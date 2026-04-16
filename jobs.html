@@ -565,19 +565,21 @@ function renderCustomerView(data) {
   // Submit job
   const submitBtn = document.getElementById("submitBtn");
   if (submitBtn) {
-    submitBtn.onclick = async () => {
-      await postAction({
-        action: "update_job",
-        description: document.getElementById("cDescription").value,
-        suburb: document.getElementById("cSuburb").value,
-        postcode: document.getElementById("cPostcode").value,
-        address: document.getElementById("cAddress").value
-      });
+  submitBtn.onclick = async () => {
+  console.log("CLICKED CONFIRM JOB"); // 🔥 ADD THIS
 
-      await postAction({ action: "submit_job" });
+  await postAction({
+    action: "update_job",
+    description: document.getElementById("cDescription").value,
+    suburb: document.getElementById("cSuburb").value,
+    postcode: document.getElementById("cPostcode").value,
+    address: document.getElementById("cAddress").value
+  });
 
-      fetchJob();
-    };
+  await postAction({ action: "submit_job" });
+
+  fetchJob();
+};
   }
 
   // Accept tradie

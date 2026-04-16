@@ -1,731 +1,715 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.3">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Noti Job</title>
+  <style>
+    :root {
+      --bg: #f5f4f0;
+      --card: #ffffff;
+      --border: #e4e1d8;
+      --text: #181818;
+      --muted: #6a6a6a;
+      --orange: #fb8a00;
+      --orange-soft: #fff4e7;
+      --black: #111111;
+      --green-soft: #eef8ef;
+      --green: #176b2c;
+      --red-soft: #fff1f1;
+      --red: #a81f1f;
+      --shadow: 0 12px 30px rgba(0,0,0,0.06);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #111111 0%, #1f1f1f 100%);
+      color: #fff;
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .hero .eyebrow {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(251,138,0,0.16);
+      color: #ffb04d;
+      border: 1px solid rgba(251,138,0,0.28);
+      margin-bottom: 14px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.05;
+    }
+
+    .hero p {
+      margin: 0;
+      color: rgba(255,255,255,0.84);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .stack { display: grid; gap: 16px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-body { padding: 20px; }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 21px;
+      color: var(--black);
+    }
+
+    .subtext {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .pill.orange {
+      background: var(--orange-soft);
+      border-color: #ffd9a7;
+      color: #9a5500;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--black);
+    }
+
+    input, textarea, button {
+      font: inherit;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(251,138,0,0.14);
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 15px 18px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--orange);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .notice {
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+      background: #faf9f6;
+    }
+
+    .notice.success {
+      background: var(--green-soft);
+      border-color: #cde6d1;
+      color: var(--green);
+    }
+
+    .notice.error {
+      background: var(--red-soft);
+      border-color: #f0c8c8;
+      color: var(--red);
+    }
+
+    .offer-card, .summary-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      background: #fff;
+    }
+
+    .offer-card h3, .summary-card h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .meta {
+      display: grid;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .meta .muted { color: var(--muted); }
+
+    .loading {
+      display: grid;
+      place-items: center;
+      min-height: 240px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .spinner {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 3px solid #ece8de;
+      border-top-color: var(--orange);
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 14px;
+    }
+
+    .footer-note {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .hidden { display: none; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 760px) {
+      .grid, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h1 {
+        font-size: 26px;
+      }
+    }
   </style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;Noti Job&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>:root {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--bg: #f5f4f0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--card: #ffffff;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--border: #e4e1d8;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--text: #181818;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--muted: #6a6a6a;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--orange: #fb8a00;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--orange-soft: #fff4e7;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--black: #111111;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--green-soft: #eef8ef;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--green: #176b2c;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--red-soft: #fff1f1;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--red: #a81f1f;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--shadow: 0 12px 30px rgba(0,0,0,0.06);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>--radius: 18px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>* { box-sizing: border-box; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>body {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-family: Arial, Helvetica, sans-serif;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: var(--bg);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--text);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 16px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.wrap {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>max-width: 920px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 0 auto;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.hero {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: linear-gradient(135deg, #111111 0%, #1f1f1f 100%);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 22px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 24px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>box-shadow: var(--shadow);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-bottom: 16px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.hero .eyebrow {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: inline-block;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 12px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-weight: 700;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>letter-spacing: 0.4px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>text-transform: uppercase;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 7px 11px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 999px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: rgba(251,138,0,0.16);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: #ffb04d;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid rgba(251,138,0,0.28);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-bottom: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.hero h1 {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 0 0 8px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 30px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>line-height: 1.05;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.hero p {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: rgba(255,255,255,0.84);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>line-height: 1.5;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.stack { display: grid; gap: 16px; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.card {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: var(--card);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: var(--radius);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>box-shadow: var(--shadow);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>overflow: hidden;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.card-body { padding: 20px; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.card h2 {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 0 0 8px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 21px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--black);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.subtext {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>line-height: 1.5;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--muted);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.status-bar {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: flex;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>flex-wrap: wrap;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gap: 10px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.pill {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: inline-flex;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>align-items: center;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gap: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 10px 12px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 999px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 13px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-weight: 700;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.pill.orange {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: var(--orange-soft);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-color: #ffd9a7;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: #9a5500;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.grid {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: grid;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>grid-template-columns: repeat(2, minmax(0, 1fr));</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gap: 16px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.grid-3 {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: grid;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>grid-template-columns: repeat(3, minmax(0, 1fr));</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gap: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.field {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: flex;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>flex-direction: column;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gap: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.field.full { grid-column: 1 / -1; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>label {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-weight: 700;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--black);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>input, textarea, button {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font: inherit;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>input, textarea {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 12px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--text);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>outline: none;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>input:focus, textarea:focus {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-color: var(--orange);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>box-shadow: 0 0 0 3px rgba(251,138,0,0.14);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>textarea {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>min-height: 110px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>resize: vertical;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.actions {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: flex;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>flex-wrap: wrap;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gap: 12px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 16px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>button {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: 0;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 15px 18px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>cursor: pointer;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-weight: 700;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>transition: transform 0.15s ease, opacity 0.2s ease;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>button:hover { transform: translateY(-1px); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>button:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.btn-primary {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: var(--orange);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.btn-secondary {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--text);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.notice {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 14px 16px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>line-height: 1.5;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: #faf9f6;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.notice.success {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: var(--green-soft);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-color: #cde6d1;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--green);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.notice.error {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: var(--red-soft);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-color: #f0c8c8;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--red);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.offer-card, .summary-card {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 16px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>padding: 16px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>background: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.offer-card h3, .summary-card h3 {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin: 0 0 8px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 18px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.meta {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: grid;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>gap: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--text);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.meta .muted { color: var(--muted); }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.loading {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>display: grid;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>place-items: center;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>min-height: 240px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--muted);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 15px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.spinner {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>width: 34px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>height: 34px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 999px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border: 3px solid #ece8de;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>border-top-color: var(--orange);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>animation: spin 0.9s linear infinite;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-bottom: 14px;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.footer-note {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>font-size: 12px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>color: var(--muted);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>text-align: center;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>.hidden { display: none; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>@keyframes spin {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>to { transform: rotate(360deg); }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>@media (max-width: 760px) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>.grid, .grid-3 {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>grid-template-columns: 1fr;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>.hero h1 {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>font-size: 26px;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="wrap"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="hero"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="eyebrow"&gt;Noti Job&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;h1 id="heroTitle"&gt;Loading job...&lt;/h1&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;p id="heroText"&gt;Please wait while we load your job details.&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="status-bar" id="heroPills"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="app" class="stack"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="loading"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="spinner"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>Loading your Noti job...</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="footer-note"&gt;Powered by Noti&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const API_URL = "https://script.google.com/macros/s/AKfycbwqJ99QUqKPLwvejodDYqpz-0F2740qYAkiwHrP3h_aNHoDKcUTUIGvsRrDb1H17cTR/exec";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const app = document.getElementById("app");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const heroTitle = document.getElementById("heroTitle");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const heroText = document.getElementById("heroText");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const heroPills = document.getElementById("heroPills");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>const pathParts = window.location.pathname.split("/").filter(Boolean);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const jobId = pathParts[pathParts.length - 1] || new URLSearchParams(window.location.search).get("id") || "";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>const token = new URLSearchParams(window.location.search).get("t") || "";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>let currentData = null;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function escapeHtml(value) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>return String(value || "")</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.replace(/&amp;/g, "&amp;amp;")</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.replace(/&lt;/g, "&amp;lt;")</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.replace(/&gt;/g, "&amp;gt;")</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.replace(/\"/g, "&amp;quot;")</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.replace(/'/g, "&amp;#039;");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function pill(text, extra = "") {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>return `&lt;div class="pill ${extra}"&gt;${escapeHtml(text)}&lt;/div&gt;`;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>async function fetchJob() {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!jobId || !token) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>renderError("This job link is missing information.");</p>
-<p class="p1"><span class="Apple-converted-space">        </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const url = `${API_URL}?type=get_job&amp;id=${encodeURIComponent(jobId)}&amp;t=${encodeURIComponent(token)}`;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const res = await fetch(url);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>const data = await res.json();</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>if (!data.success) {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>renderError(data.message || "This job link is invalid.");</p>
-<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>currentData = data;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>renderPage(data);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>} catch (err) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>renderError("We could not load this job right now.");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>async function postAction(payload) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const res = await fetch(API_URL, {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>method: "POST",</p>
-<p class="p1"><span class="Apple-converted-space">        </span>headers: {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>"Content-Type": "application/json"</p>
-<p class="p1"><span class="Apple-converted-space">        </span>},</p>
-<p class="p1"><span class="Apple-converted-space">        </span>body: JSON.stringify({</p>
-<p class="p1"><span class="Apple-converted-space">          </span>type: "frontend_action",</p>
-<p class="p1"><span class="Apple-converted-space">          </span>jobId,</p>
-<p class="p1"><span class="Apple-converted-space">          </span>token,</p>
-<p class="p1"><span class="Apple-converted-space">          </span>...payload</p>
-<p class="p1"><span class="Apple-converted-space">        </span>})</p>
-<p class="p1"><span class="Apple-converted-space">      </span>});</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>return res.json();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function setHero(data) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const role = data.role === "tradie" ? "Tradie" : "Customer";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>heroTitle.textContent = data.job.description || "Job";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>heroText.textContent = `${role} view for ${data.job.suburb || "your area"}.`;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>heroPills.innerHTML = [</p>
-<p class="p1"><span class="Apple-converted-space">        </span>pill(data.role.toUpperCase()),</p>
-<p class="p1"><span class="Apple-converted-space">        </span>pill(data.job.job_type || "STANDARD", "orange"),</p>
-<p class="p1"><span class="Apple-converted-space">        </span>pill(data.stage || "LIVE")</p>
-<p class="p1"><span class="Apple-converted-space">      </span>].join("");</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function renderError(message) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>heroTitle.textContent = "Job unavailable";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>heroText.textContent = "This link may be invalid or expired.";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>heroPills.innerHTML = "";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>app.innerHTML = `</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="card-body"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="notice error"&gt;${escapeHtml(message)}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>`;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function renderPage(data) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>setHero(data);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (data.role === "tradie_locked") {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>app.innerHTML = `</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="card-body"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;h2&gt;Job already taken&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;p class="subtext"&gt;This job has already been locked in by another tradie.&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>`;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (data.role === "tradie") {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>renderTradieView(data);</p>
-<p class="p1"><span class="Apple-converted-space">        </span>return;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>renderCustomerView(data);</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function renderCustomerView(data) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const job = data.job || {};</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const tradie = data.tradie || null;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const showOffer = !!job.price || !!job.eta;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const canReview = !!data.allow_rating;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const accepted = String(data.stage || "").toUpperCase() === "ACCEPTED";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const searching = !showOffer &amp;&amp; !accepted &amp;&amp; !canReview;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>app.innerHTML = `</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="card-body"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2&gt;Your job&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;p class="subtext"&gt;Add any missing details and confirm your request.&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="customerNotice"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="grid" style="margin-top:16px;"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="field full"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;label for="cDescription"&gt;Job description&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;textarea id="cDescription"&gt;${escapeHtml(job.description || "")}&lt;/textarea&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="field"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;label for="cSuburb"&gt;Suburb&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;input id="cSuburb" value="${escapeHtml(job.suburb || "")}" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="field"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;label for="cPostcode"&gt;Postcode&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;input id="cPostcode" value="${escapeHtml(job.postcode || "")}" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="field full"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;label for="cAddress"&gt;Address&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;input id="cAddress" value="${escapeHtml(job.address || "")}" placeholder="Only shown once you confirm" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="actions"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;button class="btn-secondary" id="customerSaveBtn"&gt;Save details&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;button class="btn-primary" id="customerSubmitBtn"&gt;Confirm job&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>${searching ? `</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="card-body"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;h2&gt;Finding tradies&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;p class="subtext"&gt;We are looking for the best available options near you.&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="loading" style="min-height:150px;"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div class="spinner"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>Searching now...</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>` : ""}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>${showOffer ? `</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="card-body"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;h2&gt;Tradie response&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="offer-card" style="margin-top:14px;"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;h3&gt;${escapeHtml(tradie ? tradie.name : "Tradie available")}&lt;/h3&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="meta"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div&gt;&lt;strong&gt;ETA:&lt;/strong&gt; ${escapeHtml(job.eta || "ASAP")}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div&gt;&lt;strong&gt;Price:&lt;/strong&gt; ${escapeHtml(job.price ? "$" + job.price : "TBC")}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>${tradie ? `&lt;div class="muted"&gt;Licensed: ${escapeHtml(tradie.licence_verified || "")}, insured: ${escapeHtml(tradie.insurance_verified || "")}&lt;/div&gt;` : ""}</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="actions"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button class="btn-primary" id="customerAcceptBtn"&gt;Accept tradie&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button class="btn-secondary" id="customerNextBtn"&gt;See next option&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>` : ""}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>${accepted &amp;&amp; tradie ? `</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="card-body"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;h2&gt;Tradie confirmed&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="summary-card" style="margin-top:14px;"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;h3&gt;${escapeHtml(tradie.name)}&lt;/h3&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div class="meta"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div&gt;&lt;strong&gt;Phone:&lt;/strong&gt; ${escapeHtml(tradie.phone || "Shared once confirmed")}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div&gt;&lt;strong&gt;ETA:&lt;/strong&gt; ${escapeHtml(job.eta || "TBC")}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div&gt;&lt;strong&gt;Price:&lt;/strong&gt; ${escapeHtml(job.price ? "$" + job.price : "TBC")}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>` : ""}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>${canReview ? `</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="card-body"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;h2&gt;How did it go?&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;p class="subtext"&gt;Leave a quick review for this job.&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="actions"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;button class="btn-primary" id="goReviewBtn"&gt;Leave review&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>` : ""}</p>
-<p class="p1"><span class="Apple-converted-space">      </span>`;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>const notice = document.getElementById("customerNotice");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const saveBtn = document.getElementById("customerSaveBtn");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const submitBtn = document.getElementById("customerSubmitBtn");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const acceptBtn = document.getElementById("customerAcceptBtn");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const nextBtn = document.getElementById("customerNextBtn");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const goReviewBtn = document.getElementById("goReviewBtn");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (saveBtn) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>saveBtn.addEventListener("click", async () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, "Saving details...", "");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const result = await postAction({</p>
-<p class="p1"><span class="Apple-converted-space">              </span>action: "update_job",</p>
-<p class="p1"><span class="Apple-converted-space">              </span>description: document.getElementById("cDescription").value,</p>
-<p class="p1"><span class="Apple-converted-space">              </span>suburb: document.getElementById("cSuburb").value,</p>
-<p class="p1"><span class="Apple-converted-space">              </span>postcode: document.getElementById("cPostcode").value,</p>
-<p class="p1"><span class="Apple-converted-space">              </span>address: document.getElementById("cAddress").value</p>
-<p class="p1"><span class="Apple-converted-space">            </span>});</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (!result.success) throw new Error(result.message || "Could not save details.");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, "Details saved", "success");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>fetchJob();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} catch (err) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, err.message || "Could not save details.", "error");</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (submitBtn) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>submitBtn.addEventListener("click", async () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>submitBtn.disabled = true;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, "Confirming your job...", "");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>await postAction({</p>
-<p class="p1"><span class="Apple-converted-space">              </span>action: "update_job",</p>
-<p class="p1"><span class="Apple-converted-space">              </span>description: document.getElementById("cDescription").value,</p>
-<p class="p1"><span class="Apple-converted-space">              </span>suburb: document.getElementById("cSuburb").value,</p>
-<p class="p1"><span class="Apple-converted-space">              </span>postcode: document.getElementById("cPostcode").value,</p>
-<p class="p1"><span class="Apple-converted-space">              </span>address: document.getElementById("cAddress").value</p>
-<p class="p1"><span class="Apple-converted-space">            </span>});</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const result = await postAction({ action: "submit_job" });</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (!result.success) throw new Error(result.message || "Could not submit job.");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, "Job confirmed. We are finding tradies now.", "success");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>fetchJob();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} catch (err) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, err.message || "Could not submit job.", "error");</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} finally {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>submitBtn.disabled = false;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (acceptBtn) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>acceptBtn.addEventListener("click", async () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>acceptBtn.disabled = true;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const result = await postAction({ action: "accept" });</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (!result.success) throw new Error(result.message || "Could not accept tradie.");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>fetchJob();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} catch (err) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>alert(err.message || "Could not accept tradie.");</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} finally {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>acceptBtn.disabled = false;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (nextBtn) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>nextBtn.addEventListener("click", async () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>nextBtn.disabled = true;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const result = await postAction({ action: "next" });</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (!result.success) throw new Error(result.message || "Could not load next option.");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>fetchJob();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} catch (err) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>alert(err.message || "Could not load next option.");</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} finally {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>nextBtn.disabled = false;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (goReviewBtn) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>goReviewBtn.addEventListener("click", () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>window.location.href = `/review/${encodeURIComponent(jobId)}?t=${encodeURIComponent(token)}`;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function renderTradieView(data) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const job = data.job || {};</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const noticeId = "tradieNotice";</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const quoteLabel = job.job_type === "QUOTE" ? "Submit quote" : "Submit ETA and price";</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>app.innerHTML = `</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="card-body"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2&gt;Job details&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;p class="subtext"&gt;Review the job and respond from this page.&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div id="${noticeId}"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="summary-card" style="margin-top:16px;"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;h3&gt;${escapeHtml(job.description || "New job")}&lt;/h3&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="meta"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div&gt;&lt;strong&gt;Suburb:&lt;/strong&gt; ${escapeHtml(job.suburb || "Not provided")}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div&gt;&lt;strong&gt;Postcode:&lt;/strong&gt; ${escapeHtml(job.postcode || "Not provided")}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div&gt;&lt;strong&gt;Type:&lt;/strong&gt; ${escapeHtml(job.job_type || "Standard")}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;div&gt;&lt;strong&gt;Urgency:&lt;/strong&gt; ${escapeHtml(job.urgency || "Standard")}&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="actions"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;button class="btn-primary" id="tradieAcceptBtn"&gt;Accept job&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="card"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="card-body"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;h2&gt;${escapeHtml(quoteLabel)}&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="grid" style="margin-top:16px;"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="field"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;label for="tEta"&gt;ETA / availability&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;input id="tEta" placeholder="Example: 30 min or Tomorrow 2pm" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;div class="field"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;label for="tPrice"&gt;Price&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>&lt;input id="tPrice" inputmode="decimal" placeholder="Example: 320" /&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;div class="actions"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">              </span>&lt;button class="btn-primary" id="tradieQuoteBtn"&gt;Send&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>`;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>const notice = document.getElementById(noticeId);</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const acceptBtn = document.getElementById("tradieAcceptBtn");</p>
-<p class="p1"><span class="Apple-converted-space">      </span>const quoteBtn = document.getElementById("tradieQuoteBtn");</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (acceptBtn) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>acceptBtn.addEventListener("click", async () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>acceptBtn.disabled = true;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const result = await postAction({ action: "accept" });</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (!result.success) throw new Error(result.message || "Could not accept job.");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, result.message || "Job accepted", "success");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>fetchJob();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} catch (err) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, err.message || "Could not accept job.", "error");</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} finally {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>acceptBtn.disabled = false;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (quoteBtn) {</p>
-<p class="p1"><span class="Apple-converted-space">        </span>quoteBtn.addEventListener("click", async () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">          </span>try {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>quoteBtn.disabled = true;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const eta = document.getElementById("tEta").value;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const price = document.getElementById("tPrice").value;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const result = await postAction({</p>
-<p class="p1"><span class="Apple-converted-space">              </span>action: "quote",</p>
-<p class="p1"><span class="Apple-converted-space">              </span>eta,</p>
-<p class="p1"><span class="Apple-converted-space">              </span>price</p>
-<p class="p1"><span class="Apple-converted-space">            </span>});</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (!result.success) throw new Error(result.message || "Could not submit quote.");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, result.message || "Quote submitted", "success");</p>
-<p class="p1"><span class="Apple-converted-space">            </span>fetchJob();</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} catch (err) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>setNotice(notice, err.message || "Could not submit quote.", "error");</p>
-<p class="p1"><span class="Apple-converted-space">          </span>} finally {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>quoteBtn.disabled = false;</p>
-<p class="p1"><span class="Apple-converted-space">          </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">      </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>function setNotice(container, text, type) {</p>
-<p class="p1"><span class="Apple-converted-space">      </span>if (!container) return;</p>
-<p class="p1"><span class="Apple-converted-space">      </span>container.innerHTML = text ? `&lt;div class="notice ${type || ""}" style="margin-top:14px;"&gt;${escapeHtml(text)}&lt;/div&gt;` : "";</p>
-<p class="p1"><span class="Apple-converted-space">    </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>fetchJob();</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+  <div class="wrap">
+    <div class="hero">
+      <div class="eyebrow">Noti Job</div>
+      <h1 id="heroTitle">Loading job...</h1>
+      <p id="heroText">Please wait while we load your job details.</p>
+      <div class="status-bar" id="heroPills"></div>
+    </div>
+
+    <div id="app" class="stack">
+      <div class="card">
+        <div class="loading">
+          <div>
+            <div class="spinner"></div>
+            Loading your Noti job...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">Powered by Noti</div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwqJ99QUqKPLwvejodDYqpz-0F2740qYAkiwHrP3h_aNHoDKcUTUIGvsRrDb1H17cTR/exec";
+
+    const app = document.getElementById("app");
+    const heroTitle = document.getElementById("heroTitle");
+    const heroText = document.getElementById("heroText");
+    const heroPills = document.getElementById("heroPills");
+
+    const pathParts = window.location.pathname.split("/").filter(Boolean);
+    const jobId = pathParts[pathParts.length - 1] || new URLSearchParams(window.location.search).get("id") || "";
+    const token = new URLSearchParams(window.location.search).get("t") || "";
+
+    let currentData = null;
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function pill(text, extra = "") {
+      return `<div class="pill ${extra}">${escapeHtml(text)}</div>`;
+    }
+
+    async function fetchJob() {
+      if (!jobId || !token) {
+        renderError("This job link is missing information.");
+        return;
+      }
+
+      try {
+        const url = `${API_URL}?type=get_job&id=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.success) {
+          renderError(data.message || "This job link is invalid.");
+          return;
+        }
+
+        currentData = data;
+        renderPage(data);
+      } catch (err) {
+        renderError("We could not load this job right now.");
+      }
+    }
+
+    async function postAction(payload) {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          type: "frontend_action",
+          jobId,
+          token,
+          ...payload
+        })
+      });
+
+      return res.json();
+    }
+
+    function setHero(data) {
+      const role = data.role === "tradie" ? "Tradie" : "Customer";
+      heroTitle.textContent = data.job.description || "Job";
+      heroText.textContent = `${role} view for ${data.job.suburb || "your area"}.`;
+
+      heroPills.innerHTML = [
+        pill(data.role.toUpperCase()),
+        pill(data.job.job_type || "STANDARD", "orange"),
+        pill(data.stage || "LIVE")
+      ].join("");
+    }
+
+    function renderError(message) {
+      heroTitle.textContent = "Job unavailable";
+      heroText.textContent = "This link may be invalid or expired.";
+      heroPills.innerHTML = "";
+      app.innerHTML = `
+        <div class="card">
+          <div class="card-body">
+            <div class="notice error">${escapeHtml(message)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPage(data) {
+      setHero(data);
+
+      if (data.role === "tradie_locked") {
+        app.innerHTML = `
+          <div class="card">
+            <div class="card-body">
+              <h2>Job already taken</h2>
+              <p class="subtext">This job has already been locked in by another tradie.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (data.role === "tradie") {
+        renderTradieView(data);
+        return;
+      }
+
+      renderCustomerView(data);
+    }
+
+    function renderCustomerView(data) {
+      const job = data.job || {};
+      const tradie = data.tradie || null;
+      const showOffer = !!job.price || !!job.eta;
+      const canReview = !!data.allow_rating;
+      const accepted = String(data.stage || "").toUpperCase() === "ACCEPTED";
+      const searching = !showOffer && !accepted && !canReview;
+
+      app.innerHTML = `
+        <div class="card">
+          <div class="card-body">
+            <h2>Your job</h2>
+            <p class="subtext">Add any missing details and confirm your request.</p>
+            <div id="customerNotice"></div>
+            <div class="grid" style="margin-top:16px;">
+              <div class="field full">
+                <label for="cDescription">Job description</label>
+                <textarea id="cDescription">${escapeHtml(job.description || "")}</textarea>
+              </div>
+              <div class="field">
+                <label for="cSuburb">Suburb</label>
+                <input id="cSuburb" value="${escapeHtml(job.suburb || "")}" />
+              </div>
+              <div class="field">
+                <label for="cPostcode">Postcode</label>
+                <input id="cPostcode" value="${escapeHtml(job.postcode || "")}" />
+              </div>
+              <div class="field full">
+                <label for="cAddress">Address</label>
+                <input id="cAddress" value="${escapeHtml(job.address || "")}" placeholder="Only shown once you confirm" />
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn-secondary" id="customerSaveBtn">Save details</button>
+              <button class="btn-primary" id="customerSubmitBtn">Confirm job</button>
+            </div>
+          </div>
+        </div>
+
+        ${searching ? `
+          <div class="card">
+            <div class="card-body">
+              <h2>Finding tradies</h2>
+              <p class="subtext">We are looking for the best available options near you.</p>
+              <div class="loading" style="min-height:150px;">
+                <div>
+                  <div class="spinner"></div>
+                  Searching now...
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+
+        ${showOffer ? `
+          <div class="card">
+            <div class="card-body">
+              <h2>Tradie response</h2>
+              <div class="offer-card" style="margin-top:14px;">
+                <h3>${escapeHtml(tradie ? tradie.name : "Tradie available")}</h3>
+                <div class="meta">
+                  <div><strong>ETA:</strong> ${escapeHtml(job.eta || "ASAP")}</div>
+                  <div><strong>Price:</strong> ${escapeHtml(job.price ? "$" + job.price : "TBC")}</div>
+                  ${tradie ? `<div class="muted">Licensed: ${escapeHtml(tradie.licence_verified || "")}, insured: ${escapeHtml(tradie.insurance_verified || "")}</div>` : ""}
+                </div>
+                <div class="actions">
+                  <button class="btn-primary" id="customerAcceptBtn">Accept tradie</button>
+                  <button class="btn-secondary" id="customerNextBtn">See next option</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+
+        ${accepted && tradie ? `
+          <div class="card">
+            <div class="card-body">
+              <h2>Tradie confirmed</h2>
+              <div class="summary-card" style="margin-top:14px;">
+                <h3>${escapeHtml(tradie.name)}</h3>
+                <div class="meta">
+                  <div><strong>Phone:</strong> ${escapeHtml(tradie.phone || "Shared once confirmed")}</div>
+                  <div><strong>ETA:</strong> ${escapeHtml(job.eta || "TBC")}</div>
+                  <div><strong>Price:</strong> ${escapeHtml(job.price ? "$" + job.price : "TBC")}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+
+        ${canReview ? `
+          <div class="card">
+            <div class="card-body">
+              <h2>How did it go?</h2>
+              <p class="subtext">Leave a quick review for this job.</p>
+              <div class="actions">
+                <button class="btn-primary" id="goReviewBtn">Leave review</button>
+              </div>
+            </div>
+          </div>
+        ` : ""}
+      `;
+
+      const notice = document.getElementById("customerNotice");
+      const saveBtn = document.getElementById("customerSaveBtn");
+      const submitBtn = document.getElementById("customerSubmitBtn");
+      const acceptBtn = document.getElementById("customerAcceptBtn");
+      const nextBtn = document.getElementById("customerNextBtn");
+      const goReviewBtn = document.getElementById("goReviewBtn");
+
+      if (saveBtn) {
+        saveBtn.addEventListener("click", async () => {
+          try {
+            setNotice(notice, "Saving details...", "");
+            const result = await postAction({
+              action: "update_job",
+              description: document.getElementById("cDescription").value,
+              suburb: document.getElementById("cSuburb").value,
+              postcode: document.getElementById("cPostcode").value,
+              address: document.getElementById("cAddress").value
+            });
+            if (!result.success) throw new Error(result.message || "Could not save details.");
+            setNotice(notice, "Details saved", "success");
+            fetchJob();
+          } catch (err) {
+            setNotice(notice, err.message || "Could not save details.", "error");
+          }
+        });
+      }
+
+      if (submitBtn) {
+        submitBtn.addEventListener("click", async () => {
+          try {
+            submitBtn.disabled = true;
+            setNotice(notice, "Confirming your job...", "");
+            await postAction({
+              action: "update_job",
+              description: document.getElementById("cDescription").value,
+              suburb: document.getElementById("cSuburb").value,
+              postcode: document.getElementById("cPostcode").value,
+              address: document.getElementById("cAddress").value
+            });
+            const result = await postAction({ action: "submit_job" });
+            if (!result.success) throw new Error(result.message || "Could not submit job.");
+            setNotice(notice, "Job confirmed. We are finding tradies now.", "success");
+            fetchJob();
+          } catch (err) {
+            setNotice(notice, err.message || "Could not submit job.", "error");
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      }
+
+      if (acceptBtn) {
+        acceptBtn.addEventListener("click", async () => {
+          try {
+            acceptBtn.disabled = true;
+            const result = await postAction({ action: "accept" });
+            if (!result.success) throw new Error(result.message || "Could not accept tradie.");
+            fetchJob();
+          } catch (err) {
+            alert(err.message || "Could not accept tradie.");
+          } finally {
+            acceptBtn.disabled = false;
+          }
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener("click", async () => {
+          try {
+            nextBtn.disabled = true;
+            const result = await postAction({ action: "next" });
+            if (!result.success) throw new Error(result.message || "Could not load next option.");
+            fetchJob();
+          } catch (err) {
+            alert(err.message || "Could not load next option.");
+          } finally {
+            nextBtn.disabled = false;
+          }
+        });
+      }
+
+      if (goReviewBtn) {
+        goReviewBtn.addEventListener("click", () => {
+          window.location.href = `/review/${encodeURIComponent(jobId)}?t=${encodeURIComponent(token)}`;
+        });
+      }
+    }
+
+    function renderTradieView(data) {
+      const job = data.job || {};
+      const noticeId = "tradieNotice";
+      const quoteLabel = job.job_type === "QUOTE" ? "Submit quote" : "Submit ETA and price";
+
+      app.innerHTML = `
+        <div class="card">
+          <div class="card-body">
+            <h2>Job details</h2>
+            <p class="subtext">Review the job and respond from this page.</p>
+            <div id="${noticeId}"></div>
+            <div class="summary-card" style="margin-top:16px;">
+              <h3>${escapeHtml(job.description || "New job")}</h3>
+              <div class="meta">
+                <div><strong>Suburb:</strong> ${escapeHtml(job.suburb || "Not provided")}</div>
+                <div><strong>Postcode:</strong> ${escapeHtml(job.postcode || "Not provided")}</div>
+                <div><strong>Type:</strong> ${escapeHtml(job.job_type || "Standard")}</div>
+                <div><strong>Urgency:</strong> ${escapeHtml(job.urgency || "Standard")}</div>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn-primary" id="tradieAcceptBtn">Accept job</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h2>${escapeHtml(quoteLabel)}</h2>
+            <div class="grid" style="margin-top:16px;">
+              <div class="field">
+                <label for="tEta">ETA / availability</label>
+                <input id="tEta" placeholder="Example: 30 min or Tomorrow 2pm" />
+              </div>
+              <div class="field">
+                <label for="tPrice">Price</label>
+                <input id="tPrice" inputmode="decimal" placeholder="Example: 320" />
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn-primary" id="tradieQuoteBtn">Send</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const notice = document.getElementById(noticeId);
+      const acceptBtn = document.getElementById("tradieAcceptBtn");
+      const quoteBtn = document.getElementById("tradieQuoteBtn");
+
+      if (acceptBtn) {
+        acceptBtn.addEventListener("click", async () => {
+          try {
+            acceptBtn.disabled = true;
+            const result = await postAction({ action: "accept" });
+            if (!result.success) throw new Error(result.message || "Could not accept job.");
+            setNotice(notice, result.message || "Job accepted", "success");
+            fetchJob();
+          } catch (err) {
+            setNotice(notice, err.message || "Could not accept job.", "error");
+          } finally {
+            acceptBtn.disabled = false;
+          }
+        });
+      }
+
+      if (quoteBtn) {
+        quoteBtn.addEventListener("click", async () => {
+          try {
+            quoteBtn.disabled = true;
+            const eta = document.getElementById("tEta").value;
+            const price = document.getElementById("tPrice").value;
+            const result = await postAction({
+              action: "quote",
+              eta,
+              price
+            });
+            if (!result.success) throw new Error(result.message || "Could not submit quote.");
+            setNotice(notice, result.message || "Quote submitted", "success");
+            fetchJob();
+          } catch (err) {
+            setNotice(notice, err.message || "Could not submit quote.", "error");
+          } finally {
+            quoteBtn.disabled = false;
+          }
+        });
+      }
+    }
+
+    function setNotice(container, text, type) {
+      if (!container) return;
+      container.innerHTML = text ? `<div class="notice ${type || ""}" style="margin-top:14px;">${escapeHtml(text)}</div>` : "";
+    }
+
+    fetchJob();
+  </script>
 </body>
 </html>

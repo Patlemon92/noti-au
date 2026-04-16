@@ -309,407 +309,314 @@
     <div class="footer-note">Powered by Noti</div>
   </div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwqJ99QUqKPLwvejodDYqpz-0F2740qYAkiwHrP3h_aNHoDKcUTUIGvsRrDb1H17cTR/exec";
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwqJ99QUqKPLwvejodDYqpz-0F2740qYAkiwHrP3h_aNHoDKcUTUIGvsRrDb1H17cTR/exec";
 
-    const app = document.getElementById("app");
-    const heroTitle = document.getElementById("heroTitle");
-    const heroText = document.getElementById("heroText");
-    const heroPills = document.getElementById("heroPills");
+const app = document.getElementById("app");
+const heroTitle = document.getElementById("heroTitle");
+const heroText = document.getElementById("heroText");
+const heroPills = document.getElementById("heroPills");
 
-    const pathParts = window.location.pathname.split("/").filter(Boolean);
-    const jobId = pathParts[pathParts.length - 1] || new URLSearchParams(window.location.search).get("id") || "";
-    const token = new URLSearchParams(window.location.search).get("t") || "";
+// =========================
+// URL PARSING (FIXED)
+// =========================
+const params = new URLSearchParams(window.location.search);
+const pathParts = window.location.pathname.split("/").filter(Boolean);
 
-    let currentData = null;
+let jobId = "";
+if (pathParts[0] === "job" && pathParts[1]) {
+  jobId = pathParts[1];
+} else {
+  jobId = params.get("id") || "";
+}
 
-    function escapeHtml(value) {
-      return String(value || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+const token = params.get("t") || "";
+
+let currentData = null;
+
+// =========================
+// HELPERS
+// =========================
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function pill(text, extra = "") {
+  return `<div class="pill ${extra}">${escapeHtml(text)}</div>`;
+}
+
+// =========================
+// FETCH JOB (DEBUG ENABLED)
+// =========================
+async function fetchJob() {
+
+  if (!jobId || !token) {
+    renderError("This job link is missing information.");
+    return;
+  }
+
+  try {
+
+    const url = `${API_URL}?type=get_job&id=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}`;
+
+    console.log("FETCH URL:", url);
+
+    const res = await fetch(url);
+    const raw = await res.text();
+
+    console.log("RAW RESPONSE:", raw);
+
+    const data = JSON.parse(raw);
+
+    if (!data.success) {
+      renderError(data.message || "This job link is invalid.");
+      return;
     }
 
-    function pill(text, extra = "") {
-      return `<div class="pill ${extra}">${escapeHtml(text)}</div>`;
-    }
+    currentData = data;
+    renderPage(data);
 
-    async function fetchJob() {
-      if (!jobId || !token) {
-        renderError("This job link is missing information.");
-        return;
-      }
+  } catch (err) {
+    console.error("FETCH ERROR:", err);
+    renderError("We could not load this job right now.");
+  }
+}
 
-      try {
-        const url = `${API_URL}?type=get_job&id=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}`;
-        const res = await fetch(url);
-        const data = await res.json();
+// =========================
+// POST ACTION
+// =========================
+async function postAction(payload) {
 
-        if (!data.success) {
-          renderError(data.message || "This job link is invalid.");
-          return;
-        }
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      type: "frontend_action",
+      jobId,
+      token,
+      ...payload
+    })
+  });
 
-        currentData = data;
-        renderPage(data);
-      } catch (err) {
-        renderError("We could not load this job right now.");
-      }
-    }
+  return res.json();
+}
 
-    async function postAction(payload) {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          type: "frontend_action",
-          jobId,
-          token,
-          ...payload
-        })
+// =========================
+// HERO
+// =========================
+function setHero(data) {
+
+  const role = data.role === "tradie" ? "Tradie" : "Customer";
+
+  heroTitle.textContent = data.job.description || "Job";
+  heroText.textContent = `${role} view for ${data.job.suburb || "your area"}.`;
+
+  heroPills.innerHTML = [
+    pill(data.role.toUpperCase()),
+    pill(data.job.job_type || "STANDARD", "orange"),
+    pill(data.stage || "LIVE")
+  ].join("");
+}
+
+// =========================
+// ERROR UI
+// =========================
+function renderError(message) {
+
+  heroTitle.textContent = "Job unavailable";
+  heroText.textContent = "This link may be invalid or expired.";
+  heroPills.innerHTML = "";
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="card-body">
+        <div class="notice error">${escapeHtml(message)}</div>
+      </div>
+    </div>
+  `;
+}
+
+// =========================
+// PAGE ROUTER
+// =========================
+function renderPage(data) {
+
+  setHero(data);
+
+  if (data.role === "tradie_locked") {
+    app.innerHTML = `
+      <div class="card">
+        <div class="card-body">
+          <h2>Job already taken</h2>
+          <p class="subtext">This job has already been locked in by another tradie.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if (data.role === "tradie") {
+    renderTradieView(data);
+    return;
+  }
+
+  renderCustomerView(data);
+}
+
+// =========================
+// CUSTOMER VIEW
+// =========================
+function renderCustomerView(data) {
+
+  const job = data.job || {};
+  const tradie = data.tradie || null;
+
+  const showOffer = !!job.price || !!job.eta;
+  const accepted = String(data.stage || "").toUpperCase() === "ACCEPTED";
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="card-body">
+        <h2>Your job</h2>
+
+        <div class="grid" style="margin-top:16px;">
+          <div class="field full">
+            <label>Description</label>
+            <textarea id="cDescription">${escapeHtml(job.description || "")}</textarea>
+          </div>
+
+          <div class="field">
+            <label>Suburb</label>
+            <input id="cSuburb" value="${escapeHtml(job.suburb || "")}" />
+          </div>
+
+          <div class="field">
+            <label>Postcode</label>
+            <input id="cPostcode" value="${escapeHtml(job.postcode || "")}" />
+          </div>
+
+          <div class="field full">
+            <label>Address</label>
+            <input id="cAddress" value="${escapeHtml(job.address || "")}" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-primary" id="submitBtn">Confirm job</button>
+        </div>
+      </div>
+    </div>
+
+    ${showOffer ? `
+      <div class="card">
+        <div class="card-body">
+          <h2>Tradie response</h2>
+
+          <div class="offer-card">
+            <h3>${escapeHtml(tradie ? tradie.name : "Tradie")}</h3>
+            <div>ETA: ${escapeHtml(job.eta || "ASAP")}</div>
+            <div>Price: ${escapeHtml(job.price ? "$" + job.price : "TBC")}</div>
+
+            <div class="actions">
+              <button class="btn-primary" id="acceptBtn">Accept</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    ` : ""}
+
+    ${accepted && tradie ? `
+      <div class="card">
+        <div class="card-body">
+          <h2>Tradie confirmed</h2>
+          <div>${escapeHtml(tradie.name)}</div>
+          <div>${escapeHtml(tradie.phone)}</div>
+        </div>
+      </div>
+    ` : ""}
+  `;
+
+  // Submit job
+  const submitBtn = document.getElementById("submitBtn");
+  if (submitBtn) {
+    submitBtn.onclick = async () => {
+      await postAction({
+        action: "update_job",
+        description: document.getElementById("cDescription").value,
+        suburb: document.getElementById("cSuburb").value,
+        postcode: document.getElementById("cPostcode").value,
+        address: document.getElementById("cAddress").value
       });
 
-      return res.json();
-    }
+      await postAction({ action: "submit_job" });
 
-    function setHero(data) {
-      const role = data.role === "tradie" ? "Tradie" : "Customer";
-      heroTitle.textContent = data.job.description || "Job";
-      heroText.textContent = `${role} view for ${data.job.suburb || "your area"}.`;
+      fetchJob();
+    };
+  }
 
-      heroPills.innerHTML = [
-        pill(data.role.toUpperCase()),
-        pill(data.job.job_type || "STANDARD", "orange"),
-        pill(data.stage || "LIVE")
-      ].join("");
-    }
+  // Accept tradie
+  const acceptBtn = document.getElementById("acceptBtn");
+  if (acceptBtn) {
+    acceptBtn.onclick = async () => {
+      await postAction({ action: "accept" });
+      fetchJob();
+    };
+  }
+}
 
-    function renderError(message) {
-      heroTitle.textContent = "Job unavailable";
-      heroText.textContent = "This link may be invalid or expired.";
-      heroPills.innerHTML = "";
-      app.innerHTML = `
-        <div class="card">
-          <div class="card-body">
-            <div class="notice error">${escapeHtml(message)}</div>
-          </div>
-        </div>
-      `;
-    }
+// =========================
+// TRADIE VIEW
+// =========================
+function renderTradieView(data) {
 
-    function renderPage(data) {
-      setHero(data);
+  const job = data.job || {};
 
-      if (data.role === "tradie_locked") {
-        app.innerHTML = `
-          <div class="card">
-            <div class="card-body">
-              <h2>Job already taken</h2>
-              <p class="subtext">This job has already been locked in by another tradie.</p>
-            </div>
-          </div>
-        `;
-        return;
-      }
+  app.innerHTML = `
+    <div class="card">
+      <div class="card-body">
+        <h2>${escapeHtml(job.description)}</h2>
 
-      if (data.role === "tradie") {
-        renderTradieView(data);
-        return;
-      }
+        <div>Suburb: ${escapeHtml(job.suburb)}</div>
+        <div>Postcode: ${escapeHtml(job.postcode)}</div>
 
-      renderCustomerView(data);
-    }
-
-    function renderCustomerView(data) {
-      const job = data.job || {};
-      const tradie = data.tradie || null;
-      const showOffer = !!job.price || !!job.eta;
-      const canReview = !!data.allow_rating;
-      const accepted = String(data.stage || "").toUpperCase() === "ACCEPTED";
-      const searching = !showOffer && !accepted && !canReview;
-
-      app.innerHTML = `
-        <div class="card">
-          <div class="card-body">
-            <h2>Your job</h2>
-            <p class="subtext">Add any missing details and confirm your request.</p>
-            <div id="customerNotice"></div>
-            <div class="grid" style="margin-top:16px;">
-              <div class="field full">
-                <label for="cDescription">Job description</label>
-                <textarea id="cDescription">${escapeHtml(job.description || "")}</textarea>
-              </div>
-              <div class="field">
-                <label for="cSuburb">Suburb</label>
-                <input id="cSuburb" value="${escapeHtml(job.suburb || "")}" />
-              </div>
-              <div class="field">
-                <label for="cPostcode">Postcode</label>
-                <input id="cPostcode" value="${escapeHtml(job.postcode || "")}" />
-              </div>
-              <div class="field full">
-                <label for="cAddress">Address</label>
-                <input id="cAddress" value="${escapeHtml(job.address || "")}" placeholder="Only shown once you confirm" />
-              </div>
-            </div>
-            <div class="actions">
-              <button class="btn-secondary" id="customerSaveBtn">Save details</button>
-              <button class="btn-primary" id="customerSubmitBtn">Confirm job</button>
-            </div>
-          </div>
+        <div class="actions">
+          <button class="btn-primary" id="acceptBtn">Accept job</button>
         </div>
 
-        ${searching ? `
-          <div class="card">
-            <div class="card-body">
-              <h2>Finding tradies</h2>
-              <p class="subtext">We are looking for the best available options near you.</p>
-              <div class="loading" style="min-height:150px;">
-                <div>
-                  <div class="spinner"></div>
-                  Searching now...
-                </div>
-              </div>
-            </div>
-          </div>
-        ` : ""}
+        <div style="margin-top:20px;">
+          <input id="eta" placeholder="ETA">
+          <input id="price" placeholder="Price">
 
-        ${showOffer ? `
-          <div class="card">
-            <div class="card-body">
-              <h2>Tradie response</h2>
-              <div class="offer-card" style="margin-top:14px;">
-                <h3>${escapeHtml(tradie ? tradie.name : "Tradie available")}</h3>
-                <div class="meta">
-                  <div><strong>ETA:</strong> ${escapeHtml(job.eta || "ASAP")}</div>
-                  <div><strong>Price:</strong> ${escapeHtml(job.price ? "$" + job.price : "TBC")}</div>
-                  ${tradie ? `<div class="muted">Licensed: ${escapeHtml(tradie.licence_verified || "")}, insured: ${escapeHtml(tradie.insurance_verified || "")}</div>` : ""}
-                </div>
-                <div class="actions">
-                  <button class="btn-primary" id="customerAcceptBtn">Accept tradie</button>
-                  <button class="btn-secondary" id="customerNextBtn">See next option</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ` : ""}
-
-        ${accepted && tradie ? `
-          <div class="card">
-            <div class="card-body">
-              <h2>Tradie confirmed</h2>
-              <div class="summary-card" style="margin-top:14px;">
-                <h3>${escapeHtml(tradie.name)}</h3>
-                <div class="meta">
-                  <div><strong>Phone:</strong> ${escapeHtml(tradie.phone || "Shared once confirmed")}</div>
-                  <div><strong>ETA:</strong> ${escapeHtml(job.eta || "TBC")}</div>
-                  <div><strong>Price:</strong> ${escapeHtml(job.price ? "$" + job.price : "TBC")}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ` : ""}
-
-        ${canReview ? `
-          <div class="card">
-            <div class="card-body">
-              <h2>How did it go?</h2>
-              <p class="subtext">Leave a quick review for this job.</p>
-              <div class="actions">
-                <button class="btn-primary" id="goReviewBtn">Leave review</button>
-              </div>
-            </div>
-          </div>
-        ` : ""}
-      `;
-
-      const notice = document.getElementById("customerNotice");
-      const saveBtn = document.getElementById("customerSaveBtn");
-      const submitBtn = document.getElementById("customerSubmitBtn");
-      const acceptBtn = document.getElementById("customerAcceptBtn");
-      const nextBtn = document.getElementById("customerNextBtn");
-      const goReviewBtn = document.getElementById("goReviewBtn");
-
-      if (saveBtn) {
-        saveBtn.addEventListener("click", async () => {
-          try {
-            setNotice(notice, "Saving details...", "");
-            const result = await postAction({
-              action: "update_job",
-              description: document.getElementById("cDescription").value,
-              suburb: document.getElementById("cSuburb").value,
-              postcode: document.getElementById("cPostcode").value,
-              address: document.getElementById("cAddress").value
-            });
-            if (!result.success) throw new Error(result.message || "Could not save details.");
-            setNotice(notice, "Details saved", "success");
-            fetchJob();
-          } catch (err) {
-            setNotice(notice, err.message || "Could not save details.", "error");
-          }
-        });
-      }
-
-      if (submitBtn) {
-        submitBtn.addEventListener("click", async () => {
-          try {
-            submitBtn.disabled = true;
-            setNotice(notice, "Confirming your job...", "");
-            await postAction({
-              action: "update_job",
-              description: document.getElementById("cDescription").value,
-              suburb: document.getElementById("cSuburb").value,
-              postcode: document.getElementById("cPostcode").value,
-              address: document.getElementById("cAddress").value
-            });
-            const result = await postAction({ action: "submit_job" });
-            if (!result.success) throw new Error(result.message || "Could not submit job.");
-            setNotice(notice, "Job confirmed. We are finding tradies now.", "success");
-            fetchJob();
-          } catch (err) {
-            setNotice(notice, err.message || "Could not submit job.", "error");
-          } finally {
-            submitBtn.disabled = false;
-          }
-        });
-      }
-
-      if (acceptBtn) {
-        acceptBtn.addEventListener("click", async () => {
-          try {
-            acceptBtn.disabled = true;
-            const result = await postAction({ action: "accept" });
-            if (!result.success) throw new Error(result.message || "Could not accept tradie.");
-            fetchJob();
-          } catch (err) {
-            alert(err.message || "Could not accept tradie.");
-          } finally {
-            acceptBtn.disabled = false;
-          }
-        });
-      }
-
-      if (nextBtn) {
-        nextBtn.addEventListener("click", async () => {
-          try {
-            nextBtn.disabled = true;
-            const result = await postAction({ action: "next" });
-            if (!result.success) throw new Error(result.message || "Could not load next option.");
-            fetchJob();
-          } catch (err) {
-            alert(err.message || "Could not load next option.");
-          } finally {
-            nextBtn.disabled = false;
-          }
-        });
-      }
-
-      if (goReviewBtn) {
-        goReviewBtn.addEventListener("click", () => {
-          window.location.href = `/review/${encodeURIComponent(jobId)}?t=${encodeURIComponent(token)}`;
-        });
-      }
-    }
-
-    function renderTradieView(data) {
-      const job = data.job || {};
-      const noticeId = "tradieNotice";
-      const quoteLabel = job.job_type === "QUOTE" ? "Submit quote" : "Submit ETA and price";
-
-      app.innerHTML = `
-        <div class="card">
-          <div class="card-body">
-            <h2>Job details</h2>
-            <p class="subtext">Review the job and respond from this page.</p>
-            <div id="${noticeId}"></div>
-            <div class="summary-card" style="margin-top:16px;">
-              <h3>${escapeHtml(job.description || "New job")}</h3>
-              <div class="meta">
-                <div><strong>Suburb:</strong> ${escapeHtml(job.suburb || "Not provided")}</div>
-                <div><strong>Postcode:</strong> ${escapeHtml(job.postcode || "Not provided")}</div>
-                <div><strong>Type:</strong> ${escapeHtml(job.job_type || "Standard")}</div>
-                <div><strong>Urgency:</strong> ${escapeHtml(job.urgency || "Standard")}</div>
-              </div>
-            </div>
-            <div class="actions">
-              <button class="btn-primary" id="tradieAcceptBtn">Accept job</button>
-            </div>
-          </div>
+          <button id="quoteBtn">Send</button>
         </div>
+      </div>
+    </div>
+  `;
 
-        <div class="card">
-          <div class="card-body">
-            <h2>${escapeHtml(quoteLabel)}</h2>
-            <div class="grid" style="margin-top:16px;">
-              <div class="field">
-                <label for="tEta">ETA / availability</label>
-                <input id="tEta" placeholder="Example: 30 min or Tomorrow 2pm" />
-              </div>
-              <div class="field">
-                <label for="tPrice">Price</label>
-                <input id="tPrice" inputmode="decimal" placeholder="Example: 320" />
-              </div>
-            </div>
-            <div class="actions">
-              <button class="btn-primary" id="tradieQuoteBtn">Send</button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const notice = document.getElementById(noticeId);
-      const acceptBtn = document.getElementById("tradieAcceptBtn");
-      const quoteBtn = document.getElementById("tradieQuoteBtn");
-
-      if (acceptBtn) {
-        acceptBtn.addEventListener("click", async () => {
-          try {
-            acceptBtn.disabled = true;
-            const result = await postAction({ action: "accept" });
-            if (!result.success) throw new Error(result.message || "Could not accept job.");
-            setNotice(notice, result.message || "Job accepted", "success");
-            fetchJob();
-          } catch (err) {
-            setNotice(notice, err.message || "Could not accept job.", "error");
-          } finally {
-            acceptBtn.disabled = false;
-          }
-        });
-      }
-
-      if (quoteBtn) {
-        quoteBtn.addEventListener("click", async () => {
-          try {
-            quoteBtn.disabled = true;
-            const eta = document.getElementById("tEta").value;
-            const price = document.getElementById("tPrice").value;
-            const result = await postAction({
-              action: "quote",
-              eta,
-              price
-            });
-            if (!result.success) throw new Error(result.message || "Could not submit quote.");
-            setNotice(notice, result.message || "Quote submitted", "success");
-            fetchJob();
-          } catch (err) {
-            setNotice(notice, err.message || "Could not submit quote.", "error");
-          } finally {
-            quoteBtn.disabled = false;
-          }
-        });
-      }
-    }
-
-    function setNotice(container, text, type) {
-      if (!container) return;
-      container.innerHTML = text ? `<div class="notice ${type || ""}" style="margin-top:14px;">${escapeHtml(text)}</div>` : "";
-    }
-
+  document.getElementById("acceptBtn").onclick = async () => {
+    await postAction({ action: "accept" });
     fetchJob();
-  </script>
+  };
+
+  document.getElementById("quoteBtn").onclick = async () => {
+    await postAction({
+      action: "quote",
+      eta: document.getElementById("eta").value,
+      price: document.getElementById("price").value
+    });
+    fetchJob();
+  };
+}
+
+// =========================
+// INIT
+// =========================
+fetchJob();
+</script>
 </body>
 </html>

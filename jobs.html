@@ -408,20 +408,23 @@ async function fetchJob() {
 // =========================
 async function postAction(payload) {
 
-  const res = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      type: "frontend_action",
-      jobId,
-      token,
-      ...payload
-    })
-  });
+  const query = new URLSearchParams({
+    type: "frontend_action",
+    jobId: jobId,
+    t: token,
+    ...payload
+  }).toString();
 
-  return res.json();
+  const url = `${API_URL}?${query}`;
+
+  console.log("ACTION URL:", url);
+
+  const res = await fetch(url);
+  const text = await res.text();
+
+  console.log("ACTION RESPONSE:", text);
+
+  return JSON.parse(text);
 }
 
 // =========================

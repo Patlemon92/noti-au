@@ -1,0 +1,292 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.3">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;Noti Review&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>:root {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>--bg: #f5f4f0;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>--card: #ffffff;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>--border: #e4e1d8;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>--text: #181818;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>--muted: #6a6a6a;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>--orange: #fb8a00;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>--orange-soft: #fff4e7;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>--shadow: 0 12px 30px rgba(0,0,0,0.06);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>--radius: 18px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>* { box-sizing: border-box; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>body {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin: 0;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-family: Arial, Helvetica, sans-serif;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>background: var(--bg);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>color: var(--text);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>padding: 16px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.wrap {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>max-width: 760px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin: 0 auto;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.hero {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>background: linear-gradient(135deg, #111111 0%, #1f1f1f 100%);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>color: white;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 22px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>padding: 24px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>box-shadow: var(--shadow);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin-bottom: 16px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.hero h1 {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin: 0 0 8px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-size: 30px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.hero p {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin: 0;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>color: rgba(255,255,255,0.84);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-size: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>line-height: 1.5;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.card {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>background: var(--card);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border-radius: var(--radius);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>box-shadow: var(--shadow);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.card-body { padding: 22px; }</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>h2 {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin: 0 0 8px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-size: 21px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.subtext {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin: 0;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>color: var(--muted);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>line-height: 1.5;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-size: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.stars {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>display: flex;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>gap: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 18px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>flex-wrap: wrap;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.star-btn {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>background: #fff;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>padding: 14px 16px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>cursor: pointer;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-size: 18px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>min-width: 64px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-weight: 700;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.star-btn.active {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>background: var(--orange-soft);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border-color: #ffd39a;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>color: #9a5500;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>textarea {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>width: 100%;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>min-height: 120px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 16px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>padding: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 12px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>resize: vertical;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font: inherit;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>outline: none;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>textarea:focus {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border-color: var(--orange);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>box-shadow: 0 0 0 3px rgba(251,138,0,0.14);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>button.submit {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 16px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border: 0;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>background: var(--orange);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>color: #fff;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>padding: 15px 18px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-weight: 700;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>cursor: pointer;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font: inherit;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>.notice {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>margin-top: 16px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>padding: 14px 16px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border-radius: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>font-size: 14px;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>line-height: 1.5;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>border: 1px solid var(--border);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>background: #faf9f6;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="wrap"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="hero"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;h1&gt;Leave a review&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;p&gt;Tell us how your Noti job went. Your feedback helps improve future matches.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="card"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="card-body"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;h2 id="reviewTitle"&gt;Loading review...&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;p class="subtext" id="reviewText"&gt;Please wait while we load this job.&lt;/p&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="stars" id="stars"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;textarea id="reviewComment" placeholder="Anything you want to mention?"&gt;&lt;/textarea&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;button class="submit" id="submitReviewBtn"&gt;Submit review&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="reviewNotice"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const API_URL = "https://script.google.com/macros/s/AKfycbwqJ99QUqKPLwvejodDYqpz-0F2740qYAkiwHrP3h_aNHoDKcUTUIGvsRrDb1H17cTR/exec";</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const pathParts = window.location.pathname.split("/").filter(Boolean);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const jobId = pathParts[pathParts.length - 1] || new URLSearchParams(window.location.search).get("id") || "";</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const token = new URLSearchParams(window.location.search).get("t") || "";</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>const reviewTitle = document.getElementById("reviewTitle");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const reviewText = document.getElementById("reviewText");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const stars = document.getElementById("stars");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const reviewComment = document.getElementById("reviewComment");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const reviewNotice = document.getElementById("reviewNotice");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const submitReviewBtn = document.getElementById("submitReviewBtn");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>let selectedRating = 0;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function escapeHtml(value) {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>return String(value || "")</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.replace(/&amp;/g, "&amp;amp;")</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.replace(/&lt;/g, "&amp;lt;")</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.replace(/&gt;/g, "&amp;gt;")</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.replace(/\"/g, "&amp;quot;")</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.replace(/'/g, "&amp;#039;");</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function setNotice(text) {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>reviewNotice.innerHTML = text ? `&lt;div class="notice"&gt;${escapeHtml(text)}&lt;/div&gt;` : "";</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function renderStars() {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>stars.innerHTML = "";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>for (let i = 1; i &lt;= 5; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const btn = document.createElement("button");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>btn.type = "button";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>btn.className = "star-btn" + (selectedRating === i ? " active" : "");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>btn.textContent = `${i} ★`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>btn.addEventListener("click", () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>selectedRating = i;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>renderStars();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>stars.appendChild(btn);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>async function fetchJob() {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (!jobId || !token) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>reviewTitle.textContent = "Invalid review link";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>reviewText.textContent = "This review link is missing information.";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>submitReviewBtn.disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const url = `${API_URL}?type=get_job&amp;id=${encodeURIComponent(jobId)}&amp;t=${encodeURIComponent(token)}`;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const res = await fetch(url);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const data = await res.json();</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!data.success) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>reviewTitle.textContent = "Review unavailable";</p>
+<p class="p1"><span class="Apple-converted-space">          </span>reviewText.textContent = data.message || "This review link is invalid.";</p>
+<p class="p1"><span class="Apple-converted-space">          </span>submitReviewBtn.disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>reviewTitle.textContent = data.job.description || "Job review";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>reviewText.textContent = `Review for ${data.job.suburb || "your job"}.`;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>} catch (err) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>reviewTitle.textContent = "Review unavailable";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>reviewText.textContent = "We could not load this review page right now.";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>submitReviewBtn.disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>async function submitReview() {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (!selectedRating) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setNotice("Please choose a rating first.");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>submitReviewBtn.disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setNotice("Submitting your review...");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const res = await fetch(API_URL, {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>method: "POST",</p>
+<p class="p1"><span class="Apple-converted-space">          </span>headers: {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>"Content-Type": "application/json"</p>
+<p class="p1"><span class="Apple-converted-space">          </span>},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>body: JSON.stringify({</p>
+<p class="p1"><span class="Apple-converted-space">            </span>type: "frontend_action",</p>
+<p class="p1"><span class="Apple-converted-space">            </span>jobId,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>token,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>action: "rating",</p>
+<p class="p1"><span class="Apple-converted-space">            </span>rating: selectedRating,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>comment: reviewComment.value</p>
+<p class="p1"><span class="Apple-converted-space">          </span>})</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const data = await res.json();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!data.success) throw new Error(data.message || "Could not submit review.");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>setNotice("Thanks for your feedback.");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>submitReviewBtn.disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>reviewComment.disabled = true;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>stars.innerHTML = "";</p>
+<p class="p1"><span class="Apple-converted-space">      </span>} catch (err) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setNotice(err.message || "Could not submit review.");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>submitReviewBtn.disabled = false;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>submitReviewBtn.addEventListener("click", submitReview);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>renderStars();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>fetchJob();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>

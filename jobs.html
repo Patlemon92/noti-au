@@ -325,28 +325,32 @@ const pathParts = window.location.pathname.split("/").filter(Boolean);
 
 let jobId = "";
 
-// 1. /job/J123
+// 1. Normal: /job/J123
 if (pathParts.length >= 2 && pathParts[0] === "job") {
   jobId = pathParts[1];
 }
 
-// 2. /jobs?jobId=J123
+// 2. Cloudflare fallback (if path got stripped)
+if (!jobId && pathParts.length === 1 && pathParts[0].startsWith("J")) {
+  jobId = pathParts[0];
+}
+
+// 3. Query param (recommended going forward)
 if (!jobId) {
   jobId = params.get("jobId");
 }
 
-// 3. fallback
+// 4. Legacy fallback
 if (!jobId) {
   jobId = params.get("id");
 }
 
-// DEBUG
-console.log("JOB ID:", jobId);
-console.log("TOKEN:", params.get("t"));
-
 const token = params.get("t") || "";
 
-let currentData = null;
+// DEBUG
+console.log("PATH:", window.location.pathname);
+console.log("JOB ID:", jobId);
+console.log("TOKEN:", token);
 
 // =========================
 // HELPERS

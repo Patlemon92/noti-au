@@ -1,2 +1,2 @@
-/job/* /jobs.html?path=:splat 200
-/review/* /review.html 200
+/job/*   /jobs.html?jobId=:splat   200
+/review/*   /review.html?jobId=:splat   200

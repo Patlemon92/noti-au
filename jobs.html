@@ -324,11 +324,25 @@ const params = new URLSearchParams(window.location.search);
 const pathParts = window.location.pathname.split("/").filter(Boolean);
 
 let jobId = "";
-if (pathParts[0] === "job" && pathParts[1]) {
+
+// 1. /job/J123
+if (pathParts.length >= 2 && pathParts[0] === "job") {
   jobId = pathParts[1];
-} else {
-  jobId = params.get("id") || "";
 }
+
+// 2. /jobs?jobId=J123
+if (!jobId) {
+  jobId = params.get("jobId");
+}
+
+// 3. fallback
+if (!jobId) {
+  jobId = params.get("id");
+}
+
+// DEBUG
+console.log("JOB ID:", jobId);
+console.log("TOKEN:", params.get("t"));
 
 const token = params.get("t") || "";
 

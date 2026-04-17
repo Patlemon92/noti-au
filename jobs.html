@@ -562,39 +562,61 @@ function renderCustomerView(data) {
     ` : ""}
   `;
 
-  // Submit job
- submitBtn.onclick = async () => {
-  console.log("CLICKED CONFIRM JOB");
+// Submit job
+const submitBtn = document.getElementById("submitBtn");
 
-  const res1 = await postAction({
-    action: "update_job",
-    description: document.getElementById("cDescription").value,
-    suburb: document.getElementById("cSuburb").value,
-    postcode: document.getElementById("cPostcode").value,
-    address: document.getElementById("cAddress").value
-  });
+if (submitBtn) {
+  submitBtn.onclick = async () => {
 
-  console.log("UPDATE RESPONSE:", res1);
+    console.log("CLICKED CONFIRM JOB");
 
-  if (!res1.success){
-    alert(res1.message || "Update failed");
-    return;
-  }
+    submitBtn.innerText = "Sending...";
+    submitBtn.disabled = true;
 
-  const res2 = await postAction({ action: "submit_job" });
+    try {
 
-  console.log("SUBMIT RESPONSE:", res2);
+      const res1 = await postAction({
+        action: "update_job",
+        description: document.getElementById("cDescription").value,
+        suburb: document.getElementById("cSuburb").value,
+        postcode: document.getElementById("cPostcode").value,
+        address: document.getElementById("cAddress").value
+      });
 
-  if (!res2.success){
-    alert(res2.message || "Submit failed");
-    return;
-  }
+      console.log("UPDATE RESPONSE:", res1);
 
-  alert("Job sent to tradies");
-  fetchJob();
-};chJob();
-};
-  }
+      if (!res1.success){
+        alert(res1.message || "Update failed");
+        submitBtn.innerText = "Confirm job";
+        submitBtn.disabled = false;
+        return;
+      }
+
+      const res2 = await postAction({ action: "submit_job" });
+
+      console.log("SUBMIT RESPONSE:", res2);
+
+      if (!res2.success){
+        alert(res2.message || "Submit failed");
+        submitBtn.innerText = "Confirm job";
+        submitBtn.disabled = false;
+        return;
+      }
+
+      submitBtn.innerText = "Sent ✓";
+
+      alert("Job sent to tradies");
+
+      fetchJob();
+
+    } catch (err){
+      console.error("FRONTEND ERROR:", err);
+      alert("Something went wrong");
+      submitBtn.innerText = "Confirm job";
+      submitBtn.disabled = false;
+    }
+  };
+}
 
   // Accept tradie
   const acceptBtn = document.getElementById("acceptBtn");

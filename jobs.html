@@ -2,680 +2,1179 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Noti Job</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>noti.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     :root {
-      --bg: #f5f4f0;
-      --card: #ffffff;
-      --border: #e4e1d8;
-      --text: #181818;
-      --muted: #6a6a6a;
-      --orange: #fb8a00;
-      --orange-soft: #fff4e7;
-      --black: #111111;
-      --green-soft: #eef8ef;
-      --green: #176b2c;
-      --red-soft: #fff1f1;
-      --red: #a81f1f;
-      --shadow: 0 12px 30px rgba(0,0,0,0.06);
-      --radius: 18px;
+      --black:   #0C0C0C;
+      --white:   #FFFFFF;
+      --off:     #F5F5F3;
+      --line:    #E8E8E6;
+      --muted:   #999994;
+      --dim:     #666663;
+      --orange:  #F5A623;
+      --green:   #0A7A3E;
+      --red:     #B52222;
+      --font:    'Montserrat', sans-serif;
+      --ease:    cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    * { box-sizing: border-box; }
+    html {
+      font-size: 16px;
+      background: var(--white);
+    }
+
     body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: 16px;
-    }
-
-    .wrap {
-      max-width: 920px;
-      margin: 0 auto;
-    }
-
-    .hero {
-      background: linear-gradient(135deg, #111111 0%, #1f1f1f 100%);
-      color: #fff;
-      border-radius: 22px;
-      padding: 24px;
-      box-shadow: var(--shadow);
-      margin-bottom: 16px;
-    }
-
-    .hero .eyebrow {
-      display: inline-block;
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      text-transform: uppercase;
-      padding: 7px 11px;
-      border-radius: 999px;
-      background: rgba(251,138,0,0.16);
-      color: #ffb04d;
-      border: 1px solid rgba(251,138,0,0.28);
-      margin-bottom: 14px;
-    }
-
-    .hero h1 {
-      margin: 0 0 8px;
-      font-size: 30px;
-      line-height: 1.05;
-    }
-
-    .hero p {
-      margin: 0;
-      color: rgba(255,255,255,0.84);
-      line-height: 1.5;
-      font-size: 14px;
-    }
-
-    .stack { display: grid; gap: 16px; }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .card-body { padding: 20px; }
-
-    .card h2 {
-      margin: 0 0 8px;
-      font-size: 21px;
+      font-family: var(--font);
+      background: var(--white);
       color: var(--black);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100dvh;
+      overflow-x: hidden;
     }
 
-    .subtext {
-      margin: 0;
-      font-size: 14px;
-      line-height: 1.5;
+    /* ─── TOPBAR ─── */
+    .topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      height: 56px;
+      background: var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.03em;
+    }
+
+    .logo em {
+      color: var(--orange);
+      font-style: normal;
+    }
+
+    .topbar-tag {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       color: var(--muted);
     }
 
-    .status-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 14px;
+    /* ─── LAYOUT ─── */
+    .shell {
+      padding-top: 56px;
+      min-height: 100dvh;
     }
 
-    .pill {
-      display: inline-flex;
+    .page {
+      max-width: 440px;
+      margin: 0 auto;
+      padding: 0 0 80px;
+    }
+
+    /* ─── JOB HERO ─── */
+    .hero {
+      padding: 36px 24px 28px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-kicker {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      display: flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: #fff;
-      font-size: 13px;
+    }
+
+    .hero-kicker::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--orange);
+      flex-shrink: 0;
+    }
+
+    .hero-title {
+      font-size: 28px;
       font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--black);
+      margin-bottom: 8px;
     }
 
-    .pill.orange {
-      background: var(--orange-soft);
-      border-color: #ffd9a7;
-      color: #9a5500;
+    .hero-sub {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.01em;
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .field {
+    .hero-status {
+      margin-top: 20px;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      gap: 10px;
     }
 
-    .field.full { grid-column: 1 / -1; }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
 
-    label {
+    .status-dot.live   { background: #22C55E; }
+    .status-dot.moving { background: var(--orange); }
+    .status-dot.done   { background: var(--black); }
+    .status-dot.pulse  {
+      background: var(--orange);
+      animation: pulse 1.8s ease infinite;
+    }
+
+    .status-label {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    /* ─── SECTIONS ─── */
+    .section {
+      padding: 28px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    /* ─── STAT PAIR ─── */
+    .stat-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      background: var(--white);
+      padding: 18px 16px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-val {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--black);
+      line-height: 1;
+    }
+
+    .stat-val.unit::after {
+      content: attr(data-unit);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0;
+      color: var(--muted);
+      margin-left: 3px;
+    }
+
+    /* ─── TRADIE ROW ─── */
+    .tradie-block {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .tradie-initial {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--off);
+      border: 2px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--black);
+      flex-shrink: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .tradie-name {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--black);
+      line-height: 1.2;
+    }
+
+    .tradie-meta {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .tradie-phone {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--orange);
+      letter-spacing: 0.01em;
+      margin-top: 4px;
+    }
+
+    /* ─── DATA LIST ─── */
+    .data-list { }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .data-row:last-child { border-bottom: none; }
+
+    .data-key {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    .data-val {
       font-size: 14px;
       font-weight: 700;
       color: var(--black);
+      text-align: right;
+      letter-spacing: -0.01em;
     }
 
-    input, textarea, button {
-      font: inherit;
+    /* ─── FIELDS ─── */
+    .field {
+      margin-bottom: 18px;
     }
 
-    input, textarea {
+    .field:last-child { margin-bottom: 0; }
+
+    .field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .field input,
+    .field textarea {
       width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--text);
+      background: transparent;
+      border: none;
+      border-bottom: 1.5px solid var(--line);
+      padding: 10px 0;
+      font: inherit;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--black);
       outline: none;
+      border-radius: 0;
+      -webkit-appearance: none;
+      transition: border-color 0.2s var(--ease);
     }
 
-    input:focus, textarea:focus {
-      border-color: var(--orange);
-      box-shadow: 0 0 0 3px rgba(251,138,0,0.14);
+    .field input:focus,
+    .field textarea:focus {
+      border-bottom-color: var(--black);
     }
 
-    textarea {
-      min-height: 110px;
-      resize: vertical;
+    .field textarea {
+      min-height: 88px;
+      resize: none;
+      line-height: 1.55;
     }
 
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 16px;
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
     }
 
-    button {
-      border: 0;
-      border-radius: 14px;
-      padding: 15px 18px;
-      cursor: pointer;
+    /* ─── BUTTONS ─── */
+    .btn-wrap {
+      padding: 0 24px;
+      margin-bottom: 10px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 18px 24px;
+      border: none;
+      border-radius: 0;
+      font: inherit;
+      font-size: 15px;
       font-weight: 700;
-      transition: transform 0.15s ease, opacity 0.2s ease;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, color 0.15s, opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    button:hover { transform: translateY(-1px); }
-    button:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+    .btn:active   { opacity: 0.75; }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    .btn-primary {
+    .btn-black {
+      background: var(--black);
+      color: var(--white);
+    }
+
+    .btn-black:hover:not(:disabled) { background: #1a1a1a; }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--black);
+      border: 1.5px solid var(--line);
+    }
+
+    .btn-outline:hover:not(:disabled) { background: var(--off); }
+
+    .btn-orange {
       background: var(--orange);
-      color: #fff;
+      color: var(--black);
     }
 
-    .btn-secondary {
-      background: #fff;
-      border: 1px solid var(--border);
-      color: var(--text);
+    .btn-orange:hover:not(:disabled) { opacity: 0.88; }
+
+    /* ─── NOTICE ─── */
+    .notice-wrap {
+      padding: 0 24px;
+      margin-bottom: 10px;
     }
 
     .notice {
       padding: 14px 16px;
-      border-radius: 14px;
-      font-size: 14px;
+      font-size: 13px;
+      font-weight: 600;
       line-height: 1.5;
-      border: 1px solid var(--border);
-      background: #faf9f6;
+      letter-spacing: 0.01em;
+      border-left: 3px solid var(--muted);
+      background: var(--off);
+      color: var(--dim);
     }
 
-    .notice.success {
-      background: var(--green-soft);
-      border-color: #cde6d1;
-      color: var(--green);
-    }
+    .notice.ok  { border-left-color: var(--green); color: var(--green); background: #F0FAF4; }
+    .notice.err { border-left-color: var(--red);   color: var(--red);   background: #FDF0F0; }
+    .notice.hi  { border-left-color: var(--orange); color: #7A4A00; background: #FEF6E9; }
 
-    .notice.error {
-      background: var(--red-soft);
-      border-color: #f0c8c8;
-      color: var(--red);
-    }
+    /* ─── QUOTE CARDS ─── */
+    .quote-list { }
 
-    .offer-card, .summary-card {
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      background: #fff;
-    }
-
-    .offer-card h3, .summary-card h3 {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
-
-    .meta {
+    .quote-item {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--line);
       display: grid;
-      gap: 8px;
-      font-size: 14px;
-      color: var(--text);
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: start;
     }
 
-    .meta .muted { color: var(--muted); }
+    .quote-item:last-child { border-bottom: none; }
 
-    .loading {
-      display: grid;
-      place-items: center;
-      min-height: 240px;
-      color: var(--muted);
-      font-size: 15px;
+    .quote-initial {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--off);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--black);
+      flex-shrink: 0;
     }
 
-    .spinner {
-      width: 34px;
-      height: 34px;
-      border-radius: 999px;
-      border: 3px solid #ece8de;
-      border-top-color: var(--orange);
-      animation: spin 0.9s linear infinite;
-      margin-bottom: 14px;
+    .quote-info { }
+    .quote-name  { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+    .quote-eta   { font-size: 13px; font-weight: 500; color: var(--muted); margin-top: 3px; }
+    .quote-call  { font-size: 13px; font-weight: 700; color: var(--orange); margin-top: 4px; }
+
+    .quote-price {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--black);
+      text-align: right;
+      padding-top: 2px;
     }
 
-    .footer-note {
-      margin-top: 8px;
+    /* ─── STARS ─── */
+    .star-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 18px;
+    }
+
+    .star {
+      font-size: 32px;
+      color: var(--line);
+      cursor: pointer;
+      border: none;
+      background: none;
+      padding: 4px 2px;
+      transition: color 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      line-height: 1;
+    }
+
+    .star.on { color: var(--orange); }
+
+    /* ─── LOADING ─── */
+    .loading-page {
+      min-height: 70dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .loader {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--line);
+      border-top-color: var(--black);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .loading-label {
       font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       color: var(--muted);
+    }
+
+    /* ─── WAITING PULSE ─── */
+    .waiting-block {
+      padding: 40px 24px;
       text-align: center;
     }
 
-    .hidden { display: none; }
+    .waiting-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--off);
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
 
+    .waiting-icon::after {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1.5px solid var(--orange);
+      opacity: 0;
+      animation: ripple 2s ease infinite;
+    }
+
+    .waiting-icon-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--orange);
+    }
+
+    .waiting-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .waiting-sub {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ─── FOOTER ─── */
+    .footer {
+      text-align: center;
+      padding: 32px 0 16px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--line);
+    }
+
+    .footer em {
+      color: var(--orange);
+      font-style: normal;
+    }
+
+    /* ─── ANIMATIONS ─── */
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
 
-    @media (max-width: 760px) {
-      .grid, .grid-3 {
-        grid-template-columns: 1fr;
-      }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,166,35,0.4); }
+      50%       { box-shadow: 0 0 0 8px rgba(245,166,35,0); }
+    }
 
-      .hero h1 {
-        font-size: 26px;
-      }
+    @keyframes ripple {
+      0%   { transform: scale(0.85); opacity: 0.6; }
+      100% { transform: scale(1.6);  opacity: 0; }
+    }
+
+    @keyframes up {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate { animation: up 0.45s var(--ease) both; }
+    .d1 { animation-delay: 0.05s; }
+    .d2 { animation-delay: 0.10s; }
+    .d3 { animation-delay: 0.15s; }
+    .d4 { animation-delay: 0.20s; }
+
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .page { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+    }
+
+    /* ─── PHOTO UPLOAD ─── */
+    .photo-section { margin-top: 20px; }
+    .photo-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+
+    .photo-slot {
+      width: 80px; height: 80px;
+      border: 1.5px dashed var(--line);
+      border-radius: 0;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; position: relative; overflow: hidden;
+      background: var(--off);
+      transition: border-color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .photo-slot:hover { border-color: var(--orange); }
+
+    .photo-slot input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+
+    .photo-slot img {
+      width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0;
+    }
+
+    .photo-slot .photo-plus {
+      font-size: 22px; color: var(--muted); line-height: 1; pointer-events: none;
+    }
+
+    .photo-slot .photo-remove {
+      position: absolute; top: 2px; right: 2px;
+      width: 18px; height: 18px;
+      background: var(--black); color: var(--white);
+      border-radius: 50%; border: none; cursor: pointer;
+      font-size: 10px; font-weight: 700;
+      display: none; align-items: center; justify-content: center;
+      z-index: 10; padding: 0;
+    }
+
+    .photo-slot.has-photo .photo-remove { display: flex; }
+    .photo-slot.has-photo .photo-plus   { display: none; }
+    .photo-slot.uploading { border-color: var(--orange); }
+
+    .photo-hint {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+      color: var(--muted); margin-top: 8px;
+    }
+
+    /* ─── TRADIE PHOTOS ─── */
+    .job-photos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .job-photo {
+      width: 72px; height: 72px; border-radius: 0;
+      object-fit: cover; border: 1px solid var(--line);
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="hero">
-      <div class="eyebrow">Noti Job</div>
-      <h1 id="heroTitle">Loading job...</h1>
-      <p id="heroText">Please wait while we load your job details.</p>
-      <div class="status-bar" id="heroPills"></div>
-    </div>
 
-    <div id="app" class="stack">
-      <div class="card">
-        <div class="loading">
-          <div>
-            <div class="spinner"></div>
-            Loading your Noti job...
-          </div>
-        </div>
-      </div>
-    </div>
+<div class="topbar">
+  <div class="logo">noti<em>.</em></div>
+  <div class="topbar-tag" id="topTag"></div>
+</div>
 
-    <div class="footer-note">Powered by Noti</div>
+<div class="shell">
+  <div class="page" id="page">
+    <div class="loading-page">
+      <div class="loader"></div>
+      <div class="loading-label">Loading</div>
+    </div>
   </div>
+</div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwqJ99QUqKPLwvejodDYqpz-0F2740qYAkiwHrP3h_aNHoDKcUTUIGvsRrDb1H17cTR/exec";
+// ─── CONFIG ───────────────────────────────────────────────
+const API = "https://script.google.com/macros/s/AKfycbwqJ99QUqKPLwvejodDYqpz-0F2740qYAkiwHrP3h_aNHoDKcUTUIGvsRrDb1H17cTR/exec";
 
-const app = document.getElementById("app");
-const heroTitle = document.getElementById("heroTitle");
-const heroText = document.getElementById("heroText");
-const heroPills = document.getElementById("heroPills");
+// ─── URL PARSING ──────────────────────────────────────────
+// Cloudflare rewrites /job/JN10001/token → /jobs.html?jobId=JN10001&t=token
+// So we always read from query string. Path parsing kept as fallback only.
+const QS    = new URLSearchParams(location.search);
+const parts = location.pathname.split("/").filter(Boolean);
 
-// =========================
-// URL PARSING (FIXED)
-// =========================
-const params = new URLSearchParams(window.location.search);
-const pathParts = window.location.pathname.split("/").filter(Boolean);
+let jobId = QS.get("jobId") || QS.get("id") || "";
+let token = QS.get("t") || "";
 
-let jobId = "";
+// Path fallback (direct access without Cloudflare rewrite)
+if (!jobId && parts[0] === "job") { jobId = parts[1] || ""; token = parts[2] || ""; }
 
-// 1. Normal: /job/J123
-if (pathParts.length >= 2 && pathParts[0] === "job") {
-  jobId = pathParts[1];
+let _data = null;
+
+// ─── HELPERS ──────────────────────────────────────────────
+const esc = v => String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const fmt = v => String(v||"").trim();
+const ini = n => (n||"?").trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+const tag = document.getElementById("topTag");
+
+// ─── API ──────────────────────────────────────────────────
+async function api(payload) {
+  const qs = new URLSearchParams({ type:"frontend_action", jobId, t:token, ...payload });
+  const r  = await fetch(`${API}?${qs}`);
+  return JSON.parse(await r.text());
 }
 
-// 2. Cloudflare fallback (if path got stripped)
-if (!jobId && pathParts.length === 1 && pathParts[0].startsWith("J")) {
-  jobId = pathParts[0];
-}
-
-// 3. Query param (recommended going forward)
-if (!jobId) {
-  jobId = params.get("jobId");
-}
-
-// 4. Legacy fallback
-if (!jobId) {
-  jobId = params.get("id");
-}
-
-const token = params.get("t") || "";
-
-// DEBUG
-console.log("PATH:", window.location.pathname);
-console.log("JOB ID:", jobId);
-console.log("TOKEN:", token);
-
-// =========================
-// HELPERS
-// =========================
-function escapeHtml(value) {
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function pill(text, extra = "") {
-  return `<div class="pill ${extra}">${escapeHtml(text)}</div>`;
-}
-
-// =========================
-// FETCH JOB (DEBUG ENABLED)
-// =========================
-async function fetchJob() {
-
-  if (!jobId || !token) {
-    renderError("This job link is missing information.");
-    return;
-  }
-
+async function load() {
+  if (!jobId || !token) { err("This link is missing information."); return; }
   try {
-
-    const url = `${API_URL}?type=get_job&id=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}`;
-
-    console.log("FETCH URL:", url);
-
-    const res = await fetch(url);
-    const raw = await res.text();
-
-    console.log("RAW RESPONSE:", raw);
-
-    const data = JSON.parse(raw);
-
-    if (!data.success) {
-      renderError(data.message || "This job link is invalid.");
-      return;
-    }
-
-    currentData = data;
-    renderPage(data);
-
-  } catch (err) {
-    console.error("FETCH ERROR:", err);
-    renderError("We could not load this job right now.");
-  }
+    const r    = await fetch(`${API}?type=get_job&id=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}`);
+    const data = JSON.parse(await r.text());
+    if (!data.success) { err(data.message || "This link is invalid or expired."); return; }
+    _data = data;
+    route(data);
+  } catch(e) { err("Could not load this job. Please try again."); }
 }
 
-// =========================
-// POST ACTION
-// =========================
-async function postAction(payload) {
-
-  const query = new URLSearchParams({
-    type: "frontend_action",
-    jobId: jobId,
-    t: token,
-    ...payload
-  }).toString();
-
-  const url = `${API_URL}?${query}`;
-
-  console.log("ACTION URL:", url);
-
-  const res = await fetch(url);
-  const text = await res.text();
-
-  console.log("ACTION RESPONSE:", text);
-
-  return JSON.parse(text);
+// ─── ROUTER ───────────────────────────────────────────────
+function route(d) {
+  if (d.role === "tradie_locked") { showLocked(); return; }
+  if (d.role === "tradie")        { showTradie(d); return; }
+  showCustomer(d);
 }
 
-// =========================
-// HERO
-// =========================
-function setHero(data) {
-
-  const role = data.role === "tradie" ? "Tradie" : "Customer";
-
-  heroTitle.textContent = data.job.description || "Job";
-  heroText.textContent = `${role} view for ${data.job.suburb || "your area"}.`;
-
-  heroPills.innerHTML = [
-    pill(data.role.toUpperCase()),
-    pill(data.job.job_type || "STANDARD", "orange"),
-    pill(data.stage || "LIVE")
-  ].join("");
+// ─── STAGE META ───────────────────────────────────────────
+function stageMeta(s) {
+  const m = {
+    NEW:                    ["live",   "Confirm your job"],
+    DRAFT:                  ["live",   "Confirm your job"],
+    SENT_TO_TRADIES:        ["pulse",  "Finding tradies"],
+    AWAITING_CUSTOMER:      ["moving", "Offer ready"],
+    AWAITING_TRADIE_DETAILS:["moving", "Tradie responding"],
+    ACCEPTED:               ["done",   "Confirmed"],
+    CLOSED:                 ["done",   "Complete"],
+    QUOTE_OPEN:             ["pulse",  "Quotes open"],
+    QUOTE_LOCKED:           ["done",   "Quotes ready"],
+  };
+  return m[s] || ["", s || "Live"];
 }
 
-// =========================
-// ERROR UI
-// =========================
-function renderError(message) {
+function heroHtml(eyebrow, title, sub, stage) {
+  const [dotCls, stageLabel] = stageMeta(stage);
+  tag.textContent = stageLabel;
+  return `
+    <div class="hero animate">
+      <div class="hero-kicker">${esc(eyebrow)}</div>
+      <div class="hero-title">${esc(title)}</div>
+      ${sub ? `<div class="hero-sub">${esc(sub)}</div>` : ""}
+      <div class="hero-status">
+        <div class="status-dot ${dotCls}"></div>
+        <div class="status-label">${esc(stageLabel)}</div>
+      </div>
+    </div>`;
+}
 
-  heroTitle.textContent = "Job unavailable";
-  heroText.textContent = "This link may be invalid or expired.";
-  heroPills.innerHTML = "";
+// ─── CUSTOMER ─────────────────────────────────────────────
+function showCustomer(d) {
+  const job   = d.job || {};
+  const stage = fmt(d.stage).toUpperCase();
+  const loc   = [job.suburb, job.postcode].filter(Boolean).join(" · ");
 
-  app.innerHTML = `
-    <div class="card">
-      <div class="card-body">
-        <div class="notice error">${escapeHtml(message)}</div>
+  if (stage === "NEW" || stage === "DRAFT")       return showConfirm(job, loc, d.returning === true);
+  if (stage === "AWAITING_CUSTOMER")               return showOffer(job, d.tradie, loc);
+  if (stage === "ACCEPTED" || stage === "CLOSED")  return showAccepted(job, d.tradie, d.allow_rating, loc);
+  if (stage === "QUOTE_LOCKED")                    return showQuotes(job, d.quote_cards||[], loc);
+  showWaiting(job, stage, loc);
+}
+
+// Confirm
+function showConfirm(job, loc, returning) {
+  render(`
+    ${heroHtml("Your job", job.description || "New job", loc, "NEW")}
+    <div class="section animate d1">
+      ${returning ? '<div class="notice hi" style="margin-bottom:16px;border-left:3px solid var(--orange);padding:12px 14px;background:#FEF6E9;color:#7A4A00;font-size:13px;font-weight:600;">Your details are pre-filled from last time</div>' : ""}
+      <div class="section-label">Confirm details</div>
+      <div class="field">
+        <label class="field-label">Description</label>
+        <textarea id="cDesc">${esc(job.description||"")}</textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Suburb</label>
+          <input id="cSuburb" value="${esc(job.suburb||"")}" />
+        </div>
+        <div class="field">
+          <label class="field-label">Postcode</label>
+          <input id="cPostcode" value="${esc(job.postcode||"")}" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Address</label>
+        <input id="cAddr" value="${esc(job.address||"")}" placeholder="Optional" />
       </div>
     </div>
-  `;
-}
-
-// =========================
-// PAGE ROUTER
-// =========================
-function renderPage(data) {
-
-  setHero(data);
-
-  if (data.role === "tradie_locked") {
-    app.innerHTML = `
-      <div class="card">
-        <div class="card-body">
-          <h2>Job already taken</h2>
-          <p class="subtext">This job has already been locked in by another tradie.</p>
-        </div>
-      </div>
-    `;
-    return;
-  }
-
-  if (data.role === "tradie") {
-    renderTradieView(data);
-    return;
-  }
-
-  renderCustomerView(data);
-}
-
-// =========================
-// CUSTOMER VIEW
-// =========================
-function renderCustomerView(data) {
-
-  const job = data.job || {};
-  const tradie = data.tradie || null;
-
-  const showOffer = !!job.price || !!job.eta;
-  const accepted = String(data.stage || "").toUpperCase() === "ACCEPTED";
-
-  app.innerHTML = `
-    <div class="card">
-      <div class="card-body">
-        <h2>Your job</h2>
-
-        <div class="grid" style="margin-top:16px;">
-          <div class="field full">
-            <label>Description</label>
-            <textarea id="cDescription">${escapeHtml(job.description || "")}</textarea>
-          </div>
-
-          <div class="field">
-            <label>Suburb</label>
-            <input id="cSuburb" value="${escapeHtml(job.suburb || "")}" />
-          </div>
-
-          <div class="field">
-            <label>Postcode</label>
-            <input id="cPostcode" value="${escapeHtml(job.postcode || "")}" />
-          </div>
-
-          <div class="field full">
-            <label>Address</label>
-            <input id="cAddress" value="${escapeHtml(job.address || "")}" />
-          </div>
-        </div>
-
-        <div class="actions">
-          <button class="btn-primary" id="submitBtn">Confirm job</button>
-        </div>
-      </div>
+    <div id="nWrap" class="notice-wrap"></div>
+    <div class="btn-wrap animate d2">
+      <button class="btn btn-black" id="submitBtn">Find tradies</button>
     </div>
+  `);
 
-    ${showOffer ? `
-      <div class="card">
-        <div class="card-body">
-          <h2>Tradie response</h2>
+  if (document.getElementById('photoRow')) initPhotoUpload();
 
-          <div class="offer-card">
-            <h3>${escapeHtml(tradie ? tradie.name : "Tradie")}</h3>
-            <div>ETA: ${escapeHtml(job.eta || "ASAP")}</div>
-            <div>Price: ${escapeHtml(job.price ? "$" + job.price : "TBC")}</div>
-
-            <div class="actions">
-              <button class="btn-primary" id="acceptBtn">Accept</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    ` : ""}
-
-    ${accepted && tradie ? `
-      <div class="card">
-        <div class="card-body">
-          <h2>Tradie confirmed</h2>
-          <div>${escapeHtml(tradie.name)}</div>
-          <div>${escapeHtml(tradie.phone)}</div>
-        </div>
-      </div>
-    ` : ""}
-  `;
-
-// Submit job
-const submitBtn = document.getElementById("submitBtn");
-
-if (submitBtn) {
-  submitBtn.onclick = async () => {
-
-    console.log("CLICKED CONFIRM JOB");
-
-    submitBtn.innerText = "Sending...";
-    submitBtn.disabled = true;
-
+  get("submitBtn").onclick = async () => {
+    const btn = get("submitBtn"), n = get("nWrap");
+    disable(btn, "Sending...");
     try {
-
-      const res1 = await postAction({
-        action: "update_job",
-        description: document.getElementById("cDescription").value,
-        suburb: document.getElementById("cSuburb").value,
-        postcode: document.getElementById("cPostcode").value,
-        address: document.getElementById("cAddress").value
-      });
-
-      console.log("UPDATE RESPONSE:", res1);
-
-      if (!res1.success){
-        alert(res1.message || "Update failed");
-        submitBtn.innerText = "Confirm job";
-        submitBtn.disabled = false;
-        return;
-      }
-
-      const res2 = await postAction({ action: "submit_job" });
-
-      console.log("SUBMIT RESPONSE:", res2);
-
-      if (!res2.success){
-        alert(res2.message || "Submit failed");
-        submitBtn.innerText = "Confirm job";
-        submitBtn.disabled = false;
-        return;
-      }
-
-      submitBtn.innerText = "Sent ✓";
-
-      alert("Job sent to tradies");
-
-      fetchJob();
-
-    } catch (err){
-      console.error("FRONTEND ERROR:", err);
-      alert("Something went wrong");
-      submitBtn.innerText = "Confirm job";
-      submitBtn.disabled = false;
-    }
+      const r1 = await api({ action:"update_job", description:get("cDesc").value, suburb:get("cSuburb").value, postcode:get("cPostcode").value, address:get("cAddr").value });
+      if (!r1.success) { note(n, r1.message||"Update failed", "err"); enable(btn,"Find tradies"); return; }
+      const r2 = await api({ action:"submit_job" });
+      if (!r2.success) { note(n, r2.message||"Could not send", "err"); enable(btn,"Find tradies"); return; }
+      btn.textContent = "Sent";
+      setTimeout(load, 900);
+    } catch(e) { note(n,"Something went wrong.","err"); enable(btn,"Find tradies"); }
   };
 }
 
-  // Accept tradie
-  const acceptBtn = document.getElementById("acceptBtn");
-  if (acceptBtn) {
-    acceptBtn.onclick = async () => {
-      await postAction({ action: "accept" });
-      fetchJob();
-    };
-  }
+// Waiting
+function showWaiting(job, stage, loc) {
+  render(`
+    ${heroHtml("Your job", job.description||"Your job", loc, stage)}
+    <div class="waiting-block animate d1">
+      <div class="waiting-icon">
+        <div class="waiting-icon-dot"></div>
+      </div>
+      <div class="waiting-title">Finding tradies nearby</div>
+      <div class="waiting-sub">Tradies in your area are being notified.<br>You'll get an SMS as soon as one responds.</div>
+    </div>
+  `);
 }
 
-// =========================
-// TRADIE VIEW
-// =========================
-function renderTradieView(data) {
+// Offer
+function showOffer(job, tradie, loc) {
+  const name  = tradie ? fmt(tradie.name) : "Tradie";
+  const price = job.price ? "$" + fmt(job.price) : "—";
+  const eta   = fmt(job.eta) || "ASAP";
 
-  const job = data.job || {};
-
-  app.innerHTML = `
-    <div class="card">
-      <div class="card-body">
-        <h2>${escapeHtml(job.description)}</h2>
-
-        <div>Suburb: ${escapeHtml(job.suburb)}</div>
-        <div>Postcode: ${escapeHtml(job.postcode)}</div>
-
-        <div class="actions">
-          <button class="btn-primary" id="acceptBtn">Accept job</button>
+  render(`
+    ${heroHtml("Your job", job.description||"Your job", loc, "AWAITING_CUSTOMER")}
+    <div class="section animate d1">
+      <div class="section-label">Tradie offer</div>
+      <div class="tradie-block">
+        <div class="tradie-initial">${esc(ini(name))}</div>
+        <div>
+          <div class="tradie-name">${esc(name)}</div>
+          ${tradie&&tradie.rating ? `<div class="tradie-meta">${esc(String(tradie.rating))} ★ &nbsp;·&nbsp; ${esc(String(tradie.jobs_completed))} jobs</div>` : ""}
         </div>
-
-        <div style="margin-top:20px;">
-          <input id="eta" placeholder="ETA">
-          <input id="price" placeholder="Price">
-
-          <button id="quoteBtn">Send</button>
+      </div>
+      <div class="stat-pair">
+        <div class="stat">
+          <div class="stat-label">Price</div>
+          <div class="stat-val">${esc(price)}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">ETA</div>
+          <div class="stat-val" style="font-size:20px;">${esc(eta)}</div>
         </div>
       </div>
     </div>
-  `;
+    <div id="nWrap" class="notice-wrap"></div>
+    <div class="btn-wrap animate d2">
+      <button class="btn btn-black"   id="acceptBtn">Accept offer</button>
+    </div>
+    <div class="btn-wrap animate d3">
+      <button class="btn btn-outline" id="declineBtn">Pass — see next offer</button>
+    </div>
+  `);
 
-  document.getElementById("acceptBtn").onclick = async () => {
-    await postAction({ action: "accept" });
-    fetchJob();
+  get("acceptBtn").onclick = async () => {
+    const btn = get("acceptBtn"), n = get("nWrap");
+    disable(btn, "Confirming...");
+    try { const r=await api({action:"accept"}); if(!r.success){note(n,r.message||"Error","err");enable(btn,"Accept offer");return;} setTimeout(load,600); }
+    catch(e){note(n,"Something went wrong.","err");enable(btn,"Accept offer");}
   };
 
-  document.getElementById("quoteBtn").onclick = async () => {
-    await postAction({
-      action: "quote",
-      eta: document.getElementById("eta").value,
-      price: document.getElementById("price").value
-    });
-    fetchJob();
+  get("declineBtn").onclick = async () => {
+    const btn = get("declineBtn"), n = get("nWrap");
+    disable(btn, "Passing...");
+    try { const r=await api({action:"decline"}); if(!r.success){note(n,r.message||"Error","err");enable(btn,"Pass — see next offer");return;} setTimeout(load,600); }
+    catch(e){note(n,"Something went wrong.","err");enable(btn,"Pass — see next offer");}
   };
 }
 
-// =========================
-// INIT
-// =========================
-fetchJob();
+// Accepted
+function showAccepted(job, tradie, allowRating, loc) {
+  const name  = tradie ? fmt(tradie.name)  : "Your tradie";
+  const phone = tradie ? fmt(tradie.phone) : "";
+
+  render(`
+    ${heroHtml("Your job", job.description||"Your job", loc, "ACCEPTED")}
+    <div class="section animate d1">
+      <div class="section-label">Confirmed tradie</div>
+      <div class="tradie-block">
+        <div class="tradie-initial">${esc(ini(name))}</div>
+        <div>
+          <div class="tradie-name">${esc(name)}</div>
+          ${tradie&&tradie.rating ? `<div class="tradie-meta">${esc(String(tradie.rating))} ★ &nbsp;·&nbsp; ${esc(String(tradie.jobs_completed))} jobs</div>` : ""}
+          ${phone ? `<div class="tradie-phone">${esc(phone)}</div>` : ""}
+        </div>
+      </div>
+      ${(job.price||job.eta) ? `
+        <div class="data-list">
+          ${job.price ? `<div class="data-row"><span class="data-key">Agreed price</span><span class="data-val" style="font-size:20px;letter-spacing:-0.03em;">$${esc(String(job.price))}</span></div>` : ""}
+          ${job.eta   ? `<div class="data-row"><span class="data-key">ETA</span><span class="data-val">${esc(job.eta)}</span></div>` : ""}
+        </div>` : ""}
+    </div>
+    <div class="notice-wrap animate d2">
+      <div class="notice hi">Contact your tradie directly to confirm timing and access.</div>
+    </div>
+    ${allowRating ? `
+      <div class="section animate d3" id="rSection">
+        <div class="section-label">Rate your tradie</div>
+        <div class="star-row" id="stars">
+          ${[1,2,3,4,5].map(n=>`<button class="star" data-v="${n}">★</button>`).join("")}
+        </div>
+        <div class="field">
+          <label class="field-label">Comment</label>
+          <textarea id="rComment" placeholder="Optional"></textarea>
+        </div>
+        <div id="rNotice" style="margin-bottom:12px;"></div>
+        <button class="btn btn-black" id="rateBtn" disabled>Submit review</button>
+      </div>` : ""}
+  `);
+
+  if (allowRating) wireStars();
+}
+
+function wireStars() {
+  let sel = 0;
+  const stars   = document.querySelectorAll(".star");
+  const rateBtn = get("rateBtn");
+  stars.forEach(s => s.addEventListener("click", () => {
+    sel = parseInt(s.dataset.v);
+    stars.forEach(b => b.classList.toggle("on", parseInt(b.dataset.v) <= sel));
+    rateBtn.disabled = false;
+  }));
+  rateBtn.onclick = async () => {
+    const n = get("rNotice");
+    disable(rateBtn, "Submitting...");
+    try {
+      const r = await api({action:"rating", rating:sel, comment:get("rComment").value});
+      if (!r.success) { note(n,r.message||"Error","err"); enable(rateBtn,"Submit review"); return; }
+      get("rSection").innerHTML = `<div class="notice ok">Thanks for your review.</div>`;
+    } catch(e) { note(n,"Something went wrong.","err"); enable(rateBtn,"Submit review"); }
+  };
+}
+
+// Quotes
+function showQuotes(job, cards, loc) {
+  const list = cards.length
+    ? cards.map(c => `
+        <div class="quote-item">
+          <div class="quote-initial">${esc(ini(c.name))}</div>
+          <div class="quote-info">
+            <div class="quote-name">${esc(c.name)}</div>
+            ${c.eta ? `<div class="quote-eta">${esc(c.eta)}</div>` : ""}
+            <div class="quote-call">${esc(c.phone)}</div>
+          </div>
+          ${c.price ? `<div class="quote-price">$${esc(String(c.price))}</div>` : ""}
+        </div>`).join("")
+    : `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">No quotes yet</div>`;
+
+  render(`
+    ${heroHtml("Your job", job.description||"Your job", loc, "QUOTE_LOCKED")}
+    <div class="section animate d1">
+      <div class="section-label">${cards.length} tradie${cards.length!==1?"s":""} responded</div>
+      <div class="quote-list">${list}</div>
+    </div>
+    <div class="notice-wrap animate d2">
+      <div class="notice hi">Call the tradie you prefer directly to confirm the job.</div>
+    </div>
+  `);
+}
+
+// ─── TRADIE ───────────────────────────────────────────────
+function showTradie(d) {
+  const job   = d.job || {};
+  const stage = fmt(d.stage).toUpperCase();
+  const loc   = [job.suburb, job.postcode].filter(Boolean).join(" · ");
+
+  if (stage === "AWAITING_CUSTOMER") {
+    render(`
+      ${heroHtml("Job", job.description||"Job", loc, "AWAITING_CUSTOMER")}
+      <div class="waiting-block animate d1">
+        <div class="waiting-icon"><div class="waiting-icon-dot"></div></div>
+        <div class="waiting-title">Offer sent</div>
+        <div class="waiting-sub">Waiting for the customer to respond.<br>You'll get an SMS either way.</div>
+      </div>
+    `);
+    return;
+  }
+
+  render(`
+    ${heroHtml("New job", job.description||"New job", loc, "SENT_TO_TRADIES")}
+    <div class="section animate d1">
+      <div class="section-label">Job details</div>
+      <div class="data-list">
+        ${job.address  ? `<div class="data-row"><span class="data-key">Address</span><span class="data-val">${esc(job.address)}</span></div>` : ""}
+        ${job.urgency  ? `<div class="data-row"><span class="data-key">Urgency</span><span class="data-val">${esc(job.urgency)}</span></div>` : ""}
+        ${job.job_type==="QUOTE" ? `<div class="data-row"><span class="data-key">Type</span><span class="data-val">Quote · 1 hr window</span></div>` : ""}
+      </div>
+    </div>
+    <div class="section animate d2">
+      <div class="section-label">Your offer</div>
+      <div class="field">
+        <label class="field-label">Price ($)</label>
+        <input id="tPrice" type="number" inputmode="decimal" placeholder="e.g. 280" />
+      </div>
+      <div class="field">
+        <label class="field-label">ETA</label>
+        <input id="tEta" placeholder="e.g. 30 min  ·  Tomorrow 2pm" />
+      </div>
+    </div>
+    <div id="nWrap" class="notice-wrap"></div>
+    <div class="btn-wrap animate d3">
+      <button class="btn btn-black" id="quoteBtn">Send offer to customer</button>
+    </div>
+  `);
+
+  get("quoteBtn").onclick = async () => {
+    const btn   = get("quoteBtn"), n = get("nWrap");
+    const price = get("tPrice").value.trim();
+    const eta   = get("tEta").value.trim();
+    if (!price||!eta) { note(n,"Please enter both a price and ETA.","err"); return; }
+    disable(btn,"Sending...");
+    try {
+      const r = await api({action:"quote", price, eta});
+      if (!r.success) { note(n,r.message||"Error","err"); enable(btn,"Send offer to customer"); return; }
+      note(n,"Offer sent. You'll get an SMS when the customer responds.","ok");
+      btn.textContent = "Offer sent";
+    } catch(e) { note(n,"Something went wrong.","err"); enable(btn,"Send offer to customer"); }
+  };
+}
+
+// ─── LOCKED / ERROR ───────────────────────────────────────
+function showLocked() {
+  tag.textContent = "Job taken";
+  render(`
+    <div class="hero animate">
+      <div class="hero-kicker">Job status</div>
+      <div class="hero-title">This one went to another tradie</div>
+      <div class="hero-status"><div class="status-dot done"></div><div class="status-label">Taken</div></div>
+    </div>
+    <div class="waiting-block animate d1">
+      <div class="waiting-icon"><div class="waiting-icon-dot" style="background:var(--black);"></div></div>
+      <div class="waiting-title">Stay live for the next one</div>
+      <div class="waiting-sub">Jobs move fast. Reply ON to make sure you're active when the next one hits.</div>
+    </div>
+  `);
+}
+
+function err(msg) {
+  tag.textContent = "Error";
+  render(`
+    <div class="hero animate">
+      <div class="hero-title">Something went wrong</div>
+    </div>
+    <div class="notice-wrap animate d1">
+      <div class="notice err">${esc(msg)}</div>
+    </div>
+  `);
+}
+
+// ─── DOM UTILS ────────────────────────────────────────────
+function render(html) {
+  document.getElementById("page").innerHTML =
+    html + `<div class="footer">noti<em>.</em></div>`;
+}
+
+function get(id) { return document.getElementById(id); }
+
+function note(el, msg, type) {
+  el.innerHTML = `<div class="notice ${type}">${esc(msg)}</div>`;
+}
+
+function disable(btn, label) {
+  btn.disabled = true;
+  btn.textContent = label;
+}
+
+function enable(btn, label) {
+  btn.disabled = false;
+  btn.textContent = label;
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+
+// ─── PHOTO UPLOAD ──────────────────────────────────────────
+const uploadedPhotos = {}; // index → url
+
+function initPhotoUpload() {
+  document.querySelectorAll('.photo-input').forEach(input => {
+    input.addEventListener('change', async (e) => {
+      const file  = e.target.files[0];
+      const index = parseInt(input.dataset.index);
+      if (!file || !jobId || !token) return;
+
+      const slot = document.getElementById('slot' + index);
+      slot.classList.add('uploading');
+
+      try {
+        const b64  = await fileToBase64(file);
+        const data = b64.split(',')[1];
+
+        const res  = await fetch(`${API}?type=upload_photo&jobId=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}&index=${index}&mimeType=${encodeURIComponent(file.type)}&data=${encodeURIComponent(data)}`);
+        const json = JSON.parse(await res.text());
+
+        if (!json.success) {
+          alert(json.message || 'Upload failed');
+          slot.classList.remove('uploading');
+          return;
+        }
+
+        uploadedPhotos[index] = json.url;
+
+        // Show preview
+        const img = document.createElement('img');
+        img.src   = URL.createObjectURL(file);
+        slot.appendChild(img);
+        slot.classList.remove('uploading');
+        slot.classList.add('has-photo');
+
+        // Enable next slot
+        const next = document.getElementById('slot' + (index + 1));
+        if (next) next.querySelector('.photo-input').disabled = false;
+
+      } catch(err) {
+        slot.classList.remove('uploading');
+        alert('Upload failed. Please try again.');
+      }
+    });
+  });
+
+  document.querySelectorAll('.photo-remove').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const index = parseInt(btn.dataset.index);
+      const slot  = document.getElementById('slot' + index);
+      const url   = uploadedPhotos[index];
+
+      if (url) {
+        await api({ action: 'delete_photo', url: url });
+        delete uploadedPhotos[index];
+      }
+
+      const img = slot.querySelector('img');
+      if (img) img.remove();
+      slot.classList.remove('has-photo');
+
+      const input = slot.querySelector('.photo-input');
+      input.value = '';
+
+      // Disable subsequent slots
+      for (let i = index + 1; i <= 3; i++) {
+        const s = document.getElementById('slot' + i);
+        if (s) {
+          s.querySelector('.photo-input').disabled = true;
+          s.classList.remove('has-photo');
+          const si = s.querySelector('img');
+          if (si) si.remove();
+        }
+      }
+    });
+  });
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+load();
 </script>
 </body>
 </html>

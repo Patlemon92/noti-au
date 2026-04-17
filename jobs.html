@@ -563,12 +563,10 @@ function renderCustomerView(data) {
   `;
 
   // Submit job
-  const submitBtn = document.getElementById("submitBtn");
-  if (submitBtn) {
-  submitBtn.onclick = async () => {
-  console.log("CLICKED CONFIRM JOB"); // 🔥 ADD THIS
+ submitBtn.onclick = async () => {
+  console.log("CLICKED CONFIRM JOB");
 
-  await postAction({
+  const res1 = await postAction({
     action: "update_job",
     description: document.getElementById("cDescription").value,
     suburb: document.getElementById("cSuburb").value,
@@ -576,9 +574,25 @@ function renderCustomerView(data) {
     address: document.getElementById("cAddress").value
   });
 
-  await postAction({ action: "submit_job" });
+  console.log("UPDATE RESPONSE:", res1);
 
+  if (!res1.success){
+    alert(res1.message || "Update failed");
+    return;
+  }
+
+  const res2 = await postAction({ action: "submit_job" });
+
+  console.log("SUBMIT RESPONSE:", res2);
+
+  if (!res2.success){
+    alert(res2.message || "Submit failed");
+    return;
+  }
+
+  alert("Job sent to tradies");
   fetchJob();
+};chJob();
 };
   }
 

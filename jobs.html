@@ -709,7 +709,7 @@ async function api(payload) {
 async function load() {
   if (!jobId || !token) { err("This link is missing information."); return; }
   try {
-    const r    = await fetch(`${API}?type=get_job&id=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}`);
+    const r = await fetch(`${API}?type=get_job&jobId=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}`);
     const data = JSON.parse(await r.text());
     if (!data.success) { err(data.message || "This link is invalid or expired."); return; }
     _data = data;

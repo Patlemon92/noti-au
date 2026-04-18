@@ -5,18 +5,5 @@
   <title>Noti</title>
 </head>
 <body>
-
-<h1>Noti is running 👍</h1>
-
-<script>
-const params = new URLSearchParams(window.location.search);
-const t = params.get("t");
-const id = params.get("id") || params.get("jobId");
-
-if (t && id) {
-  window.location.href = "/jobs.html?t=" + t + "&id=" + id;
-}
-</script>
-
 </body>
 </html>

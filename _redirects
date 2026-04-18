@@ -2,6 +2,7 @@
 /job/:jobId           /jobs.html?jobId=:jobId              200
 /review/:jobId/:token /review.html?jobId=:jobId&t=:token   200
 /review/:jobId        /review.html?jobId=:jobId            200
-/upgrade              https://buy.stripe.com/5kQ3cu9rC5wlccpd0reAg01    302
+/request              /job-request.html                    200
+/upgrade              https://buy.stripe.com/your_link     302
 /                     https://www.noti.com.au              302
 /*                    /index.html                          200

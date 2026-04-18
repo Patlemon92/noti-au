@@ -1103,7 +1103,18 @@ function initPhotoUpload() {
         const b64  = await fileToBase64(file);
         const data = b64.split(',')[1];
 
-        const res  = await fetch(`${API}?type=upload_photo&jobId=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}&index=${index}&mimeType=${encodeURIComponent(file.type)}&data=${encodeURIComponent(data)}`);
+        const res  = await fetch(API, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            type:     'upload_photo',
+            jobId:    jobId,
+            t:        token,
+            index:    index,
+            mimeType: file.type,
+            data:     data
+          })
+        });
         const json = JSON.parse(await res.text());
 
         if (!json.success) {

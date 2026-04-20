@@ -701,15 +701,18 @@ const tag = document.getElementById("topTag");
 
 // ─── API ──────────────────────────────────────────────────
 async function api(payload) {
-  const qs = new URLSearchParams({ type:"frontend_action", jobId, t:token, ...payload });
-  const r  = await fetch(`${API}?${qs}`);
+  const r = await fetch(`${API}/job/action`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jobId, token, t: token, ...payload })
+  });
   return JSON.parse(await r.text());
 }
 
 async function load() {
   if (!jobId || !token) { err("This link is missing information."); return; }
   try {
-    const r    = await fetch(`${API}?type=get_job&jobId=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}`);
+    const r    = await fetch(`${API}/job/${encodeURIComponent(jobId)}/${encodeURIComponent(token)}`);
     const data = JSON.parse(await r.text());
     if (!data.success) { err(data.message || "This link is invalid or expired."); return; }
     _data = data;

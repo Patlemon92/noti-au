@@ -779,6 +779,10 @@ function showConfirm(job, loc, returning) {
       ${returning ? '<div class="notice hi" style="margin-bottom:16px;border-left:3px solid var(--orange);padding:12px 14px;background:#FEF6E9;color:#7A4A00;font-size:13px;font-weight:600;">Your details are pre-filled from last time</div>' : ""}
       <div class="section-label">Confirm details</div>
       <div class="field">
+        <label class="field-label">Your name</label>
+        <input id="cName" value="${esc(job.name||"")}" placeholder="First and last name" />
+      </div>
+      <div class="field">
         <label class="field-label">Description</label>
         <textarea id="cDesc">${esc(job.description||"")}</textarea>
       </div>
@@ -794,7 +798,7 @@ function showConfirm(job, loc, returning) {
       </div>
       <div class="field">
         <label class="field-label">Address</label>
-        <input id="cAddr" value="${esc(job.address||"")}" placeholder="Optional" />
+        <input id="cAddr" value="${esc(job.address||"")}" placeholder="42 Smith Street" />
       </div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
@@ -809,7 +813,7 @@ function showConfirm(job, loc, returning) {
     const btn = get("submitBtn"), n = get("nWrap");
     disable(btn, "Sending...");
     try {
-      const r1 = await api({ action:"update_job", description:get("cDesc").value, suburb:get("cSuburb").value, postcode:get("cPostcode").value, address:get("cAddr").value });
+      const r1 = await api({ action:"update_job", name:get("cName").value, description:get("cDesc").value, suburb:get("cSuburb").value, postcode:get("cPostcode").value, address:get("cAddr").value });
       if (!r1.success) { note(n, r1.message||"Update failed", "err"); enable(btn,"Find tradies"); return; }
       const r2 = await api({ action:"submit_job" });
       if (!r2.success) { note(n, r2.message||"Could not send", "err"); enable(btn,"Find tradies"); return; }

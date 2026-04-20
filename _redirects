@@ -5,7 +5,7 @@
 /tradie               /tradie.html                         200
 /request              /job-request.html                    200
 /upgrade              https://buy.stripe.com/your_link     302
-/                     https://www.noti.com.au              302
+/                     /jobs.html                           200
 /sw.js                /sw.js                              200
 /manifest.json        /manifest.json                      200
 /*                    /jobs.html                           200

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="noti." />
+  <meta name="theme-color" content="#0C0C0C" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <title>noti. — tradie dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black:  #0C0C0C; --white: #FFFFFF; --off: #F5F5F3;
+      --line:   #E8E8E6; --muted: #999994; --dim: #666663;
+      --orange: #F5A623; --green: #0A7A3E; --red: #B52222;
+      --font:   'Montserrat', sans-serif;
+    }
+    html { font-size: 15px; background: var(--off); }
+    body { font-family: var(--font); color: var(--black); -webkit-font-smoothing: antialiased; min-height: 100dvh; }
+
+    /* TOPBAR */
+    .topbar { position: fixed; top:0; left:0; right:0; z-index:100; height:56px; background:var(--black); display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
+    .logo { font-size:18px; font-weight:800; color:var(--white); letter-spacing:-0.03em; }
+    .logo em { color:var(--orange); font-style:normal; }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .plan-badge { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:4px 8px; }
+    .plan-badge.premium { background:var(--orange); color:var(--black); }
+    .plan-badge.basic   { background:#222; color:var(--muted); }
+    .logout-btn { font-size:11px; font-weight:600; color:var(--muted); background:none; border:none; cursor:pointer; letter-spacing:0.04em; text-transform:uppercase; }
+
+    /* SHELL */
+    .shell { padding-top:56px; padding-bottom:72px; }
+    .page  { max-width:480px; margin:0 auto; }
+
+    /* NAV */
+    .nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--white); border-top:1px solid var(--line); display:flex; height:56px; }
+    .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; border:none; background:none; -webkit-tap-highlight-color:transparent; }
+    .nav-icon { font-size:18px; }
+    .nav-label { font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); }
+    .nav-item.active .nav-label { color:var(--orange); }
+    .nav-item.active .nav-icon  { filter: none; }
+
+    /* SECTIONS */
+    .section { background:var(--white); border:1px solid var(--line); margin:12px 16px; }
+    .section-header { padding:16px 18px 0; }
+    .section-title { font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+    .section-body { padding:0 18px 18px; }
+
+    /* STAT CARDS */
+    .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); margin:0 16px 12px; }
+    .stat-card { background:var(--white); padding:16px; }
+    .stat-label { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+    .stat-value { font-size:26px; font-weight:700; letter-spacing:-0.04em; color:var(--black); }
+    .stat-sub   { font-size:11px; font-weight:500; color:var(--muted); margin-top:2px; }
+
+    /* RATING */
+    .rating-display { display:flex; align-items:baseline; gap:6px; margin-bottom:4px; }
+    .rating-number  { font-size:36px; font-weight:700; letter-spacing:-0.04em; }
+    .rating-stars   { font-size:16px; color:var(--orange); }
+    .rating-count   { font-size:12px; font-weight:500; color:var(--muted); }
+
+    /* JOB LIST */
+    .job-item { padding:14px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:flex-start; }
+    .job-item:last-child { border-bottom:none; }
+    .job-desc { font-size:13px; font-weight:600; color:var(--black); margin-bottom:3px; line-height:1.3; }
+    .job-meta { font-size:11px; font-weight:500; color:var(--muted); }
+    .job-status { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:3px 8px; flex-shrink:0; margin-left:10px; margin-top:2px; }
+    .job-status.won     { background:#F0FAF4; color:var(--green); }
+    .job-status.missed  { background:var(--off); color:var(--muted); }
+    .job-status.pending { background:#FEF6E9; color:#7A4A00; }
+
+    /* FIELDS */
+    .field { margin-bottom:16px; }
+    .field:last-child { margin-bottom:0; }
+    .field-label { display:block; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+    input, select, textarea {
+      width:100%; background:transparent; border:none;
+      border-bottom:1.5px solid var(--line); padding:8px 0;
+      font:inherit; font-size:14px; font-weight:500; color:var(--black);
+      outline:none; border-radius:0; -webkit-appearance:none;
+    }
+    input:focus, select:focus { border-bottom-color:var(--black); }
+    select {
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 2px center; padding-right:20px;
+    }
+    .mode-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:4px; }
+    .mode-opt { border:1.5px solid var(--line); padding:10px 8px; text-align:center; cursor:pointer; transition:all 0.12s; }
+    .mode-opt input { display:none; }
+    .mode-opt.sel { border-color:var(--orange); background:#FEF6E9; }
+    .mode-name { font-size:12px; font-weight:700; color:var(--black); }
+    .mode-desc { font-size:10px; font-weight:500; color:var(--muted); margin-top:2px; }
+
+    /* BUTTONS */
+    .btn { display:block; width:100%; padding:14px; border:none; border-radius:0; font:inherit; font-size:14px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; cursor:pointer; transition:opacity 0.15s; }
+    .btn-orange { background:var(--orange); color:var(--black); }
+    .btn-black  { background:var(--black);  color:var(--white); }
+    .btn-outline{ background:transparent; color:var(--black); border:1.5px solid var(--line); }
+    .btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .btn:hover:not(:disabled) { opacity:0.88; }
+    .btn-wrap { padding:0 16px; margin-bottom:10px; }
+
+    /* NOTICE */
+    .notice { padding:12px 16px; font-size:12px; font-weight:600; line-height:1.5; border-left:3px solid var(--muted); background:var(--off); color:var(--dim); margin:0 16px 10px; }
+    .notice.ok  { border-left-color:var(--green); color:var(--green); background:#F0FAF4; }
+    .notice.err { border-left-color:var(--red);   color:var(--red);   background:#FDF0F0; }
+    .notice.hi  { border-left-color:var(--orange); color:#7A4A00; background:#FEF6E9; }
+
+    /* LOGIN */
+    .login-wrap { max-width:360px; margin:80px auto 0; padding:0 20px; }
+    .login-logo { font-size:28px; font-weight:800; letter-spacing:-0.03em; margin-bottom:6px; }
+    .login-logo em { color:var(--orange); font-style:normal; }
+    .login-sub { font-size:13px; font-weight:500; color:var(--muted); margin-bottom:28px; line-height:1.5; }
+    .login-card { background:var(--white); border:1px solid var(--line); padding:24px; }
+
+    /* PREMIUM LOCK */
+    .premium-lock { text-align:center; padding:32px 24px; }
+    .premium-lock-icon { font-size:32px; margin-bottom:12px; }
+    .premium-lock-title { font-size:16px; font-weight:700; letter-spacing:-0.02em; margin-bottom:6px; }
+    .premium-lock-sub { font-size:12px; font-weight:500; color:var(--muted); line-height:1.55; margin-bottom:16px; }
+
+    /* DATE FILTER */
+    .date-filter { display:flex; gap:8px; margin:0 16px 12px; flex-wrap:wrap; }
+    .date-btn { padding:6px 12px; font:inherit; font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; border:1.5px solid var(--line); background:var(--white); cursor:pointer; }
+    .date-btn.active { border-color:var(--orange); background:#FEF6E9; color:var(--black); }
+
+    /* LOADING */
+    .loading { text-align:center; padding:60px 0; font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
+    .spinner { width:24px; height:24px; border:2px solid var(--line); border-top-color:var(--black); border-radius:50%; animation:spin 0.7s linear infinite; margin:0 auto 14px; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* PUSH BANNER */
+    .push-banner {
+      margin: 12px 16px 0;
+      background: var(--black);
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .push-banner-icon { font-size: 24px; flex-shrink: 0; }
+    .push-banner-title { font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 2px; }
+    .push-banner-sub { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); line-height: 1.5; }
+    .push-banner-btn {
+      margin-left: auto; flex-shrink: 0;
+      padding: 8px 14px; background: var(--orange); color: var(--black);
+      border: none; font: inherit; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
+      white-space: nowrap;
+    }
+    .push-enabled-badge {
+      margin: 12px 16px 0;
+      padding: 10px 14px;
+      background: #F0FAF4;
+      border-left: 3px solid var(--green);
+      font-size: 11px; font-weight: 700; color: var(--green);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ADD TO HOMESCREEN STEPS */
+    .push-steps { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .push-step {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: rgba(255,255,255,0.06); padding: 10px 12px;
+    }
+    .push-step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--orange); color: var(--black);
+      font-size: 11px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .push-step-text {
+      font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,0.8); line-height: 1.5;
+    }
+    .push-step-text strong { color: var(--white); font-weight: 700; }
+
+    .footer { text-align:center; padding:24px 0; font-size:10px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--line); }
+    .footer em { color:var(--orange); font-style:normal; }
+  </style>
+</head>
+<body>
+
+<div id="root">
+  <div class="loading"><div class="spinner"></div>Loading</div>
+</div>
+
+<script>
+const API = "https://noti-api.ancient-bread-01fe.workers.dev";
+const SESSION_KEY = 'noti_tradie_session';
+
+let _data      = null;
+let _session   = localStorage.getItem(SESSION_KEY) || '';
+let _tab       = 'jobs';
+let _dateRange = 30;
+
+// ─── HELPERS ─────────────────────────────────────────────
+const esc = v => String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmt = v => String(v||'').trim();
+function cleanPhone(p){ return p.replace(/\s+/g,'').replace(/[^0-9]/g,''); }
+
+async function post(payload){
+  const res  = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  return JSON.parse(await res.text());
+}
+async function get(params){
+  const qs = new URLSearchParams(params);
+  const res = await fetch(`${API}?${qs}`);
+  return JSON.parse(await res.text());
+}
+
+function setSession(token){ _session = token; localStorage.setItem(SESSION_KEY, token); }
+function clearSession(){ _session = ''; localStorage.removeItem(SESSION_KEY); showLogin(); }
+
+// ─── PUSH NOTIFICATIONS ───────────────────────────────────
+// Public VAPID key — paste from https://web-push-codelab.glitch.me
+const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY_HERE';
+const PUSH_KEY         = 'noti_push_enabled';
+
+// ── Device detection ──
+function isIphone(){
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+}
+
+// Running as installed PWA (added to home screen)
+function isStandalone(){
+  return window.navigator.standalone === true ||
+         window.matchMedia('(display-mode: standalone)').matches;
+}
+
+function isChromeiOS(){
+  return /CriOS/i.test(navigator.userAgent);
+}
+
+function isFirefoxiOS(){
+  return /FxiOS/i.test(navigator.userAgent);
+}
+
+function isPushSupported(){
+  return 'serviceWorker' in navigator && 'PushManager' in window;
+}
+
+function isPushEnabled(){
+  return localStorage.getItem(PUSH_KEY) === 'true';
+}
+
+function urlBase64ToUint8Array(base64String){
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  var raw     = window.atob(base64);
+  var output  = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; ++i){ output[i] = raw.charCodeAt(i); }
+  return output;
+}
+
+async function registerServiceWorker(){
+  if (!isPushSupported()) return null;
+  try { return await navigator.serviceWorker.register('/sw.js'); }
+  catch(e){ console.log('SW registration failed:', e); return null; }
+}
+
+async function subscribeToPush(){
+  try {
+    const reg = await registerServiceWorker();
+    if (!reg) return false;
+    await reg.update();
+    const sub     = await reg.pushManager.subscribe({
+      userVisibleOnly:      true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+    const subJson = sub.toJSON();
+    const r = await post({
+      type:     'dashboard_push_token',
+      session:  _session,
+      endpoint: subJson.endpoint,
+      p256dh:   subJson.keys.p256dh,
+      auth:     subJson.keys.auth
+    });
+    if (r.success){ localStorage.setItem(PUSH_KEY, 'true'); return true; }
+    return false;
+  } catch(e){ console.log('Push subscription failed:', e); return false; }
+}
+
+// ── Push banner logic ──
+// Four states:
+// 1. Already enabled           → green confirmation
+// 2. iPhone, not on homescreen → show add-to-homescreen guide
+// 3. iPhone, on homescreen     → show enable button
+// 4. Android / desktop         → show enable button directly
+
+function renderPushBanner(){
+  // Already set up
+  if (isPushEnabled()){
+    return `
+      <div class="push-enabled-badge">
+        <span>⚡</span> Job alerts are on — you will get notified the moment a job comes in
+      </div>`;
+  }
+
+  // iPhone not on home screen — need to add first
+  if (isIphone() && !isStandalone()){
+    return `
+      <div class="push-banner" id="pushBanner" style="flex-direction:column;align-items:flex-start;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;width:100%;">
+          <div class="push-banner-icon">⚡</div>
+          <div style="flex:1;">
+            <div class="push-banner-title">Get jobs faster</div>
+            <div class="push-banner-sub">Add Noti to your home screen to get instant job alerts — first to know means first to win</div>
+          </div>
+        </div>
+        <div class="push-steps" id="iosSteps">
+          <!-- Steps populated by wirePushBanner() based on browser -->
+        </div>
+      </div>`;
+  }
+
+  // iPhone on home screen OR Android/desktop — show enable button
+  if (!isPushSupported()){
+    return ''; // browser does not support push at all
+  }
+
+  return `
+    <div class="push-banner" id="pushBanner">
+      <div class="push-banner-icon">⚡</div>
+      <div>
+        <div class="push-banner-title">Get jobs faster</div>
+        <div class="push-banner-sub">Enable instant alerts and be first to every job the moment it lands</div>
+      </div>
+      <button class="push-banner-btn" id="pushEnableBtn">Enable alerts</button>
+    </div>`;
+}
+
+function wirePushBanner(){
+  // Populate iOS steps based on which browser they are using
+  var stepsEl = document.getElementById('iosSteps');
+  if (stepsEl){
+    var step1, step2, step3;
+
+    if (isChromeiOS()){
+      step1 = 'Tap the <strong>Share</strong> button at the top right of Chrome <span style="font-size:14px;">⋯</span> then tap <strong>Share...</strong>';
+      step2 = 'Tap <strong>Add to Home Screen</strong> from the share menu';
+    } else if (isFirefoxiOS()){
+      step1 = 'Tap the <strong>menu button</strong> at the bottom right <span style="font-size:14px;">☰</span>';
+      step2 = 'Tap <strong>Share</strong> then tap <strong>Add to Home Screen</strong>';
+    } else {
+      // Safari default
+      step1 = 'Tap the <strong>Share</strong> button at the bottom of Safari <span style="font-size:15px;">⬆</span>';
+      step2 = 'Scroll down and tap <strong>Add to Home Screen</strong>';
+    }
+
+    step3 = 'Open <strong>noti.</strong> from your home screen and tap <strong>Enable alerts</strong>';
+
+    stepsEl.innerHTML =
+      '<div class="push-step"><div class="push-step-num">1</div><div class="push-step-text">' + step1 + '</div></div>' +
+      '<div class="push-step"><div class="push-step-num">2</div><div class="push-step-text">' + step2 + '</div></div>' +
+      '<div class="push-step"><div class="push-step-num">3</div><div class="push-step-text">' + step3 + '</div></div>';
+  }
+
+  var btn = document.getElementById('pushEnableBtn');
+  if (!btn) return;
+  btn.addEventListener('click', async function(){
+    btn.textContent = 'Setting up...';
+    btn.disabled    = true;
+    var ok = await subscribeToPush();
+    if (ok){
+      document.getElementById('pushBanner').outerHTML = `
+        <div class="push-enabled-badge">
+          <span>⚡</span> Job alerts are on — you will get notified the moment a job comes in
+        </div>`;
+    } else {
+      // Permission denied or error
+      document.getElementById('pushBanner').outerHTML = `
+        <div class="push-banner" style="flex-direction:column;align-items:flex-start;gap:8px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="push-banner-icon">⚡</div>
+            <div>
+              <div class="push-banner-title">Alerts blocked</div>
+              <div class="push-banner-sub">To fix this: go to your phone Settings → Safari or Chrome → Notifications → find noti.au and allow notifications. Then come back and try again.</div>
+            </div>
+          </div>
+        </div>`;
+    }
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+async function init(){
+  if (_session){
+    await loadDashboard();
+  } else {
+    showLogin();
+  }
+}
+
+// ─── LOGIN ─────────────────────────────────────────────────
+function showLogin(step){
+  step = step || 'phone';
+  document.getElementById('root').innerHTML = `
+    <div class="login-wrap">
+      <div class="login-logo">noti<em>.</em></div>
+      <div class="login-sub">Tradie dashboard. Enter your mobile to log in.</div>
+      <div class="login-card">
+        ${step === 'phone' ? `
+          <div class="field">
+            <label class="field-label">Mobile number</label>
+            <input type="tel" id="loginPhone" placeholder="04xx xxx xxx" />
+          </div>
+          <div id="loginNotice"></div>
+          <button class="btn btn-orange" id="loginBtn" style="margin-top:16px;">Send code</button>
+        ` : `
+          <div class="field">
+            <label class="field-label">Enter the 6-digit code sent to your phone</label>
+            <input type="number" id="loginCode" placeholder="123456" maxlength="6" inputmode="numeric" style="font-size:24px;letter-spacing:0.1em;" />
+          </div>
+          <div id="loginNotice"></div>
+          <button class="btn btn-orange" id="verifyBtn" style="margin-top:16px;">Log in</button>
+          <button class="btn btn-outline" id="backBtn" style="margin-top:8px;">Back</button>
+        `}
+      </div>
+      <div class="footer" style="margin-top:20px;">noti<em>.</em></div>
+    </div>
+  `;
+
+  if (step === 'phone'){
+    document.getElementById('loginBtn').onclick = async () => {
+      const btn   = document.getElementById('loginBtn');
+      const phone = cleanPhone(document.getElementById('loginPhone').value);
+      if (!phone){ showLoginNotice('Please enter your mobile number.','err'); return; }
+      btn.disabled = true; btn.textContent = 'Sending...';
+      try {
+        const r = await post({ type:'dashboard_request_code', phone });
+        if (!r.success){ showLoginNotice(r.message||'Something went wrong.','err'); btn.disabled=false; btn.textContent='Send code'; return; }
+        localStorage.setItem('noti_login_phone', phone);
+        showLogin('code');
+      } catch(e){ showLoginNotice('Something went wrong.','err'); btn.disabled=false; btn.textContent='Send code'; }
+    };
+    document.getElementById('loginPhone').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginBtn').click(); });
+  } else {
+    document.getElementById('verifyBtn').onclick = async () => {
+      const btn   = document.getElementById('verifyBtn');
+      const phone = localStorage.getItem('noti_login_phone') || '';
+      const code  = document.getElementById('loginCode').value.trim();
+      if (!code){ showLoginNotice('Please enter the code.','err'); return; }
+      btn.disabled=true; btn.textContent='Logging in...';
+      try {
+        const r = await post({ type:'dashboard_verify_code', phone, code });
+        if (!r.success){ showLoginNotice(r.message||'Incorrect code.','err'); btn.disabled=false; btn.textContent='Log in'; return; }
+        setSession(r.token);
+        await loadDashboard();
+      } catch(e){ showLoginNotice('Something went wrong.','err'); btn.disabled=false; btn.textContent='Log in'; }
+    };
+    document.getElementById('backBtn').onclick = () => showLogin('phone');
+    document.getElementById('loginCode').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('verifyBtn').click(); });
+  }
+}
+
+function showLoginNotice(msg, type){
+  const el = document.getElementById('loginNotice');
+  if (el) el.innerHTML = `<div class="notice ${type}" style="margin:10px 0 0;">${esc(msg)}</div>`;
+}
+
+// ─── LOAD DASHBOARD ───────────────────────────────────────
+async function loadDashboard(){
+  document.getElementById('root').innerHTML = '<div class="loading"><div class="spinner"></div>Loading</div>';
+  try {
+    const r = await post({ type:'dashboard_data', session: _session });
+    if (!r.success){
+      if (r.expired){ clearSession(); return; }
+      document.getElementById('root').innerHTML = `<div class="notice err" style="margin:40px 16px;">${esc(r.message)}</div>`;
+      return;
+    }
+    _data = r;
+    renderDashboard();
+  } catch(e){
+    document.getElementById('root').innerHTML = '<div class="notice err" style="margin:40px 16px;">Could not load dashboard. Please try again.</div>';
+  }
+}
+
+// ─── RENDER SHELL ─────────────────────────────────────────
+function renderDashboard(){
+  const isPremium = _data.is_premium;
+  const account   = _data.account || {};
+
+  document.getElementById('root').innerHTML = `
+    <div class="topbar">
+      <div class="logo">noti<em>.</em></div>
+      <div class="topbar-right">
+        <div class="plan-badge ${isPremium ? 'premium' : 'basic'}">${isPremium ? 'Premium' : 'Basic'}</div>
+        <button class="logout-btn" id="logoutBtn">Log out</button>
+      </div>
+    </div>
+    <div class="shell">
+      <div class="page">
+        ${renderPushBanner()}
+        <div id="tabContent"></div>
+      </div>
+    </div>
+    <div class="nav">
+      <button class="nav-item ${_tab==='jobs'?'active':''}"     onclick="switchTab('jobs')">     <span class="nav-icon">📋</span><span class="nav-label">Jobs</span></button>
+      ${isPremium ? `<button class="nav-item ${_tab==='stats'?'active':''}" onclick="switchTab('stats')"><span class="nav-icon">📈</span><span class="nav-label">Stats</span></button>` : ''}
+      <button class="nav-item ${_tab==='settings'?'active':''}" onclick="switchTab('settings')"> <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></button>
+      <button class="nav-item ${_tab==='account'?'active':''}"  onclick="switchTab('account')">  <span class="nav-icon">👤</span><span class="nav-label">Account</span></button>
+    </div>
+  `;
+
+  document.getElementById('logoutBtn').onclick = clearSession;
+  renderTab();
+  wirePushBanner();
+}
+
+function switchTab(tab){ _tab = tab; renderDashboard(); }
+
+function renderTab(){
+  if (_tab === 'jobs')     renderJobs();
+  if (_tab === 'stats')    renderStats();
+  if (_tab === 'settings') renderSettings();
+  if (_tab === 'account')  renderAccount();
+}
+
+// ─── JOBS TAB ─────────────────────────────────────────────
+function renderJobs(){
+  const jobs = (_data.jobs || []).filter(j => {
+    if (_dateRange === 0) return true;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - _dateRange);
+    return new Date(j.date) >= cutoff;
+  });
+
+  const list = jobs.length ? jobs.map(j => `
+    <div class="job-item">
+      <div>
+        <div class="job-desc">${esc(j.description || 'Job')}</div>
+        <div class="job-meta">${esc(j.suburb || '')} &nbsp;·&nbsp; ${esc(j.date)}</div>
+        ${j.price ? `<div class="job-meta" style="color:var(--green);font-weight:700;">$${esc(String(j.price))}</div>` : ''}
+      </div>
+      <div class="job-status ${j.status}">${j.status}</div>
+    </div>
+  `).join('') : '<div style="padding:24px 0;text-align:center;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">No jobs yet</div>';
+
+  const won    = jobs.filter(j => j.status === 'won').length;
+  const missed = jobs.filter(j => j.status === 'missed').length;
+
+  document.getElementById('tabContent').innerHTML = `
+    <div class="stat-grid" style="margin-top:12px;">
+      <div class="stat-card"><div class="stat-label">Jobs offered</div><div class="stat-value">${jobs.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Jobs won</div><div class="stat-value" style="color:var(--green);">${won}</div></div>
+    </div>
+    <div class="date-filter">
+      ${[7,30,90,0].map(d => `<button class="date-btn ${_dateRange===d?'active':''}" onclick="setDateRange(${d})">${d===0?'All':d+' days'}</button>`).join('')}
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-title">Job history</div></div>
+      <div class="section-body">${list}</div>
+    </div>
+    <div class="footer">noti<em>.</em></div>
+  `;
+}
+
+function setDateRange(days){ _dateRange = days; renderJobs(); }
+
+// ─── STATS TAB (PREMIUM ONLY) ─────────────────────────────
+function renderStats(){
+  if (!_data.is_premium){
+    document.getElementById('tabContent').innerHTML = `
+      <div class="section" style="margin-top:12px;">
+        <div class="premium-lock">
+          <div class="premium-lock-icon">📈</div>
+          <div class="premium-lock-title">Performance stats</div>
+          <div class="premium-lock-sub">Upgrade to premium to see your response rate, win rate, revenue and rating history.</div>
+          <a href="/upgrade" style="display:block;width:100%;padding:14px;background:var(--orange);color:var(--black);text-align:center;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;text-decoration:none;">Upgrade to premium</a>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const s = _data.stats || {};
+
+  document.getElementById('tabContent').innerHTML = `
+    <div class="stat-grid" style="margin-top:12px;">
+      <div class="stat-card">
+        <div class="stat-label">Rating</div>
+        <div class="rating-display">
+          <div class="rating-number">${s.rating || '5.0'}</div>
+          <div class="rating-stars">★</div>
+        </div>
+        <div class="rating-count">${s.review_count || 0} review${s.review_count !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Win rate</div>
+        <div class="stat-value">${s.win_rate || 0}%</div>
+        <div class="stat-sub">${s.jobs_won || 0} of ${s.jobs_accepted || 0} accepted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Jobs offered</div>
+        <div class="stat-value">${s.jobs_offered || 0}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Revenue won</div>
+        <div class="stat-value" style="font-size:20px;">$${(s.revenue_won||0).toLocaleString()}</div>
+        <div class="stat-sub">avg $${s.avg_job_value || 0}</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-title">Recent reviews</div></div>
+      <div class="section-body">
+        ${(s.rating_history || []).slice(-5).reverse().map(r => `
+          <div class="job-item">
+            <div>
+              <div class="job-desc" style="color:var(--orange);">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
+              ${r.comment ? `<div class="job-meta">${esc(r.comment)}</div>` : ''}
+              <div class="job-meta">${esc(r.date)}</div>
+            </div>
+          </div>
+        `).join('') || '<div style="padding:16px 0;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">No reviews yet</div>'}
+      </div>
+    </div>
+    <div class="footer">noti<em>.</em></div>
+  `;
+}
+
+// ─── SETTINGS TAB ─────────────────────────────────────────
+function renderSettings(){
+  const account = _data.account || {};
+  const modes   = [
+    { val: 'ON',          name: 'On',           desc: 'All jobs'     },
+    { val: 'URGENT_ONLY', name: 'Urgent only',  desc: 'Repairs only' },
+    { val: 'OFF',         name: 'Off',          desc: 'Paused'       }
+  ];
+
+  document.getElementById('tabContent').innerHTML = `
+    <div class="section" style="margin-top:12px;">
+      <div class="section-header"><div class="section-title">Availability</div></div>
+      <div class="section-body">
+        <div class="mode-row" id="modeRow">
+          ${modes.map(m => `
+            <label class="mode-opt ${account.mode === m.val ? 'sel' : ''}" id="mode-${m.val}">
+              <input type="radio" name="mode" value="${m.val}" ${account.mode === m.val ? 'checked' : ''} />
+              <div class="mode-name">${m.name}</div>
+              <div class="mode-desc">${m.desc}</div>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-title">Service areas</div></div>
+      <div class="section-body">
+        <div class="field">
+          <label class="field-label">Suburbs or postcodes</label>
+          <textarea id="serviceAreas" style="min-height:80px;resize:none;line-height:1.5;font-size:13px;">${esc(account.service_areas || '')}</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header"><div class="section-title">Contact</div></div>
+      <div class="section-body">
+        <div class="field">
+          <label class="field-label">Email</label>
+          <input type="email" id="settingsEmail" value="${esc(account.email || '')}" />
+        </div>
+      </div>
+    </div>
+    <div id="settingsNotice"></div>
+    <div class="btn-wrap"><button class="btn btn-black" id="saveBtn">Save settings</button></div>
+    <div class="footer">noti<em>.</em></div>
+  `;
+
+  // Mode selection
+  document.querySelectorAll('.mode-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.mode-opt').forEach(o => o.classList.remove('sel'));
+      opt.classList.add('sel');
+      opt.querySelector('input').checked = true;
+    });
+  });
+
+  document.getElementById('saveBtn').onclick = async () => {
+    const btn  = document.getElementById('saveBtn');
+    const mode = document.querySelector('.mode-opt.sel input').value;
+    btn.disabled = true; btn.textContent = 'Saving...';
+    try {
+      const r = await post({
+        type:         'dashboard_settings',
+        session:      _session,
+        mode:         mode,
+        serviceAreas: document.getElementById('serviceAreas').value,
+        email:        document.getElementById('settingsEmail').value
+      });
+      if (r.expired){ clearSession(); return; }
+      const n = document.getElementById('settingsNotice');
+      if (r.success){
+        n.innerHTML = '<div class="notice ok">Settings saved.</div>';
+        _data.account.mode         = mode;
+        _data.account.service_areas = document.getElementById('serviceAreas').value;
+        _data.account.email        = document.getElementById('settingsEmail').value;
+      } else {
+        n.innerHTML = `<div class="notice err">${esc(r.message || 'Save failed.')}</div>`;
+      }
+    } catch(e){
+      document.getElementById('settingsNotice').innerHTML = '<div class="notice err">Something went wrong.</div>';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save settings';
+    }
+  };
+}
+
+// ─── ACCOUNT TAB ──────────────────────────────────────────
+function renderAccount(){
+  const a = _data.account || {};
+  const isPremium = _data.is_premium;
+
+  const licenceWarning  = isExpiringSoon(a.licence_expiry);
+  const insuranceWarning = isExpiringSoon(a.insurance_expiry);
+
+  document.getElementById('tabContent').innerHTML = `
+    <div class="stat-grid" style="margin-top:12px;">
+      <div class="stat-card">
+        <div class="stat-label">Rating</div>
+        <div class="stat-value">${a.rating || '5.0'} <span style="font-size:16px;color:var(--orange);">★</span></div>
+        <div class="stat-sub">${a.review_count || 0} reviews</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Plan</div>
+        <div class="stat-value" style="font-size:18px;text-transform:uppercase;">${esc(a.plan || '')}</div>
+        ${a.plan === 'TRIAL' ? `<div class="stat-sub">${a.trial_used || 0} of ${a.trial_limit || 5} jobs used</div>` : ''}
+      </div>
+    </div>
+
+    ${licenceWarning ? `<div class="notice hi">Licence expires ${esc(a.licence_expiry)} — please update before it lapses.</div>` : ''}
+    ${insuranceWarning ? `<div class="notice hi">Insurance expires ${esc(a.insurance_expiry)} — please update before it lapses.</div>` : ''}
+
+    <div class="section">
+      <div class="section-header"><div class="section-title">Business</div></div>
+      <div class="section-body">
+        <div class="job-item"><div class="job-meta">Business</div><div class="job-desc">${esc(a.business_name || '')}</div></div>
+        <div class="job-item"><div class="job-meta">Trade</div><div class="job-desc">${esc(a.trade_type || '')}</div></div>
+        <div class="job-item"><div class="job-meta">Mobile</div><div class="job-desc">${esc(a.primary_phone || '')}</div></div>
+        <div class="job-item"><div class="job-meta">Verification</div><div class="job-desc" style="color:${a.verification_level==='VERIFIED'?'var(--green)':a.verification_level==='FLAGGED'?'var(--red)':'var(--muted)'}">${esc(a.verification_level || 'Pending')}</div></div>
+        <div class="job-item"><div class="job-meta">Licence expiry</div><div class="job-desc">${esc(a.licence_expiry || 'Not set')}</div></div>
+        <div class="job-item" style="border:none;"><div class="job-meta">Insurance expiry</div><div class="job-desc">${esc(a.insurance_expiry || 'Not set')}</div></div>
+      </div>
+    </div>
+
+    ${!isPremium ? `
+      <div class="btn-wrap">
+        <a href="/upgrade" style="display:block;width:100%;padding:14px;background:var(--orange);color:var(--black);text-align:center;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;text-decoration:none;">Upgrade to premium</a>
+      </div>
+    ` : ''}
+    <div class="footer">noti<em>.</em></div>
+  `;
+}
+
+function isExpiringSoon(dateStr){
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return false;
+  const daysUntil = (d - new Date()) / (1000 * 60 * 60 * 24);
+  return daysUntil <= 30 && daysUntil > 0;
+}
+
+// ─── START ─────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

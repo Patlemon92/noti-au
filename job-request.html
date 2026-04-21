@@ -93,7 +93,7 @@
 
     <div class="type-row">
       <label class="type-opt sel" id="opt-urgent">
-        <input type="radio" name="jobType" value="URGENT" checked />
+        <input type="radio" name="jobType" value="JOB" checked />
         <div class="type-name">Urgent repair</div>
         <div class="type-desc">Something needs fixing now</div>
       </label>
@@ -195,10 +195,12 @@ document.getElementById('submitBtn').addEventListener('click', async function(){
 
     var res = await fetch(API, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        type:'customer_job', phone:cleanPhone(val('phone')), name:val('name'),
+      // POST to /job/new
+    var res = await fetch(API + '/job/new', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone:cleanPhone(val('phone')), name:val('name'),
         description:val('description'), suburb:val('suburb'), postcode:val('postcode'),
-        jobType:document.querySelector('.type-opt.sel input').value,
+        job_type:document.querySelector('.type-opt.sel input').value,
         photo:photoB64, photoMime:photoMime
       })
     });

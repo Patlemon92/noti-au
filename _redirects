@@ -12,7 +12,6 @@
 # Service worker + manifest at their health-scoped paths
 /health/sw.js               /health/sw-health.js                   200
 /health/manifest.json       /health/manifest-health.json           200
-/health/push-client.js      /health/push-client.js                 200
 
 # ─── Noti Trade (unchanged) ─────────────
 /job/:jobId/:token    /jobs.html?jobId=:jobId&t=:token    200

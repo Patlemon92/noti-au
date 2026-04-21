@@ -16,9 +16,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+html{min-height:100%;}body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
 body{
-  min-height:100dvh;overflow-x:hidden;position:relative;color:#4A1B0C;
+  min-height:100dvh;background-attachment:fixed;overflow-x:hidden;position:relative;color:#4A1B0C;
   background:linear-gradient(160deg,#FFF5EF 0%,#F5E4D8 40%,#E8D4C2 100%);
 }
 .blob{position:absolute;border-radius:50%;pointer-events:none;z-index:0}
@@ -81,6 +81,10 @@ h1{font-size:26px;font-weight:500;color:#4A1B0C;margin:0 0 22px;letter-spacing:-
 .nav-item svg{stroke:#993C1D;opacity:.7}
 .nav-item.active{background:#4A1B0C}
 .nav-item.active svg{stroke:#FFE4D0;opacity:1}
+
+.nav-item{position:relative}
+.nav-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E9533E;border:2px solid rgba(255,255,255,.95);display:none}
+.nav-item.has-unread .nav-dot{display:block}
 </style>
 </head>
 <body>
@@ -109,12 +113,7 @@ h1{font-size:26px;font-weight:500;color:#4A1B0C;margin:0 0 22px;letter-spacing:-
 
   <div class="card">
     <p class="card-label">Summary</p>
-    <div class="stat-grid" id="summary-grid">
-      <div class="stat"><p>Check-ins</p><p id="s-checkins">—</p></div>
-      <div class="stat"><p>Avg sleep</p><p id="s-sleep">—</p></div>
-      <div class="stat"><p>Avg mood</p><p id="s-mood">—</p></div>
-      <div class="stat"><p>Headache days</p><p id="s-headaches">—</p></div>
-    </div>
+    <div class="stat-grid" id="summary-grid"></div>
   </div>
 
   <div class="card">
@@ -123,17 +122,48 @@ h1{font-size:26px;font-weight:500;color:#4A1B0C;margin:0 0 22px;letter-spacing:-
   </div>
 
   <div class="card">
-    <p class="card-label">Daily log</p>
+    <div class="log-header" id="log-header" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+      <p class="card-label" style="margin:0">Daily log</p>
+      <span class="log-caret" id="log-caret" style="font-size:18px;color:#4A1B0C;opacity:.6;transition:transform .2s;display:inline-block">▸</span>
+    </div>
     <p class="log-link" id="log-count">—</p>
+    <div id="log-entries" class="hidden" style="margin-top:12px"></div>
   </div>
 </div>
+
+<style>
+.log-entry{
+  border-top:.5px solid rgba(74,27,12,.12); padding:14px 0;
+}
+.log-entry:last-child{ padding-bottom:4px }
+.log-entry-header{
+  display:flex; justify-content:space-between; align-items:center;
+  cursor:pointer;
+}
+.log-entry-date{ font-size:14px; font-weight:500; color:#4A1B0C }
+.log-entry-slot{ font-size:12px; color:#712B13; opacity:.75 }
+.log-entry-caret{ font-size:14px; color:#4A1B0C; opacity:.5; transition:transform .2s }
+.log-entry.open .log-entry-caret{ transform:rotate(90deg) }
+.log-entry-body{ margin-top:10px; display:none }
+.log-entry.open .log-entry-body{ display:block }
+.log-answer{
+  display:flex; justify-content:space-between; padding:6px 0;
+  font-size:13px; border-bottom:.5px dashed rgba(74,27,12,.08);
+}
+.log-answer:last-child{ border-bottom:0 }
+.log-answer-key{ color:#712B13; opacity:.85 }
+.log-answer-val{ color:#4A1B0C; font-weight:500; text-align:right; max-width:60%; word-break:break-word }
+.hidden{ display:none }
+.log-caret.open{ transform:rotate(90deg) }
+</style>
 
 <div class="nav">
   <div class="nav-item" onclick="location.href='/health/home'">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
   </div>
-  <div class="nav-item" onclick="location.href='/health/alys'">
+  <div class="nav-item" id="nav-alys" onclick="location.href='/health/alys'">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    <span class="nav-dot"></span>
   </div>
   <div class="nav-item active">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
@@ -144,7 +174,7 @@ h1{font-size:26px;font-weight:500;color:#4A1B0C;margin:0 0 22px;letter-spacing:-
 </div>
 
 <script>
-const API = 'https://noti-health-api.ancient-bread-01fe.workers.dev';;
+const API = 'https://noti-health-api.ancient-bread-01fe.workers.dev';
 const token = localStorage.getItem('noti_token');
 if (!token) { location.href = '/health/login'; }
 
@@ -162,33 +192,197 @@ document.querySelectorAll('.range-chip').forEach(chip => {
 
 async function load() {
   try {
-    const [patternsRes, checkinsRes] = await Promise.all([
-      fetch(API + `/me/patterns?days=${days}`, { headers: { 'Authorization': 'Bearer ' + token }}),
-      fetch(API + `/me/checkins?days=${days}`, { headers: { 'Authorization': 'Bearer ' + token }})
+    const [meRes, patternsRes, checkinsRes, notesRes] = await Promise.all([
+      fetch(API + '/me',                         { headers: { 'Authorization': 'Bearer ' + token }}),
+      fetch(API + `/me/patterns?days=${days}`,   { headers: { 'Authorization': 'Bearer ' + token }}),
+      fetch(API + `/me/checkins?days=${days}`,   { headers: { 'Authorization': 'Bearer ' + token }}),
+      fetch(API + `/me/notes?days=${days}`,      { headers: { 'Authorization': 'Bearer ' + token }})
     ]);
-    const patterns = await patternsRes.json();
-    const checkins = await checkinsRes.json();
+    const me        = await meRes.json();
+    const patterns  = await patternsRes.json();
+    const checkins  = await checkinsRes.json();
+    const notes     = await notesRes.json();
 
-    renderSummary(patterns, checkins);
+    renderSummary(me, patterns, checkins);
     renderPatterns(patterns);
-    const count = (checkins.checkins || []).length;
-    document.getElementById('log-count').textContent =
-      count === 0 ? 'No check-ins in this range yet.' : `${count} check-ins · tap to view the day-by-day log`;
+    renderLogEntries(checkins.checkins || [], notes.notes || []);
+    const checkinsCount = (checkins.checkins || []).length;
+    const notesCount    = (notes.notes || []).length;
+    const totalCount    = checkinsCount + notesCount;
+    const label = totalCount === 0
+      ? 'No entries in this range yet.'
+      : `${checkinsCount} check-in${checkinsCount === 1 ? '' : 's'}` +
+        (notesCount > 0 ? ` + ${notesCount} note${notesCount === 1 ? '' : 's'}` : '') +
+        ' · tap to expand';
+    document.getElementById('log-count').textContent = label;
   } catch (e) {
     document.getElementById('patterns-list').innerHTML =
       `<p class="empty">Couldn't load your record. Try again in a moment.</p>`;
   }
 }
 
-function renderSummary(patterns, checkins) {
-  const a = (patterns.patterns && patterns.patterns.averages) || {};
-  const rows = (checkins.checkins || []);
-  const headacheDays = rows.filter(r => r.slot === 'evening' && r.answers && r.answers.headache != null && Number(r.answers.headache) > 0).length;
+// ── Daily log — expandable list (check-ins + notes interleaved) ─
+function renderLogEntries(checkinRows, noteRows) {
+  const el = document.getElementById('log-entries');
+  const all = [];
 
-  document.getElementById('s-checkins').textContent = `${rows.length} / ${days}`;
-  if (a.sleep != null)  document.getElementById('s-sleep').textContent = a.sleep.toFixed(1) + ' h';
-  if (a.mood != null)   document.getElementById('s-mood').textContent = a.mood.toFixed(1) + ' / 10';
-  document.getElementById('s-headaches').textContent = headacheDays;
+  // Normalise check-ins
+  for (const r of (checkinRows || [])) {
+    all.push({
+      kind: 'checkin',
+      when: r.completed_at || r.started_at,
+      slot: r.slot,
+      answers: r.answers || {}
+    });
+  }
+  // Normalise notes
+  for (const n of (noteRows || [])) {
+    all.push({
+      kind: 'note',
+      when: n.created_at,
+      mood: n.mood,
+      body: n.body,
+      alys_reply: n.alys_reply
+    });
+  }
+
+  if (!all.length) { el.innerHTML = ''; return; }
+
+  // Newest first
+  all.sort((a, b) => new Date(b.when) - new Date(a.when));
+
+  const fmtDate = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  };
+  const fmtTime = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' });
+  };
+  const labelKey = (key) => key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const moodEmoji = { good: 'Good', ok: 'OK', rough: 'Rough', bad: 'Bad' };
+
+  el.innerHTML = all.map((r, i) => {
+    if (r.kind === 'note') {
+      const bodyHTML = [];
+      bodyHTML.push(`<div class="log-answer"><span class="log-answer-key">Feeling</span><span class="log-answer-val">${moodEmoji[r.mood] || r.mood}</span></div>`);
+      if (r.body) bodyHTML.push(`<div class="log-answer"><span class="log-answer-key">Note</span><span class="log-answer-val">${escapeHtml(r.body)}</span></div>`);
+      if (r.alys_reply) bodyHTML.push(`<div class="log-answer" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="log-answer-key">Alys replied</span><span class="log-answer-val" style="max-width:100%;text-align:left">${escapeHtml(r.alys_reply)}</span></div>`);
+      return `
+        <div class="log-entry" data-idx="${i}">
+          <div class="log-entry-header">
+            <div>
+              <div class="log-entry-date">${fmtDate(r.when)}</div>
+              <div class="log-entry-slot">Note (${moodEmoji[r.mood] || r.mood}) · ${fmtTime(r.when)}</div>
+            </div>
+            <span class="log-entry-caret">▸</span>
+          </div>
+          <div class="log-entry-body">${bodyHTML.join('')}</div>
+        </div>`;
+    }
+    // Check-in row
+    const answers = r.answers || {};
+    const keys = Object.keys(answers).filter(k => answers[k] !== null && answers[k] !== '');
+    const answersHTML = keys.length === 0
+      ? `<p class="log-answer" style="justify-content:center;opacity:.6">No answers recorded</p>`
+      : keys.map(k =>
+          `<div class="log-answer"><span class="log-answer-key">${labelKey(k)}</span><span class="log-answer-val">${escapeHtml(String(answers[k]))}</span></div>`
+        ).join('');
+    return `
+      <div class="log-entry" data-idx="${i}">
+        <div class="log-entry-header">
+          <div>
+            <div class="log-entry-date">${fmtDate(r.when)}</div>
+            <div class="log-entry-slot">${r.slot} check-in · ${fmtTime(r.when)}</div>
+          </div>
+          <span class="log-entry-caret">▸</span>
+        </div>
+        <div class="log-entry-body">${answersHTML}</div>
+      </div>`;
+  }).join('');
+
+  // Wire up expand/collapse for each entry
+  el.querySelectorAll('.log-entry').forEach(entry => {
+    entry.querySelector('.log-entry-header').onclick = () => {
+      entry.classList.toggle('open');
+    };
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ── Daily log toggle ───────────────────────────
+document.getElementById('log-header').onclick = () => {
+  const entries = document.getElementById('log-entries');
+  const caret   = document.getElementById('log-caret');
+  entries.classList.toggle('hidden');
+  caret.classList.toggle('open');
+};
+
+// Stats shown by default for everyone
+const CORE_STATS = [
+  { label: 'Check-ins', get: (a, r) => `${r.length} / ${days}` },
+  { label: 'Avg sleep', get: (a) => a.sleep != null ? a.sleep.toFixed(1) + ' h'  : '—' },
+  { label: 'Avg mood',  get: (a) => a.mood  != null ? a.mood.toFixed(1)  + ' / 10' : '—' }
+];
+
+// Stats that only show if the user tracks that template
+const TEMPLATE_STATS = {
+  migraines: [{
+    label: 'Headache days',
+    get: (_a, rows) => rows.filter(r =>
+      r.slot === 'evening' && r.answers && r.answers.headache != null && Number(r.answers.headache) > 0
+    ).length
+  }],
+  pain: [{
+    label: 'Avg pain',
+    get: (a) => a.pain != null ? a.pain.toFixed(1) + ' / 10' : '—'
+  }],
+  fatigue: [{
+    label: 'Avg fatigue',
+    get: (a) => a.fatigue != null ? a.fatigue.toFixed(1) + ' / 10' : '—'
+  }],
+  fog: [{
+    label: 'Avg brain fog',
+    get: (a) => a.fog != null ? a.fog.toFixed(1) + ' / 10' : '—'
+  }],
+  anxiety: [{
+    label: 'Avg anxiety',
+    get: (a) => a.anxiety != null ? a.anxiety.toFixed(1) + ' / 10' : '—'
+  }],
+  weight: [{
+    label: 'Latest weight',
+    get: (_a, rows) => {
+      const latest = rows.find(r => r.answers && r.answers.weight != null);
+      return latest ? latest.answers.weight + ' kg' : '—';
+    }
+  }],
+  pots: [{
+    label: 'POTS flare days',
+    get: (_a, rows) => rows.filter(r =>
+      r.slot === 'evening' && r.answers && r.answers.dizzy != null && Number(r.answers.dizzy) >= 6
+    ).length
+  }]
+};
+
+function renderSummary(me, patterns, checkins) {
+  const templates = me.templates || [];
+  const a = (patterns.patterns && patterns.patterns.averages) || {};
+  const rows = checkins.checkins || [];
+
+  const stats = [...CORE_STATS];
+  for (const t of templates) {
+    if (TEMPLATE_STATS[t]) stats.push(...TEMPLATE_STATS[t]);
+  }
+  // Cap at 6 stats so the grid doesn't overflow
+  const capped = stats.slice(0, 6);
+
+  const grid = document.getElementById('summary-grid');
+  grid.innerHTML = capped.map(s =>
+    `<div class="stat"><p>${s.label}</p><p>${s.get(a, rows)}</p></div>`
+  ).join('');
 }
 
 function renderPatterns(patterns) {
@@ -229,6 +423,18 @@ function escape(s) {
 
 load();
 </script>
+<script src="/health/push-client.js">
+// ── Unread indicator on Alys nav ───────────────
+async function checkUnread() {
+  try {
+    const res = await fetch(API + '/me/unread-count', { headers: { 'Authorization': 'Bearer ' + token }});
+    const data = await res.json();
+    const navAlys = document.getElementById('nav-alys');
+    if (navAlys) navAlys.classList.toggle('has-unread', data.unread > 0);
+  } catch (e) { /* silent */ }
+}
+checkUnread();
 
+</script>
 </body>
 </html>

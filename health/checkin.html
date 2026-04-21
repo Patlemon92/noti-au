@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="theme-color" content="#D85A30" />
+<link rel="manifest" href="/health/manifest.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Noti" />
+
+<title>Noti · Check-in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+body{
+  min-height:100dvh;overflow-x:hidden;position:relative;color:var(--ink);
+  background:var(--bg);transition:background .6s ease;
+}
+:root{
+  --ink:#4A1B0C; --muted:#712B13; --accent:#993C1D; --cta:#4A1B0C; --cta-text:#FFE4D0;
+  --bg:linear-gradient(160deg,#FFE8C7 0%,#FFCBA4 25%,#F5A887 55%,#EC7E5C 85%,#D85A30 100%);
+  --blob1:radial-gradient(circle at 30% 30%,#FFF0D8,#FFCBA4);
+  --blob2:radial-gradient(circle at 30% 30%,#FBC9B4,#EC7E5C);
+  --card-bg:rgba(255,255,255,.6); --card-border:rgba(255,255,255,.85);
+}
+.t-evening{
+  --ink:#2C1530; --muted:#4D2650; --accent:#6B3B7A; --cta:#2C1530; --cta-text:#FFE4D0;
+  --bg:linear-gradient(160deg,#FFC9B0 0%,#F09980 25%,#D96F7D 55%,#A8527E 85%,#6B3B7A 100%);
+  --blob1:radial-gradient(circle at 30% 30%,#FFDCC8,#F09980);
+  --blob2:radial-gradient(circle at 30% 30%,#E09098,#A8527E);
+}
+.blob{position:absolute;border-radius:50%;pointer-events:none;z-index:0}
+.b1{top:-60px;right:-90px;width:240px;height:240px;background:var(--blob1);opacity:.85}
+.b2{top:380px;left:-120px;width:260px;height:260px;background:var(--blob2);opacity:.6}
+.wrap{position:relative;z-index:2;padding:20px 22px 40px;max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:36px}
+.icon-btn{
+  width:40px;height:40px;border-radius:14px;
+  background:rgba(255,255,255,.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border:.5px solid rgba(255,255,255,.6);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+}
+.icon-btn svg{stroke:var(--ink)}
+.progress-track{flex:1;display:flex;gap:6px;align-items:center}
+.seg{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.4)}
+.seg.done{background:var(--cta)}
+.seg.cur{background:color-mix(in srgb, var(--cta) 55%, transparent)}
+
+.pg-label{font-size:10px;font-weight:500;color:var(--ink);opacity:.7;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.qtext{font-size:30px;font-weight:500;color:var(--ink);line-height:1.1;letter-spacing:-.4px;margin-bottom:32px}
+
+/* SCALE */
+.scale-card{
+  background:var(--card-bg);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+  border-radius:24px;padding:22px;border:.5px solid var(--card-border);
+}
+.scale-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px}
+.scale-num{font-size:56px;font-weight:500;color:var(--ink);line-height:1;letter-spacing:-2px}
+.scale-desc{font-size:13px;color:var(--muted);font-weight:500;margin-top:6px}
+.scale-slider{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;outline:none;margin:0;padding:0}
+.scale-slider::-webkit-slider-runnable-track{height:44px;background:rgba(255,255,255,.55);border-radius:22px;border:.5px solid rgba(255,255,255,.85)}
+.scale-slider::-moz-range-track{height:44px;background:rgba(255,255,255,.55);border-radius:22px;border:.5px solid rgba(255,255,255,.85)}
+.scale-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:34px;height:34px;border-radius:50%;
+  background:#FFE4D0;border:.5px solid rgba(74,27,12,.3);margin-top:5px;cursor:grab;
+  box-shadow:inset 0 0 0 10px var(--cta);
+}
+.scale-slider::-moz-range-thumb{
+  width:34px;height:34px;border-radius:50%;background:#FFE4D0;border:.5px solid rgba(74,27,12,.3);
+  box-shadow:inset 0 0 0 10px var(--cta);
+}
+.scale-ends{display:flex;justify-content:space-between;margin-top:12px;padding:0 4px;font-size:12px;color:var(--muted);opacity:.7}
+
+/* CHOICE */
+.chips{display:flex;flex-direction:column;gap:12px}
+.chip{
+  background:var(--card-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border-radius:20px;padding:18px 22px;border:.5px solid var(--card-border);
+  display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+  transition:all .15s;
+}
+.chip:active{transform:scale(.98)}
+.chip.selected{background:var(--cta);border-color:var(--cta)}
+.chip-label{font-size:17px;font-weight:500;color:var(--ink);text-transform:capitalize}
+.chip.selected .chip-label{color:var(--cta-text)}
+.chip-side{font-size:13px;color:var(--muted);opacity:.75}
+.chip.selected .chip-side{color:var(--cta-text);opacity:.8}
+
+/* NUMERIC */
+.num-card{
+  background:var(--card-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border-radius:22px;padding:28px;border:.5px solid var(--card-border);text-align:center;margin-bottom:16px;
+}
+.num-big{font-size:60px;font-weight:500;color:var(--ink);line-height:1;letter-spacing:-2px;margin:0;font-variant-numeric:tabular-nums}
+.num-unit{font-size:14px;color:var(--muted);margin-top:4px}
+.num-hint{font-size:12px;color:var(--ink);opacity:.6;text-align:center;margin:8px 0 14px}
+.num-input-hidden{position:absolute;opacity:0;pointer-events:none}
+.quick-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.quick{
+  flex:1;min-width:52px;background:rgba(255,255,255,.5);border:.5px solid rgba(255,255,255,.7);
+  border-radius:14px;padding:12px 0;text-align:center;font-size:15px;color:var(--ink);font-weight:500;cursor:pointer;
+}
+.quick.active{background:var(--cta);color:var(--cta-text);border-color:var(--cta)}
+
+/* TEXT */
+.text-area{
+  width:100%;background:var(--card-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border:.5px solid var(--card-border);border-radius:22px;padding:20px;min-height:160px;
+  font-size:16px;color:var(--ink);font-family:inherit;resize:none;outline:none;
+}
+.text-area::placeholder{color:var(--muted);opacity:.55}
+.text-note{font-size:12px;color:var(--ink);opacity:.6;margin-top:14px;text-align:center}
+
+/* BUTTON + SKIP */
+.btn{
+  width:100%;background:var(--cta);color:var(--cta-text);border:0;padding:16px;
+  border-radius:18px;font-size:16px;font-weight:500;cursor:pointer;font-family:inherit;
+  margin-top:20px;transition:opacity .15s;
+}
+.btn:active{opacity:.85}
+.btn:disabled{opacity:.4}
+
+.skip-link{display:block;text-align:center;margin-top:16px;font-size:14px;color:var(--ink);opacity:.7;cursor:pointer;text-decoration:underline}
+
+.q-area{flex:1;display:flex;flex-direction:column;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.hidden{display:none}
+
+/* DONE */
+.done-card{
+  background:var(--card-bg);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  border-radius:28px;padding:28px 24px;border:.5px solid var(--card-border);text-align:center;margin-top:16px;
+}
+.check-circle{width:64px;height:64px;border-radius:50%;background:var(--cta);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.done-title{font-size:24px;font-weight:500;color:var(--ink);margin-bottom:8px;letter-spacing:-.3px}
+.done-sub{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.alys-bubble{
+  background:rgba(255,255,255,.7);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border:.5px solid rgba(255,255,255,.85);border-radius:18px 18px 18px 4px;
+  padding:14px 16px;text-align:left;margin-bottom:14px;
+}
+.alys-label{font-size:10px;color:var(--accent);font-weight:500;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px}
+.alys-text{font-size:14px;color:var(--ink);line-height:1.55;margin:0}
+
+.error-state{text-align:center;padding:40px 20px;color:var(--ink)}
+.error-state h2{font-size:22px;margin-bottom:10px;font-weight:500}
+.error-state p{font-size:14px;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+
+<div class="wrap" id="wrap">
+  <div class="topbar" id="topbar">
+    <div class="icon-btn" id="btn-back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </div>
+    <div class="progress-track" id="progress"></div>
+  </div>
+
+  <div id="main"></div>
+</div>
+
+<script>
+const API = 'https://health-api.noti.au';
+const token = localStorage.getItem('noti_token');
+
+// Session ID comes from either the URL path (/checkin/:id) or ?session= query param
+const parts = location.pathname.split('/').filter(Boolean);
+// Match /health/checkin/:id → parts = ['health','checkin',':id']
+let sessionId = parts.length > 2 && parts[0] === 'health' && parts[1] === 'checkin' ? parts[2] : null;
+if (!sessionId) sessionId = new URLSearchParams(location.search).get('session');
+
+let session = null;        // { slot, sections: [...], ... }
+let questions = [];        // flat list
+let answers = {};          // { key: value }
+let step = 0;              // current index
+let scaleValue = 5;        // current slider value
+let numericValue = null;   // current numeric
+let currentChoice = null;  // current chosen value
+
+if (!sessionId) {
+  showError('No check-in ready', "You'll get a link by text when your next check-in is due.");
+} else {
+  loadSession();
+}
+
+async function loadSession() {
+  try {
+    const res = await fetch(API + '/session/' + sessionId);
+    if (!res.ok) throw new Error('bad session');
+    session = await res.json();
+    if (session.error) throw new Error(session.error);
+
+    // flatten sections back into questions for the one-at-a-time flow
+    questions = [];
+    for (const s of session.sections || []) {
+      for (const q of s.questions || []) questions.push(q);
+    }
+
+    if (session.slot === 'evening') document.body.classList.add('t-evening');
+    render();
+  } catch (e) {
+    showError('Could not load check-in', 'The link may have expired. Try the latest SMS, or come back later.');
+  }
+}
+
+function showError(title, body) {
+  document.getElementById('topbar').style.visibility = 'hidden';
+  document.getElementById('main').innerHTML =
+    `<div class="error-state"><h2>${title}</h2><p>${body}</p></div>`;
+}
+
+function render() {
+  renderProgress();
+  const q = questions[step];
+  if (!q) return renderDone();
+
+  const pg = `${session.slot === 'morning' ? 'Morning' : 'Evening'} · question ${step+1} of ${questions.length}`;
+  let html = `<div class="q-area">`;
+  html += `<p class="pg-label">${pg}</p>`;
+  html += `<h1 class="qtext">${escape(q.question)}</h1>`;
+
+  if (q.type === 'scale')   html += renderScale(q);
+  else if (q.type === 'choice')  html += renderChoice(q);
+  else if (q.type === 'numeric') html += renderNumeric(q);
+  else html += renderText(q);
+
+  html += `<a class="skip-link" id="skip">Skip this one</a>`;
+  html += `</div>`;
+
+  document.getElementById('main').innerHTML = html;
+  attachHandlers(q);
+}
+
+function renderProgress() {
+  const track = document.getElementById('progress');
+  track.innerHTML = questions.map((_, i) => {
+    if (i < step) return '<div class="seg done"></div>';
+    if (i === step) return '<div class="seg cur"></div>';
+    return '<div class="seg"></div>';
+  }).join('');
+}
+
+// ── SCALE ────────────────────────────────────────────────
+const scaleDescriptors = [
+  'rough','rough','tough','tough',
+  'okay','okay','pretty good','pretty good',
+  'bright','bright','bright'
+];
+function renderScale(q) {
+  scaleValue = answers[q.key] != null ? Number(answers[q.key]) : 5;
+  return `
+    <div class="scale-card">
+      <div class="scale-row">
+        <div>
+          <div class="scale-num" id="scale-num">${scaleValue}</div>
+          <div class="scale-desc" id="scale-desc">${scaleDescriptors[scaleValue]}</div>
+        </div>
+      </div>
+      <input type="range" min="0" max="10" step="1" value="${scaleValue}" class="scale-slider" id="scale" />
+      <div class="scale-ends"><span>rough</span><span>bright</span></div>
+      <button class="btn" id="next">Next</button>
+    </div>
+  `;
+}
+
+// ── CHOICE ───────────────────────────────────────────────
+const choiceSubtitles = {
+  'low':'not much','okay':'got by','good':'on top of it',
+  'none':'none at all','mild':'a little','moderate':'noticeable','rough':'heavy','strong':'strong',
+  'no':'no','yes':'yes','a_little':'a little','most_of_day':'most of the day',
+  'normal':'normal','very_low':'very low','somewhat':'somewhat','a_bit':'a bit','some':'some',
+  'poor':'poor','light':'light','heavy':'heavy','medium':'medium',
+  'today':'today','yesterday':'yesterday','earlier':'earlier','better':'better','same':'same','worse':'worse',
+  'dull':'dull','throbbing':'throbbing','sharp':'sharp','visual':'visual','pressure':'pressure','fatigue':'fatigue','other':'other',
+  'helped':'it helped','not_helped':"didn't help",'almost':'almost','bloating':'bloating','cramps':'cramps','low_mood':'low mood',
+  'period':'period','pre_period':'pre-period','mid_cycle':'mid-cycle','unsure':'unsure',
+  'female':'female','male':'male','prefer_not':'prefer not to say',
+  'sweet':'sweet','salty':'salty','high':'high','high':'high','enjoyment':'enjoyment',
+  'mood':'mood','health':'health','migraines':'migraines','pots':'POTS','weight':'weight','depression':'depression','cycle':'cycle'
+};
+function renderChoice(q) {
+  const opts = q.options || [];
+  currentChoice = answers[q.key] || null;
+  const chips = opts.map(o => {
+    const sub = choiceSubtitles[o] || '';
+    const sel = currentChoice === o ? ' selected' : '';
+    return `<div class="chip${sel}" data-value="${o}">
+      <span class="chip-label">${o.replace(/_/g,' ')}</span>
+      ${sub ? `<span class="chip-side">${sub}</span>` : ''}
+    </div>`;
+  }).join('');
+  return `<div class="chips">${chips}</div>`;
+}
+
+// ── NUMERIC ──────────────────────────────────────────────
+function quickPicks(key) {
+  if (key === 'sleep') return [5, 6, 6.5, 7, 8];
+  if (key === 'duration') return [1, 2, 4, 8, 12];
+  if (key === 'weight') return [];
+  return [];
+}
+function renderNumeric(q) {
+  numericValue = answers[q.key] != null ? Number(answers[q.key]) : null;
+  const picks = quickPicks(q.key);
+  const quickHTML = picks.length
+    ? `<div class="quick-row">${picks.map(n => `<div class="quick${numericValue===n?' active':''}" data-n="${n}">${n}</div>`).join('')}</div>`
+    : '';
+  const unit = q.key === 'sleep' ? 'hours' : q.key === 'duration' ? 'hours' : q.key === 'weight' ? 'kg' : '';
+  return `
+    <div class="num-card" id="num-card">
+      <div class="num-big" id="num-big">${numericValue != null ? numericValue : '—'}</div>
+      ${unit ? `<div class="num-unit">${unit}</div>` : ''}
+    </div>
+    <p class="num-hint">roughly is fine · tap to type</p>
+    ${quickHTML}
+    <input type="number" step="0.1" class="num-input-hidden" id="num-input" />
+    <button class="btn" id="next">Next</button>
+  `;
+}
+
+// ── TEXT ─────────────────────────────────────────────────
+function renderText(q) {
+  const val = answers[q.key] || '';
+  const placeholderMap = {
+    migraine_trigger: "Heat, probably. Long day standing and I forgot to drink much…",
+    pots_trigger:     "Stood up too fast from the couch.",
+    warning:          "Visual flickers in my peripheral, same as before.",
+    weight_notes:     "Bit bloated, period coming.",
+    extra_info:       "Anything you'd like me to know…",
+    goal:             "What you're hoping to understand…",
+    focus:            "What matters most to you right now…"
+  };
+  const ph = placeholderMap[q.key] || 'Type anything… or skip';
+  return `
+    <textarea class="text-area" id="text" placeholder="${ph}">${escape(val)}</textarea>
+    <p class="text-note">Optional · type anything, or skip</p>
+    <button class="btn" id="next">Next</button>
+  `;
+}
+
+// ── HANDLERS ─────────────────────────────────────────────
+function attachHandlers(q) {
+  document.getElementById('skip').onclick = () => advance(q, null, true);
+
+  if (q.type === 'scale') {
+    const slider = document.getElementById('scale');
+    slider.oninput = () => {
+      scaleValue = Number(slider.value);
+      document.getElementById('scale-num').textContent = scaleValue;
+      document.getElementById('scale-desc').textContent = scaleDescriptors[scaleValue];
+    };
+    document.getElementById('next').onclick = () => advance(q, scaleValue, false);
+  }
+
+  if (q.type === 'choice') {
+    document.querySelectorAll('.chip').forEach(el => {
+      el.onclick = () => {
+        const v = el.dataset.value;
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        setTimeout(() => advance(q, v, false), 180);
+      };
+    });
+  }
+
+  if (q.type === 'numeric') {
+    const numBig = document.getElementById('num-big');
+    const input  = document.getElementById('num-input');
+    document.querySelectorAll('.quick').forEach(el => {
+      el.onclick = () => {
+        numericValue = Number(el.dataset.n);
+        numBig.textContent = numericValue;
+        document.querySelectorAll('.quick').forEach(q => q.classList.remove('active'));
+        el.classList.add('active');
+      };
+    });
+    document.getElementById('num-card').onclick = () => {
+      input.value = numericValue != null ? numericValue : '';
+      input.focus();
+    };
+    input.oninput = () => {
+      const v = input.value;
+      if (v === '') { numBig.textContent = '—'; numericValue = null; return; }
+      numericValue = Number(v);
+      if (!isNaN(numericValue)) numBig.textContent = numericValue;
+    };
+    input.onblur = () => { /* keep value */ };
+    document.getElementById('next').onclick = () => {
+      if (numericValue == null || isNaN(numericValue)) return;
+      advance(q, numericValue, false);
+    };
+  }
+
+  if (q.type === 'text') {
+    document.getElementById('next').onclick = () => {
+      const v = document.getElementById('text').value.trim();
+      advance(q, v || null, !v);
+    };
+  }
+
+  document.getElementById('btn-back').onclick = () => {
+    if (step === 0) { location.href = '/health/home'; return; }
+    step--; render();
+  };
+}
+
+// ── ADVANCE ──────────────────────────────────────────────
+async function advance(q, value, skipped) {
+  // Save answer (null if skipped)
+  const toSend = skipped ? null : value;
+  answers[q.key] = toSend;
+
+  // POST to backend (don't await — let it run in the background)
+  fetch(API + '/session/' + sessionId + '/answer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: q.key, value: toSend })
+  }).catch(() => {});
+
+  step++;
+  if (step >= questions.length) return complete();
+  render();
+}
+
+async function complete() {
+  document.getElementById('topbar').innerHTML = `<div class="progress-track">${
+    questions.map(() => '<div class="seg done"></div>').join('')
+  }</div>`;
+  document.getElementById('main').innerHTML = `
+    <div class="done-card">
+      <div class="check-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--cta-text)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h2 class="done-title">All logged${session?.user?.name ? ', ' + session.user.name.split(' ')[0] : ''}</h2>
+      <p class="done-sub">Thanks for taking the time.</p>
+      <div class="alys-bubble" id="alys-box" style="display:none">
+        <p class="alys-label">Alys</p>
+        <p class="alys-text" id="alys-text"></p>
+      </div>
+      <button class="btn" onclick="location.href='/health/home'">Back to home</button>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(API + '/session/' + sessionId + '/complete', { method: 'POST' });
+    const data = await res.json();
+    if (data.reply) {
+      document.getElementById('alys-text').textContent = data.reply;
+      document.getElementById('alys-box').style.display = 'block';
+    }
+  } catch (e) { /* quietly swallow */ }
+}
+
+// ── UTIL ─────────────────────────────────────────────────
+function escape(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+</script>
+<script src="/health/push-client.js"></script>
+</body>
+</html>

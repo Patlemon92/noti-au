@@ -210,10 +210,22 @@ if (!token || !user) { location.href = '/health/login'; }
 
 // ── Time-of-day theming ──────────────────────────────────
 function timeOfDay() {
-  const h = new Date().getHours();
-  if (h >= 5 && h < 10)  return 'sunrise';
-  if (h >= 10 && h < 15) return 'midday';
-  if (h >= 15 && h < 20) return 'evening';
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const current = h * 60 + m;
+
+  const parseHm = (hm) => {
+    if (!hm) return null;
+    const [hh, mm] = hm.split(':').map(Number);
+    return hh * 60 + (mm || 0);
+  };
+  const morningMins = parseHm((user.morningTime || '07:30').slice(0,5));
+  const eveningMins = parseHm((user.eveningTime || '20:30').slice(0,5));
+
+  if (current >= 5 * 60 && current < (morningMins + 60))        return 'sunrise';
+  if (current >= (morningMins + 60) && current < 15 * 60)       return 'midday';
+  if (current >= 15 * 60 && current < (eveningMins + 60))       return 'evening';
   return 'night';
 }
 const tod = timeOfDay();

@@ -16,9 +16,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+html{min-height:100%;}body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
 body{
-  min-height:100dvh;overflow-x:hidden;position:relative;color:var(--ink);
+  min-height:100dvh;background-attachment:fixed;overflow-x:hidden;position:relative;color:var(--ink);
   background:var(--bg);transition:background .6s ease;
 }
 :root{
@@ -151,6 +151,10 @@ body{
 .error-state{text-align:center;padding:40px 20px;color:var(--ink)}
 .error-state h2{font-size:22px;margin-bottom:10px;font-weight:500}
 .error-state p{font-size:14px;color:var(--muted);line-height:1.5}
+
+.nav-item{position:relative}
+.nav-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E9533E;border:2px solid rgba(255,255,255,.95);display:none}
+.nav-item.has-unread .nav-dot{display:block}
 </style>
 </head>
 <body>
@@ -169,7 +173,7 @@ body{
 </div>
 
 <script>
-const API = 'https://noti-health-api.ancient-bread-01fe.workers.dev';
+const API = 'https://health-api.noti.au';
 const token = localStorage.getItem('noti_token');
 
 // Session ID comes from either the URL path (/checkin/:id) or ?session= query param
@@ -467,6 +471,6 @@ function escape(s) {
   }[c]));
 }
 </script>
-
+<script src="/health/push-client.js"></script>
 </body>
 </html>

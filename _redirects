@@ -1,6 +1,6 @@
 # ─── Noti Health (rely on Cloudflare's auto .html serving) ─────────────
 /health                     /health/start.html                     200
-/health/checkin/:id         /health/checkin.html?session=:id       200
+/health/checkin/:id         /health/checkin?session=:id       200
 /health/sw.js               /health/sw-health.js                   200
 /health/manifest.json       /health/manifest-health.json           200
 

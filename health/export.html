@@ -16,9 +16,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Crimson+Pro:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+html{min-height:100%;}body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
 body{
-  min-height:100dvh;overflow-x:hidden;position:relative;color:#4A1B0C;
+  min-height:100dvh;background-attachment:fixed;overflow-x:hidden;position:relative;color:#4A1B0C;
   background:linear-gradient(160deg,#FFF5EF 0%,#F5E4D8 40%,#E8D4C2 100%);
 }
 .blob{position:absolute;border-radius:50%;pointer-events:none;z-index:0}
@@ -83,6 +83,10 @@ h1{font-size:24px;font-weight:500;color:#4A1B0C;margin:0 0 4px;letter-spacing:-.
 }
 .export-btn svg{stroke:#FFE4D0}
 .export-sub{text-align:center;font-size:12px;color:#712B13;opacity:.75;margin:0}
+
+.nav-item{position:relative}
+.nav-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E9533E;border:2px solid rgba(255,255,255,.95);display:none}
+.nav-item.has-unread .nav-dot{display:block}
 </style>
 </head>
 <body>
@@ -151,7 +155,7 @@ h1{font-size:24px;font-weight:500;color:#4A1B0C;margin:0 0 4px;letter-spacing:-.
 </div>
 
 <script>
-const API = 'https://noti-health-api.ancient-bread-01fe.workers.dev';
+const API = 'https://health-api.noti.au';
 const token = localStorage.getItem('noti_token');
 const user = JSON.parse(localStorage.getItem('noti_user') || 'null');
 if (!token || !user) location.href = '/health/login';
@@ -293,6 +297,6 @@ document.getElementById('btn-export').onclick = async () => {
 
 init();
 </script>
-
+<script src="/health/push-client.js"></script>
 </body>
 </html>

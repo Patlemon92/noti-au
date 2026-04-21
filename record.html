@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="theme-color" content="#D85A30" />
+<link rel="manifest" href="/health/manifest.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Noti" />
+
+<title>Noti · Your record</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+body{
+  min-height:100dvh;overflow-x:hidden;position:relative;color:#4A1B0C;
+  background:linear-gradient(160deg,#FFF5EF 0%,#F5E4D8 40%,#E8D4C2 100%);
+}
+.blob{position:absolute;border-radius:50%;pointer-events:none;z-index:0}
+.b1{top:-60px;right:-80px;width:200px;height:200px;background:radial-gradient(circle at 30% 30%,#FFF5EF,#F5E4D8);opacity:.9}
+
+.wrap{position:relative;z-index:2;padding:24px 22px 110px;max-width:480px;margin:0 auto}
+
+.topbar{display:flex;align-items:center;margin-bottom:22px}
+.back{
+  width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.7);
+  border:.5px solid rgba(74,27,12,.1);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+
+.pg-label{font-size:11px;font-weight:500;color:#993C1D;letter-spacing:1.5px;text-transform:uppercase;margin:0 0 4px}
+h1{font-size:26px;font-weight:500;color:#4A1B0C;margin:0 0 22px;letter-spacing:-.3px}
+
+.range-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.range-chip{
+  background:rgba(255,255,255,.7);border:.5px solid rgba(74,27,12,.12);
+  border-radius:12px;padding:10px 0;text-align:center;font-size:13px;color:#4A1B0C;font-weight:500;cursor:pointer;
+}
+.range-chip.active{background:#4A1B0C;color:#FFE4D0;border-color:#4A1B0C}
+
+.export-btn{
+  width:100%;background:#4A1B0C;color:#FFE4D0;border:0;padding:14px;border-radius:16px;
+  font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;
+}
+.export-btn:active{opacity:.9}
+.export-btn svg{stroke:#FFE4D0}
+
+.card{
+  background:rgba(255,255,255,.75);border:.5px solid rgba(74,27,12,.1);
+  border-radius:18px;padding:16px;margin-bottom:12px;
+}
+.card-label{font-size:11px;font-weight:500;color:#993C1D;letter-spacing:1.2px;text-transform:uppercase;margin:0 0 12px}
+
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{}
+.stat p:first-child{font-size:11px;color:#712B13;margin:0 0 2px}
+.stat p:last-child{font-size:18px;font-weight:500;color:#4A1B0C;margin:0;font-variant-numeric:tabular-nums}
+
+.pattern{font-size:13px;color:#4A1B0C;margin:0 0 8px;line-height:1.5;padding-left:14px;position:relative}
+.pattern::before{content:'';position:absolute;left:0;top:8px;width:5px;height:5px;background:#993C1D;border-radius:50%}
+.pattern:last-child{margin-bottom:0}
+
+.log-link{font-size:13px;color:#712B13;margin:0;line-height:1.5}
+
+.empty{color:#712B13;font-size:13px;line-height:1.5;margin:0}
+
+.nav{
+  position:fixed;bottom:16px;left:16px;right:16px;max-width:448px;margin:0 auto;
+  background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+  border-radius:24px;padding:12px 20px;
+  display:flex;justify-content:space-around;align-items:center;z-index:10;
+  border:.5px solid rgba(74,27,12,.1);
+}
+.nav-item{width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:14px;transition:background .15s}
+.nav-item svg{stroke:#993C1D;opacity:.7}
+.nav-item.active{background:#4A1B0C}
+.nav-item.active svg{stroke:#FFE4D0;opacity:1}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="back" onclick="location.href='/health/home'">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A1B0C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </div>
+  </div>
+
+  <p class="pg-label">Your record</p>
+  <h1 id="title">Last 30 days</h1>
+
+  <div class="range-chips">
+    <div class="range-chip" data-days="7">7 days</div>
+    <div class="range-chip active" data-days="30">30 days</div>
+    <div class="range-chip" data-days="90">90 days</div>
+  </div>
+
+  <button class="export-btn" onclick="location.href='/health/export'">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+    Export PDF for specialist
+  </button>
+
+  <div class="card">
+    <p class="card-label">Summary</p>
+    <div class="stat-grid" id="summary-grid">
+      <div class="stat"><p>Check-ins</p><p id="s-checkins">—</p></div>
+      <div class="stat"><p>Avg sleep</p><p id="s-sleep">—</p></div>
+      <div class="stat"><p>Avg mood</p><p id="s-mood">—</p></div>
+      <div class="stat"><p>Headache days</p><p id="s-headaches">—</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="card-label">Patterns Alys noticed</p>
+    <div id="patterns-list"><p class="empty">Building up a picture. Check back after a few more check-ins.</p></div>
+  </div>
+
+  <div class="card">
+    <p class="card-label">Daily log</p>
+    <p class="log-link" id="log-count">—</p>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-item" onclick="location.href='/health/home'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+  </div>
+  <div class="nav-item" onclick="location.href='/health/alys'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+  </div>
+  <div class="nav-item active">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+  </div>
+  <div class="nav-item" onclick="location.href='/health/profile'">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+  </div>
+</div>
+
+<script>
+const API = 'https://health-api.noti.au';
+const token = localStorage.getItem('noti_token');
+if (!token) { location.href = '/health/login'; }
+
+let days = 30;
+
+document.querySelectorAll('.range-chip').forEach(chip => {
+  chip.onclick = () => {
+    days = Number(chip.dataset.days);
+    document.querySelectorAll('.range-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    document.getElementById('title').textContent = `Last ${days} days`;
+    load();
+  };
+});
+
+async function load() {
+  try {
+    const [patternsRes, checkinsRes] = await Promise.all([
+      fetch(API + `/me/patterns?days=${days}`, { headers: { 'Authorization': 'Bearer ' + token }}),
+      fetch(API + `/me/checkins?days=${days}`, { headers: { 'Authorization': 'Bearer ' + token }})
+    ]);
+    const patterns = await patternsRes.json();
+    const checkins = await checkinsRes.json();
+
+    renderSummary(patterns, checkins);
+    renderPatterns(patterns);
+    const count = (checkins.checkins || []).length;
+    document.getElementById('log-count').textContent =
+      count === 0 ? 'No check-ins in this range yet.' : `${count} check-ins · tap to view the day-by-day log`;
+  } catch (e) {
+    document.getElementById('patterns-list').innerHTML =
+      `<p class="empty">Couldn't load your record. Try again in a moment.</p>`;
+  }
+}
+
+function renderSummary(patterns, checkins) {
+  const a = (patterns.patterns && patterns.patterns.averages) || {};
+  const rows = (checkins.checkins || []);
+  const headacheDays = rows.filter(r => r.slot === 'evening' && r.answers && r.answers.headache != null && Number(r.answers.headache) > 0).length;
+
+  document.getElementById('s-checkins').textContent = `${rows.length} / ${days}`;
+  if (a.sleep != null)  document.getElementById('s-sleep').textContent = a.sleep.toFixed(1) + ' h';
+  if (a.mood != null)   document.getElementById('s-mood').textContent = a.mood.toFixed(1) + ' / 10';
+  document.getElementById('s-headaches').textContent = headacheDays;
+}
+
+function renderPatterns(patterns) {
+  const el = document.getElementById('patterns-list');
+  const p = patterns.patterns || {};
+  const lines = [];
+
+  // Derived sentences from the pattern engine output
+  for (const c of (p.comparisons || [])) {
+    if (c.label === 'sleep_vs_headache' && c.low_sleep_avg_headache != null) {
+      lines.push(`Headaches were heavier on nights under 6 hours of sleep (avg ${c.low_sleep_avg_headache} vs ${c.better_sleep_avg_headache}).`);
+    }
+    if (c.label === 'morning_vs_evening_mood') {
+      lines.push(`Evening mood was higher than morning mood on ${c.evening_higher_on} of ${c.of_paired_days} paired days.`);
+    }
+    if (c.label === 'hydration_vs_headache' && c.rows && c.rows.length) {
+      const low = c.rows.find(r => r.choice === 'low');
+      const good = c.rows.find(r => r.choice === 'good');
+      if (low && good) lines.push(`Headaches ran higher on low-hydration days (avg ${low.avg_headache}) than good-hydration days (avg ${good.avg_headache}).`);
+    }
+  }
+
+  if (p.top_triggers && p.top_triggers.length) {
+    const top = p.top_triggers.slice(0,3).map(t => `${t.trigger} (${t.count})`).join(', ');
+    lines.push(`Top self-reported triggers: ${top}.`);
+  }
+
+  if (!lines.length) {
+    el.innerHTML = `<p class="empty">Building up a picture. Check back after a few more check-ins.</p>`;
+    return;
+  }
+  el.innerHTML = lines.map(l => `<p class="pattern">${escape(l)}</p>`).join('');
+}
+
+function escape(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+load();
+</script>
+<script src="/health/push-client.js"></script>
+</body>
+</html>

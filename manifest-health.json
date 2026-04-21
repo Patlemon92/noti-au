@@ -1,0 +1,25 @@
+{
+  "name": "Noti Health",
+  "short_name": "Noti",
+  "description": "A daily companion for people living with chronic illness.",
+  "start_url": "/health/home",
+  "scope": "/health/",
+  "display": "standalone",
+  "background_color": "#FFE8C7",
+  "theme_color": "#D85A30",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/health/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/health/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

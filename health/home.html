@@ -16,11 +16,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
-body{
+html{min-height:100%}
+body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
   min-height:100dvh;overflow-x:hidden;position:relative;
   color:var(--ink);
   background:var(--bg);
+  background-attachment:fixed;
   transition:background .6s ease;
 }
 :root{
@@ -135,6 +136,42 @@ body{
 .push-btn-ghost{flex:0 0 auto;background:transparent;color:var(--ink);border:.5px solid var(--card-border);padding:11px 16px;border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;opacity:.75}
 .push-banner.success{border-color:rgba(34,139,34,.3)}
 .push-banner.success .push-banner-label{color:#1F7A3E}
+
+/* ── Quick Log form (midday) ─────────────────── */
+.qlog{display:none;margin-top:18px}
+.qlog.open{display:block}
+.qlog-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.qlog-opt{
+  padding:14px 10px;border-radius:14px;font-size:14px;font-weight:500;
+  background:var(--mini-bg);color:var(--ink);border:.5px solid var(--mini-border);
+  cursor:pointer;transition:all .15s;font-family:inherit;
+}
+.qlog-opt:active{transform:scale(.98)}
+.qlog-opt.selected{background:var(--cta);color:var(--cta-text);border-color:var(--cta)}
+.qlog-text{
+  width:100%;min-height:80px;resize:vertical;
+  background:var(--mini-bg);color:var(--ink);border:.5px solid var(--mini-border);
+  border-radius:14px;padding:12px;font-size:14px;font-family:inherit;
+  margin-bottom:12px;outline:none;
+}
+.qlog-text::placeholder{color:var(--muted);opacity:.7}
+.qlog-reply{
+  padding:14px;border-radius:14px;background:var(--mini-bg);
+  border:.5px solid var(--mini-border);font-size:14px;line-height:1.5;
+  color:var(--ink);margin-top:8px;
+}
+.qlog-reply-label{font-size:11px;font-weight:500;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+
+/* ── Unread dot on Alys nav item ─────────── */
+.nav-item{position:relative}
+.nav-dot{
+  position:absolute;top:8px;right:8px;
+  width:8px;height:8px;border-radius:50%;background:#E9533E;
+  border:2px solid rgba(255,255,255,.95);
+  display:none;
+}
+.t-night .nav-dot{border-color:rgba(255,255,255,.2)}
+.nav-item.has-unread .nav-dot{display:block}
 </style>
 </head>
 <body>
@@ -162,6 +199,22 @@ body{
     <p class="cta-title" id="cta-title">Ready when you are</p>
     <p class="cta-sub" id="cta-sub">A few quick things so I can see how today is going.</p>
     <button class="btn" id="cta-btn" disabled>Loading…</button>
+
+    <!-- Quick Log form — expands in place when user taps Quick Log CTA -->
+    <div class="qlog" id="qlog">
+      <div class="qlog-grid">
+        <button type="button" class="qlog-opt" data-mood="good">Good</button>
+        <button type="button" class="qlog-opt" data-mood="ok">OK</button>
+        <button type="button" class="qlog-opt" data-mood="rough">Rough</button>
+        <button type="button" class="qlog-opt" data-mood="bad">Bad</button>
+      </div>
+      <textarea class="qlog-text" id="qlog-text" placeholder="Anything else? (optional)"></textarea>
+      <button class="btn" id="qlog-submit" disabled>Pick how you're feeling</button>
+      <div class="qlog-reply hidden" id="qlog-reply">
+        <p class="qlog-reply-label">ALYS</p>
+        <p id="qlog-reply-body"></p>
+      </div>
+    </div>
   </div>
 
   <p class="skip hidden" id="skip"><a id="skip-link">Not today? Skip — I'll catch you later.</a></p>
@@ -190,8 +243,9 @@ body{
   <div class="nav-item active">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
   </div>
-  <div class="nav-item" onclick="location.href='/health/alys'">
+  <div class="nav-item" id="nav-alys" onclick="location.href='/health/alys'">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    <span class="nav-dot"></span>
   </div>
   <div class="nav-item" onclick="location.href='/health/record'">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
@@ -213,8 +267,11 @@ function timeOfDay() {
   const now = new Date();
   const h = now.getHours();
   const m = now.getMinutes();
-  const current = h * 60 + m;
+  const current = h * 60 + m;  // minutes since midnight
 
+  // Anchor transitions to the user's actual check-in schedule where sensible.
+  // Morning window: from 5am until 1h after their morning time (so late risers still see "morning")
+  // Evening window: from 3pm until 1h after their evening time (so late check-ins still look like "evening")
   const parseHm = (hm) => {
     if (!hm) return null;
     const [hh, mm] = hm.split(':').map(Number);
@@ -254,15 +311,15 @@ async function setupCTA() {
   const time = document.getElementById('cta-time');
   const skip = document.getElementById('skip');
 
-  // Midday: the app doesn't ask — offers the chat
+  // Midday: Quick Log — expands in place, not a redirect
   if (tod === 'midday') {
     tag.textContent = "How's the day going?";
-    title.textContent = 'Message Alys';
-    sub.textContent = "I'm here if anything comes up.";
-    time.textContent = '';
-    btn.textContent = 'Message Alys';
+    title.textContent = 'Quick check-in';
+    sub.textContent = "One tap, one line. I'll be here if there's more.";
+    time.textContent = '~30 sec';
+    btn.textContent = 'Quick log';
     btn.disabled = false;
-    btn.onclick = () => location.href = '/health/alys';
+    btn.onclick = openQuickLog;
     return;
   }
 
@@ -325,31 +382,133 @@ async function startCheckin() {
   }
 }
 
-// ── Mirror — last week's stats ──────────────────────────
+// ── Mirror — last week's stats, dynamic per user templates ──
+// Core stats shown to everyone
+const CORE_MIRROR = [
+  { label: 'Sleep',  get: (a) => a.sleep != null ? a.sleep.toFixed(1) + '<span class="mini-unit"> hrs avg</span>' : null },
+  { label: 'Mood',   get: (a) => a.mood  != null ? a.mood.toFixed(1)  + '<span class="mini-unit"> / 10</span>' : null }
+];
+
+// Template-specific stats — only shown if user tracks that template
+const TEMPLATE_MIRROR = {
+  anxiety:  { label: 'Anxiety',    get: (a) => a.anxiety  != null ? a.anxiety.toFixed(1)  + '<span class="mini-unit"> / 10</span>' : null },
+  fatigue:  { label: 'Fatigue',    get: (a) => a.fatigue  != null ? a.fatigue.toFixed(1)  + '<span class="mini-unit"> / 10</span>' : null },
+  fog:      { label: 'Brain fog',  get: (a) => a.fog      != null ? a.fog.toFixed(1)      + '<span class="mini-unit"> / 10</span>' : null },
+  pain:     { label: 'Pain',       get: (a) => a.pain     != null ? a.pain.toFixed(1)     + '<span class="mini-unit"> / 10</span>' : null },
+  weight:   { label: 'Weight',     get: (a) => a.weight   != null ? a.weight.toFixed(1)   + '<span class="mini-unit"> kg</span>' : null },
+  migraines:{ label: 'Headache',   get: (a) => a.headache != null ? a.headache.toFixed(1) + '<span class="mini-unit"> / 10</span>' : null },
+  pots:     { label: 'Heart rate', get: (a) => a.heart_rate != null ? Math.round(a.heart_rate) + '<span class="mini-unit"> bpm avg</span>' : null }
+};
+
 async function loadMirror() {
   try {
-    const res = await fetch(API + '/me/patterns?days=7', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const data = await res.json();
-    const avgs = (data.patterns && data.patterns.averages) || {};
+    const [meRes, patternsRes] = await Promise.all([
+      fetch(API + '/me',                   { headers: { 'Authorization': 'Bearer ' + token }}),
+      fetch(API + '/me/patterns?days=7',   { headers: { 'Authorization': 'Bearer ' + token }})
+    ]);
+    const me       = await meRes.json();
+    const data     = await patternsRes.json();
+    const avgs     = (data.patterns && data.patterns.averages) || {};
+    const templates = me.templates || [];
 
-    if (avgs.sleep != null) {
-      document.getElementById('m-sleep').innerHTML =
-        avgs.sleep.toFixed(1) + '<span class="mini-unit"> hrs avg</span>';
+    // Build the list of stats to show
+    const picks = [];
+    for (const stat of CORE_MIRROR) {
+      const v = stat.get(avgs);
+      if (v != null) picks.push({ label: stat.label, value: v });
     }
-    const morningMood = avgs.morning_mood;
-    if (morningMood != null) {
-      document.getElementById('m-morning').innerHTML =
-        morningMood.toFixed(1) + '<span class="mini-unit"> / 10</span>';
+    for (const t of templates) {
+      if (TEMPLATE_MIRROR[t]) {
+        const v = TEMPLATE_MIRROR[t].get(avgs);
+        if (v != null) picks.push({ label: TEMPLATE_MIRROR[t].label, value: v });
+      }
+    }
+    // Cap at 4 (2x2 grid looks best on mobile) and need at least 1 to render
+    const capped = picks.slice(0, 4);
+    const mirror = document.getElementById('mirror');
+    if (capped.length === 0) {
+      mirror.innerHTML = `<div class="mini" style="grid-column:span 2"><p class="mini-label">Your week</p><p class="mini-value" style="font-size:14px;opacity:.7">Do a couple more check-ins and patterns will start showing here.</p></div>`;
+    } else {
+      mirror.innerHTML = capped.map(s =>
+        `<div class="mini"><p class="mini-label">${s.label}</p><p class="mini-value">${s.value}</p></div>`
+      ).join('');
     }
   } catch (e) {
     // quietly ignore; the mirror is decorative
   }
 }
 
+// ── Quick Log — opens in place, submits via POST /me/note ──
+let qlogMood = null;
+function openQuickLog() {
+  const qlog = document.getElementById('qlog');
+  const btn  = document.getElementById('cta-btn');
+  qlog.classList.add('open');
+  btn.style.display = 'none';
+  // Focus first option for keyboard users
+  setTimeout(() => document.querySelector('.qlog-opt')?.focus(), 100);
+}
+
+document.querySelectorAll('.qlog-opt').forEach(opt => {
+  opt.onclick = () => {
+    document.querySelectorAll('.qlog-opt').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    qlogMood = opt.dataset.mood;
+    const submit = document.getElementById('qlog-submit');
+    submit.disabled = false;
+    submit.textContent = 'Send';
+  };
+});
+
+document.getElementById('qlog-submit').onclick = async () => {
+  if (!qlogMood) return;
+  const submit = document.getElementById('qlog-submit');
+  const text   = document.getElementById('qlog-text').value.trim();
+  submit.disabled = true;
+  submit.textContent = 'Sending…';
+  try {
+    const res = await fetch(API + '/me/note', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mood: qlogMood, body: text })
+    });
+    const data = await res.json();
+    if (data.success && data.note && data.note.alys_reply) {
+      // Lock the form, show Alys's reply
+      document.querySelectorAll('.qlog-opt').forEach(o => o.disabled = true);
+      document.getElementById('qlog-text').disabled = true;
+      submit.style.display = 'none';
+      document.getElementById('qlog-reply-body').textContent = data.note.alys_reply;
+      document.getElementById('qlog-reply').classList.remove('hidden');
+    } else {
+      submit.textContent = 'Try again';
+      submit.disabled = false;
+    }
+  } catch (e) {
+    submit.textContent = 'Try again';
+    submit.disabled = false;
+  }
+};
+
+// ── Unread indicator on Alys nav icon ────────────────────
+async function checkUnread() {
+  try {
+    const res = await fetch(API + '/me/unread-count', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    const navAlys = document.getElementById('nav-alys');
+    if (data.unread > 0) {
+      navAlys.classList.add('has-unread');
+    } else {
+      navAlys.classList.remove('has-unread');
+    }
+  } catch (e) { /* silent */ }
+}
+
 setupCTA();
 loadMirror();
+checkUnread();
 
 // ── Record / profile quick-access via topbar icons ──────
 document.getElementById('btn-record').onclick = () => location.href = '/health/record';

@@ -693,10 +693,6 @@ if (!jobId && parts[0] === "job") { jobId = parts[1] || ""; token = parts[2] || 
 
 let _data = null;
 
-// ─── HELPERS ──────────────────────────────────────────────
-const esc = v => String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-const fmt = v => String(v||"").trim();
-const ini = n => (n||"?").trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
 const tag = document.getElementById("topTag");
 
 // ─── API ──────────────────────────────────────────────────
@@ -765,18 +761,18 @@ function showCustomer(d) {
   const loc   = [job.suburb, job.postcode].filter(Boolean).join(" · ");
 
   if (stage === "NEW" || stage === "DRAFT")       return showConfirm(job, loc, d.returning === true);
-  if (stage === "AWAITING_CUSTOMER")               return showOffer(job, d.tradie, loc);
+  if (stage === "AWAITING_CUSTOMER")               return showOfferCards(job, d.quote_cards||[], loc);
   if (stage === "ACCEPTED" || stage === "CLOSED")  return showAccepted(job, d.tradie, d.allow_rating, loc);
-  if (stage === "QUOTE_LOCKED")                    return showQuotes(job, d.quote_cards||[], loc);
+  if (stage === "QUOTE_LOCKED")                    return showQuoteCards(job, d.quote_cards||[], loc);
   showWaiting(job, stage, loc);
 }
 
-// Confirm
+// ── CONFIRM ───────────────────────────────────────────────
 function showConfirm(job, loc, returning) {
   render(`
     ${heroHtml("Your job", job.description || "New job", loc, "NEW")}
     <div class="section animate d1">
-      ${returning ? '<div class="notice hi" style="margin-bottom:16px;border-left:3px solid var(--orange);padding:12px 14px;background:#FEF6E9;color:#7A4A00;font-size:13px;font-weight:600;">Your details are pre-filled from last time</div>' : ""}
+      ${returning ? '<div class="notice hi" style="margin-bottom:16px;">Your details are pre-filled from last time.</div>' : ""}
       <div class="section-label">Confirm details</div>
       <div class="field">
         <label class="field-label">Your name</label>
@@ -800,6 +796,18 @@ function showConfirm(job, loc, returning) {
         <label class="field-label">Address</label>
         <input id="cAddr" value="${esc(job.address||"")}" placeholder="42 Smith Street" />
       </div>
+      <div class="field" style="margin-top:20px;">
+        <label class="field-label">Photos (optional)</label>
+        <div class="photo-row" id="photoRow">
+          ${[1,2,3].map(i => `
+            <div class="photo-slot" id="slot${i}">
+              <input type="file" class="photo-input" data-index="${i}" accept="image/*" ${i>1?'disabled':''} capture="environment" />
+              <div class="photo-plus">+</div>
+              <button class="photo-remove" data-index="${i}" type="button">✕</button>
+            </div>`).join('')}
+        </div>
+        <div class="photo-hint">Add photos to help the tradie understand the job</div>
+      </div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
     <div class="btn-wrap animate d2">
@@ -807,10 +815,14 @@ function showConfirm(job, loc, returning) {
     </div>
   `);
 
-  if (document.getElementById('photoRow')) initPhotoUpload();
+  // Initialise photo upload slots
+  initPhotoUpload();
 
   get("submitBtn").onclick = async () => {
     const btn = get("submitBtn"), n = get("nWrap");
+    if (!get("cName").value.trim())   { note(n,"Please enter your name.","err"); return; }
+    if (!get("cAddr").value.trim())   { note(n,"Please enter your address.","err"); return; }
+    if (!get("cSuburb").value.trim()) { note(n,"Please enter your suburb.","err"); return; }
     disable(btn, "Sending...");
     try {
       const r1 = await api({ action:"update_job", name:get("cName").value, description:get("cDesc").value, suburb:get("cSuburb").value, postcode:get("cPostcode").value, address:get("cAddr").value });
@@ -823,8 +835,15 @@ function showConfirm(job, loc, returning) {
   };
 }
 
-// Waiting
+// ── WAITING ───────────────────────────────────────────────
 function showWaiting(job, stage, loc) {
+  const windowMins = job.job_type === "QUOTE" ? 60 : 10;
+  const createdAt  = job.created_at ? new Date(job.created_at).getTime() : Date.now();
+  const expiresAt  = createdAt + (windowMins * 60 * 1000);
+  const secsLeft   = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+  const mins       = Math.floor(secsLeft / 60);
+  const secs       = String(secsLeft % 60).padStart(2, '0');
+
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, stage)}
     <div class="waiting-block animate d1">
@@ -832,64 +851,126 @@ function showWaiting(job, stage, loc) {
         <div class="waiting-icon-dot"></div>
       </div>
       <div class="waiting-title">Finding tradies nearby</div>
-      <div class="waiting-sub">Tradies in your area are being notified.<br>You'll get an SMS as soon as one responds.</div>
+      <div class="waiting-sub">Tradies in your area are being notified.<br>You will get an SMS as soon as one responds.</div>
+      ${secsLeft > 0 ? `
+      <div style="margin-top:24px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Responses close in</div>
+      <div id="custCountdown" style="font-size:40px;font-weight:800;letter-spacing:-0.04em;color:var(--orange);margin-top:4px;">${mins}:${secs}</div>` : ''}
     </div>
   `);
+
+  // Countdown for customer
+  if (secsLeft > 0) {
+    let s = secsLeft;
+    const tick = setInterval(() => {
+      s--;
+      const el = document.getElementById('custCountdown');
+      if (!el) { clearInterval(tick); return; }
+      if (s <= 0) { el.textContent = '0:00'; clearInterval(tick); load(); return; }
+      el.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+    }, 1000);
+  }
+
+  // Auto-refresh every 15 seconds while waiting
+  setTimeout(() => { if (_data && _data.stage === stage) load(); }, 15000);
 }
 
-// Offer
-function showOffer(job, tradie, loc) {
-  const name  = tradie ? fmt(tradie.name) : "Tradie";
-  const price = job.price ? "$" + fmt(job.price) : "—";
-  const eta   = fmt(job.eta) || "ASAP";
+// ── OFFER CARDS — JOB type ────────────────────────────────
+// Customer sees all responding tradies as cards and picks one
+function showOfferCards(job, cards, loc) {
+  const hasCards = cards && cards.length > 0;
+
+  const cardHtml = hasCards ? cards.map((c, i) => {
+    const isPremium  = c.premium && c.verified;
+    const initials   = ini(c.name);
+    const price      = c.price  ? `$${esc(String(c.price))}` : '—';
+    const eta        = c.eta    ? esc(c.eta) : 'ASAP';
+    const rating     = c.rating ? `${parseFloat(c.rating).toFixed(1)} ★` : '';
+
+    return `
+      <div class="quote-item${isPremium ? ' premium-card' : ''}" style="${isPremium ? 'border:2px solid var(--orange);background:#FFFBF4;' : ''}">
+        ${isPremium ? `<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--orange);margin-bottom:8px;">Verified Premium</div>` : ''}
+        <div style="display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;">
+          <div class="quote-initial" style="${isPremium ? 'background:var(--orange);color:var(--black);' : ''}">${initials}</div>
+          <div>
+            <div class="quote-name">${esc(c.name)}</div>
+            ${rating ? `<div class="quote-eta">${rating}</div>` : ''}
+            <div class="quote-eta">${eta}</div>
+          </div>
+          <div class="quote-price">${price}</div>
+        </div>
+        <div id="nWrap${i}" style="margin-top:8px;"></div>
+        <button class="btn btn-black" style="margin-top:12px;padding:14px;" onclick="acceptTradie('${esc(c.tradie_id)}',${i})">Choose this tradie</button>
+      </div>`;
+  }).join('') : `
+    <div class="waiting-block">
+      <div class="waiting-icon"><div class="waiting-icon-dot"></div></div>
+      <div class="waiting-title">Waiting for responses</div>
+      <div class="waiting-sub">Tradies are reviewing your job.<br>This page will update automatically.</div>
+    </div>`;
 
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, "AWAITING_CUSTOMER")}
     <div class="section animate d1">
-      <div class="section-label">Tradie offer</div>
-      <div class="tradie-block">
-        <div class="tradie-initial">${esc(ini(name))}</div>
-        <div>
-          <div class="tradie-name">${esc(name)}</div>
-          ${tradie&&tradie.rating ? `<div class="tradie-meta">${esc(String(tradie.rating))} ★ &nbsp;·&nbsp; ${esc(String(tradie.jobs_completed))} jobs</div>` : ""}
-        </div>
-      </div>
-      <div class="stat-pair">
-        <div class="stat">
-          <div class="stat-label">Price</div>
-          <div class="stat-val">${esc(price)}</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">ETA</div>
-          <div class="stat-val" style="font-size:20px;">${esc(eta)}</div>
-        </div>
-      </div>
+      ${hasCards ? `<div class="section-label">${cards.length} tradie${cards.length !== 1 ? 's' : ''} responded</div>` : ''}
+      <div class="quote-list">${cardHtml}</div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
-    <div class="btn-wrap animate d2">
-      <button class="btn btn-black"   id="acceptBtn">Accept offer</button>
-    </div>
-    <div class="btn-wrap animate d3">
-      <button class="btn btn-outline" id="declineBtn">Pass — see next offer</button>
-    </div>
   `);
 
-  get("acceptBtn").onclick = async () => {
-    const btn = get("acceptBtn"), n = get("nWrap");
-    disable(btn, "Confirming...");
-    try { const r=await api({action:"accept"}); if(!r.success){note(n,r.message||"Error","err");enable(btn,"Accept offer");return;} setTimeout(load,600); }
-    catch(e){note(n,"Something went wrong.","err");enable(btn,"Accept offer");}
-  };
-
-  get("declineBtn").onclick = async () => {
-    const btn = get("declineBtn"), n = get("nWrap");
-    disable(btn, "Passing...");
-    try { const r=await api({action:"decline"}); if(!r.success){note(n,r.message||"Error","err");enable(btn,"Pass — see next offer");return;} setTimeout(load,600); }
-    catch(e){note(n,"Something went wrong.","err");enable(btn,"Pass — see next offer");}
-  };
+  if (!hasCards) setTimeout(() => load(), 10000);
 }
 
-// Accepted
+window.acceptTradie = async function(tradieId, idx) {
+  const btn = document.querySelectorAll('.quote-item .btn')[idx];
+  const n   = get('nWrap' + idx) || get('nWrap');
+  if (btn) { btn.disabled = true; btn.textContent = 'Confirming...'; }
+  try {
+    const r = await api({ action:'accept', tradie_id: tradieId });
+    if (!r.success) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Choose this tradie'; }
+      note(n, r.message || 'Something went wrong.', 'err');
+      return;
+    }
+    setTimeout(load, 600);
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Choose this tradie'; }
+    note(n, 'Something went wrong.', 'err');
+  }
+};
+
+// ── QUOTE CARDS — QUOTE type ──────────────────────────────
+// Customer sees all cards with phone numbers and calls directly
+function showQuoteCards(job, cards, loc) {
+  const list = cards.length ? cards.map(c => {
+    const isPremium = c.premium && c.verified;
+    return `
+      <div class="quote-item" style="${isPremium ? 'border-left:3px solid var(--orange);' : ''}">
+        <div class="quote-initial" style="${isPremium ? 'background:var(--orange);color:var(--black);' : ''}">${ini(c.name)}</div>
+        <div class="quote-info">
+          <div class="quote-name">
+            ${esc(c.name)}
+            ${isPremium ? `<span style="margin-left:6px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--orange);color:var(--black);padding:2px 6px;">Verified</span>` : ''}
+          </div>
+          ${c.eta   ? `<div class="quote-eta">${esc(c.eta)}</div>` : ''}
+          ${c.price ? `<div class="quote-eta">$${esc(String(c.price))}</div>` : ''}
+          <div class="quote-call">${esc(c.phone)}</div>
+        </div>
+      </div>`;
+  }).join('') : `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">No quotes yet</div>`;
+
+  render(`
+    ${heroHtml("Your job", job.description||"Your job", loc, "QUOTE_LOCKED")}
+    <div class="section animate d1">
+      <div class="section-label">${cards.length} tradie${cards.length !== 1 ? 's' : ''} responded</div>
+      <div class="quote-list">${list}</div>
+    </div>
+    <div class="notice-wrap animate d2">
+      <div class="notice hi">Call the tradie you prefer to arrange a time.</div>
+    </div>
+  `);
+}
+
+// ── ACCEPTED ──────────────────────────────────────────────
 function showAccepted(job, tradie, allowRating, loc) {
   const name  = tradie ? fmt(tradie.name)  : "Your tradie";
   const phone = tradie ? fmt(tradie.phone) : "";
@@ -897,33 +978,33 @@ function showAccepted(job, tradie, allowRating, loc) {
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, "ACCEPTED")}
     <div class="section animate d1">
-      <div class="section-label">Confirmed tradie</div>
+      <div class="section-label">Your confirmed tradie</div>
       <div class="tradie-block">
         <div class="tradie-initial">${esc(ini(name))}</div>
         <div>
           <div class="tradie-name">${esc(name)}</div>
-          ${tradie&&tradie.rating ? `<div class="tradie-meta">${esc(String(tradie.rating))} ★ &nbsp;·&nbsp; ${esc(String(tradie.jobs_completed))} jobs</div>` : ""}
+          ${tradie && tradie.rating ? `<div class="tradie-meta">${parseFloat(tradie.rating).toFixed(1)} ★</div>` : ""}
           ${phone ? `<div class="tradie-phone">${esc(phone)}</div>` : ""}
         </div>
       </div>
-      ${(job.price||job.eta) ? `
+      ${(job.price || job.eta) ? `
         <div class="data-list">
           ${job.price ? `<div class="data-row"><span class="data-key">Agreed price</span><span class="data-val" style="font-size:20px;letter-spacing:-0.03em;">$${esc(String(job.price))}</span></div>` : ""}
           ${job.eta   ? `<div class="data-row"><span class="data-key">ETA</span><span class="data-val">${esc(job.eta)}</span></div>` : ""}
         </div>` : ""}
     </div>
     <div class="notice-wrap animate d2">
-      <div class="notice hi">Contact your tradie directly to confirm timing and access.</div>
+      <div class="notice hi">Contact your tradie directly to confirm timing.</div>
     </div>
     ${allowRating ? `
       <div class="section animate d3" id="rSection">
-        <div class="section-label">Rate your tradie</div>
+        <div class="section-label">How did it go?</div>
         <div class="star-row" id="stars">
-          ${[1,2,3,4,5].map(n=>`<button class="star" data-v="${n}">★</button>`).join("")}
+          ${[1,2,3,4,5].map(n => `<button class="star" data-v="${n}">★</button>`).join("")}
         </div>
         <div class="field">
-          <label class="field-label">Comment</label>
-          <textarea id="rComment" placeholder="Optional"></textarea>
+          <label class="field-label">Comment (optional)</label>
+          <textarea id="rComment"></textarea>
         </div>
         <div id="rNotice" style="margin-bottom:12px;"></div>
         <button class="btn btn-black" id="rateBtn" disabled>Submit review</button>
@@ -946,80 +1027,92 @@ function wireStars() {
     const n = get("rNotice");
     disable(rateBtn, "Submitting...");
     try {
-      const r = await api({action:"rating", rating:sel, comment:get("rComment").value});
+      const r = await api({ action:"rating", rating:sel, comment:get("rComment").value });
       if (!r.success) { note(n,r.message||"Error","err"); enable(rateBtn,"Submit review"); return; }
       get("rSection").innerHTML = `<div class="notice ok">Thanks for your review.</div>`;
     } catch(e) { note(n,"Something went wrong.","err"); enable(rateBtn,"Submit review"); }
   };
 }
 
-// Quotes
-function showQuotes(job, cards, loc) {
-  const list = cards.length
-    ? cards.map(c => `
-        <div class="quote-item">
-          <div class="quote-initial">${esc(ini(c.name))}</div>
-          <div class="quote-info">
-            <div class="quote-name">
-              ${esc(c.name)}
-              ${c.premium && c.verified ? `<span style="display:inline-block;margin-left:6px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--orange);color:var(--black);padding:2px 6px;">Verified</span>` : ""}
-            </div>
-            ${c.eta ? `<div class="quote-eta">${esc(c.eta)}</div>` : ""}
-            <div class="quote-call">${esc(c.phone)}</div>
-          </div>
-          ${c.price ? `<div class="quote-price">$${esc(String(c.price))}</div>` : ""}
-        </div>`).join("")
-    : `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">No quotes yet</div>`;
-
-  render(`
-    ${heroHtml("Your job", job.description||"Your job", loc, "QUOTE_LOCKED")}
-    <div class="section animate d1">
-      <div class="section-label">${cards.length} tradie${cards.length!==1?"s":""} responded</div>
-      <div class="quote-list">${list}</div>
-    </div>
-    <div class="notice-wrap animate d2">
-      <div class="notice hi">Call the tradie you prefer directly to confirm the job.</div>
-    </div>
-  `);
-}
-
-// ─── TRADIE ───────────────────────────────────────────────
+// ─── TRADIE VIEWS ─────────────────────────────────────────
 function showTradie(d) {
   const job   = d.job || {};
   const stage = fmt(d.stage).toUpperCase();
   const loc   = [job.suburb, job.postcode].filter(Boolean).join(" · ");
 
+  // Tradie has already submitted their offer — waiting on customer
   if (stage === "AWAITING_CUSTOMER") {
     render(`
       ${heroHtml("Job", job.description||"Job", loc, "AWAITING_CUSTOMER")}
       <div class="waiting-block animate d1">
         <div class="waiting-icon"><div class="waiting-icon-dot"></div></div>
         <div class="waiting-title">Offer sent</div>
-        <div class="waiting-sub">Waiting for the customer to respond.<br>You'll get an SMS either way.</div>
+        <div class="waiting-sub">Waiting for the customer to respond.<br>You will get an SMS either way.</div>
       </div>
     `);
     return;
   }
 
+  // Tradie has won — show customer details with address
+  if (stage === "ACCEPTED") {
+    const custPhone = job.customer_phone || '';
+    const address   = [job.address_unit ? job.address_unit + '/' : '', job.address, job.suburb, job.postcode].filter(Boolean).join(' ');
+    render(`
+      ${heroHtml("Job confirmed", job.description||"Job", loc, "ACCEPTED")}
+      <div class="section animate d1">
+        <div class="section-label">Customer details</div>
+        <div class="data-list">
+          ${job.customer_name ? `<div class="data-row"><span class="data-key">Name</span><span class="data-val">${esc(job.customer_name)}</span></div>` : ''}
+          ${custPhone ? `<div class="data-row"><span class="data-key">Mobile</span><span class="data-val" style="color:var(--orange);">${esc(custPhone)}</span></div>` : ''}
+          ${address ? `<div class="data-row"><span class="data-key">Address</span><span class="data-val">${esc(address)}</span></div>` : ''}
+        </div>
+      </div>
+      <div class="notice-wrap animate d2">
+        <div class="notice ok">You are confirmed. Contact your customer to arrange access.</div>
+      </div>
+    `);
+    return;
+  }
+
+  // Tradie sees job and submits price + ETA
+  // Calculate countdown from job created time
+  const windowMins  = job.job_type === "QUOTE" ? 60 : 10;
+  const createdAt   = job.created_at ? new Date(job.created_at).getTime() : Date.now();
+  const expiresAt   = createdAt + (windowMins * 60 * 1000);
+  const secsLeft    = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+  const isExpired   = secsLeft === 0;
+
   render(`
     ${heroHtml("New job", job.description||"New job", loc, "SENT_TO_TRADIES")}
+    ${job.job_type === "JOB" ? `
+    <div style="background:${isExpired ? 'var(--off)' : '#0C0C0C'};padding:20px 24px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${isExpired ? 'var(--muted)' : 'var(--muted)'};">
+        ${isExpired ? 'Window closed' : 'Time to respond'}
+      </div>
+      <div id="countdown" style="font-size:32px;font-weight:800;letter-spacing:-0.04em;color:${isExpired ? 'var(--muted)' : 'var(--orange)'};">
+        ${isExpired ? '0:00' : Math.floor(secsLeft/60)+':'+String(secsLeft%60).padStart(2,'0')}
+      </div>
+    </div>` : ''}
     <div class="section animate d1">
       <div class="section-label">Job details</div>
       <div class="data-list">
-        ${job.address  ? `<div class="data-row"><span class="data-key">Address</span><span class="data-val">${esc(job.address)}</span></div>` : ""}
-        ${job.urgency  ? `<div class="data-row"><span class="data-key">Urgency</span><span class="data-val">${esc(job.urgency)}</span></div>` : ""}
-        ${job.job_type==="QUOTE" ? `<div class="data-row"><span class="data-key">Type</span><span class="data-val">Quote · 1 hr window</span></div>` : ""}
+        <div class="data-row"><span class="data-key">Location</span><span class="data-val">${esc(loc || 'Not specified')}</span></div>
+        ${job.job_type === "QUOTE" ? `<div class="data-row"><span class="data-key">Type</span><span class="data-val">Quote — 60 min window</span></div>` : `<div class="data-row"><span class="data-key">Type</span><span class="data-val">Job — be quick</span></div>`}
       </div>
+      ${job.photo_urls && job.photo_urls.length ? `
+        <div class="job-photos">
+          ${job.photo_urls.map(u => `<img class="job-photo" src="${esc(u)}" />`).join('')}
+        </div>` : ''}
     </div>
     <div class="section animate d2">
       <div class="section-label">Your offer</div>
       <div class="field">
-        <label class="field-label">Price ($)</label>
+        <label class="field-label">Your price ($)</label>
         <input id="tPrice" type="number" inputmode="decimal" placeholder="e.g. 280" />
       </div>
       <div class="field">
-        <label class="field-label">ETA</label>
-        <input id="tEta" placeholder="e.g. 30 min  ·  Tomorrow 2pm" />
+        <label class="field-label">When can you be there?</label>
+        <input id="tEta" placeholder="e.g. 30 mins  ·  Tomorrow 2pm" />
       </div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
@@ -1028,17 +1121,40 @@ function showTradie(d) {
     </div>
   `);
 
+  // Start countdown timer
+  if (job.job_type === "JOB" && !isExpired) {
+    let secs = secsLeft;
+    const tick = setInterval(() => {
+      secs--;
+      const el = document.getElementById('countdown');
+      if (!el) { clearInterval(tick); return; }
+      if (secs <= 0) {
+        el.textContent = '0:00';
+        el.style.color = 'var(--muted)';
+        clearInterval(tick);
+        return;
+      }
+      const mins = Math.floor(secs / 60);
+      const s    = String(secs % 60).padStart(2, '0');
+      el.textContent = `${mins}:${s}`;
+      // Turn red in last 2 minutes
+      if (secs <= 120) el.style.color = 'var(--red)';
+    }, 1000);
+  }
+
   get("quoteBtn").onclick = async () => {
     const btn   = get("quoteBtn"), n = get("nWrap");
     const price = get("tPrice").value.trim();
     const eta   = get("tEta").value.trim();
-    if (!price||!eta) { note(n,"Please enter both a price and ETA.","err"); return; }
+    if (!price) { note(n,"Please enter your price.","err"); return; }
+    if (!eta)   { note(n,"Please enter when you can be there.","err"); return; }
     disable(btn,"Sending...");
     try {
-      const r = await api({action:"quote", price, eta});
+      const r = await api({ action:"quote", price, eta });
       if (!r.success) { note(n,r.message||"Error","err"); enable(btn,"Send offer to customer"); return; }
-      note(n,"Offer sent. You'll get an SMS when the customer responds.","ok");
+      note(n,"Offer sent. You will get an SMS when the customer responds.","ok");
       btn.textContent = "Offer sent";
+      btn.disabled    = true;
     } catch(e) { note(n,"Something went wrong.","err"); enable(btn,"Send offer to customer"); }
   };
 }
@@ -1055,7 +1171,7 @@ function showLocked() {
     <div class="waiting-block animate d1">
       <div class="waiting-icon"><div class="waiting-icon-dot" style="background:var(--black);"></div></div>
       <div class="waiting-title">Stay live for the next one</div>
-      <div class="waiting-sub">Jobs move fast. Reply ON to make sure you're active when the next one hits.</div>
+      <div class="waiting-sub">Jobs move fast. Reply ON to make sure you are active when the next one hits.</div>
     </div>
   `);
 }
@@ -1081,23 +1197,15 @@ function render(html) {
 function get(id) { return document.getElementById(id); }
 
 function note(el, msg, type) {
+  if (!el) return;
   el.innerHTML = `<div class="notice ${type}">${esc(msg)}</div>`;
 }
 
-function disable(btn, label) {
-  btn.disabled = true;
-  btn.textContent = label;
-}
+function disable(btn, label) { btn.disabled = true;  btn.textContent = label; }
+function enable(btn, label)  { btn.disabled = false; btn.textContent = label; }
 
-function enable(btn, label) {
-  btn.disabled = false;
-  btn.textContent = label;
-}
-
-// ─── INIT ─────────────────────────────────────────────────
-
-// ─── PHOTO UPLOAD ──────────────────────────────────────────
-const uploadedPhotos = {}; // index → url
+// ─── PHOTO UPLOAD ─────────────────────────────────────────
+const uploadedPhotos = {};
 
 function initPhotoUpload() {
   document.querySelectorAll('.photo-input').forEach(input => {
@@ -1105,83 +1213,27 @@ function initPhotoUpload() {
       const file  = e.target.files[0];
       const index = parseInt(input.dataset.index);
       if (!file || !jobId || !token) return;
-
       const slot = document.getElementById('slot' + index);
       slot.classList.add('uploading');
-
       try {
         const b64  = await fileToBase64(file);
         const data = b64.split(',')[1];
-
-        const res  = await fetch(API, {
+        const res  = await fetch(`${API}/upload/photo`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            type:     'upload_photo',
-            jobId:    jobId,
-            t:        token,
-            index:    index,
-            mimeType: file.type,
-            data:     data
-          })
+          body:    JSON.stringify({ jobId, t:token, index, mimeType:file.type, data })
         });
         const json = JSON.parse(await res.text());
-
-        if (!json.success) {
-          alert(json.message || 'Upload failed');
-          slot.classList.remove('uploading');
-          return;
-        }
-
+        if (!json.success) { slot.classList.remove('uploading'); return; }
         uploadedPhotos[index] = json.url;
-
-        // Show preview
         const img = document.createElement('img');
         img.src   = URL.createObjectURL(file);
         slot.appendChild(img);
         slot.classList.remove('uploading');
         slot.classList.add('has-photo');
-
-        // Enable next slot
         const next = document.getElementById('slot' + (index + 1));
         if (next) next.querySelector('.photo-input').disabled = false;
-
-      } catch(err) {
-        slot.classList.remove('uploading');
-        alert('Upload failed. Please try again.');
-      }
-    });
-  });
-
-  document.querySelectorAll('.photo-remove').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const index = parseInt(btn.dataset.index);
-      const slot  = document.getElementById('slot' + index);
-      const url   = uploadedPhotos[index];
-
-      if (url) {
-        await api({ action: 'delete_photo', url: url });
-        delete uploadedPhotos[index];
-      }
-
-      const img = slot.querySelector('img');
-      if (img) img.remove();
-      slot.classList.remove('has-photo');
-
-      const input = slot.querySelector('.photo-input');
-      input.value = '';
-
-      // Disable subsequent slots
-      for (let i = index + 1; i <= 3; i++) {
-        const s = document.getElementById('slot' + i);
-        if (s) {
-          s.querySelector('.photo-input').disabled = true;
-          s.classList.remove('has-photo');
-          const si = s.querySelector('img');
-          if (si) si.remove();
-        }
-      }
+      } catch(e) { slot.classList.remove('uploading'); }
     });
   });
 }

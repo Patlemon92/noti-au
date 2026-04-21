@@ -165,13 +165,19 @@ const user = JSON.parse(localStorage.getItem('noti_user') || 'null');
 if (!token || !user) location.href = '/health/login';
 
 const ALL_TEMPLATES = [
-  { key: 'mood',       label: 'Mood' },
-  { key: 'health',     label: 'Health' },
-  { key: 'migraines',  label: 'Migraines' },
-  { key: 'pots',       label: 'POTS' },
-  { key: 'depression', label: 'Depression' },
-  { key: 'weight',     label: 'Weight' },
-  { key: 'cycle',      label: 'Cycle' }
+  { key: 'mood',        label: 'Mood' },
+  { key: 'health',      label: 'Health' },
+  { key: 'anxiety',     label: 'Anxiety' },
+  { key: 'depression',  label: 'Depression' },
+  { key: 'pain',        label: 'Pain' },
+  { key: 'fatigue',     label: 'Fatigue' },
+  { key: 'fog',         label: 'Brain fog' },
+  { key: 'migraines',   label: 'Migraines' },
+  { key: 'pots',        label: 'POTS' },
+  { key: 'gut',         label: 'Gut' },
+  { key: 'weight',      label: 'Weight' },
+  { key: 'medications', label: 'Medications' },
+  { key: 'cycle',       label: 'Cycle' }
 ];
 
 // Identity

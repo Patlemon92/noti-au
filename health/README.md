@@ -21,7 +21,7 @@ noti-health-web/
 ## Setup
 
 1. Deploy to Cloudflare Pages as its own project, or add these files to the existing noti.au Pages project.
-2. Update the `API` constant at the top of each HTML file to point at your deployed `noti-health-api` worker URL (typically `https://health-api.noti.au`).
+2. Update the `API` constant at the top of each HTML file to point at your deployed `noti-health-api` worker URL (typically `https://noti-health-api.ancient-bread-01fe.workers.dev`).
 3. If deploying alongside the Trade app, merge the `_redirects` file contents into Trade's existing `_redirects`.
 
 ## API endpoints the frontend expects

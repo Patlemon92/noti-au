@@ -13,7 +13,7 @@
 // =============================================================
 
 (function() {
-  const API = window.__NOTI_API__ || 'https://health-api.noti.au';
+  const API = window.__NOTI_API__ || 'https://noti-health-api.ancient-bread-01fe.workers.dev';
 
   // ── Detect environment ──────────────────────────────────
   const supportsServiceWorker = 'serviceWorker' in navigator;

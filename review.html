@@ -443,7 +443,7 @@ let jobData   = null;
 async function load() {
   if (!jobId || !token) { showError("This review link is missing information."); return; }
   try {
-    const r    = await fetch(`${API}?type=get_job&id=${encodeURIComponent(jobId)}&t=${encodeURIComponent(token)}`);
+    const r    = await fetch(`${API}/job/${encodeURIComponent(jobId)}/${encodeURIComponent(token)}`);
     const data = JSON.parse(await r.text());
     if (!data.success) { showError(data.message || "This review link is invalid or expired."); return; }
     jobData = data;

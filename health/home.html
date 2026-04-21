@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="theme-color" content="#D85A30" />
+<link rel="manifest" href="/health/manifest.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Noti" />
+
+<title>Noti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+body{
+  background:linear-gradient(160deg,#FFE8C7 0%,#FFCBA4 25%,#F5A887 55%,#EC7E5C 85%,#D85A30 100%);
+  min-height:100dvh;color:#4A1B0C;overflow-x:hidden;position:relative;
+}
+.blob{position:absolute;border-radius:50%;pointer-events:none}
+.b1{top:-60px;right:-90px;width:240px;height:240px;background:radial-gradient(circle at 30% 30%,#FFF0D8,#FFCBA4);opacity:.85}
+.b2{top:380px;left:-120px;width:260px;height:260px;background:radial-gradient(circle at 30% 30%,#FBC9B4,#EC7E5C);opacity:.6}
+.wrap{position:relative;z-index:2;padding:40px 24px;max-width:420px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;justify-content:center}
+.brand{font-size:40px;font-weight:600;letter-spacing:-1px;margin-bottom:8px}
+.brand em{color:#D85A30;font-style:normal}
+.sub{font-size:15px;opacity:.75;margin-bottom:40px;font-weight:400;line-height:1.5}
+.card{
+  background:rgba(255,255,255,.65);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-radius:28px;padding:28px;border:.5px solid rgba(255,255,255,.85);
+}
+.card h2{font-size:22px;font-weight:500;margin-bottom:6px;letter-spacing:-.3px}
+.card p.help{font-size:13px;opacity:.75;margin-bottom:20px;line-height:1.5}
+label{display:block;font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:#993C1D;margin-bottom:8px}
+input{
+  width:100%;background:rgba(255,255,255,.8);border:.5px solid rgba(74,27,12,.15);
+  border-radius:14px;padding:14px 16px;font-size:17px;color:#4A1B0C;font-family:inherit;
+  -webkit-appearance:none;appearance:none;outline:none;
+}
+input:focus{border-color:#D85A30;background:rgba(255,255,255,.95)}
+button{
+  width:100%;background:#4A1B0C;color:#FFE4D0;border:0;padding:16px;border-radius:16px;
+  font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:16px;
+  transition:opacity .15s;
+}
+button:active{opacity:.85}
+button:disabled{opacity:.4;cursor:wait}
+.error{color:#993C1D;font-size:13px;margin-top:12px;text-align:center;min-height:16px}
+.back{font-size:13px;opacity:.7;margin-top:16px;text-align:center;cursor:pointer;text-decoration:underline}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+
+<div class="wrap">
+  <div class="brand">noti<em>.</em></div>
+  <p class="sub">A daily companion for when<br>chronic illness makes life hard to read.</p>
+
+  <div class="card" id="step-phone">
+    <h2>Sign in</h2>
+    <p class="help">We'll text you a 6-digit code.</p>
+    <label for="phone">Your phone number</label>
+    <input id="phone" type="tel" inputmode="tel" placeholder="0433 461 432" autocomplete="tel" />
+    <button id="btn-code">Send me a code</button>
+    <div class="error" id="err1"></div>
+  </div>
+
+  <div class="card hidden" id="step-code">
+    <h2>Enter the code</h2>
+    <p class="help" id="code-help">We sent a 6-digit code to your phone.</p>
+    <label for="code">6-digit code</label>
+    <input id="code" type="tel" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" />
+    <button id="btn-verify">Verify</button>
+    <div class="error" id="err2"></div>
+    <div class="back" id="back">Use a different number</div>
+  </div>
+</div>
+
+<script>
+const API = 'https://health-api.noti.au';
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => $(id).classList.remove('hidden');
+const hide = (id) => $(id).classList.add('hidden');
+
+// If already signed in, skip straight to home
+if (localStorage.getItem('noti_token')) {
+  window.location.href = '/health/home';
+}
+
+$('btn-code').addEventListener('click', async () => {
+  const phone = $('phone').value.trim();
+  if (!phone) { $('err1').textContent = 'Enter your phone number.'; return; }
+  $('btn-code').disabled = true;
+  $('err1').textContent = '';
+  try {
+    const res = await fetch(API + '/auth/code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      $('err1').textContent = data.message || 'Could not send code.';
+      $('btn-code').disabled = false;
+      return;
+    }
+    window.__phone = phone;
+    $('code-help').textContent = `We sent a code to ${phone}.`;
+    hide('step-phone'); show('step-code');
+    $('code').focus();
+  } catch (e) {
+    $('err1').textContent = 'Network issue — try again.';
+    $('btn-code').disabled = false;
+  }
+});
+
+$('btn-verify').addEventListener('click', async () => {
+  const code = $('code').value.trim();
+  if (code.length !== 6) { $('err2').textContent = 'Enter the 6-digit code.'; return; }
+  $('btn-verify').disabled = true;
+  $('err2').textContent = '';
+  try {
+    const res = await fetch(API + '/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: window.__phone, code })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      $('err2').textContent = data.message || 'Invalid code.';
+      $('btn-verify').disabled = false;
+      return;
+    }
+    localStorage.setItem('noti_token', data.token);
+    localStorage.setItem('noti_user', JSON.stringify(data.user));
+    window.location.href = '/health/home';
+  } catch (e) {
+    $('err2').textContent = 'Network issue — try again.';
+    $('btn-verify').disabled = false;
+  }
+});
+
+$('back').addEventListener('click', () => {
+  hide('step-code'); show('step-phone');
+  $('code').value = ''; $('err1').textContent = '';
+  $('btn-code').disabled = false;
+});
+
+$('code').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/\D/g, '');
+  if (e.target.value.length === 6) $('btn-verify').click();
+});
+</script>
+<script src="/health/push-client.js"></script>
+</body>
+</html>

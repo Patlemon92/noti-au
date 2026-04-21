@@ -1,3 +1,20 @@
+# ─── Noti Health (paths prefixed /health, files live in /health folder) ─────────────
+/health                     /health/start.html                     200
+/health/login               /health/login.html                     200
+/health/home                /health/home.html                      200
+/health/checkin             /health/checkin.html                   200
+/health/checkin/:id         /health/checkin.html?session=:id       200
+/health/alys                /health/alys.html                      200
+/health/record              /health/record.html                    200
+/health/profile             /health/profile.html                   200
+/health/export              /health/export.html                    200
+
+# Service worker + manifest at their health-scoped paths
+/health/sw.js               /health/sw-health.js                   200
+/health/manifest.json       /health/manifest-health.json           200
+/health/push-client.js      /health/push-client.js                 200
+
+# ─── Noti Trade (unchanged) ─────────────
 /job/:jobId/:token    /jobs.html?jobId=:jobId&t=:token    200
 /job/:jobId           /jobs.html?jobId=:jobId              200
 /review/:jobId/:token /review.html?jobId=:jobId&t=:token   200

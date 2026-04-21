@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Noti</title>
+<style>
+body{margin:0;font-family:sans-serif;background:linear-gradient(160deg,#FFE8C7 0%,#F5A887 50%,#D85A30 100%);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.logo{font-size:48px;font-weight:600;color:#4A1B0C;letter-spacing:-1px}
+.logo em{color:#FFE4D0;font-style:normal}
+</style>
+</head>
+<body>
+<div class="logo">noti<em>.</em></div>
+<script>
+const token = localStorage.getItem('noti_token');
+location.href = token ? '/health/home' : '/health/login';
+</script>
+</body>
+</html>

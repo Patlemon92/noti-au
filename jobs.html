@@ -693,6 +693,10 @@ if (!jobId && parts[0] === "job") { jobId = parts[1] || ""; token = parts[2] || 
 
 let _data = null;
 
+// ─── HELPERS ──────────────────────────────────────────────
+const esc = v => String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const fmt = v => String(v||"").trim();
+const ini = n => (n||"?").trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
 const tag = document.getElementById("topTag");
 
 // ─── API ──────────────────────────────────────────────────

@@ -206,13 +206,12 @@ const esc = v => String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 const fmt = v => String(v||'').trim();
 function cleanPhone(p){ return p.replace(/\s+/g,'').replace(/[^0-9]/g,''); }
 
-async function post(payload){
-  const res  = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-  return JSON.parse(await res.text());
-}
-async function get(params){
-  const qs = new URLSearchParams(params);
-  const res = await fetch(`${API}?${qs}`);
+async function post(endpoint, payload){
+  const res = await fetch(`${API}${endpoint}`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload)
+  });
   return JSON.parse(await res.text());
 }
 
@@ -220,8 +219,8 @@ function setSession(token){ _session = token; localStorage.setItem(SESSION_KEY, 
 function clearSession(){ _session = ''; localStorage.removeItem(SESSION_KEY); showLogin(); }
 
 // ─── PUSH NOTIFICATIONS ───────────────────────────────────
-// Public VAPID key — paste from https://web-push-codelab.glitch.me
-const VAPID_PUBLIC_KEY = 'YOUR_VAPID_PUBLIC_KEY_HERE';
+// VAPID public key loaded from API response after login
+let VAPID_PUBLIC_KEY = '';
 const PUSH_KEY         = 'noti_push_enabled';
 
 // ── Device detection ──
@@ -276,8 +275,7 @@ async function subscribeToPush(){
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
     const subJson = sub.toJSON();
-    const r = await post({
-      type:     'dashboard_push_token',
+    const r = await post('/dashboard/push', {
       session:  _session,
       endpoint: subJson.endpoint,
       p256dh:   subJson.keys.p256dh,
@@ -435,7 +433,7 @@ function showLogin(step){
       if (!phone){ showLoginNotice('Please enter your mobile number.','err'); return; }
       btn.disabled = true; btn.textContent = 'Sending...';
       try {
-        const r = await post({ type:'dashboard_request_code', phone });
+        const r = await post('/dashboard/code', { phone });
         if (!r.success){ showLoginNotice(r.message||'Something went wrong.','err'); btn.disabled=false; btn.textContent='Send code'; return; }
         localStorage.setItem('noti_login_phone', phone);
         showLogin('code');
@@ -450,7 +448,7 @@ function showLogin(step){
       if (!code){ showLoginNotice('Please enter the code.','err'); return; }
       btn.disabled=true; btn.textContent='Logging in...';
       try {
-        const r = await post({ type:'dashboard_verify_code', phone, code });
+        const r = await post('/dashboard/verify', { phone, code });
         if (!r.success){ showLoginNotice(r.message||'Incorrect code.','err'); btn.disabled=false; btn.textContent='Log in'; return; }
         setSession(r.token);
         await loadDashboard();
@@ -470,13 +468,14 @@ function showLoginNotice(msg, type){
 async function loadDashboard(){
   document.getElementById('root').innerHTML = '<div class="loading"><div class="spinner"></div>Loading</div>';
   try {
-    const r = await post({ type:'dashboard_data', session: _session });
+    const r = await post('/dashboard/data', { session: _session });
     if (!r.success){
       if (r.expired){ clearSession(); return; }
       document.getElementById('root').innerHTML = `<div class="notice err" style="margin:40px 16px;">${esc(r.message)}</div>`;
       return;
     }
     _data = r;
+    if (r.vapid_public_key) VAPID_PUBLIC_KEY = r.vapid_public_key;
     renderDashboard();
   } catch(e){
     document.getElementById('root').innerHTML = '<div class="notice err" style="margin:40px 16px;">Could not load dashboard. Please try again.</div>';
@@ -687,8 +686,7 @@ function renderSettings(){
     const mode = document.querySelector('.mode-opt.sel input').value;
     btn.disabled = true; btn.textContent = 'Saving...';
     try {
-      const r = await post({
-        type:         'dashboard_settings',
+      const r = await post('/dashboard/settings', {
         session:      _session,
         mode:         mode,
         serviceAreas: document.getElementById('serviceAreas').value,

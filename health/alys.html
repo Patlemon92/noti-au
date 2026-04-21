@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="theme-color" content="#D85A30" />
+<link rel="manifest" href="/health/manifest.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Noti" />
+
+<title>Noti · Alys</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+body{
+  min-height:100dvh;overflow-x:hidden;position:relative;color:#4A1B0C;
+  background:linear-gradient(160deg,#FFE8D8 0%,#FBD4C0 30%,#F5BBAA 70%,#E8A89A 100%);
+}
+.blob{position:absolute;border-radius:50%;pointer-events:none;z-index:0}
+.b1{top:-60px;right:-80px;width:220px;height:220px;background:radial-gradient(circle at 30% 30%,#FFF0E4,#FBD4C0);opacity:.85}
+.b2{top:520px;left:-120px;width:260px;height:260px;background:radial-gradient(circle at 30% 30%,#FCDCCB,#F5BBAA);opacity:.6}
+
+.wrap{position:relative;z-index:2;max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+
+.header{padding:22px 22px 12px;display:flex;align-items:center;gap:12px}
+.avatar{
+  width:46px;height:46px;border-radius:50%;
+  background:rgba(255,255,255,.65);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border:.5px solid rgba(255,255,255,.85);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.avatar-dot{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#F09980,#6B3B7A)}
+.header h1{font-size:17px;font-weight:500;color:#4A1B0C;margin:0}
+.header p{font-size:12px;color:#712B13;opacity:.75;margin:0}
+
+.back-btn{
+  width:36px;height:36px;margin-left:auto;border-radius:12px;
+  background:rgba(255,255,255,.5);border:.5px solid rgba(255,255,255,.7);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+
+.thread{flex:1;overflow-y:auto;padding:10px 22px 20px;display:flex;flex-direction:column;gap:8px}
+.day-label{text-align:center;font-size:11px;color:#712B13;opacity:.65;margin:16px 0 6px}
+.bubble{max-width:85%;padding:12px 14px;border-radius:18px;font-size:14px;line-height:1.45;word-break:break-word}
+.bubble.alys{
+  align-self:flex-start;background:rgba(255,255,255,.75);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  color:#4A1B0C;border-radius:18px 18px 18px 4px;
+  border:.5px solid rgba(255,255,255,.85);
+}
+.bubble.me{
+  align-self:flex-end;background:#4A1B0C;color:#FFE4D0;border-radius:18px 18px 4px 18px;
+}
+.stamp{font-size:10px;color:#712B13;opacity:.6;margin:0 4px}
+.stamp.me{align-self:flex-end}
+.stamp.alys{align-self:flex-start}
+
+.input-bar{
+  position:sticky;bottom:0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));
+  display:flex;gap:10px;align-items:center;
+  background:linear-gradient(to top, rgba(251,212,192,1) 60%, rgba(251,212,192,0));
+}
+.input-wrap{
+  flex:1;background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+  border:.5px solid rgba(255,255,255,.9);border-radius:22px;display:flex;align-items:center;padding:4px 4px 4px 16px;
+}
+.input-wrap input{
+  flex:1;border:0;background:transparent;outline:none;padding:12px 0;font-size:15px;color:#4A1B0C;font-family:inherit;
+}
+.input-wrap input::placeholder{color:#712B13;opacity:.6}
+.send-btn{
+  width:36px;height:36px;border-radius:50%;background:#4A1B0C;border:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.send-btn:disabled{opacity:.4}
+.empty{padding:40px 20px;text-align:center;color:#712B13;font-size:14px;line-height:1.6;opacity:.8}
+.typing{align-self:flex-start;padding:12px 16px;color:#712B13;font-size:13px;opacity:.7;font-style:italic}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+
+<div class="wrap">
+  <div class="header">
+    <div class="avatar"><div class="avatar-dot"></div></div>
+    <div>
+      <h1>Alys</h1>
+      <p>Here when you need me</p>
+    </div>
+    <div class="back-btn" onclick="location.href='/health/home'">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A1B0C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </div>
+  </div>
+
+  <div class="thread" id="thread">
+    <div class="empty">Loading…</div>
+  </div>
+
+  <div class="input-bar">
+    <div class="input-wrap">
+      <input id="composer" placeholder="Message Alys…" autocomplete="off" />
+    </div>
+    <button class="send-btn" id="send-btn" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE4D0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const API = 'https://health-api.noti.au';
+const token = localStorage.getItem('noti_token');
+if (!token) { location.href = '/health/login'; }
+
+const threadEl = document.getElementById('thread');
+const composer = document.getElementById('composer');
+const sendBtn  = document.getElementById('send-btn');
+
+async function loadMessages() {
+  try {
+    const res = await fetch(API + '/me/messages?limit=50', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    render(data.messages || []);
+  } catch (e) {
+    threadEl.innerHTML = `<div class="empty">Couldn't load messages. Check your connection and try again.</div>`;
+  }
+}
+
+function render(messages) {
+  threadEl.innerHTML = '';
+  if (!messages.length) {
+    threadEl.innerHTML = `<div class="empty">Say hi — Alys is here whenever something comes up.</div>`;
+    return;
+  }
+
+  let lastDay = '';
+  for (const m of messages) {
+    const d = new Date(m.created_at);
+    const dayKey = d.toDateString();
+    if (dayKey !== lastDay) {
+      const label = document.createElement('div');
+      label.className = 'day-label';
+      label.textContent = formatDay(d);
+      threadEl.appendChild(label);
+      lastDay = dayKey;
+    }
+
+    const bub = document.createElement('div');
+    bub.className = 'bubble ' + (m.direction === 'in' ? 'me' : 'alys');
+    bub.textContent = m.body;
+    threadEl.appendChild(bub);
+
+    const stamp = document.createElement('div');
+    stamp.className = 'stamp ' + (m.direction === 'in' ? 'me' : 'alys');
+    stamp.textContent = (m.direction === 'in' ? 'You' : 'Alys') + ' · ' + formatTime(d);
+    threadEl.appendChild(stamp);
+  }
+  threadEl.scrollTop = threadEl.scrollHeight;
+}
+
+function formatDay(d) {
+  const now = new Date();
+  if (sameDay(d, now)) return 'Today';
+  const y = new Date(now); y.setDate(y.getDate() - 1);
+  if (sameDay(d, y)) return 'Yesterday';
+  return d.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' });
+}
+function sameDay(a, b) { return a.toDateString() === b.toDateString(); }
+function formatTime(d) { return d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }); }
+
+composer.addEventListener('input', () => {
+  sendBtn.disabled = !composer.value.trim();
+});
+composer.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+sendBtn.addEventListener('click', sendMessage);
+
+async function sendMessage() {
+  const body = composer.value.trim();
+  if (!body) return;
+
+  composer.value = '';
+  sendBtn.disabled = true;
+
+  // Optimistic append
+  const now = new Date();
+  const bub = document.createElement('div');
+  bub.className = 'bubble me';
+  bub.textContent = body;
+  threadEl.appendChild(bub);
+  const stamp = document.createElement('div');
+  stamp.className = 'stamp me';
+  stamp.textContent = 'You · just now';
+  threadEl.appendChild(stamp);
+
+  // Typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.id = 'typing';
+  typing.textContent = 'Alys is thinking…';
+  threadEl.appendChild(typing);
+  threadEl.scrollTop = threadEl.scrollHeight;
+
+  try {
+    await fetch(API + '/me/message', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body })
+    });
+    // Reply comes asynchronously (through the buffer → cron). Poll briefly.
+    pollForReply();
+  } catch (e) {
+    typing.textContent = "Couldn't send. Try again in a moment.";
+  }
+}
+
+let pollAttempts = 0;
+async function pollForReply() {
+  pollAttempts++;
+  try {
+    const res = await fetch(API + '/me/messages?limit=10', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    const msgs = data.messages || [];
+    const lastOut = msgs.reverse().find(m => m.direction === 'out');
+    const now = Date.now();
+    if (lastOut && (now - new Date(lastOut.created_at).getTime()) < 2 * 60 * 1000) {
+      document.getElementById('typing')?.remove();
+      render(data.messages.slice().reverse());
+      return;
+    }
+  } catch (e) { /* ignore */ }
+
+  if (pollAttempts < 20) {  // ~100s of polling
+    setTimeout(pollForReply, 5000);
+  } else {
+    const t = document.getElementById('typing');
+    if (t) t.textContent = 'Alys will reply soon.';
+    pollAttempts = 0;
+  }
+}
+
+loadMessages();
+</script>
+<script src="/health/push-client.js"></script>
+</body>
+</html>

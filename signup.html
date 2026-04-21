@@ -476,6 +476,21 @@
     </div>
 
     <div class="field">
+      <label class="field-label">State</label>
+      <select id="businessState" required>
+        <option value="">Select state</option>
+        <option value="NSW">NSW</option>
+        <option value="VIC">VIC</option>
+        <option value="QLD">QLD</option>
+        <option value="WA">WA</option>
+        <option value="SA">SA</option>
+        <option value="TAS">TAS</option>
+        <option value="ACT">ACT</option>
+        <option value="NT">NT</option>
+      </select>
+    </div>
+
+    <div class="field">
       <label class="field-label">Service areas</label>
       <textarea id="serviceAreas" placeholder="e.g. Campbelltown, Camden, Narellan, 2560"></textarea>
       <div class="field-hint">Enter suburbs or postcodes separated by commas</div>
@@ -485,6 +500,10 @@
       <label class="field-label">Trade type (select all that apply)</label>
       <div class="trade-grid" id="tradeGrid">
         <!-- populated by JS -->
+      </div>
+      <div class="field" id="otherTradeField" style="display:none;margin-top:12px;">
+        <label class="field-label">Describe your trade</label>
+        <input type="text" id="otherTrade" placeholder="e.g. Glazier, Concreter, Stonemason" />
       </div>
     </div>
 
@@ -623,9 +642,10 @@ const API = "https://noti-api.ancient-bread-01fe.workers.dev";
 
 const TRADES = [
   "Plumber","Electrician","Builder","Carpenter","Handyman",
-  "Air Conditioning","Gas Fitter","Drainage","Waterproofing","Roofing",
-  "Cleaner","Pest Control","Gardening / Landscaping","Pool Maintenance",
-  "Locksmith","Security Systems","Painter","Tiler","Plasterer","Flooring","Other"
+  "Air Conditioning","Gas Fitter","Waterproofing","Roofing","Concreter",
+  "Glazier","Fencing","Cleaner","Pest Control","Gardening / Landscaping",
+  "Pool Maintenance","Locksmith","Security Systems","Painter","Tiler",
+  "Plasterer","Flooring","Appliance Repair","Rubbish Removal","Other"
 ];
 
 const selectedTrades = new Set();
@@ -641,6 +661,9 @@ TRADES.forEach(trade => {
     cb.checked = !cb.checked;
     if (cb.checked){ selectedTrades.add(trade); label.classList.add('selected'); }
     else            { selectedTrades.delete(trade); label.classList.remove('selected'); }
+    // Show other text box when Other is selected
+    const otherField = document.getElementById('otherTradeField');
+    if (otherField) otherField.style.display = selectedTrades.has('Other') ? 'block' : 'none';
   });
   grid.appendChild(label);
 });
@@ -698,12 +721,16 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   // Validation
   if (!val('businessName'))      { note('Business name is required.', 'err'); return; }
   if (selectedTrades.size === 0) { note('Please select at least one trade type.', 'err'); return; }
+  if (selectedTrades.has('Other') && !document.getElementById('otherTrade')?.value?.trim()) {
+    note('Please describe your trade in the Other field.', 'err'); return;
+  }
   if (!isValidABN(val('abn')))   { note('Please enter a valid 11 digit ABN.', 'err'); return; }
   if (!val('email'))             { note('Business email is required.', 'err'); return; }
   if (!val('primaryPhone'))      { note('Primary mobile number is required.', 'err'); return; }
   if (!val('businessAddress'))   { note('Business address is required.', 'err'); return; }
   if (!val('businessSuburb'))    { note('Business suburb is required.', 'err'); return; }
   if (!val('businessPostcode'))  { note('Business postcode is required.', 'err'); return; }
+  if (!val('businessState'))     { note('Business state is required.', 'err'); return; }
   if (!val('licenceNumber'))     { note('Licence number is required.', 'err'); return; }
   if (!val('licenceState'))      { note('Licence state is required.', 'err'); return; }
   if (!val('insuranceProvider')) { note('Insurance provider is required.', 'err'); return; }
@@ -743,17 +770,53 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     insuranceB64   = iData.split(',')[1];
     insuranceMime  = insuranceFile.type || 'application/pdf';
 
+    // Map trade display names to system codes
+    const TRADE_MAP = {
+      'Plumber':                'PLUMBER',
+      'Electrician':            'ELECTRICIAN',
+      'Builder':                'BUILDER',
+      'Carpenter':              'CARPENTER',
+      'Handyman':               'HANDYMAN',
+      'Air Conditioning':       'AIR_CONDITIONING',
+      'Gas Fitter':             'GAS_FITTER',
+      'Waterproofing':          'WATERPROOFING',
+      'Roofing':                'ROOFING',
+      'Concreter':              'CONCRETER',
+      'Glazier':                'GLAZIER',
+      'Fencing':                'FENCING',
+      'Cleaner':                'CLEANER',
+      'Pest Control':           'PEST_CONTROL',
+      'Gardening / Landscaping':'GARDENING',
+      'Pool Maintenance':       'POOL',
+      'Locksmith':              'LOCKSMITH',
+      'Security Systems':       'SECURITY',
+      'Painter':                'PAINTER',
+      'Tiler':                  'TILER',
+      'Plasterer':              'PLASTERER',
+      'Flooring':               'FLOORING',
+      'Appliance Repair':       'APPLIANCE',
+      'Rubbish Removal':        'RUBBISH',
+      'Other':                  'HANDYMAN'
+    };
+    // If Other is selected, use the text box value as trade description
+    const otherText   = document.getElementById('otherTrade')?.value?.trim() || '';
+    if (selectedTrades.has('Other') && otherText) {
+      TRADE_MAP['Other'] = otherText.toUpperCase().replace(/\s+/g, '_');
+    }
+    const tradeCodes  = [...selectedTrades].map(t => TRADE_MAP[t] || t.toUpperCase());
+    const primaryTrade = tradeCodes[0];
+
     // Build payload
     const payload = {
-      type:              'tradie_signup',
       businessName:      val('businessName'),
-      tradeType:         [...selectedTrades].join(', '),
+      tradeType:         primaryTrade,
       abn:               val('abn').replace(/\s/g,''),
       email:             val('email'),
       serviceAreas:      val('serviceAreas'),
       businessAddress:   val('businessAddress'),
       businessSuburb:    val('businessSuburb'),
       businessPostcode:  val('businessPostcode'),
+      businessState:     val('businessState'),
       primaryPhone:      cleanPhone(val('primaryPhone')),
       secondaryPhone:    cleanPhone(val('secondaryPhone')),
       licenceNumber:     val('licenceNumber'),
@@ -768,7 +831,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       insuranceMime:     insuranceMime
     };
 
-    const res  = await fetch(API, {
+    const res  = await fetch(`${API}/signup`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload)

@@ -92,6 +92,18 @@ body{
 .chip-side{font-size:13px;color:var(--muted);opacity:.75}
 .chip.selected .chip-side{color:var(--cta-text);opacity:.8}
 
+/* CHOICE: 'other' text reveal */
+.other-wrap{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.other-wrap.hidden{display:none}
+.other-wrap textarea{
+  width:100%;padding:14px 16px;border-radius:16px;
+  background:var(--card-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  border:.5px solid var(--card-border);
+  color:var(--ink);font-family:inherit;font-size:15px;line-height:1.5;
+  resize:vertical;outline:none;min-height:60px;
+}
+.other-wrap textarea:focus{border-color:var(--cta)}
+
 /* NUMERIC */
 .num-card{
   background:var(--card-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
@@ -192,7 +204,9 @@ let answers = {};          // { key: value }
 let step = 0;              // current index
 let scaleValue = 5;        // current slider value
 let numericValue = null;   // current numeric
-let currentChoice = null;  // current chosen value
+let currentChoice = null;  // current chosen value (single choice)
+let currentMulti = new Set();  // current chosen values (multi)
+let currentChoiceText = '';   // current 'other' text (single or multi)
 
 if (!sessionId) {
   showError('No check-in ready', "You'll get a link by text when your next check-in is due.");
@@ -238,6 +252,7 @@ function render() {
 
   if (q.type === 'scale')   html += renderScale(q);
   else if (q.type === 'choice')  html += renderChoice(q);
+  else if (q.type === 'multi_choice') html += renderMulti(q);
   else if (q.type === 'numeric') html += renderNumeric(q);
   else html += renderText(q);
 
@@ -311,12 +326,33 @@ const choiceSubtitles = {
   'helped':'it helped','not_helped':"didn't help",'almost':'almost','bloating':'bloating','cramps':'cramps','low_mood':'low mood',
   'period':'period','pre_period':'pre-period','mid_cycle':'mid-cycle','unsure':'unsure',
   'female':'female','male':'male','prefer_not':'prefer not to say',
-  'sweet':'sweet','salty':'salty','high':'high','high':'high','enjoyment':'enjoyment',
+  'sweet':'sweet','salty':'salty','high':'high','enjoyment':'enjoyment',
+  'stabbing':'stabbing','burning':'burning','aching':'aching',
+  '1-2':'1\u20132','3+':'3 or more','1':'1','2-3':'2\u20133','more':'more',
+  'yes_all':'all of them','partly':'some of them','not_applicable':'not applicable',
+  'constipated':'constipated','loose':'loose','both':'both',
+  'head':'head','neck':'neck','back':'back','shoulders':'shoulders','joints':'joints',
+  'chest':'chest','abdomen':'abdomen','limbs':'limbs','widespread':'widespread',
+  'breast_tenderness':'breast tenderness','nausea':'nausea','anxiety':'anxiety',
+  'acne':'acne','food_cravings':'food cravings','insomnia':'insomnia',
+  'follicular':'follicular','ovulation':'ovulation','luteal':'luteal','spotting':'spotting','very_heavy':'very heavy',
+  'one':'one','more_than_one':'more than one','not_much':'not much','constant':'constant',
+  'crashed':'crashed','flare':'flare',
   'mood':'mood','health':'health','migraines':'migraines','pots':'POTS','weight':'weight','depression':'depression','cycle':'cycle'
 };
+// Parse a stored value that may be "other: some text" into { choice, text }
+function parseChoiceValue(v) {
+  if (v == null) return { choice: null, text: '' };
+  const s = String(v);
+  const m = s.match(/^other:\s*(.*)$/);
+  if (m) return { choice: 'other', text: m[1] };
+  return { choice: s, text: '' };
+}
 function renderChoice(q) {
   const opts = q.options || [];
-  currentChoice = answers[q.key] || null;
+  const parsed = parseChoiceValue(answers[q.key]);
+  currentChoice = parsed.choice;
+  currentChoiceText = parsed.text;
   const chips = opts.map(o => {
     const sub = choiceSubtitles[o] || '';
     const sel = currentChoice === o ? ' selected' : '';
@@ -325,13 +361,64 @@ function renderChoice(q) {
       ${sub ? `<span class="chip-side">${sub}</span>` : ''}
     </div>`;
   }).join('');
-  return `<div class="chips">${chips}</div>`;
+  const hasOther = opts.includes('other');
+  const otherTextHidden = !(hasOther && currentChoice === 'other') ? 'hidden' : '';
+  return `
+    <div class="chips">${chips}</div>
+    ${hasOther ? `
+      <div class="other-wrap ${otherTextHidden}" id="other-wrap">
+        <textarea id="other-text" rows="2" placeholder="Tell me a bit about it" maxlength="200">${escape(currentChoiceText)}</textarea>
+        <button class="btn" id="next">Next</button>
+      </div>
+    ` : ''}
+  `;
+}
+
+// ── MULTI-CHOICE ─────────────────────────────────────────
+// Pick multiple options. Stored as comma-joined string: "cramps,bloating" or
+// "cramps,bloating,other: tight band" if 'other' with text was picked.
+function parseMultiValue(v) {
+  if (v == null) return { chosen: [], text: '' };
+  const s = String(v);
+  const parts = s.split(',').map(x => x.trim()).filter(Boolean);
+  let text = '';
+  const chosen = parts.map(p => {
+    const m = p.match(/^other:\s*(.*)$/);
+    if (m) { text = m[1]; return 'other'; }
+    return p;
+  });
+  return { chosen, text };
+}
+function renderMulti(q) {
+  const opts = q.options || [];
+  const parsed = parseMultiValue(answers[q.key]);
+  currentMulti = new Set(parsed.chosen);
+  currentChoiceText = parsed.text;
+  const chips = opts.map(o => {
+    const sub = choiceSubtitles[o] || '';
+    const sel = currentMulti.has(o) ? ' selected' : '';
+    return `<div class="chip${sel}" data-value="${o}">
+      <span class="chip-label">${o.replace(/_/g,' ')}</span>
+      ${sub ? `<span class="chip-side">${sub}</span>` : ''}
+    </div>`;
+  }).join('');
+  const hasOther = opts.includes('other');
+  const otherTextHidden = !(hasOther && currentMulti.has('other')) ? 'hidden' : '';
+  return `
+    <div class="chips">${chips}</div>
+    ${hasOther ? `
+      <div class="other-wrap ${otherTextHidden}" id="other-wrap">
+        <textarea id="other-text" rows="2" placeholder="Tell me a bit about it" maxlength="200">${escape(currentChoiceText)}</textarea>
+      </div>
+    ` : ''}
+    <button class="btn" id="next">${currentMulti.size ? 'Next' : 'Skip or choose one+'}</button>
+  `;
 }
 
 // ── NUMERIC ──────────────────────────────────────────────
 function quickPicks(key) {
-  if (key === 'sleep') return [];
-  if (key === 'duration') return [];
+  if (key === 'sleep') return [5, 6, 6.5, 7, 8];
+  if (key === 'duration') return [1, 2, 4, 8, 12];
   if (key === 'weight') return [];
   return [];
 }
@@ -389,14 +476,83 @@ function attachHandlers(q) {
   }
 
   if (q.type === 'choice') {
+    const opts = q.options || [];
+    const hasOther = opts.includes('other');
     document.querySelectorAll('.chip').forEach(el => {
       el.onclick = () => {
         const v = el.dataset.value;
         document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
         el.classList.add('selected');
+        currentChoice = v;
+        if (v === 'other' && hasOther) {
+          // reveal text input, wait for Next
+          const wrap = document.getElementById('other-wrap');
+          if (wrap) {
+            wrap.classList.remove('hidden');
+            const ta = document.getElementById('other-text');
+            if (ta) setTimeout(() => ta.focus(), 150);
+          }
+          return;
+        }
+        // Regular chip picked: if we had an "other" wrap open, hide it
+        const wrap = document.getElementById('other-wrap');
+        if (wrap) wrap.classList.add('hidden');
         setTimeout(() => advance(q, v, false), 180);
       };
     });
+    // Next button inside other-wrap (only renders when options include 'other')
+    const nextBtn = document.getElementById('next');
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        const ta = document.getElementById('other-text');
+        const txt = (ta && ta.value.trim()) || '';
+        const val = txt ? `other: ${txt}` : 'other';
+        advance(q, val, false);
+      };
+    }
+  }
+
+  if (q.type === 'multi_choice') {
+    const opts = q.options || [];
+    const hasOther = opts.includes('other');
+    document.querySelectorAll('.chip').forEach(el => {
+      el.onclick = () => {
+        const v = el.dataset.value;
+        if (currentMulti.has(v)) {
+          currentMulti.delete(v);
+          el.classList.remove('selected');
+        } else {
+          currentMulti.add(v);
+          el.classList.add('selected');
+        }
+        if (hasOther) {
+          const wrap = document.getElementById('other-wrap');
+          if (wrap) {
+            if (currentMulti.has('other')) wrap.classList.remove('hidden');
+            else wrap.classList.add('hidden');
+          }
+        }
+        const nb = document.getElementById('next');
+        if (nb) nb.textContent = currentMulti.size ? 'Next' : 'Skip or choose one+';
+      };
+    });
+    const nextBtn = document.getElementById('next');
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        if (!currentMulti.size) {
+          advance(q, null, true);
+          return;
+        }
+        const arr = [...currentMulti];
+        if (arr.includes('other')) {
+          const ta = document.getElementById('other-text');
+          const txt = (ta && ta.value.trim()) || '';
+          const idx = arr.indexOf('other');
+          arr[idx] = txt ? `other: ${txt}` : 'other';
+        }
+        advance(q, arr.join(','), false);
+      };
+    }
   }
 
   if (q.type === 'numeric') {

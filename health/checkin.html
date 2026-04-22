@@ -229,7 +229,7 @@ function showError(title, body) {
 function render() {
   renderProgress();
   const q = questions[step];
-  if (!q) return renderDone();
+  if (!q) return complete();
 
   const pg = `${session.slot === 'morning' ? 'Morning' : 'Evening'} · question ${step+1} of ${questions.length}`;
   let html = `<div class="q-area">`;
@@ -258,23 +258,42 @@ function renderProgress() {
 }
 
 // ── SCALE ────────────────────────────────────────────────
-const scaleDescriptors = [
+// Two directions depending on what the question asks.
+// higher_is_better (mood, energy, clarity, overall): 0 feels bad, 10 feels great.
+// higher_is_worse  (pain, anxiety, fatigue, headache, stress, fog):
+//                   0 means no symptom (good), 10 means severe (bad).
+const scaleDescriptorsBetter = [
   'rough','rough','tough','tough',
   'okay','okay','pretty good','pretty good',
   'bright','bright','bright'
 ];
+const scaleDescriptorsWorse = [
+  'none','barely','mild','mild',
+  'moderate','moderate','strong','strong',
+  'severe','severe','as bad as it gets'
+];
+function descriptorFor(q, v) {
+  const dir = q.direction || 'higher_is_worse';
+  const set = dir === 'higher_is_better' ? scaleDescriptorsBetter : scaleDescriptorsWorse;
+  return set[Math.max(0, Math.min(10, v))];
+}
+function endLabelsFor(q) {
+  const dir = q.direction || 'higher_is_worse';
+  return dir === 'higher_is_better' ? ['rough', 'bright'] : ['none', 'severe'];
+}
 function renderScale(q) {
   scaleValue = answers[q.key] != null ? Number(answers[q.key]) : 5;
+  const [leftLabel, rightLabel] = endLabelsFor(q);
   return `
     <div class="scale-card">
       <div class="scale-row">
         <div>
           <div class="scale-num" id="scale-num">${scaleValue}</div>
-          <div class="scale-desc" id="scale-desc">${scaleDescriptors[scaleValue]}</div>
+          <div class="scale-desc" id="scale-desc">${descriptorFor(q, scaleValue)}</div>
         </div>
       </div>
       <input type="range" min="0" max="10" step="1" value="${scaleValue}" class="scale-slider" id="scale" />
-      <div class="scale-ends"><span>rough</span><span>bright</span></div>
+      <div class="scale-ends"><span>${leftLabel}</span><span>${rightLabel}</span></div>
       <button class="btn" id="next">Next</button>
     </div>
   `;
@@ -311,8 +330,8 @@ function renderChoice(q) {
 
 // ── NUMERIC ──────────────────────────────────────────────
 function quickPicks(key) {
-  if (key === 'sleep') return [5, 6, 6.5, 7, 8];
-  if (key === 'duration') return [1, 2, 4, 8, 12];
+  if (key === 'sleep') return [];
+  if (key === 'duration') return [];
   if (key === 'weight') return [];
   return [];
 }
@@ -364,7 +383,7 @@ function attachHandlers(q) {
     slider.oninput = () => {
       scaleValue = Number(slider.value);
       document.getElementById('scale-num').textContent = scaleValue;
-      document.getElementById('scale-desc').textContent = scaleDescriptors[scaleValue];
+      document.getElementById('scale-desc').textContent = descriptorFor(q, scaleValue);
     };
     document.getElementById('next').onclick = () => advance(q, scaleValue, false);
   }
@@ -440,32 +459,48 @@ async function advance(q, value, skipped) {
 }
 
 async function complete() {
-  document.getElementById('topbar').innerHTML = `<div class="progress-track">${
-    questions.map(() => '<div class="seg done"></div>').join('')
-  }</div>`;
-  document.getElementById('main').innerHTML = `
-    <div class="done-card">
-      <div class="check-circle">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--cta-text)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-      </div>
-      <h2 class="done-title">All logged${session?.user?.name ? ', ' + session.user.name.split(' ')[0] : ''}</h2>
-      <p class="done-sub">Thanks for taking the time.</p>
-      <div class="alys-bubble" id="alys-box" style="display:none">
-        <p class="alys-label">Alys</p>
-        <p class="alys-text" id="alys-text"></p>
-      </div>
-      <button class="btn" onclick="location.href='/health/home'">Back to home</button>
-    </div>
-  `;
+  try {
+    const firstName = (session && session.user && session.user.name) ? session.user.name.split(' ')[0] : '';
+    const topbar = document.getElementById('topbar');
+    if (topbar) {
+      topbar.innerHTML = `<div class="progress-track">${
+        questions.map(() => '<div class="seg done"></div>').join('')
+      }</div>`;
+    }
+    const main = document.getElementById('main');
+    if (main) {
+      main.innerHTML = `
+        <div class="done-card">
+          <div class="check-circle">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--cta-text)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <h2 class="done-title">All logged${firstName ? ', ' + firstName : ''}</h2>
+          <p class="done-sub">Thanks for taking the time.</p>
+          <div class="alys-bubble" id="alys-box" style="display:none">
+            <p class="alys-label">Alys</p>
+            <p class="alys-text" id="alys-text"></p>
+          </div>
+          <button class="btn" onclick="location.href='/health/home'">Back to home</button>
+        </div>
+      `;
+    }
+  } catch (e) {
+    console.error('complete() render failed:', e);
+  }
 
+  // Post to server — if this fails, user still sees "All logged" screen
   try {
     const res = await fetch(API + '/session/' + sessionId + '/complete', { method: 'POST' });
     const data = await res.json();
-    if (data.reply) {
-      document.getElementById('alys-text').textContent = data.reply;
-      document.getElementById('alys-box').style.display = 'block';
+    if (data && data.reply) {
+      const txt = document.getElementById('alys-text');
+      const box = document.getElementById('alys-box');
+      if (txt) txt.textContent = data.reply;
+      if (box) box.style.display = 'block';
     }
-  } catch (e) { /* quietly swallow */ }
+  } catch (e) {
+    console.error('complete() POST failed:', e);
+  }
 }
 
 // ── UTIL ─────────────────────────────────────────────────

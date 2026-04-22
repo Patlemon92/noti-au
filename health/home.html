@@ -137,30 +137,40 @@ body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
 .push-banner.success{border-color:rgba(34,139,34,.3)}
 .push-banner.success .push-banner-label{color:#1F7A3E}
 
-/* ── Quick Log form (midday) ─────────────────── */
-.qlog{display:none;margin-top:18px}
-.qlog.open{display:block}
-.qlog-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+/* ── Quick Log card — always visible, second card below CTA ─── */
+.qlog-card{
+  background:rgba(255,255,255,.6);
+  border:.5px solid rgba(74,27,12,.1);
+  border-radius:20px;
+  padding:20px 22px;
+  margin-top:14px;
+  backdrop-filter:blur(8px);
+}
+.t-night .qlog-card,.t-evening .qlog-card{background:rgba(30,22,18,.4);border-color:rgba(255,255,255,.08)}
+.qlog-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.qlog-tag{font-size:10px;font-weight:500;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase}
+.qlog-hint{font-size:12px;color:var(--muted);font-style:italic}
+.qlog-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .qlog-opt{
-  padding:14px 10px;border-radius:14px;font-size:14px;font-weight:500;
+  padding:12px 4px;border-radius:12px;font-size:13px;font-weight:500;
   background:var(--mini-bg);color:var(--ink);border:.5px solid var(--mini-border);
   cursor:pointer;transition:all .15s;font-family:inherit;
 }
 .qlog-opt:active{transform:scale(.98)}
 .qlog-opt.selected{background:var(--cta);color:var(--cta-text);border-color:var(--cta)}
 .qlog-text{
-  width:100%;min-height:80px;resize:vertical;
+  width:100%;min-height:60px;resize:vertical;
   background:var(--mini-bg);color:var(--ink);border:.5px solid var(--mini-border);
-  border-radius:14px;padding:12px;font-size:14px;font-family:inherit;
-  margin-bottom:12px;outline:none;
+  border-radius:12px;padding:11px 12px;font-size:13.5px;font-family:inherit;
+  margin-bottom:10px;outline:none;line-height:1.5;
 }
 .qlog-text::placeholder{color:var(--muted);opacity:.7}
 .qlog-reply{
-  padding:14px;border-radius:14px;background:var(--mini-bg);
-  border:.5px solid var(--mini-border);font-size:14px;line-height:1.5;
+  padding:13px 14px;border-radius:12px;background:var(--mini-bg);
+  border:.5px solid var(--mini-border);font-size:13.5px;line-height:1.5;
   color:var(--ink);margin-top:8px;
 }
-.qlog-reply-label{font-size:11px;font-weight:500;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.qlog-reply-label{font-size:10px;font-weight:500;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
 
 /* ── Unread dot on Alys nav item ─────────── */
 .nav-item{position:relative}
@@ -199,25 +209,29 @@ body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
     <p class="cta-title" id="cta-title">Ready when you are</p>
     <p class="cta-sub" id="cta-sub">A few quick things so I can see how today is going.</p>
     <button class="btn" id="cta-btn" disabled>Loading…</button>
-
-    <!-- Quick Log form — expands in place when user taps Quick Log CTA -->
-    <div class="qlog" id="qlog">
-      <div class="qlog-grid">
-        <button type="button" class="qlog-opt" data-mood="good">Good</button>
-        <button type="button" class="qlog-opt" data-mood="ok">OK</button>
-        <button type="button" class="qlog-opt" data-mood="rough">Rough</button>
-        <button type="button" class="qlog-opt" data-mood="bad">Bad</button>
-      </div>
-      <textarea class="qlog-text" id="qlog-text" placeholder="Anything else? (optional)"></textarea>
-      <button class="btn" id="qlog-submit" disabled>Pick how you're feeling</button>
-      <div class="qlog-reply hidden" id="qlog-reply">
-        <p class="qlog-reply-label">ALYS</p>
-        <p id="qlog-reply-body"></p>
-      </div>
-    </div>
   </div>
 
   <p class="skip hidden" id="skip"><a id="skip-link">Not today? Skip — I'll catch you later.</a></p>
+
+  <!-- Quick Log card — always visible. Tap a mood button to expand + type. -->
+  <div class="qlog-card" id="qlog-card">
+    <div class="qlog-header">
+      <span class="qlog-tag">Quick log</span>
+      <span class="qlog-hint">How are you right now?</span>
+    </div>
+    <div class="qlog-grid">
+      <button type="button" class="qlog-opt" data-mood="good">Good</button>
+      <button type="button" class="qlog-opt" data-mood="ok">OK</button>
+      <button type="button" class="qlog-opt" data-mood="rough">Rough</button>
+      <button type="button" class="qlog-opt" data-mood="bad">Bad</button>
+    </div>
+    <textarea class="qlog-text" id="qlog-text" placeholder="Anything else? (optional)"></textarea>
+    <button class="btn" id="qlog-submit" disabled>Pick how you're feeling</button>
+    <div class="qlog-reply hidden" id="qlog-reply">
+      <p class="qlog-reply-label">ALYS</p>
+      <p id="qlog-reply-body"></p>
+    </div>
+  </div>
 
   <p class="section-label">Your week so far</p>
   <div class="mirror" id="mirror">
@@ -311,15 +325,15 @@ async function setupCTA() {
   const time = document.getElementById('cta-time');
   const skip = document.getElementById('skip');
 
-  // Midday: Quick Log — expands in place, not a redirect
+  // Midday: no required check-in, just a soft presence. Quick Log is always available below.
   if (tod === 'midday') {
-    tag.textContent = "How's the day going?";
-    title.textContent = 'Quick check-in';
-    sub.textContent = "One tap, one line. I'll be here if there's more.";
-    time.textContent = '~30 sec';
-    btn.textContent = 'Quick log';
+    tag.textContent = 'Mid-day';
+    title.textContent = 'No check-in right now';
+    sub.textContent = "Morning's done. Evening comes later. If anything's on your mind, use Quick log.";
+    time.textContent = '';
+    btn.textContent = 'View today';
     btn.disabled = false;
-    btn.onclick = openQuickLog;
+    btn.onclick = () => location.href = '/health/record';
     return;
   }
 
@@ -438,16 +452,8 @@ async function loadMirror() {
   }
 }
 
-// ── Quick Log — opens in place, submits via POST /me/note ──
+// ── Quick Log — always visible card, submits via POST /me/note ─
 let qlogMood = null;
-function openQuickLog() {
-  const qlog = document.getElementById('qlog');
-  const btn  = document.getElementById('cta-btn');
-  qlog.classList.add('open');
-  btn.style.display = 'none';
-  // Focus first option for keyboard users
-  setTimeout(() => document.querySelector('.qlog-opt')?.focus(), 100);
-}
 
 document.querySelectorAll('.qlog-opt').forEach(opt => {
   opt.onclick = () => {

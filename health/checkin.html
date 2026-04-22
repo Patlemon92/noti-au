@@ -173,7 +173,7 @@ body{
 </div>
 
 <script>
-const API = 'https://noti-health-api.ancient-bread-01fe.workers.dev
+const API = 'https://noti-health-api.ancient-bread-01fe.workers.dev';
 const token = localStorage.getItem('noti_token');
 
 // Session ID comes from either the URL path (/checkin/:id) or ?session= query param
@@ -210,6 +210,9 @@ async function loadSession() {
     }
 
     if (session.slot === 'evening') document.body.classList.add('t-evening');
+    // Start at the first visible question (normally index 0, but defensive
+    // in case the list happens to start with a conditional).
+    step = nextVisibleStep(0);
     render();
   } catch (e) {
     showError('Could not load check-in', 'The link may have expired. Try the latest SMS, or come back later.');
@@ -227,7 +230,10 @@ function render() {
   const q = questions[step];
   if (!q) return renderDone();
 
-  const pg = `${session.slot === 'morning' ? 'Morning' : 'Evening'} · question ${step+1} of ${questions.length}`;
+  // Visible-question numbering for the label + progress
+  const visibleCount = countVisible();
+  const currentVisibleIdx = visibleIndexOf(step);
+  const pg = `${session.slot === 'morning' ? 'Morning' : 'Evening'} · question ${currentVisibleIdx + 1} of ${visibleCount}`;
   let html = `<div class="q-area">`;
   html += `<p class="pg-label">${pg}</p>`;
   html += `<h1 class="qtext">${escape(q.question)}</h1>`;
@@ -244,13 +250,57 @@ function render() {
   attachHandlers(q);
 }
 
+// ── CONDITIONAL BRANCHING ────────────────────────────────
+// A question is "visible" unless it has a conditionalOnKey and the
+// user's answer to that key doesn't match conditionalOnValue.
+// Unanswered controlling question ⇒ dependent not visible yet.
+function isVisible(q) {
+  if (!q || !q.conditionalOnKey) return true;
+  const controlling = answers[q.conditionalOnKey];
+  if (controlling === undefined || controlling === null) return false;
+  return String(controlling).toLowerCase() === String(q.conditionalOnValue).toLowerCase();
+}
+
+// Walk forward from `from` and return the first visible question index.
+// Returns questions.length if none remain (→ complete).
+function nextVisibleStep(from) {
+  for (let i = from; i < questions.length; i++) {
+    if (isVisible(questions[i])) return i;
+  }
+  return questions.length;
+}
+
+// Walk backward from `from` and return the previous visible index, or -1.
+function prevVisibleStep(from) {
+  for (let i = from; i >= 0; i--) {
+    if (isVisible(questions[i])) return i;
+  }
+  return -1;
+}
+
+function countVisible() {
+  let n = 0;
+  for (const q of questions) if (isVisible(q)) n++;
+  return n;
+}
+
+function visibleIndexOf(idx) {
+  let n = 0;
+  for (let i = 0; i < idx; i++) if (isVisible(questions[i])) n++;
+  return n;
+}
+
 function renderProgress() {
   const track = document.getElementById('progress');
-  track.innerHTML = questions.map((_, i) => {
-    if (i < step) return '<div class="seg done"></div>';
-    if (i === step) return '<div class="seg cur"></div>';
-    return '<div class="seg"></div>';
-  }).join('');
+  // Only show segments for currently-visible questions
+  const segs = [];
+  for (let i = 0; i < questions.length; i++) {
+    if (!isVisible(questions[i])) continue;
+    if (i < step)       segs.push('<div class="seg done"></div>');
+    else if (i === step){ segs.push('<div class="seg cur"></div>'); }
+    else                 segs.push('<div class="seg"></div>');
+  }
+  track.innerHTML = segs.join('');
 }
 
 // ── SCALE ────────────────────────────────────────────────
@@ -412,8 +462,10 @@ function attachHandlers(q) {
   }
 
   document.getElementById('btn-back').onclick = () => {
-    if (step === 0) { location.href = '/health/home'; return; }
-    step--; render();
+    const prev = prevVisibleStep(step - 1);
+    if (prev < 0) { location.href = '/health/home'; return; }
+    step = prev;
+    render();
   };
 }
 
@@ -430,14 +482,17 @@ async function advance(q, value, skipped) {
     body: JSON.stringify({ key: q.key, value: toSend })
   }).catch(() => {});
 
-  step++;
+  // Jump to the next applicable question (skips conditionals that
+  // don't apply given what's been answered so far).
+  step = nextVisibleStep(step + 1);
   if (step >= questions.length) return complete();
   render();
 }
 
 async function complete() {
+  const visN = countVisible();
   document.getElementById('topbar').innerHTML = `<div class="progress-track">${
-    questions.map(() => '<div class="seg done"></div>').join('')
+    Array.from({length: visN}, () => '<div class="seg done"></div>').join('')
   }</div>`;
   document.getElementById('main').innerHTML = `
     <div class="done-card">

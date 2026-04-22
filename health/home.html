@@ -107,6 +107,7 @@ body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
 .mini-label{font-size:12px;color:var(--accent);margin-bottom:6px}
 .mini-value{font-size:22px;font-weight:500;color:var(--ink);margin:0}
 .mini-unit{font-size:13px;color:var(--muted);font-weight:400}
+.mini-dir{display:inline-block;margin-left:5px;font-size:11px;color:var(--muted);opacity:.55;vertical-align:middle}
 .mini-note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.4}
 .bars{margin-top:10px;display:flex;gap:3px;align-items:flex-end;height:22px}
 .bar{flex:1;border-radius:2px;background:var(--accent);opacity:.35}
@@ -398,11 +399,13 @@ async function setupCTA() {
   const eveningStart = (parseHm((user.eveningTime || '20:30').slice(0,5)) ?? (20*60+30)) - 60;
   const eveningWindowOpen = nowMins >= eveningStart;
 
-  // Case 1: both done — rest state
-  if (morningDone && eveningDone) {
+  // Case 1: evening done — rest state (morning is moot once evening is in)
+  if (eveningDone) {
     tag.textContent   = 'Today, logged';
-    title.textContent = 'All done for today';
-    sub.textContent   = "Both check-ins recorded. Rest if you can — I'll see you tomorrow.";
+    title.textContent = morningDone ? 'All done for today' : 'Evening logged';
+    sub.textContent   = morningDone
+      ? "Both check-ins recorded. Rest if you can — I'll see you tomorrow."
+      : "Evening check-in saved. Rest if you can — I'll see you tomorrow.";
     time.textContent  = '';
     btn.textContent   = "View today's record";
     btn.disabled      = false;
@@ -477,20 +480,24 @@ async function startCheckin(slot) {
 
 // ── Mirror — last week's stats, dynamic per user templates ──
 // Core stats shown to everyone
+// Core wellbeing stats shown to everyone.
+// Mood: 10 = best, so no direction marker needed.
 const CORE_MIRROR = [
   { label: 'Sleep',  get: (a) => a.sleep != null ? a.sleep.toFixed(1) + '<span class="mini-unit"> hrs avg</span>' : null },
   { label: 'Mood',   get: (a) => a.mood  != null ? a.mood.toFixed(1)  + '<span class="mini-unit"> / 10</span>' : null }
 ];
 
-// Template-specific stats — only shown if user tracks that template
+// Template-specific stats — only shown if user tracks that template.
+// Symptom metrics (pain, fatigue, fog, anxiety, headache) get a "↓ lower is better"
+// hint via the dir:'lower' flag so users read "Pain: 4.2 ↓" as "good, it's low".
 const TEMPLATE_MIRROR = {
-  anxiety:  { label: 'Anxiety',    get: (a) => a.anxiety  != null ? a.anxiety.toFixed(1)  + '<span class="mini-unit"> / 10</span>' : null },
-  fatigue:  { label: 'Fatigue',    get: (a) => a.fatigue  != null ? a.fatigue.toFixed(1)  + '<span class="mini-unit"> / 10</span>' : null },
-  fog:      { label: 'Brain fog',  get: (a) => a.fog      != null ? a.fog.toFixed(1)      + '<span class="mini-unit"> / 10</span>' : null },
-  pain:     { label: 'Pain',       get: (a) => a.pain     != null ? a.pain.toFixed(1)     + '<span class="mini-unit"> / 10</span>' : null },
-  weight:   { label: 'Weight',     get: (a) => a.weight   != null ? a.weight.toFixed(1)   + '<span class="mini-unit"> kg</span>' : null },
-  migraines:{ label: 'Headache',   get: (a) => a.headache != null ? a.headache.toFixed(1) + '<span class="mini-unit"> / 10</span>' : null },
-  pots:     { label: 'Heart rate', get: (a) => a.heart_rate != null ? Math.round(a.heart_rate) + '<span class="mini-unit"> bpm avg</span>' : null }
+  anxiety:  { label: 'Anxiety',    dir: 'lower', get: (a) => a.anxiety  != null ? a.anxiety.toFixed(1)  + '<span class="mini-unit"> / 10</span>' : null },
+  fatigue:  { label: 'Fatigue',    dir: 'lower', get: (a) => a.fatigue  != null ? a.fatigue.toFixed(1)  + '<span class="mini-unit"> / 10</span>' : null },
+  fog:      { label: 'Brain fog',  dir: 'lower', get: (a) => a.fog      != null ? a.fog.toFixed(1)      + '<span class="mini-unit"> / 10</span>' : null },
+  pain:     { label: 'Pain',       dir: 'lower', get: (a) => a.pain     != null ? a.pain.toFixed(1)     + '<span class="mini-unit"> / 10</span>' : null },
+  weight:   { label: 'Weight',                   get: (a) => a.weight   != null ? a.weight.toFixed(1)   + '<span class="mini-unit"> kg</span>' : null },
+  migraines:{ label: 'Headache',   dir: 'lower', get: (a) => a.headache != null ? a.headache.toFixed(1) + '<span class="mini-unit"> / 10</span>' : null },
+  pots:     { label: 'Heart rate',               get: (a) => a.heart_rate != null ? Math.round(a.heart_rate) + '<span class="mini-unit"> bpm avg</span>' : null }
 };
 
 async function loadMirror() {
@@ -508,12 +515,12 @@ async function loadMirror() {
     const picks = [];
     for (const stat of CORE_MIRROR) {
       const v = stat.get(avgs);
-      if (v != null) picks.push({ label: stat.label, value: v });
+      if (v != null) picks.push({ label: stat.label, value: v, dir: null });
     }
     for (const t of templates) {
       if (TEMPLATE_MIRROR[t]) {
         const v = TEMPLATE_MIRROR[t].get(avgs);
-        if (v != null) picks.push({ label: TEMPLATE_MIRROR[t].label, value: v });
+        if (v != null) picks.push({ label: TEMPLATE_MIRROR[t].label, value: v, dir: TEMPLATE_MIRROR[t].dir || null });
       }
     }
     // Cap at 4 (2x2 grid looks best on mobile) and need at least 1 to render
@@ -522,9 +529,12 @@ async function loadMirror() {
     if (capped.length === 0) {
       mirror.innerHTML = `<div class="mini" style="grid-column:span 2"><p class="mini-label">Your week</p><p class="mini-value" style="font-size:14px;opacity:.7">Do a couple more check-ins and patterns will start showing here.</p></div>`;
     } else {
-      mirror.innerHTML = capped.map(s =>
-        `<div class="mini"><p class="mini-label">${s.label}</p><p class="mini-value">${s.value}</p></div>`
-      ).join('');
+      mirror.innerHTML = capped.map(s => {
+        const arrow = s.dir === 'lower'
+          ? '<span class="mini-dir" title="Lower is better">\u2193</span>'
+          : '';
+        return `<div class="mini"><p class="mini-label">${s.label}${arrow}</p><p class="mini-value">${s.value}</p></div>`;
+      }).join('');
     }
   } catch (e) {
     // quietly ignore; the mirror is decorative

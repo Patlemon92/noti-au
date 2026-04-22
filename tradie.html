@@ -206,6 +206,34 @@ const esc = v => String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 const fmt = v => String(v||'').trim();
 function cleanPhone(p){ return p.replace(/\s+/g,'').replace(/[^0-9]/g,''); }
 
+// Format UTC timestamp to Sydney time
+function sydneyTime(utcStr) {
+  if (!utcStr) return '';
+  try {
+    return new Date(utcStr).toLocaleString('en-AU', {
+      timeZone: 'Australia/Sydney',
+      day:   '2-digit',
+      month: 'short',
+      year:  'numeric',
+      hour:  '2-digit',
+      minute:'2-digit',
+      hour12: true
+    });
+  } catch(e) { return utcStr; }
+}
+
+function sydneyDate(utcStr) {
+  if (!utcStr) return '';
+  try {
+    return new Date(utcStr).toLocaleDateString('en-AU', {
+      timeZone: 'Australia/Sydney',
+      day:   '2-digit',
+      month: 'short',
+      year:  'numeric'
+    });
+  } catch(e) { return utcStr; }
+}
+
 async function post(endpoint, payload){
   const res = await fetch(`${API}${endpoint}`, {
     method:  'POST',
@@ -536,7 +564,7 @@ function renderJobs(){
     <div class="job-item">
       <div>
         <div class="job-desc">${esc(j.description || 'Job')}</div>
-        <div class="job-meta">${esc(j.suburb || '')} &nbsp;·&nbsp; ${esc(j.date)}</div>
+        <div class="job-meta">${esc(j.suburb || '')} &nbsp;·&nbsp; ${sydneyDate(j.date)}</div>
         ${j.price ? `<div class="job-meta" style="color:var(--green);font-weight:700;">$${esc(String(j.price))}</div>` : ''}
       </div>
       <div class="job-status ${j.status}">${j.status}</div>

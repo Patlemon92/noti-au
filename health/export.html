@@ -54,9 +54,13 @@ h1{font-size:24px;font-weight:500;color:#4A1B0C;margin:0 0 4px;letter-spacing:-.
 .section{margin-bottom:22px}
 .section-label{font-size:11px;font-weight:500;color:#993C1D;letter-spacing:1.5px;text-transform:uppercase;margin:0 0 10px}
 
-.range-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.range-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
 .range-chip{background:rgba(255,255,255,.7);border:.5px solid rgba(74,27,12,.12);border-radius:12px;padding:11px 0;text-align:center;font-size:13px;color:#4A1B0C;font-weight:500;cursor:pointer}
 .range-chip.active{background:#4A1B0C;color:#FFE4D0;border-color:#4A1B0C}
+.custom-range{display:none;gap:8px;margin-top:8px}
+.custom-range.open{display:grid;grid-template-columns:1fr 1fr}
+.custom-range .field{margin-bottom:0}
+.custom-range input[type=date]{color:#4A1B0C;font-size:13px}
 
 .field{background:rgba(255,255,255,.7);border:.5px solid rgba(74,27,12,.12);border-radius:14px;padding:14px 16px;margin-bottom:10px}
 .field input, .field textarea{width:100%;background:transparent;border:0;font-family:inherit;font-size:14px;color:#4A1B0C;outline:none;resize:none}
@@ -123,6 +127,17 @@ h1{font-size:24px;font-weight:500;color:#4A1B0C;margin:0 0 4px;letter-spacing:-.
       <div class="range-chip" data-days="7">Last 7d</div>
       <div class="range-chip active" data-days="30">Last 30d</div>
       <div class="range-chip" data-days="90">Last 90d</div>
+      <div class="range-chip" data-days="custom">Custom</div>
+    </div>
+    <div class="custom-range" id="custom-range">
+      <div class="field">
+        <p class="field-label">From</p>
+        <input id="date-from" type="date" />
+      </div>
+      <div class="field">
+        <p class="field-label">To</p>
+        <input id="date-to" type="date" />
+      </div>
     </div>
   </div>
 
@@ -230,12 +245,47 @@ function renderToggles() {
 
 document.querySelectorAll('.range-chip').forEach(chip => {
   chip.onclick = () => {
-    state.days = Number(chip.dataset.days);
+    const v = chip.dataset.days;
     document.querySelectorAll('.range-chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
+    const customRange = document.getElementById('custom-range');
+    if (v === 'custom') {
+      customRange.classList.add('open');
+      state.isCustom = true;
+      // Default: last 30 days pre-filled so user can nudge
+      const end = new Date();
+      const start = new Date(); start.setDate(end.getDate() - 29);
+      const iso = (d) => d.toISOString().slice(0,10);
+      if (!document.getElementById('date-from').value) document.getElementById('date-from').value = iso(start);
+      if (!document.getElementById('date-to').value)   document.getElementById('date-to').value   = iso(end);
+      state.from = document.getElementById('date-from').value;
+      state.to   = document.getElementById('date-to').value;
+      updateCustomDays();
+    } else {
+      customRange.classList.remove('open');
+      state.isCustom = false;
+      state.days = Number(v);
+    }
     renderPreview();
   };
 });
+
+['date-from','date-to'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => {
+    state.from = document.getElementById('date-from').value;
+    state.to   = document.getElementById('date-to').value;
+    updateCustomDays();
+    renderPreview();
+  });
+});
+
+function updateCustomDays() {
+  if (!state.from || !state.to) return;
+  const d1 = new Date(state.from);
+  const d2 = new Date(state.to);
+  const days = Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
+  state.days = days;
+}
 
 document.getElementById('recipient').addEventListener('input', e => {
   state.recipient = e.target.value.trim();
@@ -252,13 +302,14 @@ function renderPreview() {
   else { rEl.textContent = 'No recipient'; rEl.classList.add('empty'); }
 
   document.getElementById('p-meta').textContent =
-    `Period: last ${state.days} days · ${formatDateRange(state.days)}`;
+    state.isCustom
+      ? `Period: ${formatCustomRange()} (${state.days} days)`
+      : `Period: last ${state.days} days · ${formatDateRange(state.days)}`;
 
   const noteEl = document.getElementById('p-note');
   if (state.note) { noteEl.textContent = `"${state.note}"`; noteEl.style.display = 'block'; }
   else { noteEl.style.display = 'none'; }
 
-  const total = state.sections.reduce((n, s) => n + (s.on ? s.pages : 0), 0) + 1; // +1 for the daily-log/own-words page count assumption simplification
   const pages = state.sections.filter(s => s.on).reduce((n, s) => n + s.pages, 0);
   document.getElementById('p-pages').textContent = `Page 1 of ${pages}`;
   document.getElementById('btn-label').textContent = `Generate PDF · ${pages} page${pages===1?'':'s'}`;
@@ -271,6 +322,12 @@ function formatDateRange(days) {
   return `${fmt(start)} – ${fmt(end)}`;
 }
 
+function formatCustomRange() {
+  if (!state.from || !state.to) return '—';
+  const fmt = s => new Date(s).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  return `${fmt(state.from)} – ${fmt(state.to)}`;
+}
+
 document.getElementById('btn-export').onclick = async () => {
   const btn = document.getElementById('btn-export');
   const label = document.getElementById('btn-label');
@@ -278,6 +335,8 @@ document.getElementById('btn-export').onclick = async () => {
 
   const body = {
     days: state.days,
+    from: state.isCustom ? state.from : null,
+    to:   state.isCustom ? state.to   : null,
     recipient: state.recipient || null,
     note: state.note || null,
     sections: state.sections.filter(s => s.on).map(s => s.key)

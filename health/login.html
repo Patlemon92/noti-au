@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{min-height:100%;}body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+html{min-height:100%;overflow-x:hidden;max-width:100vw}body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
 body{
   background:linear-gradient(160deg,#FFE8C7 0%,#FFCBA4 25%,#F5A887 55%,#EC7E5C 85%,#D85A30 100%);
   min-height:100dvh;background-attachment:fixed;color:#4A1B0C;overflow-x:hidden;position:relative;
@@ -56,7 +56,7 @@ button:disabled{opacity:.4;cursor:wait}
 
 /* iOS safe-area: fill behind status bar and home indicator */
 body{padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
-html{min-height:100%;background:inherit}
+html{min-height:100%;overflow-x:hidden;max-width:100vw;background:inherit}
 </style>
 </head>
 <body>

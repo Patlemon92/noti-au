@@ -4,7 +4,7 @@
 // Handles: push events, notification clicks, minimal cache for offline.
 // =============================================================
 
-const CACHE_VERSION = 'noti-health-v1';
+const CACHE_VERSION = 'noti-health-v3';
 const SHELL_ASSETS = [
   '/health/login',
   '/health/home',

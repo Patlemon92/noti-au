@@ -94,6 +94,63 @@ body{
 /* iOS safe-area: fill behind status bar and home indicator */
 body{padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
 html{min-height:100%;overflow-x:hidden;max-width:100vw;background:inherit}
+/* Bio section — what Alys knows about you */
+.bio-view{padding:16px 0;display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.bio-text{flex:1;font-size:14px;line-height:1.55;color:#4A1B0C;margin:0;white-space:pre-wrap}
+.bio-text.empty{color:#712B13;opacity:.6;font-style:italic}
+.bio-edit-btn{
+  flex-shrink:0;background:transparent;border:.5px solid rgba(74,27,12,.25);
+  color:#4A1B0C;padding:6px 14px;border-radius:10px;
+  font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;
+}
+.bio-edit-btn:active{background:rgba(74,27,12,.05)}
+.bio-edit{padding:12px 0}
+.bio-edit textarea{
+  width:100%;padding:12px 14px;border-radius:12px;
+  border:.5px solid rgba(74,27,12,.2);background:rgba(255,255,255,.85);
+  color:#4A1B0C;font-family:inherit;font-size:14px;line-height:1.5;
+  resize:vertical;outline:none;min-height:100px;
+}
+.bio-edit textarea:focus{border-color:#D85A30}
+.bio-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+.bio-cancel, .bio-save{
+  padding:8px 16px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:500;
+  cursor:pointer;border:0;
+}
+.bio-cancel{background:transparent;color:#4A1B0C;border:.5px solid rgba(74,27,12,.2)}
+.bio-save{background:#4A1B0C;color:#FFE4D0}
+.bio-save:disabled{opacity:.4;cursor:wait}
+/* Bio: what Alys knows */
+#bio-card{padding:18px 18px 14px}
+.bio-view{display:flex;gap:12px;align-items:flex-start}
+.bio-text{
+  flex:1;font-size:13.5px;line-height:1.6;color:#4A1B0C;margin:0;
+  white-space:pre-wrap;word-break:break-word;font-style:italic;
+}
+.bio-text.empty{opacity:.55;font-style:italic}
+.bio-edit-btn{
+  flex-shrink:0;background:transparent;border:.5px solid rgba(74,27,12,.25);
+  color:#4A1B0C;font-size:12px;font-weight:500;font-family:inherit;
+  padding:8px 14px;border-radius:10px;cursor:pointer;
+}
+.bio-edit-btn:active{opacity:.7}
+.bio-edit{display:flex;flex-direction:column;gap:10px}
+.bio-edit textarea{
+  width:100%;min-height:120px;resize:vertical;
+  background:rgba(255,255,255,.9);border:.5px solid rgba(74,27,12,.15);
+  border-radius:12px;padding:12px 14px;font-size:13.5px;font-family:inherit;
+  color:#4A1B0C;outline:none;line-height:1.55;
+}
+.bio-edit textarea:focus{border-color:#D85A30}
+.bio-actions{display:flex;gap:8px;justify-content:flex-end}
+.bio-actions button{
+  font-family:inherit;font-size:13px;font-weight:500;
+  padding:9px 16px;border-radius:10px;cursor:pointer;border:0;
+}
+.bio-cancel{background:transparent;color:#4A1B0C;border:.5px solid rgba(74,27,12,.25)}
+.bio-save{background:#4A1B0C;color:#FFE4D0}
+.hidden{display:none}
+
 </style>
 </head>
 <body>
@@ -135,6 +192,21 @@ html{min-height:100%;overflow-x:hidden;max-width:100vw;background:inherit}
 
   <p class="section-label">What you track</p>
   <div class="tag-row" id="templates"></div>
+
+  <p class="section-label">What Alys knows about you</p>
+  <div class="card" id="bio-card">
+    <div class="bio-view" id="bio-view">
+      <p class="bio-text" id="bio-text">&mdash;</p>
+      <button class="bio-edit-btn" id="bio-edit-btn">Edit</button>
+    </div>
+    <div class="bio-edit hidden" id="bio-edit-mode">
+      <textarea id="bio-input" rows="5" placeholder="What would you like Alys to remember about you?"></textarea>
+      <div class="bio-actions">
+        <button class="bio-cancel" id="bio-cancel">Cancel</button>
+        <button class="bio-save" id="bio-save">Save</button>
+      </div>
+    </div>
+  </div>
 
   <p class="section-label">Reminders on this device</p>
   <div class="card" id="push-card">
@@ -196,10 +268,14 @@ document.getElementById('initial').textContent = (user.name || '?').trim()[0].to
 document.getElementById('morning-time').value = (user.morningTime || '').slice(0,5);
 document.getElementById('evening-time').value = (user.eveningTime || '').slice(0,5);
 
-async function loadTemplates() {
+async function loadMe() {
   try {
     const res = await fetch(API + '/me', { headers: { 'Authorization': 'Bearer ' + token }});
     const data = await res.json();
+    // Refresh cached user with server-side truth (for bio updates too)
+    localStorage.setItem('noti_user', JSON.stringify(data));
+
+    // Templates
     const active = new Set(data.templates || []);
     const el = document.getElementById('templates');
     el.innerHTML = ALL_TEMPLATES.map(t =>
@@ -212,14 +288,71 @@ async function loadTemplates() {
         saveTemplates(enabled);
       };
     });
+
+    // Bio
+    renderBio(data.bio);
   } catch (e) {
-    // Fallback: offer all as toggles anyway
+    // Fallback: offer all templates as toggles anyway
     const el = document.getElementById('templates');
     el.innerHTML = ALL_TEMPLATES.map(t =>
       `<span class="tag" data-key="${t.key}">${t.label}</span>`
     ).join('');
+    renderBio(null);
   }
 }
+
+function renderBio(bio) {
+  const textEl = document.getElementById('bio-text');
+  if (bio && String(bio).trim()) {
+    textEl.textContent = bio;
+    textEl.classList.remove('empty');
+  } else {
+    textEl.textContent = 'Alys hasn\u2019t built a profile of you yet. Chat with her and she\u2019ll write one, or tap Edit to write your own.';
+    textEl.classList.add('empty');
+  }
+  // Ensure we're in view mode, not edit mode
+  document.getElementById('bio-view').classList.remove('hidden');
+  document.getElementById('bio-edit-mode').classList.add('hidden');
+}
+
+document.getElementById('bio-edit-btn').onclick = () => {
+  const current = document.getElementById('bio-text').classList.contains('empty')
+    ? ''
+    : document.getElementById('bio-text').textContent;
+  document.getElementById('bio-input').value = current;
+  document.getElementById('bio-view').classList.add('hidden');
+  document.getElementById('bio-edit-mode').classList.remove('hidden');
+  document.getElementById('bio-input').focus();
+};
+
+document.getElementById('bio-cancel').onclick = () => {
+  document.getElementById('bio-edit-mode').classList.add('hidden');
+  document.getElementById('bio-view').classList.remove('hidden');
+};
+
+document.getElementById('bio-save').onclick = async () => {
+  const newBio = document.getElementById('bio-input').value.trim();
+  const saveBtn = document.getElementById('bio-save');
+  saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+  try {
+    const res = await fetch(API + '/me/bio', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bio: newBio })
+    });
+    const data = await res.json();
+    if (data.success) {
+      renderBio(data.bio);
+      toast();
+    } else {
+      alert(data.message || 'Could not save. Try again.');
+    }
+  } catch (e) {
+    alert('Network issue — try again.');
+  } finally {
+    saveBtn.disabled = false; saveBtn.textContent = 'Save';
+  }
+};
 
 async function saveTemplates(enabled) {
   try {
@@ -269,7 +402,66 @@ function toast() {
   setTimeout(() => t.classList.remove('show'), 1200);
 }
 
-loadTemplates();
+loadMe();
+loadBio();
+
+// ── Bio (what Alys knows about you) ──────────────────────
+async function loadBio() {
+  try {
+    const res = await fetch(API + '/me', { headers: { 'Authorization': 'Bearer ' + token }});
+    const data = await res.json();
+    const bio = data.bio;
+    const textEl = document.getElementById('bio-text');
+    if (bio && bio.trim()) {
+      textEl.textContent = bio;
+      textEl.classList.remove('empty');
+    } else {
+      textEl.textContent = "Alys doesn\u2019t know much about you yet \u2014 finish the welcome chat or edit this to help her.";
+      textEl.classList.add('empty');
+    }
+    document.getElementById('bio-input').value = bio || '';
+  } catch (e) { /* keep placeholder */ }
+}
+
+document.getElementById('bio-edit-btn').onclick = () => {
+  document.getElementById('bio-view').classList.add('hidden');
+  document.getElementById('bio-edit-mode').classList.remove('hidden');
+  document.getElementById('bio-input').focus();
+};
+
+document.getElementById('bio-cancel').onclick = () => {
+  document.getElementById('bio-edit-mode').classList.add('hidden');
+  document.getElementById('bio-view').classList.remove('hidden');
+  // Revert input to saved value
+  loadBio();
+};
+
+document.getElementById('bio-save').onclick = async () => {
+  const btn = document.getElementById('bio-save');
+  const bio = document.getElementById('bio-input').value.trim();
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch(API + '/me/bio', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bio })
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Re-render with saved bio
+      document.getElementById('bio-edit-mode').classList.add('hidden');
+      document.getElementById('bio-view').classList.remove('hidden');
+      await loadBio();
+      toast();
+    } else {
+      alert(data.message || 'Could not save.');
+    }
+  } catch (e) {
+    alert('Network issue — try again.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save';
+  }
+};
 
 // ── Push notifications status + toggle ───────────────────
 async function refreshPushStatus() {

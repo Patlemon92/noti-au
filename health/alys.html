@@ -25,7 +25,13 @@ body{
 .b1{top:-60px;right:-80px;width:220px;height:220px;background:radial-gradient(circle at 30% 30%,#FFF0E4,#FBD4C0);opacity:.85}
 .b2{top:520px;left:-120px;width:260px;height:260px;background:radial-gradient(circle at 30% 30%,#FCDCCB,#F5BBAA);opacity:.6}
 
-.wrap{position:relative;z-index:2;max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+.wrap{
+  position:fixed;inset:0;z-index:2;
+  max-width:480px;margin:0 auto;
+  height:100dvh;min-height:100dvh;
+  display:flex;flex-direction:column;overflow:hidden;
+  padding-top:env(safe-area-inset-top,0);
+}
 
 .header{padding:22px 22px 12px;display:flex;align-items:center;gap:12px}
 .avatar{
@@ -44,7 +50,7 @@ body{
   display:flex;align-items:center;justify-content:center;cursor:pointer;
 }
 
-.thread{flex:1;overflow-y:auto;padding:10px 22px 20px;display:flex;flex-direction:column;gap:8px}
+.thread{flex:1;overflow-y:auto;padding:10px 22px 24px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
 .day-label{text-align:center;font-size:11px;color:#712B13;opacity:.65;margin:16px 0 6px}
 .bubble{max-width:85%;padding:12px 14px;border-radius:18px;font-size:14px;line-height:1.45;word-break:break-word}
 .bubble.alys{
@@ -61,9 +67,12 @@ body{
 .stamp.alys{align-self:flex-start}
 
 .input-bar{
-  position:sticky;bottom:0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));
+  flex-shrink:0;margin-top:auto;
+  padding:10px 16px calc(12px + env(safe-area-inset-bottom));
   display:flex;gap:10px;align-items:center;
-  background:linear-gradient(to top, rgba(251,212,192,1) 60%, rgba(251,212,192,0));
+  background:rgba(251,212,192,.92);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  border-top:.5px solid rgba(74,27,12,.08);
 }
 .input-wrap{
   flex:1;background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
@@ -187,7 +196,7 @@ async function triggerWelcomeOpener() {
 
 function maybeShowDoneButton(messages) {
   const userReplies = (messages || []).filter(m => m.direction === 'in').length;
-  if (userReplies >= 3) {
+  if (userReplies >= 5) {
     showDoneButton();
   }
 }
@@ -314,9 +323,11 @@ async function sendMessage() {
         threadEl.appendChild(s);
         threadEl.scrollTop = threadEl.scrollHeight;
       }
-      // Show Done button after 3 user replies
-      const userTurnsNow = threadEl.querySelectorAll('.bubble.me').length;
-      if (userTurnsNow >= 3) showDoneButton();
+      // Show Done button when API signals the 5 questions are complete,
+      // or as a safety net after 5+ user replies
+      if (data.done || (threadEl.querySelectorAll('.bubble.me').length >= 5)) {
+        showDoneButton();
+      }
     } catch (e) {
       const t = document.getElementById('typing');
       if (t) t.textContent = "Couldn't send. Try again in a moment.";

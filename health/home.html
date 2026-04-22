@@ -411,7 +411,21 @@ async function setupCTA() {
     return;
   }
 
-  // Case 2: morning not done — offer morning check-in
+  // Case 2: it's evening time AND evening not done — offer evening check-in
+  // (takes priority over a missed morning; morning's gone, move on)
+  if (eveningWindowOpen && !eveningDone) {
+    tag.textContent   = 'Evening check-in';
+    title.textContent = 'How did today go?';
+    sub.textContent   = 'Take your time. Skip anything.';
+    time.textContent  = '~5 min';
+    btn.textContent   = 'Start reflection';
+    btn.disabled      = false;
+    btn.onclick       = () => startCheckin('evening');
+    skip.classList.remove('hidden');
+    return;
+  }
+
+  // Case 3: morning not done and not yet evening — offer morning check-in
   if (!morningDone) {
     tag.textContent   = 'Morning check-in';
     title.textContent = nowMins < 15 * 60 ? 'Ready when you are' : 'Catch up on this morning';
@@ -424,28 +438,15 @@ async function setupCTA() {
     return;
   }
 
-  // Case 3: morning done, we're before the evening window — soft encouragement
-  if (!eveningWindowOpen) {
-    tag.textContent   = 'Morning logged';
-    title.textContent = `Hope you have a good day, ${(user.name || '').split(' ')[0] || 'you'}`;
-    sub.textContent   = "I'll be here this evening. Quick log anytime if anything comes up.";
-    time.textContent  = '';
-    btn.textContent   = 'View today so far';
-    btn.disabled      = false;
-    btn.onclick       = () => location.href = '/health/record';
-    skip.classList.add('hidden');
-    return;
-  }
-
-  // Case 4: evening window open, evening not done — offer evening
-  tag.textContent   = 'Evening check-in';
-  title.textContent = 'How did today go?';
-  sub.textContent   = 'Take your time. Skip anything.';
-  time.textContent  = '~5 min';
-  btn.textContent   = 'Start reflection';
+  // Case 4: morning done, not yet evening — soft encouragement
+  tag.textContent   = 'Morning logged';
+  title.textContent = `Hope you have a good day, ${(user.name || '').split(' ')[0] || 'you'}`;
+  sub.textContent   = "I'll be here this evening. Quick log anytime if anything comes up.";
+  time.textContent  = '';
+  btn.textContent   = 'View today so far';
   btn.disabled      = false;
-  btn.onclick       = () => startCheckin('evening');
-  skip.classList.remove('hidden');
+  btn.onclick       = () => location.href = '/health/record';
+  skip.classList.add('hidden');
 }
 
 async function startCheckin(slot) {

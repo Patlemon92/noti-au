@@ -323,7 +323,7 @@ document.getElementById('log-header').onclick = () => {
 
 // Stats shown by default for everyone
 const CORE_STATS = [
-  { label: 'Check-ins', get: (a, r) => `${r.length} / ${days}` },
+  { label: 'Check-ins', get: (a, r) => `${r.length} / ${days * 2}` },
   { label: 'Avg sleep', get: (a) => a.sleep != null ? a.sleep.toFixed(1) + ' h'  : '—' },
   { label: 'Avg mood',  get: (a) => a.mood  != null ? a.mood.toFixed(1)  + ' / 10' : '—' }
 ];

@@ -16,7 +16,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{min-height:100%;}
+html{min-height:100%;overflow-x:hidden;max-width:100vw}
 body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
 body{
   background:linear-gradient(160deg,#FFE8C7 0%,#FFCBA4 25%,#F5A887 55%,#EC7E5C 85%,#D85A30 100%);
@@ -85,24 +85,49 @@ button:disabled{opacity:.4;cursor:not-allowed}
 .foot{text-align:center;font-size:13px;opacity:.75;margin-top:22px}
 .foot a{color:#4A1B0C;font-weight:500;text-decoration:underline;cursor:pointer}
 
-/* Consent checkboxes */
+/* Consent checkboxes — custom styled to guarantee visible state change on every device */
 .consent-row{
-  display:flex;gap:12px;align-items:flex-start;
-  padding:14px 0;margin:0;font-size:13.5px;line-height:1.5;color:#4A1B0C;
+  display:flex;gap:14px;align-items:flex-start;
+  padding:14px 0;margin:0;font-size:13.5px;line-height:1.55;color:#4A1B0C;
   cursor:pointer;
   border-top:.5px solid rgba(74,27,12,.1);
   text-transform:none;letter-spacing:normal;font-weight:400;
+  -webkit-tap-highlight-color:transparent;
 }
 .consent-row:first-of-type{border-top:0}
+/* Hide native checkbox, replace with a custom-drawn box */
 .consent-row input[type="checkbox"]{
-  flex-shrink:0;margin-top:2px;width:18px;height:18px;cursor:pointer;accent-color:#4A1B0C;
+  position:absolute;opacity:0;width:1px;height:1px;pointer-events:none;
 }
+.consent-row .cbox{
+  flex-shrink:0;margin-top:2px;
+  width:22px;height:22px;border-radius:6px;
+  background:#fff;
+  border:1.5px solid rgba(74,27,12,.35);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+/* Hidden check SVG inside the box */
+.consent-row .cbox svg{
+  width:14px;height:14px;stroke:#FFE4D0;stroke-width:3;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;
+  opacity:0;transform:scale(.7);transition:opacity .15s, transform .15s;
+}
+/* When the hidden input is checked, fill the box + show the tick */
+.consent-row input:checked ~ .cbox{
+  background:#4A1B0C;
+  border-color:#4A1B0C;
+}
+.consent-row input:checked ~ .cbox svg{
+  opacity:1;transform:scale(1);
+}
+.consent-row:active .cbox{transform:scale(.95)}
 .consent-row strong{color:#4A1B0C;font-weight:500}
 .tos-link{color:#993C1D;text-decoration:underline;cursor:pointer}
 
 /* iOS safe-area */
 body{padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
-html{min-height:100%;background:inherit}
+html{min-height:100%;overflow-x:hidden;max-width:100vw;background:inherit}
 </style>
 </head>
 <body>
@@ -199,16 +224,19 @@ html{min-height:100%;background:inherit}
 
     <label class="consent-row">
       <input type="checkbox" id="c-medical" />
+      <span class="cbox"><svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
       <span>I understand Noti is <strong>not a medical device</strong> and does not diagnose or treat conditions. It is a tool to help me track and reflect — alongside, not instead of, care from qualified professionals.</span>
     </label>
 
     <label class="consent-row">
       <input type="checkbox" id="c-ai" />
+      <span class="cbox"><svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
       <span>I understand <strong>Alys is an AI companion</strong>. Responses are generated, not from a human. In a crisis I will call <strong>000</strong> (emergency services in Australia) or <strong>Lifeline 13 11 14</strong>.</span>
     </label>
 
     <label class="consent-row">
       <input type="checkbox" id="c-terms" />
+      <span class="cbox"><svg viewBox="0 0 24 24"><polyline points="5 12 10 17 19 7"></polyline></svg></span>
       <span>I agree to the <a class="tos-link" onclick="alert('Terms &amp; Privacy Policy coming soon at noti.au/health/terms')">Terms of Service and Privacy Policy</a>. My self-reported data is stored securely and never sold or shared without my consent.</span>
     </label>
 

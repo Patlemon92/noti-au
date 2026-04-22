@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#D85A30" />
 <link rel="manifest" href="/health/manifest.json" />
 <link rel="apple-touch-icon" href="/health/icon-192.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Noti" />
 
 <title>Noti · Profile</title>
@@ -16,9 +16,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{min-height:100%;}body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+html{min-height:100%;overflow-x:hidden;max-width:100vw}body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
 body{
-  min-height:100dvh;background-attachment:fixed;overflow-x:hidden;position:relative;color:#4A1B0C;
+  min-height:100dvh;background-attachment:fixed;overflow-x:hidden;max-width:100vw;position:relative;color:#4A1B0C;
   background:linear-gradient(160deg,#FFF5EF 0%,#F5E4D8 40%,#E8D4C2 100%);
 }
 .blob{position:absolute;border-radius:50%;pointer-events:none;z-index:0}
@@ -73,7 +73,7 @@ body{
 }
 
 .nav{
-  position:fixed;bottom:16px;left:16px;right:16px;max-width:448px;margin:0 auto;
+  position:fixed;bottom:calc(16px + env(safe-area-inset-bottom, 0));left:16px;right:16px;max-width:448px;margin:0 auto;
   background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
   border-radius:24px;padding:12px 20px;
   display:flex;justify-content:space-around;align-items:center;z-index:10;
@@ -90,6 +90,10 @@ body{
 .nav-item{position:relative}
 .nav-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E9533E;border:2px solid rgba(255,255,255,.95);display:none}
 .nav-item.has-unread .nav-dot{display:block}
+
+/* iOS safe-area: fill behind status bar and home indicator */
+body{padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
+html{min-height:100%;overflow-x:hidden;max-width:100vw;background:inherit}
 </style>
 </head>
 <body>
@@ -164,7 +168,7 @@ body{
 </div>
 
 <script>
-const API = 'https://noti-health-api.ancient-bread-01fe.workers.dev';
+const API = 'https://health-api.noti.au';
 const token = localStorage.getItem('noti_token');
 const user = JSON.parse(localStorage.getItem('noti_user') || 'null');
 if (!token || !user) location.href = '/health/login';

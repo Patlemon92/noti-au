@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#D85A30" />
+<link rel="manifest" href="/health/manifest.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Noti" />
+
+<title>Noti · Sign up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{min-height:100%;}
+body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+body{
+  background:linear-gradient(160deg,#FFE8C7 0%,#FFCBA4 25%,#F5A887 55%,#EC7E5C 85%,#D85A30 100%);
+  min-height:100dvh;background-attachment:fixed;color:#4A1B0C;overflow-x:hidden;position:relative;
+}
+.blob{position:absolute;border-radius:50%;pointer-events:none}
+.b1{top:-60px;right:-90px;width:240px;height:240px;background:radial-gradient(circle at 30% 30%,#FFF0D8,#FFCBA4);opacity:.85}
+.b2{top:380px;left:-120px;width:260px;height:260px;background:radial-gradient(circle at 30% 30%,#FBC9B4,#EC7E5C);opacity:.6}
+
+.wrap{position:relative;z-index:2;padding:40px 24px;max-width:460px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;justify-content:center}
+
+.brand{font-size:40px;font-weight:600;letter-spacing:-1px;margin-bottom:8px}
+.brand em{color:#D85A30;font-style:normal}
+.sub{font-size:15px;opacity:.75;margin-bottom:28px;font-weight:400;line-height:1.5}
+
+/* Step progress */
+.progress{display:flex;gap:6px;margin-bottom:18px}
+.progress-dot{flex:1;height:4px;background:rgba(74,27,12,.15);border-radius:2px;transition:background .3s}
+.progress-dot.active{background:#4A1B0C}
+
+.card{
+  background:rgba(255,255,255,.65);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+  border-radius:28px;padding:28px;border:.5px solid rgba(255,255,255,.85);
+}
+.card h2{font-size:22px;font-weight:500;margin-bottom:6px;letter-spacing:-.3px}
+.card p.help{font-size:13px;opacity:.75;margin-bottom:20px;line-height:1.5}
+
+label{display:block;font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:#993C1D;margin:12px 0 8px}
+label:first-child{margin-top:0}
+input{
+  width:100%;background:rgba(255,255,255,.8);border:.5px solid rgba(74,27,12,.15);
+  border-radius:14px;padding:14px 16px;font-size:17px;color:#4A1B0C;font-family:inherit;
+  -webkit-appearance:none;appearance:none;outline:none;
+}
+input:focus{border-color:#D85A30;background:rgba(255,255,255,.95)}
+
+/* Template grid */
+.templates{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px}
+.tpl{
+  padding:14px 12px;border-radius:12px;background:rgba(255,255,255,.7);
+  border:.5px solid rgba(74,27,12,.15);font-size:13px;font-weight:500;color:#4A1B0C;
+  cursor:pointer;user-select:none;text-align:center;line-height:1.3;transition:all .15s;
+  font-family:inherit;
+}
+.tpl:active{transform:scale(.98)}
+.tpl.selected{background:#4A1B0C;color:#FFE4D0;border-color:#4A1B0C}
+
+/* Times side-by-side */
+.times{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.times input{font-size:16px}
+
+button{
+  width:100%;background:#4A1B0C;color:#FFE4D0;border:0;padding:16px;border-radius:16px;
+  font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:20px;
+  transition:opacity .15s;
+}
+button:active{opacity:.85}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:transparent;color:#4A1B0C;border:.5px solid rgba(74,27,12,.25);margin-top:8px}
+
+.error{color:#993C1D;font-size:13px;margin-top:12px;text-align:center;min-height:16px}
+.back{font-size:13px;opacity:.7;margin-top:14px;text-align:center;cursor:pointer;text-decoration:underline}
+
+.hidden{display:none}
+
+.foot{text-align:center;font-size:13px;opacity:.75;margin-top:22px}
+.foot a{color:#4A1B0C;font-weight:500;text-decoration:underline;cursor:pointer}
+
+/* Consent checkboxes */
+.consent-row{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:14px 0;margin:0;font-size:13.5px;line-height:1.5;color:#4A1B0C;
+  cursor:pointer;
+  border-top:.5px solid rgba(74,27,12,.1);
+  text-transform:none;letter-spacing:normal;font-weight:400;
+}
+.consent-row:first-of-type{border-top:0}
+.consent-row input[type="checkbox"]{
+  flex-shrink:0;margin-top:2px;width:18px;height:18px;cursor:pointer;accent-color:#4A1B0C;
+}
+.consent-row strong{color:#4A1B0C;font-weight:500}
+.tos-link{color:#993C1D;text-decoration:underline;cursor:pointer}
+
+/* iOS safe-area */
+body{padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
+html{min-height:100%;background:inherit}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+
+<div class="wrap">
+  <div class="brand">noti<em>.</em></div>
+  <p class="sub">Let's set you up. A minute or two — I'll ask a few things.</p>
+
+  <div class="progress">
+    <div class="progress-dot active" id="dot1"></div>
+    <div class="progress-dot" id="dot2"></div>
+    <div class="progress-dot" id="dot3"></div>
+    <div class="progress-dot" id="dot4"></div>
+    <div class="progress-dot" id="dot5"></div>
+  </div>
+
+  <!-- STEP 1: name + phone -->
+  <div class="card" id="step-1">
+    <h2>Welcome</h2>
+    <p class="help">Tell me who you are. I'll text a code to verify your number.</p>
+
+    <label for="name">Your first name</label>
+    <input id="name" type="text" placeholder="Alex" autocomplete="given-name" />
+
+    <label for="phone">Your phone number</label>
+    <input id="phone" type="tel" inputmode="tel" placeholder="0433 461 432" autocomplete="tel" />
+
+    <button id="btn-start">Send me a code</button>
+    <div class="error" id="err1"></div>
+
+    <div class="foot">Already have an account? <a onclick="location.href='/health/login'">Log in</a></div>
+  </div>
+
+  <!-- STEP 2: SMS verification -->
+  <div class="card hidden" id="step-2">
+    <h2>Enter the code</h2>
+    <p class="help" id="code-help">Check your phone for a 6-digit code.</p>
+
+    <label for="code">6-digit code</label>
+    <input id="code" type="tel" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code" />
+
+    <button id="btn-verify">Verify</button>
+    <div class="error" id="err2"></div>
+    <div class="back" id="back-1">Use a different number</div>
+  </div>
+
+  <!-- STEP 3: templates -->
+  <div class="card hidden" id="step-3">
+    <h2>What do you track?</h2>
+    <p class="help">Pick one or more. You can change these later in Profile.</p>
+
+    <div class="templates" id="templates">
+      <div class="tpl" data-k="mood">Mood</div>
+      <div class="tpl" data-k="health">Sleep &amp; energy</div>
+      <div class="tpl" data-k="anxiety">Anxiety</div>
+      <div class="tpl" data-k="depression">Depression</div>
+      <div class="tpl" data-k="pain">Pain</div>
+      <div class="tpl" data-k="fatigue">Fatigue</div>
+      <div class="tpl" data-k="fog">Brain fog</div>
+      <div class="tpl" data-k="migraines">Headaches / migraines</div>
+      <div class="tpl" data-k="pots">POTS</div>
+      <div class="tpl" data-k="gut">Gut</div>
+      <div class="tpl" data-k="cycle">Cycle</div>
+      <div class="tpl" data-k="weight">Weight</div>
+      <div class="tpl" data-k="medications">Medications</div>
+    </div>
+
+    <button id="btn-templates" disabled>Continue</button>
+    <div class="error" id="err3"></div>
+  </div>
+
+  <!-- STEP 4: check-in times -->
+  <div class="card hidden" id="step-4">
+    <h2>When should I check in?</h2>
+    <p class="help">Two gentle nudges a day. Pick times that fit your rhythm.</p>
+
+    <label>Morning</label>
+    <div class="times">
+      <input id="t-morning" type="time" value="07:30" />
+      <input id="t-evening" type="time" value="20:30" />
+    </div>
+    <p class="help" style="margin-top:10px">Morning · Evening</p>
+
+    <button id="btn-times">Continue</button>
+    <div class="error" id="err4"></div>
+  </div>
+
+  <!-- STEP 5: consent -->
+  <div class="card hidden" id="step-5">
+    <h2>Before we begin</h2>
+    <p class="help">A few things I need you to read and agree to so we can continue.</p>
+
+    <label class="consent-row">
+      <input type="checkbox" id="c-medical" />
+      <span>I understand Noti is <strong>not a medical device</strong> and does not diagnose or treat conditions. It is a tool to help me track and reflect — alongside, not instead of, care from qualified professionals.</span>
+    </label>
+
+    <label class="consent-row">
+      <input type="checkbox" id="c-ai" />
+      <span>I understand <strong>Alys is an AI companion</strong>. Responses are generated, not from a human. In a crisis I will call <strong>000</strong> (emergency services in Australia) or <strong>Lifeline 13 11 14</strong>.</span>
+    </label>
+
+    <label class="consent-row">
+      <input type="checkbox" id="c-terms" />
+      <span>I agree to the <a class="tos-link" onclick="alert('Terms &amp; Privacy Policy coming soon at noti.au/health/terms')">Terms of Service and Privacy Policy</a>. My self-reported data is stored securely and never sold or shared without my consent.</span>
+    </label>
+
+    <button id="btn-finish" disabled>I agree — continue</button>
+    <div class="error" id="err5"></div>
+  </div>
+</div>
+
+<script>
+const API = 'https://noti-health-api.ancient-bread-01fe.workers.dev';
+
+const $ = (id) => document.getElementById(id);
+const show = (id) => $(id).classList.remove('hidden');
+const hide = (id) => $(id).classList.add('hidden');
+
+// If already signed in, skip straight to home
+if (localStorage.getItem('noti_token')) {
+  window.location.href = '/health/home';
+}
+
+// Wizard state
+const state = {
+  name: '',
+  phone: '',
+  templates: new Set(),
+  morningTime: '07:30',
+  eveningTime: '20:30'
+};
+
+function setStep(n) {
+  for (let i = 1; i <= 5; i++) {
+    $(`step-${i}`).classList.toggle('hidden', i !== n);
+    $(`dot${i}`).classList.toggle('active', i <= n);
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Step 1: name + phone ──────────────────────────────
+$('btn-start').onclick = async () => {
+  const name  = $('name').value.trim();
+  const phone = $('phone').value.trim();
+  $('err1').textContent = '';
+
+  if (!name)  { $('err1').textContent = 'Tell me your first name.'; return; }
+  if (!phone) { $('err1').textContent = 'Enter your phone number.'; return; }
+
+  $('btn-start').disabled = true;
+  $('btn-start').textContent = 'Sending…';
+  try {
+    const res = await fetch(API + '/signup/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      $('err1').textContent = data.message || 'Could not send code.';
+      $('btn-start').disabled = false;
+      $('btn-start').textContent = 'Send me a code';
+      return;
+    }
+    state.name = name;
+    state.phone = phone;
+    $('code-help').textContent = `We sent a code to ${phone}.`;
+    setStep(2);
+    $('code').focus();
+  } catch (e) {
+    $('err1').textContent = 'Network issue — try again.';
+    $('btn-start').disabled = false;
+    $('btn-start').textContent = 'Send me a code';
+  }
+};
+
+// ── Step 2: verify code ───────────────────────────────
+$('code').oninput = (e) => {
+  e.target.value = e.target.value.replace(/\D/g, '');
+};
+
+$('btn-verify').onclick = () => {
+  const code = $('code').value.trim();
+  if (code.length !== 6) {
+    $('err2').textContent = 'Enter the 6-digit code.';
+    return;
+  }
+  // Don't verify yet — we verify on the final step when we have everything.
+  // Just record the code and move on to templates.
+  state.code = code;
+  $('err2').textContent = '';
+  setStep(3);
+};
+
+$('back-1').onclick = () => {
+  state.code = '';
+  $('code').value = '';
+  $('err2').textContent = '';
+  $('btn-start').disabled = false;
+  $('btn-start').textContent = 'Send me a code';
+  setStep(1);
+};
+
+// ── Step 3: templates ─────────────────────────────────
+document.querySelectorAll('.tpl').forEach(tpl => {
+  tpl.onclick = () => {
+    const k = tpl.dataset.k;
+    if (state.templates.has(k)) {
+      state.templates.delete(k);
+      tpl.classList.remove('selected');
+    } else {
+      state.templates.add(k);
+      tpl.classList.add('selected');
+    }
+    $('btn-templates').disabled = state.templates.size === 0;
+  };
+});
+
+$('btn-templates').onclick = () => {
+  if (state.templates.size === 0) return;
+  setStep(4);
+};
+
+// ── Step 4: times → continue to consent ────────────────
+$('btn-times').onclick = () => {
+  state.morningTime = $('t-morning').value || '07:30';
+  state.eveningTime = $('t-evening').value || '20:30';
+  setStep(5);
+};
+
+// ── Step 5: consent checkboxes ─────────────────────────
+const consentIds = ['c-medical', 'c-ai', 'c-terms'];
+function refreshConsent() {
+  const allChecked = consentIds.every(id => $(id).checked);
+  $('btn-finish').disabled = !allChecked;
+}
+consentIds.forEach(id => { $(id).onchange = refreshConsent; });
+
+$('btn-finish').onclick = async () => {
+  // Re-verify all three boxes are ticked (belt & braces)
+  const allChecked = consentIds.every(id => $(id).checked);
+  if (!allChecked) {
+    $('err5').textContent = 'Please tick all three to continue.';
+    return;
+  }
+
+  $('btn-finish').disabled = true;
+  $('btn-finish').textContent = 'Setting you up…';
+  $('err5').textContent = '';
+  try {
+    const res = await fetch(API + '/signup/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone:       state.phone,
+        code:        state.code,
+        name:        state.name,
+        templates:   [...state.templates],
+        morningTime: state.morningTime,
+        eveningTime: state.eveningTime,
+        consent:     true
+      })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      $('err5').textContent = data.message || 'Could not finish signup.';
+      $('btn-finish').disabled = false;
+      $('btn-finish').textContent = 'I agree — continue';
+      // If OTP expired, rewind to step 2
+      if ((data.message || '').toLowerCase().includes('code')) {
+        setStep(2);
+      }
+      return;
+    }
+    localStorage.setItem('noti_token', data.token);
+    localStorage.setItem('noti_user', JSON.stringify(data.user));
+    // Send them to Alys for the onboarding chat
+    window.location.href = '/health/alys?welcome=1';
+  } catch (e) {
+    $('err5').textContent = 'Network issue — try again.';
+    $('btn-finish').disabled = false;
+    $('btn-finish').textContent = 'I agree — continue';
+  }
+};
+
+// Enter/Next key handling on each step
+$('name').onkeydown = (e) => { if (e.key === 'Enter') $('phone').focus(); };
+$('phone').onkeydown = (e) => { if (e.key === 'Enter') $('btn-start').click(); };
+$('code').onkeydown = (e) => { if (e.key === 'Enter') $('btn-verify').click(); };
+</script>
+</body>
+</html>

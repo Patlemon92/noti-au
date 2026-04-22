@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#D85A30" />
 <link rel="manifest" href="/health/manifest.json" />
 <link rel="apple-touch-icon" href="/health/icon-192.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Noti" />
 
 <title>Noti</title>
@@ -16,7 +16,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{min-height:100%;overflow-x:hidden}
+html{
+  min-height:100%;overflow-x:hidden;
+  background:var(--bg);
+  background-attachment:fixed;
+}
 body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
   min-height:100dvh;overflow-x:hidden;position:relative;
   color:var(--ink);
@@ -24,6 +28,8 @@ body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
   background-attachment:fixed;
   transition:background .6s ease;
   width:100%;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
 }
 :root{
   --ink:#4A1B0C; --muted:#712B13; --accent:#993C1D; --cta:#4A1B0C; --cta-text:#FFE4D0;
@@ -106,7 +112,7 @@ body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
 .bar{flex:1;border-radius:2px;background:var(--accent);opacity:.35}
 
 .nav{
-  position:fixed;bottom:16px;left:16px;right:16px;max-width:448px;margin:0 auto;
+  position:fixed;bottom:calc(16px + env(safe-area-inset-bottom, 0));left:16px;right:16px;max-width:448px;margin:0 auto;
   background:rgba(255,255,255,.85);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
   border-radius:24px;padding:12px 20px;
   display:flex;justify-content:space-around;align-items:center;z-index:10;
@@ -345,81 +351,120 @@ document.getElementById('date').textContent =
   now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 
 // ── CTA — what's the primary action right now? ──────────
+// Logic:
+//   - Morning not done → show morning check-in (anytime)
+//   - Morning done, before evening_time - 1h → "Hope you have a good day"
+//   - At or after evening_time - 1h AND evening not done → show evening check-in
+//   - Both done → "Today, logged"
+// Background stays purely time-of-day (set elsewhere). This only drives the CTA card.
 async function setupCTA() {
-  const btn = document.getElementById('cta-btn');
-  const tag = document.getElementById('cta-tag');
+  const btn   = document.getElementById('cta-btn');
+  const tag   = document.getElementById('cta-tag');
   const title = document.getElementById('cta-title');
-  const sub = document.getElementById('cta-sub');
-  const time = document.getElementById('cta-time');
-  const skip = document.getElementById('skip');
+  const sub   = document.getElementById('cta-sub');
+  const time  = document.getElementById('cta-time');
+  const skip  = document.getElementById('skip');
 
-  // Midday: no required check-in, just a soft presence. Quick Log is always available below.
-  if (tod === 'midday') {
-    tag.textContent = 'Mid-day';
-    title.textContent = 'No check-in right now';
-    sub.textContent = "Morning's done. Evening comes later. If anything's on your mind, use Quick log.";
-    time.textContent = '';
-    btn.textContent = 'View today';
-    btn.disabled = false;
-    btn.onclick = () => location.href = '/health/record';
+  // Fetch today's completed check-ins
+  let morningDone = false;
+  let eveningDone = false;
+  try {
+    const res = await fetch(API + '/me/checkins?days=1', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    const today = new Date();
+    const isToday = (iso) => {
+      if (!iso) return false;
+      const d = new Date(iso);
+      return d.toDateString() === today.toDateString();
+    };
+    for (const c of (data.checkins || [])) {
+      if (!c.completed_at || !isToday(c.completed_at)) continue;
+      if (c.slot === 'morning') morningDone = true;
+      if (c.slot === 'evening') eveningDone = true;
+    }
+  } catch (e) { /* fall through to defaults */ }
+
+  // Determine if we're in the evening window (evening_time - 1h onward)
+  const nowMins = (() => {
+    const n = new Date(); return n.getHours() * 60 + n.getMinutes();
+  })();
+  const parseHm = (hm) => {
+    if (!hm) return null;
+    const [hh, mm] = String(hm).split(':').map(Number);
+    return hh * 60 + (mm || 0);
+  };
+  const eveningStart = (parseHm((user.eveningTime || '20:30').slice(0,5)) ?? (20*60+30)) - 60;
+  const eveningWindowOpen = nowMins >= eveningStart;
+
+  // Case 1: both done — rest state
+  if (morningDone && eveningDone) {
+    tag.textContent   = 'Today, logged';
+    title.textContent = 'All done for today';
+    sub.textContent   = "Both check-ins recorded. Rest if you can — I'll see you tomorrow.";
+    time.textContent  = '';
+    btn.textContent   = "View today's record";
+    btn.disabled      = false;
+    btn.onclick       = () => location.href = '/health/record';
+    skip.classList.add('hidden');
     return;
   }
 
-  // Night: check-ins assumed done
-  if (tod === 'night') {
-    tag.textContent = 'Today, logged';
-    title.textContent = 'See you in the morning';
-    sub.textContent = "Rest if you can — I'll check in tomorrow.";
-    time.textContent = '';
-    btn.textContent = "View today's record";
-    btn.disabled = false;
-    btn.onclick = () => location.href = '/health/record';
+  // Case 2: morning not done — offer morning check-in
+  if (!morningDone) {
+    tag.textContent   = 'Morning check-in';
+    title.textContent = nowMins < 15 * 60 ? 'Ready when you are' : 'Catch up on this morning';
+    sub.textContent   = 'A few quick things so I can see how today is going.';
+    time.textContent  = '~2 min';
+    btn.textContent   = 'Start check-in';
+    btn.disabled      = false;
+    btn.onclick       = () => startCheckin('morning');
+    skip.classList.remove('hidden');
     return;
   }
 
-  // Morning or evening: offer the check-in
-  const isMorning = tod === 'sunrise';
-  if (isMorning) {
-    tag.textContent = 'Morning check-in';
-    title.textContent = 'Ready when you are';
-    sub.textContent = 'A few quick things before the day gets going.';
-    time.textContent = '~2 min';
-    btn.textContent = 'Start check-in';
-  } else {
-    tag.textContent = 'Evening check-in';
-    title.textContent = 'How did today go?';
-    sub.textContent = 'Take your time. Skip anything.';
-    time.textContent = '~5 min';
-    btn.textContent = 'Start reflection';
+  // Case 3: morning done, we're before the evening window — soft encouragement
+  if (!eveningWindowOpen) {
+    tag.textContent   = 'Morning logged';
+    title.textContent = `Hope you have a good day, ${(user.name || '').split(' ')[0] || 'you'}`;
+    sub.textContent   = "I'll be here this evening. Quick log anytime if anything comes up.";
+    time.textContent  = '';
+    btn.textContent   = 'View today so far';
+    btn.disabled      = false;
+    btn.onclick       = () => location.href = '/health/record';
+    skip.classList.add('hidden');
+    return;
   }
-  btn.disabled = false;
-  btn.onclick = startCheckin;
+
+  // Case 4: evening window open, evening not done — offer evening
+  tag.textContent   = 'Evening check-in';
+  title.textContent = 'How did today go?';
+  sub.textContent   = 'Take your time. Skip anything.';
+  time.textContent  = '~5 min';
+  btn.textContent   = 'Start reflection';
+  btn.disabled      = false;
+  btn.onclick       = () => startCheckin('evening');
   skip.classList.remove('hidden');
 }
 
-async function startCheckin() {
-  // In the full product, this would hit an endpoint that returns a session ID,
-  // or read the session from a scheduled-check-in SMS link. For now:
-  // - If the user arrived via an SMS link, they'd land on /checkin directly
-  // - From here we ask the backend for an ad-hoc session
+async function startCheckin(slot) {
   const btn = document.getElementById('cta-btn');
   btn.disabled = true; btn.textContent = 'Opening…';
   try {
     const res = await fetch(API + '/me/start-checkin', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slot: tod === 'sunrise' ? 'morning' : 'evening' })
+      body: JSON.stringify({ slot })
     });
     const data = await res.json();
     if (data.sessionId) {
       location.href = '/health/checkin/' + data.sessionId;
     } else {
-      // Fallback: route to the checkin page without a session;
-      // it will show a "no active session" state.
       location.href = '/health/checkin';
     }
   } catch (e) {
-    btn.textContent = 'Start check-in';
+    btn.textContent = slot === 'morning' ? 'Start check-in' : 'Start reflection';
     btn.disabled = false;
   }
 }

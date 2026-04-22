@@ -451,6 +451,7 @@ async function setupCTA() {
 
 async function startCheckin(slot) {
   const btn = document.getElementById('cta-btn');
+  const sub = document.getElementById('cta-sub');
   btn.disabled = true; btn.textContent = 'Opening…';
   try {
     const res = await fetch(API + '/me/start-checkin', {
@@ -459,12 +460,16 @@ async function startCheckin(slot) {
       body: JSON.stringify({ slot })
     });
     const data = await res.json();
-    if (data.sessionId) {
+    if (data.success && data.sessionId) {
       location.href = '/health/checkin/' + data.sessionId;
-    } else {
-      location.href = '/health/checkin';
+      return;
     }
+    // Real error — show the message inline and let user retry
+    sub.textContent = data.message || 'Could not start check-in — try again.';
+    btn.textContent = slot === 'morning' ? 'Try again' : 'Try again';
+    btn.disabled = false;
   } catch (e) {
+    sub.textContent = 'Network issue — try again.';
     btn.textContent = slot === 'morning' ? 'Start check-in' : 'Start reflection';
     btn.disabled = false;
   }

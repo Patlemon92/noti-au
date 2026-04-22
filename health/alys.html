@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#D85A30" />
 <link rel="manifest" href="/health/manifest.json" />
 <link rel="apple-touch-icon" href="/health/icon-192.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Noti" />
 
 <title>Noti · Alys</title>
@@ -81,9 +81,21 @@ body{
 .empty{padding:40px 20px;text-align:center;color:#712B13;font-size:14px;line-height:1.6;opacity:.8}
 .typing{align-self:flex-start;padding:12px 16px;color:#712B13;font-size:13px;opacity:.7;font-style:italic}
 
+.welcome-done-btn{
+  margin:0 12px 10px;padding:14px 18px;border-radius:16px;
+  background:#4A1B0C;color:#FFE4D0;border:0;cursor:pointer;
+  font-family:inherit;font-size:14px;font-weight:500;
+  box-shadow:0 2px 8px rgba(74,27,12,.15);
+}
+.welcome-done-btn:disabled{opacity:.5;cursor:wait}
+
 .nav-item{position:relative}
 .nav-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#E9533E;border:2px solid rgba(255,255,255,.95);display:none}
 .nav-item.has-unread .nav-dot{display:block}
+
+/* iOS safe-area: fill behind status bar and home indicator */
+body{padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
+html{min-height:100%;background:inherit}
 </style>
 </head>
 <body>
@@ -121,6 +133,10 @@ const API = 'https://noti-health-api.ancient-bread-01fe.workers.dev';
 const token = localStorage.getItem('noti_token');
 if (!token) { location.href = '/health/login'; }
 
+// Welcome mode: set by ?welcome=1 URL param on first visit after signup
+const params = new URLSearchParams(location.search);
+const isWelcome = params.get('welcome') === '1';
+
 const threadEl = document.getElementById('thread');
 const composer = document.getElementById('composer');
 const sendBtn  = document.getElementById('send-btn');
@@ -132,9 +148,72 @@ async function loadMessages() {
     });
     const data = await res.json();
     render(data.messages || []);
+
+    // In welcome mode, trigger the opener if the thread is empty
+    if (isWelcome && (!data.messages || data.messages.length === 0)) {
+      triggerWelcomeOpener();
+    } else if (isWelcome) {
+      // Welcome in progress — show the "Done" button if we already have a few exchanges
+      maybeShowDoneButton(data.messages || []);
+    }
   } catch (e) {
     threadEl.innerHTML = `<div class="empty">Couldn't load messages. Check your connection and try again.</div>`;
   }
+}
+
+async function triggerWelcomeOpener() {
+  // Show typing indicator while Alys thinks
+  threadEl.innerHTML = '';
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.id = 'typing';
+  typing.textContent = 'Alys is writing…';
+  threadEl.appendChild(typing);
+
+  try {
+    const res = await fetch(API + '/me/welcome', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    document.getElementById('typing')?.remove();
+    // Reload messages to show what Alys said
+    await loadMessages();
+  } catch (e) {
+    document.getElementById('typing')?.remove();
+    threadEl.innerHTML = `<div class="empty">Couldn't start the welcome chat. Refresh to try again.</div>`;
+  }
+}
+
+function maybeShowDoneButton(messages) {
+  const userReplies = (messages || []).filter(m => m.direction === 'in').length;
+  if (userReplies >= 3) {
+    showDoneButton();
+  }
+}
+
+function showDoneButton() {
+  if (document.getElementById('welcome-done')) return;
+  const btn = document.createElement('button');
+  btn.id = 'welcome-done';
+  btn.className = 'welcome-done-btn';
+  btn.textContent = "I'm ready — let's start";
+  btn.onclick = finishWelcome;
+  // Insert above the composer
+  composer.parentNode.insertBefore(btn, composer);
+}
+
+async function finishWelcome() {
+  const btn = document.getElementById('welcome-done');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving what you told me…'; }
+  try {
+    await fetch(API + '/me/welcome-complete', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+    });
+  } catch (e) { /* non-fatal; worst case bio is blank */ }
+  // Drop the ?welcome flag and go home
+  location.href = '/health/home';
 }
 
 function render(messages) {
@@ -213,6 +292,39 @@ async function sendMessage() {
   threadEl.appendChild(typing);
   threadEl.scrollTop = threadEl.scrollHeight;
 
+  // Welcome mode: use the immediate-reply endpoint
+  if (isWelcome) {
+    try {
+      const res = await fetch(API + '/me/welcome-reply', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body })
+      });
+      const data = await res.json();
+      document.getElementById('typing')?.remove();
+      if (data.success && data.reply) {
+        // Append Alys's reply immediately
+        const b = document.createElement('div');
+        b.className = 'bubble alys';
+        b.textContent = data.reply;
+        threadEl.appendChild(b);
+        const s = document.createElement('div');
+        s.className = 'stamp alys';
+        s.textContent = 'Alys · just now';
+        threadEl.appendChild(s);
+        threadEl.scrollTop = threadEl.scrollHeight;
+      }
+      // Show Done button after 3 user replies
+      const userTurnsNow = threadEl.querySelectorAll('.bubble.me').length;
+      if (userTurnsNow >= 3) showDoneButton();
+    } catch (e) {
+      const t = document.getElementById('typing');
+      if (t) t.textContent = "Couldn't send. Try again in a moment.";
+    }
+    return;
+  }
+
+  // Normal conversation: buffer + poll
   try {
     await fetch(API + '/me/message', {
       method: 'POST',

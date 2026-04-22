@@ -160,16 +160,25 @@ const token = localStorage.getItem('noti_token');
 const user = JSON.parse(localStorage.getItem('noti_user') || 'null');
 if (!token || !user) location.href = '/health/login';
 
-// The toggles adapt to what the user tracks. For MVP we start with a fixed
-// list; in production, /me returns user.templates and we filter.
+// Sections filter by user templates so the report only offers what makes sense.
+// "own_words" changed to neutral language — no pronoun assumption.
 const SECTIONS = [
-  { key: 'cover_findings', title: 'Cover & key findings',       sub: 'Always included · 2 pages',                    pages: 2, locked: true, on: true },
-  { key: 'headaches',      title: 'Headaches this period',      sub: 'Frequency, intensity, triggers · 1 page',       pages: 1, conditional: 'migraines', on: true },
-  { key: 'pots',           title: 'POTS this period',           sub: 'Dizziness, standing, triggers · 1 page',        pages: 1, conditional: 'pots',      on: true },
-  { key: 'mood',           title: 'Mood & mental health',       sub: 'Daily averages, weekly trend · 1 page',         pages: 1, conditional: 'mood',      on: true },
-  { key: 'lifestyle',      title: 'Sleep, hydration & lifestyle', sub: 'Averages, distribution · 1 page',             pages: 1, conditional: 'health',    on: true },
-  { key: 'daily_log',      title: 'Daily log',                  sub: 'Scannable table, one row per day · 1 page',     pages: 1, on: true },
-  { key: 'own_words',      title: 'In her own words',           sub: 'Free-text notes, grouped by theme · 1 page',    pages: 1, on: true }
+  { key: 'cover_findings', title: 'Cover & key findings',        sub: 'Always included · 2 pages',                     pages: 2, locked: true, on: true },
+  { key: 'mood',           title: 'Mood',                         sub: 'Daily averages, weekly trend · 1 page',         pages: 1, conditional: 'mood',        on: true },
+  { key: 'anxiety',        title: 'Anxiety',                      sub: 'Daily averages, patterns · 1 page',             pages: 1, conditional: 'anxiety',     on: true },
+  { key: 'depression',     title: 'Depression',                   sub: 'Low-mood markers, patterns · 1 page',           pages: 1, conditional: 'depression',  on: true },
+  { key: 'headaches',      title: 'Headaches',                    sub: 'Frequency, intensity, triggers · 1 page',       pages: 1, conditional: 'migraines',   on: true },
+  { key: 'pots',           title: 'POTS',                         sub: 'Dizziness, standing, triggers · 1 page',        pages: 1, conditional: 'pots',        on: true },
+  { key: 'pain',           title: 'Pain',                         sub: 'Averages, sites, intensity · 1 page',           pages: 1, conditional: 'pain',        on: true },
+  { key: 'fatigue',        title: 'Fatigue',                      sub: 'Severity, context · 1 page',                    pages: 1, conditional: 'fatigue',     on: true },
+  { key: 'fog',            title: 'Brain fog',                    sub: 'Severity, context · 1 page',                    pages: 1, conditional: 'fog',         on: true },
+  { key: 'gut',            title: 'Gut & digestion',              sub: 'Symptoms, patterns · 1 page',                   pages: 1, conditional: 'gut',         on: true },
+  { key: 'cycle',          title: 'Cycle',                        sub: 'Phases, correlations · 1 page',                 pages: 1, conditional: 'cycle',       on: true },
+  { key: 'weight',         title: 'Weight',                       sub: 'Trend over period · 1 page',                    pages: 1, conditional: 'weight',      on: true },
+  { key: 'medications',    title: 'Medications',                  sub: 'Log of medications taken · 1 page',             pages: 1, conditional: 'medications', on: true },
+  { key: 'lifestyle',      title: 'Sleep, hydration & lifestyle', sub: 'Averages, distribution · 1 page',               pages: 1, conditional: 'health',      on: true },
+  { key: 'daily_log',      title: 'Daily log',                    sub: 'Scannable table, one row per day · 1 page',     pages: 1, on: true },
+  { key: 'own_words',      title: 'Notes & reflections',          sub: 'Free-text entries, grouped by theme · 1 page',  pages: 1, on: true }
 ];
 
 const state = {
@@ -282,8 +291,34 @@ document.getElementById('btn-export').onclick = async () => {
     });
     const data = await res.json();
     if (data.url) {
-      // Open the rendered HTML in a new tab — user can print / save as PDF
-      window.open(data.url, '_blank');
+      // data.url is a data:text/html;base64 URL. Modern browsers block these in
+      // new tabs for security. Instead, decode the HTML and write it into a fresh
+      // tab ourselves — same result, doesn't get blocked.
+      let html = '';
+      try {
+        const match = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
+        if (match) {
+          html = atob(match[1]);
+          // atob gives Latin-1 — if there's UTF-8, decode properly
+          try {
+            html = decodeURIComponent(escape(html));
+          } catch (e) { /* non-UTF-8 path, keep as is */ }
+        }
+      } catch (e) { /* fall through to direct open */ }
+
+      if (html) {
+        const w = window.open('', '_blank');
+        if (w) {
+          w.document.open();
+          w.document.write(html);
+          w.document.close();
+        } else {
+          alert('Pop-up blocked — please allow pop-ups for this site to view your report.');
+        }
+      } else {
+        // Fallback to old behaviour
+        window.open(data.url, '_blank');
+      }
     } else {
       alert('Something went wrong — try again.');
     }

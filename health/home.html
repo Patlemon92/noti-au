@@ -16,13 +16,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{min-height:100%}
+html{min-height:100%;overflow-x:hidden}
 body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;
   min-height:100dvh;overflow-x:hidden;position:relative;
   color:var(--ink);
   background:var(--bg);
   background-attachment:fixed;
   transition:background .6s ease;
+  width:100%;
 }
 :root{
   --ink:#4A1B0C; --muted:#712B13; --accent:#993C1D; --cta:#4A1B0C; --cta-text:#FFE4D0;
@@ -481,7 +482,32 @@ async function loadMirror() {
 
 // ── Quick Log — collapsed by default, trigger opens it. Submits via POST /me/note ─
 let qlogMood = null;
+
+function qlogReset() {
+  // Clear selection + text + reply, enable everything, re-show the submit button
+  qlogMood = null;
+  document.querySelectorAll('.qlog-opt').forEach(o => {
+    o.classList.remove('selected');
+    o.disabled = false;
+  });
+  const textEl = document.getElementById('qlog-text');
+  textEl.value = '';
+  textEl.disabled = false;
+  const submit = document.getElementById('qlog-submit');
+  submit.style.display = '';
+  submit.disabled = true;
+  submit.textContent = "Pick how you're feeling";
+  document.getElementById('qlog-reply').classList.add('hidden');
+  document.getElementById('qlog-reply-body').textContent = '';
+}
+
+function qlogCollapse() {
+  document.getElementById('qlog-card').classList.remove('open');
+  qlogReset();
+}
+
 document.getElementById('qlog-trigger').onclick = () => {
+  qlogReset();
   document.getElementById('qlog-card').classList.add('open');
   // Focus first mood option for keyboard users
   setTimeout(() => document.querySelector('.qlog-opt')?.focus(), 100);
@@ -489,6 +515,7 @@ document.getElementById('qlog-trigger').onclick = () => {
 
 document.querySelectorAll('.qlog-opt').forEach(opt => {
   opt.onclick = () => {
+    if (opt.disabled) return;
     document.querySelectorAll('.qlog-opt').forEach(o => o.classList.remove('selected'));
     opt.classList.add('selected');
     qlogMood = opt.dataset.mood;
@@ -512,12 +539,13 @@ document.getElementById('qlog-submit').onclick = async () => {
     });
     const data = await res.json();
     if (data.success && data.note && data.note.alys_reply) {
-      // Lock the form, show Alys's reply
+      // Show Alys's reply briefly, lock inputs, then auto-collapse + reset after 3.5s
       document.querySelectorAll('.qlog-opt').forEach(o => o.disabled = true);
       document.getElementById('qlog-text').disabled = true;
       submit.style.display = 'none';
       document.getElementById('qlog-reply-body').textContent = data.note.alys_reply;
       document.getElementById('qlog-reply').classList.remove('hidden');
+      setTimeout(qlogCollapse, 3500);
     } else {
       submit.textContent = 'Try again';
       submit.disabled = false;

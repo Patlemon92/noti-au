@@ -623,7 +623,7 @@ function renderStats(){
       <div class="stat-card">
         <div class="stat-label">Win rate</div>
         <div class="stat-value">${s.win_rate || 0}%</div>
-        <div class="stat-sub">${s.jobs_won || 0} of ${s.jobs_accepted || 0} accepted</div>
+        <div class="stat-sub">${s.jobs_won || 0} of ${s.jobs_offered || 0} offers</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Jobs offered</div>
@@ -643,7 +643,7 @@ function renderStats(){
             <div>
               <div class="job-desc" style="color:var(--orange);">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
               ${r.comment ? `<div class="job-meta">${esc(r.comment)}</div>` : ''}
-              <div class="job-meta">${esc(r.date)}</div>
+              <div class="job-meta">${sydneyDate(r.date)}</div>
             </div>
           </div>
         `).join('') || '<div style="padding:16px 0;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">No reviews yet</div>'}

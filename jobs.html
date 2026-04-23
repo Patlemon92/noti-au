@@ -805,7 +805,7 @@ function showConfirm(job, loc, returning) {
         <div class="photo-row" id="photoRow">
           ${[1,2,3].map(i => `
             <div class="photo-slot" id="slot${i}">
-              <input type="file" class="photo-input" data-index="${i}" accept="image/*" ${i>1?'disabled':''} capture="environment" />
+              <input type="file" class="photo-input" data-index="${i}" accept="image/*" ${i>1?'disabled':''} />
               <div class="photo-plus">+</div>
               <button class="photo-remove" data-index="${i}" type="button">✕</button>
             </div>`).join('')}
@@ -1195,7 +1195,7 @@ function err(msg) {
 // ─── DOM UTILS ────────────────────────────────────────────
 function render(html) {
   document.getElementById("page").innerHTML =
-    html + `<div class="footer">noti<em>.</em></div>`;
+    html + `<div class="footer">noti<em>.</em></div><div style="text-align:center;padding:0 0 20px;font-size:11px;font-weight:600;color:var(--muted);"><a href="/support" style="color:var(--muted);text-decoration:none;">Need help? Chat with support</a></div>`;
 }
 
 function get(id) { return document.getElementById(id); }

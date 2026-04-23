@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>noti. admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0A0A0A;
+  --surface: #111111;
+  --card:    #161616;
+  --border:  #222222;
+  --border2: #2A2A2A;
+  --muted:   #444444;
+  --dim:     #888888;
+  --text:    #E8E8E6;
+  --white:   #FFFFFF;
+  --orange:  #F5A623;
+  --green:   #22C55E;
+  --red:     #EF4444;
+  --blue:    #3B82F6;
+  --yellow:  #EAB308;
+  --font:    'Montserrat', sans-serif;
+  --mono:    'JetBrains Mono', monospace;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── LOGIN ── */
+#loginScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+.login-box {
+  width: 340px;
+  padding: 40px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+}
+.login-logo {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.login-logo em { color: var(--orange); font-style: normal; }
+.login-sub { font-size: 11px; font-weight: 500; color: var(--dim); margin-bottom: 28px; letter-spacing: 0.06em; text-transform: uppercase; }
+.login-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 12px 14px;
+  outline: none;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.login-input:focus { border-color: var(--orange); }
+.login-btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--orange);
+  color: #000;
+  border: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.login-btn:hover { opacity: 0.88; }
+.login-err { font-size: 11px; color: var(--red); margin-top: 10px; font-weight: 600; }
+
+/* ── APP SHELL ── */
+#app { display: none; height: 100vh; display: none; flex-direction: column; }
+#app.visible { display: flex; }
+
+/* Topbar */
+.topbar {
+  height: 48px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.topbar-logo { font-size: 15px; font-weight: 800; letter-spacing: -0.03em; color: var(--white); }
+.topbar-logo em { color: var(--orange); font-style: normal; }
+.topbar-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); border: 1px solid var(--border2); padding: 2px 8px; }
+.topbar-spacer { flex: 1; }
+.topbar-refresh { font-size: 11px; font-weight: 600; color: var(--dim); cursor: pointer; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 12px; border: 1px solid var(--border); background: none; color: var(--dim); }
+.topbar-refresh:hover { color: var(--text); border-color: var(--border2); }
+.topbar-logout { font-size: 11px; font-weight: 600; color: var(--dim); cursor: pointer; background: none; border: none; letter-spacing: 0.04em; text-transform: uppercase; }
+.topbar-logout:hover { color: var(--red); }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+/* Main layout */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar {
+  width: 200px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  padding: 16px 0;
+  overflow-y: auto;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  border-left: 2px solid transparent;
+  transition: all 0.1s;
+}
+.nav-item:hover { color: var(--text); background: var(--card); }
+.nav-item.active { color: var(--orange); border-left-color: var(--orange); background: rgba(245,166,35,0.06); }
+.nav-icon { font-size: 14px; width: 18px; text-align: center; }
+.nav-badge {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--red);
+  color: #fff;
+  padding: 1px 6px;
+  border-radius: 2px;
+  min-width: 18px;
+  text-align: center;
+}
+.nav-badge.orange { background: var(--orange); color: #000; }
+.nav-section { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 16px 18px 6px; }
+
+/* Content */
+.content { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* Tab panels */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── OVERVIEW ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--card);
+  padding: 16px 18px;
+}
+.stat-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
+.stat-val { font-size: 28px; font-weight: 800; letter-spacing: -0.04em; color: var(--white); }
+.stat-val.orange { color: var(--orange); }
+.stat-val.green  { color: var(--green); }
+.stat-val.red    { color: var(--red); }
+.stat-sub { font-size: 10px; font-weight: 500; color: var(--dim); margin-top: 4px; }
+
+/* ── TABLES ── */
+.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title span { color: var(--orange); }
+
+.table-wrap { border: 1px solid var(--border); overflow: hidden; margin-bottom: 24px; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead tr { background: var(--surface); border-bottom: 1px solid var(--border); }
+th { padding: 9px 12px; text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+}
+.badge-green  { background: rgba(34,197,94,0.15);  color: var(--green); }
+.badge-red    { background: rgba(239,68,68,0.15);   color: var(--red); }
+.badge-orange { background: rgba(245,166,35,0.15);  color: var(--orange); }
+.badge-blue   { background: rgba(59,130,246,0.15);  color: var(--blue); }
+.badge-yellow { background: rgba(234,179,8,0.15);   color: var(--yellow); }
+.badge-muted  { background: rgba(255,255,255,0.06); color: var(--dim); }
+
+/* Action buttons */
+.act-btn {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid var(--border2);
+  background: none;
+  color: var(--dim);
+  cursor: pointer;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.act-btn:hover { color: var(--text); border-color: var(--border2); background: var(--card); }
+.act-btn.green  { color: var(--green);  border-color: rgba(34,197,94,0.3); }
+.act-btn.green:hover  { background: rgba(34,197,94,0.1); }
+.act-btn.red    { color: var(--red);    border-color: rgba(239,68,68,0.3); }
+.act-btn.red:hover    { background: rgba(239,68,68,0.1); }
+.act-btn.orange { color: var(--orange); border-color: rgba(245,166,35,0.3); }
+.act-btn.orange:hover { background: rgba(245,166,35,0.1); }
+
+/* Mono text */
+.mono { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+
+/* ── SMS SENDER ── */
+.sms-form { background: var(--card); border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+.form-row { display: grid; grid-template-columns: 200px 1fr auto; gap: 10px; align-items: end; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+.form-input {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 9px 12px;
+  outline: none;
+}
+.form-input:focus { border-color: var(--orange); }
+.form-btn {
+  padding: 9px 20px;
+  background: var(--orange);
+  color: #000;
+  border: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.form-btn:hover { opacity: 0.88; }
+.form-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  display: none;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  width: 560px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+.modal-title { font-size: 14px; font-weight: 700; color: var(--white); margin-bottom: 16px; letter-spacing: -0.02em; }
+.modal-close { float: right; background: none; border: none; color: var(--dim); font-size: 18px; cursor: pointer; margin-top: -2px; }
+.modal-close:hover { color: var(--text); }
+.detail-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.detail-key { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); width: 140px; flex-shrink: 0; padding-top: 1px; }
+.detail-val { font-size: 12px; font-weight: 500; color: var(--text); flex: 1; word-break: break-all; }
+.detail-row:last-child { border-bottom: none; }
+.doc-link { color: var(--blue); font-size: 11px; text-decoration: none; }
+.doc-link:hover { text-decoration: underline; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 12px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  z-index: 2000;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.2s;
+  pointer-events: none;
+  border-left: 3px solid var(--green);
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.err { border-left-color: var(--red); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ── RESPONSIVE ── */
+
+/* Mobile bottom nav */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 200;
+  height: 56px;
+}
+.mobile-nav-inner {
+  display: flex;
+  height: 100%;
+}
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--dim);
+  font-family: var(--font);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-nav-item.active { color: var(--orange); }
+.mobile-nav-item .nav-icon { font-size: 18px; }
+.mobile-nav-badge {
+  position: absolute;
+  top: 6px; right: calc(50% - 16px);
+  background: var(--red);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 2px;
+  min-width: 14px;
+  text-align: center;
+}
+
+/* Mobile stat grid */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .mobile-nav { display: flex; }
+
+  .main { flex-direction: column; }
+  .content { padding: 12px 12px 72px; }
+
+  /* Topbar compact */
+  .topbar { padding: 0 14px; gap: 10px; }
+  .topbar-badge { display: none; }
+  #lastUpdated { display: none; }
+
+  /* Stat grid — 2 cols on mobile */
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .stat-val { font-size: 22px; }
+
+  /* Tables — horizontal scroll */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 600px; }
+
+  /* Form rows stack */
+  .form-row { grid-template-columns: 1fr; }
+  .form-btn { width: 100%; }
+
+  /* Filter row wraps */
+  .filter-row { gap: 6px; }
+  .search-input { width: 100%; margin-left: 0; margin-top: 4px; }
+
+  /* Support chat stacks */
+  #tab-support > div { grid-template-columns: 1fr !important; height: auto !important; }
+  #convList { max-height: 200px; }
+  #chatMessages { min-height: 260px; }
+
+  /* Modal full width */
+  .modal { width: calc(100vw - 24px); max-height: 85vh; }
+  .modal-overlay { align-items: flex-end; padding-bottom: 0; }
+  .modal { border-radius: 0; }
+
+  /* Login box */
+  .login-box { width: calc(100vw - 32px); padding: 28px 20px; }
+
+  /* Broadcast form */
+  #tab-sms .sms-form > div:first-of-type { display: none; }
+  #tab-sms .sms-form div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+
+  /* Section titles smaller */
+  .section-title { font-size: 9px; }
+
+  /* Hide less important table columns on mobile */
+  .hide-mobile { display: none; }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+  .sidebar { width: 160px; }
+  .stat-grid { grid-template-columns: repeat(4, 1fr); }
+  .nav-item { padding: 9px 12px; font-size: 11px; }
+}
+
+/* Filter row */
+.filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.filter-btn { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 12px; border: 1px solid var(--border); background: none; color: var(--dim); cursor: pointer; }
+.filter-btn:hover { color: var(--text); border-color: var(--border2); }
+.filter-btn.active { border-color: var(--orange); color: var(--orange); background: rgba(245,166,35,0.06); }
+.search-input { background: var(--card); border: 1px solid var(--border); color: var(--text); font: inherit; font-size: 12px; padding: 5px 12px; outline: none; width: 200px; margin-left: auto; }
+.search-input:focus { border-color: var(--orange); }
+
+/* Pending highlight */
+.row-pending td { background: rgba(245,166,35,0.04) !important; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">noti<em>.</em></div>
+    <div class="login-sub">Admin Dashboard</div>
+    <input class="login-input" type="password" id="pwInput" placeholder="Password" autocomplete="current-password" />
+    <button class="login-btn" id="loginBtn">Enter</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">noti<em>.</em></div>
+    <div class="topbar-badge">Admin</div>
+    <div class="live-dot"></div>
+    <div class="topbar-spacer"></div>
+    <div id="lastUpdated" style="font-size:10px;color:var(--muted);font-family:var(--mono);"></div>
+    <button class="topbar-refresh" onclick="loadData()">↺ Refresh</button>
+    <button class="topbar-logout" onclick="logout()">Log out</button>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+      <div class="nav-section">Overview</div>
+      <div class="nav-item active" onclick="switchTab('overview')" id="nav-overview">
+        <span class="nav-icon">◉</span> Overview
+      </div>
+
+      <div class="nav-section">Platform</div>
+      <div class="nav-item" onclick="switchTab('specialists')" id="nav-specialists">
+        <span class="nav-icon">👤</span> Specialists
+        <span class="nav-badge orange" id="badge-pending">0</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('jobs')" id="nav-jobs">
+        <span class="nav-icon">📋</span> Jobs
+      </div>
+      <div class="nav-item" onclick="switchTab('messages')" id="nav-messages">
+        <span class="nav-icon">💬</span> Messages
+      </div>
+
+      <div class="nav-section">Tools</div>
+      <div class="nav-item" onclick="switchTab('sms')" id="nav-sms">
+        <span class="nav-icon">📱</span> Send SMS
+      </div>
+      <div class="nav-item" onclick="switchTab('support')" id="nav-support">
+        <span class="nav-icon">🎧</span> Support Chat
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── OVERVIEW ── -->
+      <div class="tab-panel active" id="tab-overview">
+        <div class="stat-grid" id="statGrid">
+          <div class="stat-card"><div class="stat-label">Jobs today</div><div class="stat-val" id="s-today">—</div></div>
+          <div class="stat-card"><div class="stat-label">Active jobs</div><div class="stat-val orange" id="s-active">—</div></div>
+          <div class="stat-card"><div class="stat-label">Conversion rate</div><div class="stat-val green" id="s-conv">—</div></div>
+          <div class="stat-card"><div class="stat-label">Total revenue</div><div class="stat-val" id="s-rev">—</div></div>
+          <div class="stat-card"><div class="stat-label">Active specialists</div><div class="stat-val" id="s-active-sp">—</div></div>
+          <div class="stat-card"><div class="stat-label">Pending approval</div><div class="stat-val red" id="s-pending">—</div></div>
+          <div class="stat-card"><div class="stat-label">Premium / Basic</div><div class="stat-val" id="s-plans">—</div></div>
+          <div class="stat-card"><div class="stat-label">SMS costs</div><div class="stat-val" id="s-sms">—</div></div>
+        </div>
+
+        <div class="section-title">Pending Approval <span id="pending-count"></span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Business</th><th>Trade</th><th>Phone</th><th>Plan</th><th class="hide-mobile">Signed up</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="pendingTable"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="section-title">Live Jobs</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Job #</th><th>Description</th><th>Trade</th><th>Location</th><th>Status</th><th>Created</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="liveJobsTable"><tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px;">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── SPECIALISTS ── -->
+      <div class="tab-panel" id="tab-specialists">
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterSpec('all',this)">All</button>
+          <button class="filter-btn" onclick="filterSpec('PENDING',this)">Pending</button>
+          <button class="filter-btn" onclick="filterSpec('ACTIVE',this)">Active</button>
+          <button class="filter-btn" onclick="filterSpec('PAUSED',this)">Paused</button>
+          <button class="filter-btn" onclick="filterSpec('BLOCKED',this)">Blocked</button>
+          <input class="search-input" id="specSearch" placeholder="Search name or phone..." oninput="renderSpecialists()" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Business</th><th>Trade</th><th>Phone</th><th>Plan</th><th>Status</th><th>Verified</th><th>Jobs</th><th>Rating</th><th>Signed up</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="specTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── JOBS ── -->
+      <div class="tab-panel" id="tab-jobs">
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterJob('all',this)">All</button>
+          <button class="filter-btn" onclick="filterJob('active',this)">Active</button>
+          <button class="filter-btn" onclick="filterJob('ACCEPTED',this)">Won</button>
+          <button class="filter-btn" onclick="filterJob('CLOSED',this)">Closed</button>
+        </div>
+        <div class="filter-row" style="margin-top:0;">
+          <input class="search-input" id="jobSearch" placeholder="Job # or suburb or phone..." oninput="renderJobs()" style="width:220px;margin-left:0;" />
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+            <span style="font-size:10px;font-weight:600;color:var(--dim);letter-spacing:0.06em;text-transform:uppercase;">From</span>
+            <input type="date" id="jobDateFrom" class="form-input" style="width:140px;padding:5px 10px;font-size:12px;" onchange="renderJobs()" />
+            <span style="font-size:10px;font-weight:600;color:var(--dim);letter-spacing:0.06em;text-transform:uppercase;">To</span>
+            <input type="date" id="jobDateTo" class="form-input" style="width:140px;padding:5px 10px;font-size:12px;" onchange="renderJobs()" />
+            <button class="act-btn" onclick="clearJobDates()">Clear</button>
+            <button class="act-btn orange" onclick="searchJobsRemote()" title="Search all jobs in database">Search all</button>
+          </div>
+        </div>
+        <div id="jobSearchStatus" style="font-size:10px;font-weight:600;color:var(--muted);padding:4px 0 8px;letter-spacing:0.04em;"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Job #</th><th>Description</th><th>Trade</th><th>Type</th><th>Suburb</th><th>Customer</th><th>Status</th><th>Price</th><th>Created</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="jobTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── MESSAGES ── -->
+      <div class="tab-panel" id="tab-messages">
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="filterMsg('all',this)">All</button>
+          <button class="filter-btn" onclick="filterMsg('OUT',this)">Outbound</button>
+          <button class="filter-btn" onclick="filterMsg('IN',this)">Inbound</button>
+          <input class="search-input" id="msgSearch" placeholder="Search phone or type..." oninput="renderMessages()" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Time</th><th>Phone</th><th>Direction</th><th>Type</th><th>Job</th><th>Cost</th>
+            </tr></thead>
+            <tbody id="msgTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── SEND SMS ── -->
+      <div class="tab-panel" id="tab-sms">
+
+        <div class="section-title">Broadcast to all specialists</div>
+        <div class="sms-form" style="border-color:rgba(245,166,35,0.3);">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--orange);margin-bottom:14px;">⚡ Mass SMS — sends to multiple specialists at once</div>
+          <div style="display:grid;grid-template-columns:180px 1fr auto;gap:10px;align-items:end;">
+            <div class="form-group">
+              <div class="form-label">Send to</div>
+              <select class="form-input" id="broadcastFilter" style="cursor:pointer;">
+                <option value="all">All specialists</option>
+                <option value="active">Active only</option>
+                <option value="premium">Premium only</option>
+                <option value="basic">Basic only</option>
+                <option value="trial">Trial only</option>
+                <option value="paused">Paused only</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <div class="form-label">Message</div>
+              <input class="form-input" id="broadcastMsg" placeholder="Type your broadcast message..." />
+            </div>
+            <button class="form-btn" id="broadcastBtn" onclick="sendBroadcast()" style="background:var(--orange);">Broadcast</button>
+          </div>
+          <div id="broadcastResult" style="margin-top:12px;font-size:12px;font-weight:600;"></div>
+        </div>
+
+        <div class="section-title" style="margin-top:8px;">Send to one specialist</div>
+        <div class="sms-form">
+          <div class="form-row">
+            <div class="form-group">
+              <div class="form-label">Phone number</div>
+              <input class="form-input" id="smsPhone" placeholder="04xx xxx xxx" />
+            </div>
+            <div class="form-group">
+              <div class="form-label">Message</div>
+              <input class="form-input" id="smsMsg" placeholder="Type your message..." />
+            </div>
+            <button class="form-btn" id="smsSendBtn" onclick="sendSMS()">Send</button>
+          </div>
+          <div id="smsResult" style="margin-top:12px;font-size:12px;font-weight:600;"></div>
+        </div>
+
+        <div class="section-title">Recent outbound SMS</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Time</th><th>Phone</th><th>Type</th><th>Job</th><th>Cost</th></tr></thead>
+            <tbody id="smsLogTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── SUPPORT CHAT ── -->
+      <div class="tab-panel" id="tab-support">
+        <div class="section-title">Support Chat</div>
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:1px;background:var(--border);height:calc(100vh - 160px);">
+
+          <!-- Conversation list -->
+          <div style="background:var(--card);overflow-y:auto;">
+            <div style="padding:12px 14px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);">Conversations</div>
+            <div id="convList" style="overflow-y:auto;"></div>
+          </div>
+
+          <!-- Chat window -->
+          <div style="background:var(--surface);display:flex;flex-direction:column;">
+            <div id="chatHeader" style="padding:14px 18px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--text);">Select a conversation</div>
+            <div id="chatMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;"></div>
+            <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:10px;">
+              <input id="chatInput" class="form-input" style="flex:1;" placeholder="Type a message and press Enter..." onkeydown="if(event.key==='Enter')sendChatMsg()" />
+              <button class="form-btn" onclick="sendChatMsg()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SPECIALIST DETAIL MODAL -->
+<div class="modal-overlay" id="specModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('specModal')">✕</button>
+    <div class="modal-title" id="specModalTitle">Specialist details</div>
+    <div id="specModalBody"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;" id="specModalActions"></div>
+  </div>
+</div>
+
+<!-- JOB DETAIL MODAL -->
+<div class="modal-overlay" id="jobModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('jobModal')">✕</button>
+    <div class="modal-title" id="jobModalTitle">Job details</div>
+    <div id="jobModalBody"></div>
+    <div style="margin-top:16px;display:flex;gap:8px;" id="jobModalActions"></div>
+  </div>
+</div>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobileNav">
+  <div class="mobile-nav-inner">
+    <button class="mobile-nav-item active" id="mnav-overview" onclick="switchTab('overview')">
+      <span class="nav-icon">◉</span>Overview
+    </button>
+    <button class="mobile-nav-item" id="mnav-specialists" onclick="switchTab('specialists')" style="position:relative;">
+      <span class="nav-icon">👤</span>Specialists
+      <span class="mobile-nav-badge" id="mbadge-pending" style="display:none;">0</span>
+    </button>
+    <button class="mobile-nav-item" id="mnav-jobs" onclick="switchTab('jobs')">
+      <span class="nav-icon">📋</span>Jobs
+    </button>
+    <button class="mobile-nav-item" id="mnav-sms" onclick="switchTab('sms')">
+      <span class="nav-icon">📱</span>SMS
+    </button>
+    <button class="mobile-nav-item" id="mnav-support" onclick="switchTab('support')">
+      <span class="nav-icon">🎧</span>Support
+    </button>
+  </div>
+</div>
+
+<!-- JOB DETAIL MODAL -->
+<div class="modal-overlay" id="jobDetailModal">
+  <div class="modal" style="width:720px;max-width:calc(100vw - 24px);max-height:90vh;">
+    <button class="modal-close" onclick="closeModal('jobDetailModal')">✕</button>
+    <div class="modal-title" id="jobDetailTitle">Job detail</div>
+    <div id="jobDetailBody" style="overflow-y:auto;max-height:calc(90vh - 80px);"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://noti-api.ancient-bread-01fe.workers.dev';
+const SESSION_KEY = 'noti_admin_token';
+
+let _token = localStorage.getItem(SESSION_KEY) || '';
+let _data  = null;
+let _tab   = 'overview';
+let _specFilter = 'all';
+let _jobFilter  = 'all';
+let _msgFilter  = 'all';
+let _activeConv = null;
+
+// ── AUTH ──────────────────────────────────────────────────────
+document.getElementById('pwInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+document.getElementById('loginBtn').addEventListener('click', login);
+
+async function login() {
+  const pw = document.getElementById('pwInput').value;
+  if (!pw) return;
+  document.getElementById('loginBtn').textContent = '...';
+  try {
+    const r = await post('/admin/login', { password: pw });
+    if (!r.success) {
+      document.getElementById('loginErr').textContent = r.message || 'Incorrect password';
+      document.getElementById('loginBtn').textContent = 'Enter';
+      return;
+    }
+    _token = r.token;
+    localStorage.setItem(SESSION_KEY, _token);
+    showApp();
+  } catch(e) {
+    document.getElementById('loginErr').textContent = 'Could not connect';
+    document.getElementById('loginBtn').textContent = 'Enter';
+  }
+}
+
+function logout() {
+  localStorage.removeItem(SESSION_KEY);
+  _token = '';
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('pwInput').value = '';
+}
+
+async function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  await loadData();
+  setInterval(loadData, 60000);
+}
+
+// ── DATA LOADING ──────────────────────────────────────────────
+async function loadData() {
+  try {
+    const r = await post('/admin/data', { token: _token });
+    if (!r.success) { if (r.message === 'Unauthorised') logout(); return; }
+    _data = r;
+    document.getElementById('lastUpdated').textContent = 'Updated ' + sydTime(new Date().toISOString());
+    renderAll();
+  } catch(e) {
+    console.error('Load error:', e);
+  }
+}
+
+function renderAll() {
+  renderStats();
+  renderPendingTable();
+  renderLiveJobs();
+  renderSpecialists();
+  renderJobs();
+  renderMessages();
+  renderSMSLog();
+  renderConversations();
+  updateBadges();
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function renderStats() {
+  const s = _data.stats || {};
+  set('s-today',     s.jobs_today      || 0);
+  set('s-active',    s.active_jobs     || 0);
+  set('s-conv',      (s.conversion_rate || 0) + '%');
+  set('s-rev',       '$' + (s.total_revenue || '0.00'));
+  set('s-active-sp', s.active_specialists || 0);
+  set('s-pending',   s.pending_approval   || 0);
+  set('s-plans',     (s.premium_count||0) + ' / ' + (s.basic_count||0));
+  set('s-sms',       '$' + (s.sms_costs || '0.00'));
+}
+
+function updateBadges() {
+  const pending = (_data.specialists || []).filter(t =>
+    !t.verification_level || t.verification_level === 'PENDING'
+  ).length;
+  const el = document.getElementById('badge-pending');
+  el.textContent = pending;
+  el.style.display = pending ? 'block' : 'none';
+  const mel = document.getElementById('mbadge-pending');
+  if (mel) { mel.textContent = pending; mel.style.display = pending ? 'block' : 'none'; }
+  set('pending-count', pending ? `(${pending})` : '');
+}
+
+// ── PENDING TABLE ─────────────────────────────────────────────
+function renderPendingTable() {
+  const pending = (_data.specialists || []).filter(t =>
+    !t.verification_level || t.verification_level === 'PENDING'
+  );
+  const tbody = document.getElementById('pendingTable');
+  if (!pending.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px;">No pending approvals</td></tr>';
+    return;
+  }
+  tbody.innerHTML = pending.map(t => `
+    <tr class="row-pending">
+      <td><b>${esc(t.business_name)}</b></td>
+      <td>${esc(t.trade_type)}</td>
+      <td class="mono">${esc(t.primary_phone)}</td>
+      <td>${planBadge(t.plan)}</td>
+      <td class="mono hide-mobile" style="color:var(--dim);">${sydDate(t.created_at)}</td>
+      <td>
+        <button class="act-btn green" onclick="specAction('approve','${t.id}','${esc(t.business_name)}')">✓ Approve</button>
+        <button class="act-btn" onclick="showSpecModal(${JSON.stringify(t).replace(/"/g,'&quot;')})">View docs</button>
+        <button class="act-btn red" onclick="specAction('reject','${t.id}','${esc(t.business_name)}')">✗ Reject</button>
+      </td>
+    </tr>`).join('');
+}
+
+// ── LIVE JOBS ─────────────────────────────────────────────────
+function renderLiveJobs() {
+  const active = ['NEW','DRAFT','SENT_TO_TRADIES','AWAITING_CUSTOMER','QUOTE_OPEN'];
+  const jobs = (_data.jobs || []).filter(j => active.includes(j.status));
+  const tbody = document.getElementById('liveJobsTable');
+  if (!jobs.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:24px;">No live jobs</td></tr>';
+    return;
+  }
+  tbody.innerHTML = jobs.map(j => `
+    <tr>
+      <td class="mono" style="color:var(--orange);cursor:pointer;" onclick="showJobDetail('${j.id}','${j.job_number}','${esc(j.description)}')">${esc(j.job_number)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(j.description)}</td>
+      <td>${esc(j.trade_type)}</td>
+      <td>${esc(j.suburb)} ${esc(j.postcode)}</td>
+      <td>${statusBadge(j.status)}</td>
+      <td class="mono" style="color:var(--dim);">${sydTime(j.created_at)}</td>
+      <td>
+        <button class="act-btn orange" onclick="jobAction('redispatch','${j.id}')">↺ Redispatch</button>
+        <button class="act-btn red" onclick="jobAction('close_job','${j.id}')">Close</button>
+      </td>
+    </tr>`).join('');
+}
+
+// ── SPECIALISTS ───────────────────────────────────────────────
+function filterSpec(f, btn) {
+  _specFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    if (b.closest('#tab-specialists')) b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  renderSpecialists();
+}
+
+function renderSpecialists() {
+  const search = (document.getElementById('specSearch')?.value || '').toLowerCase();
+  let data = _data?.specialists || [];
+  if (_specFilter !== 'all') {
+    if (_specFilter === 'PENDING') data = data.filter(t => !t.verification_level || t.verification_level === 'PENDING');
+    else data = data.filter(t => t.status === _specFilter);
+  }
+  if (search) data = data.filter(t =>
+    (t.business_name||'').toLowerCase().includes(search) ||
+    (t.primary_phone||'').includes(search) ||
+    (t.trade_type||'').toLowerCase().includes(search)
+  );
+  const tbody = document.getElementById('specTable');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="10" style="color:var(--muted);text-align:center;padding:24px;">No specialists found</td></tr>'; return; }
+  tbody.innerHTML = data.map(t => `
+    <tr>
+      <td><b style="cursor:pointer;color:var(--orange);" onclick="showSpecModal(${JSON.stringify(t).replace(/"/g,'&quot;')})">${esc(t.business_name)}</b></td>
+      <td style="color:var(--dim);">${esc(t.trade_type)}</td>
+      <td class="mono">${esc(t.primary_phone)}</td>
+      <td>${planBadge(t.plan)}</td>
+      <td>${statusBadge(t.status)}</td>
+      <td>${verifyBadge(t.verification_level)}</td>
+      <td style="color:var(--dim);">${t.jobs_offered||0} / ${t.jobs_won||0}</td>
+      <td class="hide-mobile" style="color:var(--orange);">${t.rating ? parseFloat(t.rating).toFixed(1) + ' ★' : '—'}</td>
+      <td class="mono hide-mobile" style="color:var(--dim);">${sydDate(t.created_at)}</td>
+      <td>
+        ${t.status !== 'ACTIVE'  ? `<button class="act-btn green" onclick="specAction('activate','${t.id}','${esc(t.business_name)}')">Activate</button>` : ''}
+        ${t.status === 'ACTIVE'  ? `<button class="act-btn" onclick="specAction('pause','${t.id}','${esc(t.business_name)}')">Pause</button>` : ''}
+        ${t.status !== 'BLOCKED' ? `<button class="act-btn red" onclick="specAction('ban','${t.id}','${esc(t.business_name)}')">Ban</button>` : ''}
+        <button class="act-btn" onclick="specAction('reset_trial','${t.id}','${esc(t.business_name)}')">Reset trial</button>
+      </td>
+    </tr>`).join('');
+}
+
+// ── JOBS ──────────────────────────────────────────────────────
+function filterJob(f, btn) {
+  _jobFilter   = f;
+  _isSearchMode = false;
+  _searchedJobs = [];
+  document.getElementById('jobSearchStatus').textContent = '';
+  document.querySelectorAll('#tab-jobs .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderJobs();
+}
+
+function clearJobDates() {
+  document.getElementById('jobDateFrom').value = '';
+  document.getElementById('jobDateTo').value   = '';
+  document.getElementById('jobSearchStatus').textContent = '';
+  renderJobs();
+}
+
+async function searchJobsRemote() {
+  const search  = (document.getElementById('jobSearch')?.value || '').trim();
+  const dateFrom = document.getElementById('jobDateFrom')?.value;
+  const dateTo   = document.getElementById('jobDateTo')?.value;
+
+  if (!search && !dateFrom && !dateTo) {
+    toast('Enter a job number, phone, suburb or date range to search all jobs', 'err');
+    return;
+  }
+
+  const btn = document.querySelector('#tab-jobs .act-btn.orange');
+  if (btn) { btn.disabled = true; btn.textContent = 'Searching...'; }
+
+  try {
+    const r = await post('/admin/search_jobs', {
+      token: _token,
+      search: search || '',
+      date_from: dateFrom || '',
+      date_to:   dateTo   || '',
+    });
+
+    if (r.success) {
+      // Merge results into display without overwriting _data
+      _searchedJobs = r.jobs || [];
+      _isSearchMode  = true;
+      document.getElementById('jobSearchStatus').textContent =
+        `Showing ${r.jobs.length} result${r.jobs.length !== 1 ? 's' : ''} from full database search`;
+      renderJobs();
+    } else {
+      toast(r.message || 'Search failed', 'err');
+    }
+  } catch(e) {
+    toast('Search failed', 'err');
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Search all'; }
+}
+
+let _searchedJobs = [];
+let _isSearchMode  = false;
+
+function renderJobs() {
+  const search   = (document.getElementById('jobSearch')?.value || '').toLowerCase();
+  const dateFrom = document.getElementById('jobDateFrom')?.value;
+  const dateTo   = document.getElementById('jobDateTo')?.value;
+  const active   = ['NEW','DRAFT','SENT_TO_TRADIES','AWAITING_CUSTOMER','QUOTE_OPEN'];
+
+  // Use searched jobs if in search mode, otherwise use loaded data
+  let data = _isSearchMode ? _searchedJobs : (_data?.jobs || []);
+
+  // Status filter
+  if (_jobFilter === 'active') data = data.filter(j => active.includes(j.status));
+  else if (_jobFilter !== 'all') data = data.filter(j => j.status === _jobFilter);
+
+  // Text search
+  if (search) data = data.filter(j =>
+    (j.job_number||'').toLowerCase().includes(search) ||
+    (j.description||'').toLowerCase().includes(search) ||
+    (j.suburb||'').toLowerCase().includes(search) ||
+    (j.customer_phone||'').includes(search) ||
+    (j.customer_name||'').toLowerCase().includes(search)
+  );
+
+  // Date range filter (local, on loaded data)
+  if (dateFrom && !_isSearchMode) {
+    const from = new Date(dateFrom);
+    data = data.filter(j => new Date(j.created_at) >= from);
+  }
+  if (dateTo && !_isSearchMode) {
+    const to = new Date(dateTo);
+    to.setHours(23,59,59,999);
+    data = data.filter(j => new Date(j.created_at) <= to);
+  }
+
+  // Update status line for local filter
+  if (!_isSearchMode && (dateFrom || dateTo)) {
+    document.getElementById('jobSearchStatus').textContent =
+      `Filtering ${data.length} job${data.length !== 1 ? 's' : ''} from loaded data. Use "Search all" to query the full database.`;
+  } else if (!_isSearchMode) {
+    document.getElementById('jobSearchStatus').textContent = `Showing ${data.length} of last 100 jobs. Use "Search all" to query the full database.`;
+  }
+
+  const tbody = document.getElementById('jobTable');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="10" style="color:var(--muted);text-align:center;padding:24px;">No jobs found</td></tr>'; return; }
+  tbody.innerHTML = data.map(j => `
+    <tr>
+      <td class="mono" style="color:var(--orange);cursor:pointer;" onclick="showJobModal(${JSON.stringify(j).replace(/"/g,'&quot;')})">${esc(j.job_number)}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(j.description)}</td>
+      <td style="color:var(--dim);">${esc(j.trade_type)}</td>
+      <td><span class="badge badge-${j.job_type==='QUOTE'?'blue':'muted'}">${j.job_type}</span></td>
+      <td>${esc(j.suburb)}</td>
+      <td class="mono" style="color:var(--dim);">${esc(j.customer_phone)}</td>
+      <td>${statusBadge(j.status)}</td>
+      <td style="color:var(--green);">${j.winning_price ? '$'+j.winning_price : '—'}</td>
+      <td class="mono" style="color:var(--dim);">${sydTime(j.created_at)}</td>
+      <td>
+        ${active.includes(j.status) ? `<button class="act-btn orange" onclick="jobAction('redispatch','${j.id}')">↺</button>` : ''}
+        ${active.includes(j.status) ? `<button class="act-btn red" onclick="jobAction('close_job','${j.id}')">Close</button>` : ''}
+      </td>
+    </tr>`).join('');
+}
+
+// ── MESSAGES ─────────────────────────────────────────────────
+function filterMsg(f, btn) {
+  _msgFilter = f;
+  document.querySelectorAll('#tab-messages .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMessages();
+}
+
+function renderMessages() {
+  const search = (document.getElementById('msgSearch')?.value || '').toLowerCase();
+  let data = _data?.messages || [];
+  if (_msgFilter !== 'all') data = data.filter(m => m.direction === _msgFilter);
+  if (search) data = data.filter(m =>
+    (m.phone||'').includes(search) ||
+    (m.message_type||'').toLowerCase().includes(search)
+  );
+  const tbody = document.getElementById('msgTable');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px;">No messages</td></tr>'; return; }
+  tbody.innerHTML = data.map(m => `
+    <tr>
+      <td class="mono" style="color:var(--dim);">${sydTime(m.created_at)}</td>
+      <td class="mono">${esc(m.phone)}</td>
+      <td><span class="badge ${m.direction==='OUT'?'badge-blue':'badge-muted'}">${m.direction}</span></td>
+      <td style="color:var(--dim);font-size:11px;">${esc(m.message_type)}</td>
+      <td class="mono" style="color:var(--muted);font-size:10px;">${m.job_id ? m.job_id.slice(0,8)+'...' : '—'}</td>
+      <td style="color:var(--dim);">$${m.cost_aud || '0.09'}</td>
+    </tr>`).join('');
+}
+
+function renderSMSLog() {
+  const data = (_data?.messages || []).filter(m => m.direction === 'OUT').slice(0, 30);
+  const tbody = document.getElementById('smsLogTable');
+  tbody.innerHTML = data.map(m => `
+    <tr>
+      <td class="mono" style="color:var(--dim);">${sydTime(m.created_at)}</td>
+      <td class="mono">${esc(m.phone)}</td>
+      <td style="color:var(--dim);font-size:11px;">${esc(m.message_type)}</td>
+      <td class="mono" style="color:var(--muted);font-size:10px;">${m.job_id ? m.job_id.slice(0,8)+'...' : '—'}</td>
+      <td style="color:var(--dim);">$${m.cost_aud || '0.09'}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px;">No messages</td></tr>';
+}
+
+// ── SUPPORT CHAT ──────────────────────────────────────────────
+function renderConversations() {
+  // Group support_messages by phone number
+  const msgs = _data?.support_messages || [];
+  const phones = {};
+  msgs.forEach(m => {
+    if (!phones[m.phone]) phones[m.phone] = { phone: m.phone, name: m.name, role: m.role, last: m.created_at, last_msg: m.message, unread: 0 };
+    if (m.created_at > phones[m.phone].last) { phones[m.phone].last = m.created_at; phones[m.phone].last_msg = m.message; }
+    if (!m.read && m.role !== 'admin') phones[m.phone].unread++;
+  });
+  const convs = Object.values(phones).sort((a,b) => b.last.localeCompare(a.last));
+  const list = document.getElementById('convList');
+  list.innerHTML = convs.map(c => `
+    <div onclick="openConv('${c.phone}')" style="padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;${_activeConv===c.phone?'background:rgba(245,166,35,0.08);border-left:2px solid var(--orange);':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:12px;font-weight:600;color:var(--text);">${esc(c.name||c.phone)}</div>
+        ${c.unread ? `<span style="background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px;">${c.unread}</span>` : ''}
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px;font-family:var(--mono);">${c.phone} · ${esc(c.role)}</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">${esc(c.last_msg)}</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:2px;">${sydTime(c.last)}</div>
+    </div>`).join('') || '<div style="padding:20px;color:var(--muted);font-size:11px;text-align:center;">No support conversations yet</div>';
+}
+
+function openConv(phone) {
+  _activeConv = phone;
+  renderConversations();
+  const msgs = (_data?.support_messages || []).filter(m => m.phone === phone).sort((a,b) => a.created_at.localeCompare(b.created_at));
+  const first = (_data?.support_messages || []).find(m => m.phone === phone);
+  document.getElementById('chatHeader').textContent = (first?.name || phone) + ' · ' + (first?.role || '');
+  document.getElementById('chatMessages').innerHTML = msgs.length ? msgs.map(m => `
+    <div style="display:flex;flex-direction:column;align-items:${m.role==='admin'?'flex-end':'flex-start'};">
+      <div style="max-width:75%;padding:10px 14px;background:${m.role==='admin'?'rgba(245,166,35,0.15)':'var(--card)'};border:1px solid ${m.role==='admin'?'rgba(245,166,35,0.3)':'var(--border)'};font-size:12px;line-height:1.5;color:var(--text);">
+        ${esc(m.message).replace(/\n/g,'<br>')}
+      </div>
+      <div style="font-size:9px;color:var(--muted);margin-top:3px;">${m.role==='admin'?'You':'Customer'} · ${sydTime(m.created_at)}</div>
+    </div>`).join('') : '<div style="color:var(--muted);text-align:center;padding:20px;font-size:11px;">No messages yet</div>';
+
+  const el = document.getElementById('chatMessages');
+  setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+  document.getElementById('smsPhone').value = phone;
+  document.getElementById('chatInput').focus();
+}
+
+async function sendChatMsg() {
+  const msg = document.getElementById('chatInput').value.trim();
+  if (!msg || !_activeConv) return;
+  const input = document.getElementById('chatInput');
+  input.value = '';
+
+  try {
+    await fetch(API + '/support/send', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ phone: _activeConv, name: 'Noti Support', role: 'admin', message: msg })
+    });
+    await loadData();
+    // Re-open conversation to show new message
+    openConv(_activeConv);
+  } catch(e) { toast('Failed to send', 'err'); }
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────
+async function specAction(action, id, name) {
+  const labels = { approve:'Approve', reject:'Reject', pause:'Pause', activate:'Activate', ban:'Ban', reset_trial:'Reset trial' };
+  if (!confirm(`${labels[action]} ${name}?`)) return;
+  const r = await post('/admin/action', { token: _token, action, specialist_id: id });
+  toast(r.success ? r.message : r.message, r.success ? 'ok' : 'err');
+  if (r.success) await loadData();
+}
+
+async function jobAction(action, id) {
+  if (!confirm(`${action === 'close_job' ? 'Close' : 'Redispatch'} this job?`)) return;
+  const r = await post('/admin/action', { token: _token, action, job_id: id });
+  toast(r.success ? r.message : r.message, r.success ? 'ok' : 'err');
+  if (r.success) await loadData();
+}
+
+async function sendBroadcast() {
+  const msg    = document.getElementById('broadcastMsg').value.trim();
+  const filter = document.getElementById('broadcastFilter').value;
+  if (!msg) { toast('Message required', 'err'); return; }
+
+  // Count how many will receive it
+  let count = _data?.specialists?.length || 0;
+  if (filter === 'active')  count = (_data?.specialists||[]).filter(t => t.status === 'ACTIVE').length;
+  if (filter === 'premium') count = (_data?.specialists||[]).filter(t => t.plan === 'PREMIUM').length;
+  if (filter === 'basic')   count = (_data?.specialists||[]).filter(t => t.plan === 'BASIC').length;
+  if (filter === 'trial')   count = (_data?.specialists||[]).filter(t => t.plan === 'TRIAL').length;
+  if (filter === 'paused')  count = (_data?.specialists||[]).filter(t => t.status === 'PAUSED').length;
+
+  if (!confirm(`Send this message to ${count} specialist${count !== 1 ? 's' : ''}?
+
+"${msg}"`)) return;
+
+  const btn = document.getElementById('broadcastBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+
+  const r = await post('/admin/action', {
+    token: _token, action: 'broadcast', message: msg, value: filter
+  });
+
+  btn.disabled = false; btn.textContent = 'Broadcast';
+  const res = document.getElementById('broadcastResult');
+  res.style.color = r.success ? 'var(--green)' : 'var(--red)';
+  res.textContent = r.message || (r.success ? 'Sent' : 'Failed');
+
+  if (r.success) {
+    document.getElementById('broadcastMsg').value = '';
+    toast(r.message, 'ok');
+    await loadData();
+  }
+}
+
+async function sendSMS() {
+  const phone = document.getElementById('smsPhone').value.trim();
+  const msg   = document.getElementById('smsMsg').value.trim();
+  if (!phone || !msg) { toast('Phone and message required', 'err'); return; }
+  const btn = document.getElementById('smsSendBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  const r = await post('/admin/action', { token: _token, action: 'send_sms', phone, message: msg });
+  btn.disabled = false; btn.textContent = 'Send';
+  const res = document.getElementById('smsResult');
+  res.style.color = r.success ? 'var(--green)' : 'var(--red)';
+  res.textContent = r.message || (r.success ? 'Sent' : 'Failed');
+  if (r.success) { document.getElementById('smsMsg').value = ''; await loadData(); }
+}
+
+// ── MODALS ────────────────────────────────────────────────────
+function showSpecModal(t) {
+  document.getElementById('specModalTitle').textContent = t.business_name;
+  document.getElementById('specModalBody').innerHTML = [
+    ['Trade', t.trade_type],
+    ['Phone', t.primary_phone],
+    ['Email', t.email || '—'],
+    ['Plan', t.plan],
+    ['Status', t.status],
+    ['Verified', t.verification_level || 'PENDING'],
+    ['Service areas', t.service_areas || '—'],
+    ['Jobs offered / won', `${t.jobs_offered||0} / ${t.jobs_won||0}`],
+    ['Trial used', `${t.trial_used||0} of 5`],
+    ['Rating', t.rating ? parseFloat(t.rating).toFixed(1) + ' ★' : '—'],
+    ['Licence expiry', t.licence_expiry || '—'],
+    ['Insurance expiry', t.insurance_expiry || '—'],
+    ['Signed up', sydTime(t.created_at)],
+  ].map(([k,v]) => `<div class="detail-row"><div class="detail-key">${k}</div><div class="detail-val">${esc(String(v))}</div></div>`).join('') +
+  (t.licence_file_url ? `<div class="detail-row"><div class="detail-key">Licence doc</div><div class="detail-val"><a class="doc-link" href="${t.licence_file_url}" target="_blank">View document ↗</a></div></div>` : '') +
+  (t.insurance_file_url ? `<div class="detail-row"><div class="detail-key">Insurance doc</div><div class="detail-val"><a class="doc-link" href="${t.insurance_file_url}" target="_blank">View document ↗</a></div></div>` : '');
+
+  document.getElementById('specModalActions').innerHTML = `
+    <button class="act-btn green" onclick="specAction('approve','${t.id}','${esc(t.business_name)}');closeModal('specModal')">✓ Approve</button>
+    <button class="act-btn red"   onclick="specAction('reject','${t.id}','${esc(t.business_name)}');closeModal('specModal')">✗ Reject</button>
+    <button class="act-btn"       onclick="specAction('pause','${t.id}','${esc(t.business_name)}')">Pause</button>
+    <button class="act-btn"       onclick="specAction('reset_trial','${t.id}','${esc(t.business_name)}')">Reset trial</button>
+    <button class="act-btn orange" onclick="document.getElementById('smsPhone').value='${t.primary_phone}';switchTab('sms');closeModal('specModal')">Send SMS</button>
+  `;
+  document.getElementById('specModal').classList.add('open');
+}
+
+function showJobModal(j) {
+  // Open the full detail view instead
+  showJobDetail(j.id, j.job_number, j.description);
+}
+
+async function showJobDetail(jobId, jobNumber, description) {
+  document.getElementById('jobDetailTitle').textContent = `${jobNumber || 'Job'} — ${description || ''}`;
+  document.getElementById('jobDetailBody').innerHTML = '<div style="padding:40px;text-align:center;color:var(--dim);">Loading...</div>';
+  document.getElementById('jobDetailModal').classList.add('open');
+
+  try {
+    const r = await post('/admin/job', { token: _token, job_id: jobId, job_number: jobNumber });
+    if (!r.success) {
+      document.getElementById('jobDetailBody').innerHTML = `<div style="padding:20px;color:var(--red);">${esc(r.message)}</div>`;
+      return;
+    }
+    renderJobDetail(r);
+  } catch(e) {
+    document.getElementById('jobDetailBody').innerHTML = '<div style="padding:20px;color:var(--red);">Failed to load</div>';
+  }
+}
+
+function renderJobDetail(r) {
+  const j  = r.job || {};
+  const c  = r.customer || {};
+  const ds = r.dispatches || [];
+  const ms = r.messages || [];
+  const sm = r.support_messages || [];
+  const rv = r.reviews || [];
+  const pr = r.pricing || [];
+  const active = ['NEW','DRAFT','SENT_TO_TRADIES','AWAITING_CUSTOMER','QUOTE_OPEN'];
+
+  const section = (title, body) => `
+    <div style="margin-bottom:20px;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">${title}</div>
+      ${body}
+    </div>`;
+
+  const row = (k, v, color='') => `<div class="detail-row"><div class="detail-key">${k}</div><div class="detail-val" style="color:${color||'inherit'};">${v}</div></div>`;
+
+  let html = '';
+
+  // ── Job details ──
+  html += section('Job details', [
+    row('Job number', esc(j.job_number)),
+    row('Description', esc(j.description)),
+    row('Raw message', esc(j.raw_message), 'var(--dim)'),
+    row('Trade type', esc(j.trade_type)),
+    row('Job type', esc(j.job_type)),
+    row('Location', `${esc(j.suburb)} ${esc(j.postcode)} ${esc(j.state)}`),
+    row('Address', j.address ? esc(`${j.address_unit ? j.address_unit+'/' : ''}${j.address}`) : '<span style="color:var(--muted);">Not confirmed</span>'),
+    row('Status', `<span class="badge ${j.status==='ACCEPTED'||j.status==='CLOSED'?'badge-green':'badge-orange'}">${esc(j.status)}</span>`),
+    row('Winning price', j.winning_price ? `<span style="color:var(--green);font-weight:700;">$${j.winning_price}</span>` : '—'),
+    row('Winning ETA', esc(j.winning_eta) || '—'),
+    row('Responses', j.winning_response_count || '—'),
+    row('Created', sydTime(j.created_at)),
+    row('Accepted', j.tradie_accepted_time ? sydTime(j.tradie_accepted_time) : '—'),
+    j.review_rating ? row('Review', '★'.repeat(j.review_rating) + '☆'.repeat(5-j.review_rating)) : '',
+    j.photo_urls?.length ? row('Photos', j.photo_urls.map(u => `<a href="${esc(u)}" target="_blank" class="doc-link">Photo ↗</a>`).join(' &nbsp; ')) : '',
+  ].filter(Boolean).join(''));
+
+  // ── Customer ──
+  html += section('Customer', [
+    row('Name', esc(c.name) || '—'),
+    row('Phone', esc(c.phone)),
+    row('Total jobs', c.total_jobs || 0),
+    row('First seen', sydDate(c.first_seen)),
+    row('Status', esc(c.status) || 'active'),
+  ].join(''));
+
+  // ── Dispatches ──
+  const dispatchRows = ds.length ? ds.map(d => `
+    <tr>
+      <td>${esc(d.specialist_name)}</td>
+      <td class="mono" style="color:var(--dim);">${esc(d.specialist_phone)}</td>
+      <td>${planBadge(d.specialist_plan)}</td>
+      <td>${d.specialist_rating ? parseFloat(d.specialist_rating).toFixed(1)+' ★' : '—'}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td>${d.won ? '<span style="color:var(--green);font-weight:700;">WON</span>' : '—'}</td>
+      <td style="color:var(--dim);">${d.detail_text?.price ? '$'+d.detail_text.price : '—'}</td>
+      <td style="color:var(--dim);">${d.detail_text?.arrival || '—'}</td>
+      <td class="mono" style="color:var(--muted);font-size:10px;">${sydTime(d.sent_time)}</td>
+    </tr>`).join('') : '<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:16px;">No dispatches</td></tr>';
+
+  html += section(`Dispatches (${ds.length})`, `
+    <div style="overflow-x:auto;">
+    <table style="min-width:500px;">
+      <thead><tr>
+        <th>Specialist</th><th>Phone</th><th>Plan</th><th>Rating</th><th>Status</th><th>Result</th><th>Price</th><th>ETA</th><th>Sent</th>
+      </tr></thead>
+      <tbody>${dispatchRows}</tbody>
+    </table></div>`);
+
+  // ── SMS messages for this job ──
+  const msgRows = ms.length ? ms.map(m => `
+    <tr>
+      <td class="mono" style="color:var(--dim);font-size:10px;">${sydTime(m.created_at)}</td>
+      <td class="mono">${esc(m.phone)}</td>
+      <td><span class="badge ${m.direction==='OUT'?'badge-blue':'badge-muted'}">${m.direction}</span></td>
+      <td style="color:var(--dim);font-size:11px;">${esc(m.message_type)}</td>
+      <td style="color:var(--dim);">$${m.cost_aud||'0.09'}</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px;">No messages</td></tr>';
+
+  html += section(`SMS messages (${ms.length})`, `
+    <table>
+      <thead><tr><th>Time</th><th>Phone</th><th>Direction</th><th>Type</th><th>Cost</th></tr></thead>
+      <tbody>${msgRows}</tbody>
+    </table>`);
+
+  // ── Support messages ──
+  if (sm.length) {
+    const smRows = sm.map(m => `
+      <tr>
+        <td class="mono" style="color:var(--dim);font-size:10px;">${sydTime(m.created_at)}</td>
+        <td><span class="badge ${m.role==='admin'?'badge-orange':'badge-muted'}">${m.role}</span></td>
+        <td style="max-width:400px;word-break:break-word;">${esc(m.message)}</td>
+      </tr>`).join('');
+    html += section(`Support chat (${sm.length})`, `
+      <table>
+        <thead><tr><th>Time</th><th>From</th><th>Message</th></tr></thead>
+        <tbody>${smRows}</tbody>
+      </table>`);
+  }
+
+  // ── Actions ──
+  if (active.includes(j.status)) {
+    html += `<div style="display:flex;gap:8px;padding-top:8px;">
+      <button class="act-btn orange" onclick="jobAction('redispatch','${j.id}');closeModal('jobDetailModal')">↺ Redispatch</button>
+      <button class="act-btn red"    onclick="jobAction('close_job','${j.id}');closeModal('jobDetailModal')">Close job</button>
+      <button class="act-btn"        onclick="document.getElementById('smsPhone').value='${j.customer_phone}';switchTab('sms');closeModal('jobDetailModal')">SMS customer</button>
+    </div>`;
+  }
+
+  document.getElementById('jobDetailBody').innerHTML = html;
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── TAB SWITCHING ─────────────────────────────────────────────
+function switchTab(tab) {
+  _tab = tab;
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab)?.classList.add('active');
+  document.getElementById('mnav-' + tab)?.classList.add('active');
+  // Scroll content to top on mobile
+  const content = document.querySelector('.content');
+  if (content) content.scrollTop = 0;
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function post(endpoint, payload) {
+  const r = await fetch(API + endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return JSON.parse(await r.text());
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+const esc = v => String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+function sydTime(utcStr) {
+  if (!utcStr) return '—';
+  return new Date(utcStr).toLocaleString('en-AU', {
+    timeZone: 'Australia/Sydney', day:'2-digit', month:'short',
+    hour:'2-digit', minute:'2-digit', hour12:true
+  });
+}
+function sydDate(utcStr) {
+  if (!utcStr) return '—';
+  return new Date(utcStr).toLocaleDateString('en-AU', {
+    timeZone: 'Australia/Sydney', day:'2-digit', month:'short', year:'numeric'
+  });
+}
+
+function planBadge(plan) {
+  const map = { PREMIUM:'badge-orange', BASIC:'badge-blue', TRIAL:'badge-muted' };
+  return `<span class="badge ${map[plan]||'badge-muted'}">${plan||'—'}</span>`;
+}
+function statusBadge(status) {
+  const map = {
+    ACTIVE:'badge-green', PAUSED:'badge-yellow', BLOCKED:'badge-red',
+    ACCEPTED:'badge-green', CLOSED:'badge-muted',
+    NEW:'badge-orange', DRAFT:'badge-orange',
+    SENT_TO_TRADIES:'badge-blue', AWAITING_CUSTOMER:'badge-orange',
+    QUOTE_OPEN:'badge-blue', QUOTE_LOCKED:'badge-muted',
+  };
+  return `<span class="badge ${map[status]||'badge-muted'}">${status||'—'}</span>`;
+}
+function verifyBadge(v) {
+  if (!v || v === 'PENDING') return `<span class="badge badge-yellow">PENDING</span>`;
+  if (v === 'VERIFIED')      return `<span class="badge badge-green">VERIFIED</span>`;
+  if (v === 'FLAGGED')       return `<span class="badge badge-red">FLAGGED</span>`;
+  return `<span class="badge badge-muted">${v}</span>`;
+}
+
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type === 'err' ? ' err' : '');
+  setTimeout(() => { el.classList.remove('show'); }, 3000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+if (_token) showApp();
+</script>
+</body>
+</html>

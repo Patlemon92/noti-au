@@ -536,11 +536,11 @@
 
   <!-- LICENCE -->
   <div class="section">
-    <div class="section-title">Licence</div>
+    <div class="section-title">Licence <span style="font-size:10px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;">(optional)</span></div>
     <div class="grid-2">
       <div class="field">
         <label class="field-label">Licence number</label>
-        <input type="text" id="licenceNumber" required />
+        <input type="text" id="licenceNumber" />
       </div>
       <div class="field">
         <label class="field-label">Licence state</label>
@@ -731,8 +731,8 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   if (!val('businessSuburb'))    { note('Business suburb is required.', 'err'); return; }
   if (!val('businessPostcode'))  { note('Business postcode is required.', 'err'); return; }
   if (!val('businessState'))     { note('Business state is required.', 'err'); return; }
-  if (!val('licenceNumber'))     { note('Licence number is required.', 'err'); return; }
-  if (!val('licenceState'))      { note('Licence state is required.', 'err'); return; }
+  // licence number optional
+  // licence state optional
   if (!val('insuranceProvider')) { note('Insurance provider is required.', 'err'); return; }
   if (!val('insuranceAmount'))   { note('Please select a public liability cover amount.', 'err'); return; }
   if (!val('insuranceExpiry'))   { note('Insurance expiry date is required.', 'err'); return; }

@@ -643,9 +643,9 @@ const API = "https://noti-api.ancient-bread-01fe.workers.dev";
 const TRADES = [
   "Plumber","Electrician","Builder","Carpenter","Handyman",
   "Air Conditioning","Gas Fitter","Waterproofing","Roofing","Concreter",
-  "Glazier","Fencing","Cleaner","Pest Control","Gardening / Landscaping",
-  "Pool Maintenance","Locksmith","Security Systems","Painter","Tiler",
-  "Plasterer","Flooring","Appliance Repair","Rubbish Removal","Other"
+  "Glazier","Fencing","Cleaner","Carpet & Upholstery Cleaning","Pest Control",
+  "Gardening / Landscaping","Pool Maintenance","Locksmith","Security Systems",
+  "Painter","Tiler","Plasterer","Flooring","Appliance Repair","Rubbish Removal","Other"
 ];
 
 const selectedTrades = new Set();
@@ -785,6 +785,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       'Glazier':                'GLAZIER',
       'Fencing':                'FENCING',
       'Cleaner':                'CLEANER',
+      'Carpet & Upholstery Cleaning': 'CARPET_CLEANING',
       'Pest Control':           'PEST_CONTROL',
       'Gardening / Landscaping':'GARDENING',
       'Pool Maintenance':       'POOL',

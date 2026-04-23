@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>noti. — Support</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:  #0C0C0C;
+      --white:  #FFFFFF;
+      --off:    #F5F5F3;
+      --line:   #E8E8E6;
+      --muted:  #999994;
+      --dim:    #666663;
+      --orange: #F5A623;
+      --green:  #0A7A3E;
+      --red:    #B52222;
+      --font:   'Montserrat', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--off);
+      color: var(--black);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .shell {
+      max-width: 560px;
+      margin: 0 auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+    }
+
+    /* Header */
+    .header {
+      background: var(--black);
+      padding: 16px 20px 14px;
+      flex-shrink: 0;
+    }
+    .header-logo {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--white);
+      margin-bottom: 2px;
+    }
+    .header-logo em { color: var(--orange); font-style: normal; }
+    .header-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.04em;
+    }
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+    .status-text {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* Identity step */
+    #identityStep {
+      flex: 1;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .id-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+    .id-sub {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+    .field { margin-bottom: 16px; }
+    .field-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 6px;
+    }
+    .field-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1.5px solid var(--line);
+      padding: 10px 0;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--black);
+      outline: none;
+    }
+    .field-input:focus { border-bottom-color: var(--black); }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: var(--black);
+      color: var(--white);
+      border: none;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .notice {
+      padding: 12px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.5;
+      border-left: 3px solid var(--muted);
+      background: var(--off);
+      color: var(--dim);
+      margin-top: 12px;
+    }
+    .notice.err { border-left-color: var(--red); color: var(--red); background: #FDF0F0; }
+
+    /* Chat view */
+    #chatStep {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #chatStep.active { display: flex; }
+
+    .chat-info {
+      padding: 10px 16px;
+      background: var(--off);
+      border-bottom: 1px solid var(--line);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .chat-info em { color: var(--black); font-style: normal; }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 80%;
+    }
+    .msg.mine { align-self: flex-end; align-items: flex-end; }
+    .msg.theirs { align-self: flex-start; align-items: flex-start; }
+
+    .msg-bubble {
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+    .msg.mine .msg-bubble {
+      background: var(--black);
+      color: var(--white);
+    }
+    .msg.theirs .msg-bubble {
+      background: var(--off);
+      color: var(--black);
+      border: 1px solid var(--line);
+    }
+    .msg-meta {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 3px;
+      letter-spacing: 0.04em;
+    }
+
+    .empty-chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .empty-icon { font-size: 32px; margin-bottom: 12px; }
+    .empty-title { font-size: 14px; font-weight: 700; color: var(--black); margin-bottom: 6px; }
+    .empty-sub { font-size: 12px; font-weight: 500; color: var(--muted); line-height: 1.5; }
+
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      padding: 10px 14px;
+      background: var(--off);
+      border: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .typing-indicator.show { display: block; }
+
+    /* Input */
+    .chat-input-wrap {
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      gap: 10px;
+      background: var(--white);
+      flex-shrink: 0;
+    }
+    .chat-input {
+      flex: 1;
+      background: var(--off);
+      border: 1px solid var(--line);
+      padding: 10px 14px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--black);
+      outline: none;
+      resize: none;
+      min-height: 42px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .chat-input:focus { border-color: var(--black); }
+    .send-btn {
+      padding: 10px 18px;
+      background: var(--orange);
+      color: var(--black);
+      border: none;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .send-btn:hover:not(:disabled) { opacity: 0.88; }
+
+    /* Back link */
+    .back-link {
+      text-align: center;
+      padding: 14px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      border-top: 1px solid var(--line);
+      flex-shrink: 0;
+    }
+    .back-link a { color: var(--muted); text-decoration: none; }
+    .back-link a:hover { color: var(--black); }
+  </style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="header">
+    <div class="header-logo">noti<em>.</em></div>
+    <div class="header-title">Support chat</div>
+    <div class="header-status">
+      <div class="status-dot"></div>
+      <div class="status-text">We typically reply within a few hours</div>
+    </div>
+  </div>
+
+  <!-- Step 1: Identity -->
+  <div id="identityStep">
+    <div class="id-title">Start a conversation</div>
+    <div class="id-sub">Enter your mobile number so we know who you are. We'll reply as soon as possible.</div>
+    <div class="field">
+      <label class="field-label">Your mobile number</label>
+      <input class="field-input" type="tel" id="phoneInput" placeholder="04xx xxx xxx" inputmode="numeric" />
+    </div>
+    <div class="field">
+      <label class="field-label">Your name (optional)</label>
+      <input class="field-input" type="text" id="nameInput" placeholder="First name" />
+    </div>
+    <div class="field">
+      <label class="field-label">I am a...</label>
+      <select class="field-input" id="roleInput" style="cursor:pointer;">
+        <option value="customer">Customer</option>
+        <option value="specialist">Specialist</option>
+      </select>
+    </div>
+    <button class="btn" id="startBtn" onclick="startChat()">Start chat</button>
+    <div id="idNotice"></div>
+  </div>
+
+  <!-- Step 2: Chat -->
+  <div id="chatStep">
+    <div class="chat-info" id="chatInfo">Chatting as <em>—</em></div>
+    <div class="messages" id="messages">
+      <div class="empty-chat" id="emptyChat">
+        <div class="empty-icon">💬</div>
+        <div class="empty-title">How can we help?</div>
+        <div class="empty-sub">Type your message below. Our team will get back to you as soon as possible.</div>
+      </div>
+      <div class="typing-indicator" id="typingIndicator">Noti support is typing...</div>
+    </div>
+    <div class="chat-input-wrap">
+      <textarea class="chat-input" id="chatInput" placeholder="Type your message..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMsg()">Send</button>
+    </div>
+  </div>
+
+  <div class="back-link"><a href="javascript:history.back()">← Back</a></div>
+</div>
+
+<script>
+const API    = 'https://noti-api.ancient-bread-01fe.workers.dev';
+const SK     = 'noti_support_phone';
+const NK     = 'noti_support_name';
+const RK     = 'noti_support_role';
+
+let _phone   = localStorage.getItem(SK) || '';
+let _name    = localStorage.getItem(NK) || '';
+let _role    = localStorage.getItem(RK) || 'customer';
+let _polling = null;
+let _lastCount = 0;
+
+function cleanPhone(p) { return p.replace(/\s+/g,'').replace(/[^0-9]/g,''); }
+
+function fmtTime(utcStr) {
+  if (!utcStr) return '';
+  return new Date(utcStr).toLocaleTimeString('en-AU', {
+    timeZone: 'Australia/Sydney',
+    hour: '2-digit', minute: '2-digit', hour12: true
+  });
+}
+
+// Auto-start if we have a saved phone
+if (_phone) {
+  document.getElementById('phoneInput').value = _phone;
+  document.getElementById('nameInput').value  = _name;
+  document.getElementById('roleInput').value  = _role;
+  openChat(_phone, _name, _role);
+}
+
+function startChat() {
+  const phone = cleanPhone(document.getElementById('phoneInput').value);
+  const name  = document.getElementById('nameInput').value.trim();
+  const role  = document.getElementById('roleInput').value;
+
+  if (!phone || phone.length < 10) {
+    document.getElementById('idNotice').innerHTML = '<div class="notice err">Please enter a valid mobile number.</div>';
+    return;
+  }
+
+  localStorage.setItem(SK, phone);
+  localStorage.setItem(NK, name);
+  localStorage.setItem(RK, role);
+  openChat(phone, name, role);
+}
+
+function openChat(phone, name, role) {
+  _phone = phone;
+  _name  = name;
+  _role  = role;
+
+  document.getElementById('identityStep').style.display = 'none';
+  document.getElementById('chatStep').classList.add('active');
+  document.getElementById('chatInfo').innerHTML =
+    `Chatting as <em>${name || phone}</em> · ${role}`;
+
+  loadMessages();
+  _polling = setInterval(loadMessages, 5000);
+}
+
+async function loadMessages() {
+  try {
+    const r = await fetch(API + '/support/messages', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ phone: _phone })
+    });
+    const data = await r.json();
+    if (!data.success) return;
+    renderMessages(data.messages || []);
+  } catch(e) {}
+}
+
+function renderMessages(msgs) {
+  const container = document.getElementById('messages');
+  const empty     = document.getElementById('emptyChat');
+  const typing    = document.getElementById('typingIndicator');
+
+  if (!msgs.length) {
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Only re-render if count changed
+  if (msgs.length === _lastCount) return;
+  _lastCount = msgs.length;
+
+  // Remove existing message bubbles
+  [...container.querySelectorAll('.msg')].forEach(el => el.remove());
+
+  // Insert before typing indicator
+  msgs.forEach(m => {
+    const isMe  = m.role !== 'admin';
+    const div   = document.createElement('div');
+    div.className = `msg ${isMe ? 'mine' : 'theirs'}`;
+    div.innerHTML = `
+      <div class="msg-bubble">${esc(m.message)}</div>
+      <div class="msg-meta">${isMe ? 'You' : 'Noti support'} · ${fmtTime(m.created_at)}</div>
+    `;
+    container.insertBefore(div, typing);
+  });
+
+  // Scroll to bottom
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendMsg() {
+  const input = document.getElementById('chatInput');
+  const msg   = input.value.trim();
+  if (!msg) return;
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  try {
+    await fetch(API + '/support/send', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ phone: _phone, name: _name, role: _role, message: msg })
+    });
+    await loadMessages();
+  } catch(e) {}
+
+  btn.disabled = false;
+  input.focus();
+}
+
+const esc = v => String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+</script>
+</body>
+</html>

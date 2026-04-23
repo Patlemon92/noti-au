@@ -723,7 +723,7 @@ async function load() {
 // ─── ROUTER ───────────────────────────────────────────────
 function route(d) {
   if (d.role === "tradie_locked") { showLocked(); return; }
-  if (d.role === "tradie")        { showTradie(d); return; }
+  if (d.role === "specialist")        { showTradie(d); return; }
   showCustomer(d);
 }
 
@@ -815,7 +815,7 @@ function showConfirm(job, loc, returning) {
     </div>
     <div id="nWrap" class="notice-wrap"></div>
     <div class="btn-wrap animate d2">
-      <button class="btn btn-black" id="submitBtn">Find tradies</button>
+      <button class="btn btn-black" id="submitBtn">Find specialists</button>
     </div>
   `);
 
@@ -830,12 +830,12 @@ function showConfirm(job, loc, returning) {
     disable(btn, "Sending...");
     try {
       const r1 = await api({ action:"update_job", name:get("cName").value, description:get("cDesc").value, suburb:get("cSuburb").value, postcode:get("cPostcode").value, address:get("cAddr").value });
-      if (!r1.success) { note(n, r1.message||"Update failed", "err"); enable(btn,"Find tradies"); return; }
+      if (!r1.success) { note(n, r1.message||"Update failed", "err"); enable(btn,"Find specialists"); return; }
       const r2 = await api({ action:"submit_job" });
-      if (!r2.success) { note(n, r2.message||"Could not send", "err"); enable(btn,"Find tradies"); return; }
+      if (!r2.success) { note(n, r2.message||"Could not send", "err"); enable(btn,"Find specialists"); return; }
       btn.textContent = "Sent";
       setTimeout(load, 900);
-    } catch(e) { note(n,"Something went wrong.","err"); enable(btn,"Find tradies"); }
+    } catch(e) { note(n,"Something went wrong.","err"); enable(btn,"Find specialists"); }
   };
 }
 

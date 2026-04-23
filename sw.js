@@ -39,15 +39,15 @@ self.addEventListener('notificationclick', function(e){
 
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients){
-      // If dashboard is already open, focus it
+      // If dashboard already open, navigate to job URL and focus
       for (var i = 0; i < windowClients.length; i++){
         var client = windowClients[i];
-        if (client.url.indexOf('/tradie') !== -1 && 'focus' in client){
+        if (client.url.indexOf('noti.au') !== -1 && 'focus' in client){
           client.navigate(url);
           return client.focus();
         }
       }
-      // Otherwise open a new window
+      // Otherwise open the job link directly
       if (clients.openWindow) return clients.openWindow(url);
     })
   );

@@ -147,7 +147,7 @@
       </div>
     </div>
 
-    <button class="btn" id="submitBtn">Find tradies</button>
+    <button class="btn" id="submitBtn">Find specialists</button>
     <div id="notice"></div>
   </div>
 
@@ -205,10 +205,10 @@ document.getElementById('submitBtn').addEventListener('click', async function(){
       })
     });
     var data = JSON.parse(await res.text());
-    if (!data.success){ note(data.message||'Something went wrong. Please try again.','err'); btn.disabled=false; btn.textContent='Find tradies'; return; }
+    if (!data.success){ note(data.message||'Something went wrong. Please try again.','err'); btn.disabled=false; btn.textContent='Find specialists'; return; }
     window.location.href = '/job/' + data.jobId + '/' + data.token;
   } catch(e){
-    note('Something went wrong. Please try again.','err'); btn.disabled=false; btn.textContent='Find tradies';
+    note('Something went wrong. Please try again.','err'); btn.disabled=false; btn.textContent='Find specialists';
   }
 });
 </script>

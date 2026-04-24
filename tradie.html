@@ -552,8 +552,6 @@ function renderTab(){
 }
 
 // ─── JOBS TAB ─────────────────────────────────────────────
-let _jobView = 'active'; // active | history
-
 function renderJobs(){
   const all     = _data.jobs || [];
   const active  = all.filter(j => j.status === 'active');
@@ -561,13 +559,14 @@ function renderJobs(){
   const won     = all.filter(j => j.status === 'won');
   const missed  = all.filter(j => j.status === 'missed');
 
-  const historyJobs = (_jobView === 'history') ? all.filter(j => {
+  const historyJobs = all.filter(j => {
+    if (j.status === 'active') return false; // active shown above
     if (_dateRange === 0) return true;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - _dateRange);
     const jobDate = j.date || j.sent_time || '';
     return jobDate && new Date(jobDate) >= cutoff;
-  }) : [];
+  });
 
   // ── Active jobs section ────────────────────────────────────
   const activeCards = active.map(j => `

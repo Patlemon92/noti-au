@@ -246,6 +246,19 @@ async function post(endpoint, payload){
 function setSession(token){ _session = token; localStorage.setItem(SESSION_KEY, token); }
 function clearSession(){ _session = ''; localStorage.removeItem(SESSION_KEY); showLogin(); }
 
+// Open one of your own documents (licence or insurance).
+// Fetches a short-lived signed URL from the backend and opens it.
+async function openMyDoc(evt, docType){
+  if (evt) evt.preventDefault();
+  try {
+    const r = await post('/dashboard/doc-url', { session: _session, doc_type: docType });
+    if (!r.success || !r.url) { alert(r.message || 'Could not open document'); return; }
+    window.open(r.url, '_blank');
+  } catch(e) {
+    alert('Failed to open document');
+  }
+}
+
 // ─── PUSH NOTIFICATIONS ───────────────────────────────────
 // VAPID public key loaded from API response after login
 let VAPID_PUBLIC_KEY = '';
@@ -886,14 +899,14 @@ function renderAccount(){
         <div class="field" style="margin-bottom:12px;">
           <div class="field-label">Licence document</div>
           ${a.licence_file_url
-            ? `<a href="${esc(a.licence_file_url)}" target="_blank" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current licence ↗</a>`
+            ? `<a href="#" onclick="openMyDoc(event,'licence')" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current licence ↗</a>`
             : `<div style="font-size:12px;color:var(--muted);">No licence uploaded</div>`}
         </div>
 
         <div class="field" style="margin-bottom:16px;">
           <div class="field-label">Insurance certificate</div>
           ${a.insurance_file_url
-            ? `<a href="${esc(a.insurance_file_url)}" target="_blank" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current insurance ↗</a>`
+            ? `<a href="#" onclick="openMyDoc(event,'insurance')" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current insurance ↗</a>`
             : `<div style="font-size:12px;color:var(--muted);">No insurance uploaded</div>`}
         </div>
 

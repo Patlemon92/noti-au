@@ -1143,7 +1143,7 @@ function renderMessages() {
       <td><span class="badge ${m.direction==='OUT'?'badge-blue':'badge-muted'}">${m.direction}</span></td>
       <td style="color:var(--dim);font-size:11px;">${esc(m.message_type)}</td>
       <td class="mono" style="color:var(--muted);font-size:10px;">${m.job_id ? m.job_id.slice(0,8)+'...' : '—'}</td>
-      <td style="color:var(--dim);">$${m.cost_aud || '0.09'}</td>
+      <td style="color:var(--dim);">${m.cost_aud ? '$' + parseFloat(m.cost_aud).toFixed(4) : '<span style="color:var(--dim);opacity:0.5;">pending</span>'}</td>
     </tr>`).join('');
 }
 
@@ -1156,7 +1156,7 @@ function renderSMSLog() {
       <td class="mono">${esc(m.phone)}</td>
       <td style="color:var(--dim);font-size:11px;">${esc(m.message_type)}</td>
       <td class="mono" style="color:var(--muted);font-size:10px;">${m.job_id ? m.job_id.slice(0,8)+'...' : '—'}</td>
-      <td style="color:var(--dim);">$${m.cost_aud || '0.09'}</td>
+      <td style="color:var(--dim);">${m.cost_aud ? '$' + parseFloat(m.cost_aud).toFixed(4) : '<span style="color:var(--dim);opacity:0.5;">pending</span>'}</td>
     </tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px;">No messages</td></tr>';
 }
 
@@ -1419,7 +1419,7 @@ function renderJobDetail(r) {
       <td class="mono">${esc(m.phone)}</td>
       <td><span class="badge ${m.direction==='OUT'?'badge-blue':'badge-muted'}">${m.direction}</span></td>
       <td style="color:var(--dim);font-size:11px;">${esc(m.message_type)}</td>
-      <td style="color:var(--dim);">$${m.cost_aud||'0.09'}</td>
+      <td style="color:var(--dim);">${m.cost_aud ? '$' + parseFloat(m.cost_aud).toFixed(4) : '<span style="color:var(--dim);opacity:0.5;">pending</span>'}</td>
     </tr>`).join('') : '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:16px;">No messages</td></tr>';
 
   html += section(`SMS messages (${ms.length})`, `

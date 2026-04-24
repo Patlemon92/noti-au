@@ -1223,6 +1223,27 @@ async function sendChatMsg() {
 }
 
 // ── ACTIONS ──────────────────────────────────────────────────
+
+// Open a private specialist document. Calls the backend to get a
+// short-lived signed URL, then opens it in a new tab.
+async function openDoc(evt, specialistId, docType) {
+  if (evt) evt.preventDefault();
+  try {
+    const r = await post('/admin/doc-url', {
+      token: _token,
+      specialist_id: specialistId,
+      doc_type: docType
+    });
+    if (!r.success || !r.url) {
+      toast(r.message || 'Could not open document', 'err');
+      return;
+    }
+    window.open(r.url, '_blank');
+  } catch(e) {
+    toast('Failed to open document', 'err');
+  }
+}
+
 async function specAction(action, id, name) {
   const labels = { approve:'Approve', reject:'Reject', pause:'Pause', activate:'Activate', ban:'Ban', reset_trial:'Reset trial' };
   if (!confirm(`${labels[action]} ${name}?`)) return;
@@ -1306,8 +1327,8 @@ function showSpecModal(t) {
     ['Insurance expiry', t.insurance_expiry || '—'],
     ['Signed up', sydTime(t.created_at)],
   ].map(([k,v]) => `<div class="detail-row"><div class="detail-key">${k}</div><div class="detail-val">${esc(String(v))}</div></div>`).join('') +
-  (t.licence_file_url ? `<div class="detail-row"><div class="detail-key">Licence doc</div><div class="detail-val"><a class="doc-link" href="${t.licence_file_url}" target="_blank">View document ↗</a></div></div>` : '') +
-  (t.insurance_file_url ? `<div class="detail-row"><div class="detail-key">Insurance doc</div><div class="detail-val"><a class="doc-link" href="${t.insurance_file_url}" target="_blank">View document ↗</a></div></div>` : '');
+  (t.licence_file_url ? `<div class="detail-row"><div class="detail-key">Licence doc</div><div class="detail-val"><a class="doc-link" href="#" onclick="openDoc(event,'${t.id}','licence')">View document ↗</a></div></div>` : '') +
+  (t.insurance_file_url ? `<div class="detail-row"><div class="detail-key">Insurance doc</div><div class="detail-val"><a class="doc-link" href="#" onclick="openDoc(event,'${t.id}','insurance')">View document ↗</a></div></div>` : '');
 
   document.getElementById('specModalActions').innerHTML = `
     <button class="act-btn green" onclick="specAction('approve','${t.id}','${esc(t.business_name)}');closeModal('specModal')">✓ Approve</button>

@@ -552,42 +552,136 @@ function renderTab(){
 }
 
 // ─── JOBS TAB ─────────────────────────────────────────────
+let _jobView = 'active'; // active | history
+
 function renderJobs(){
-  const jobs = (_data.jobs || []).filter(j => {
+  const all     = _data.jobs || [];
+  const active  = all.filter(j => j.status === 'active');
+  const pending = all.filter(j => j.status === 'pending');
+  const won     = all.filter(j => j.status === 'won');
+  const missed  = all.filter(j => j.status === 'missed');
+
+  const historyJobs = (_jobView === 'history') ? all.filter(j => {
     if (_dateRange === 0) return true;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - _dateRange);
-    return new Date(j.date) >= cutoff;
-  });
+    const jobDate = j.date || j.sent_time || '';
+    return jobDate && new Date(jobDate) >= cutoff;
+  }) : [];
 
-  const list = jobs.length ? jobs.map(j => `
-    <div class="job-item">
-      <div>
-        <div class="job-desc">${esc(j.description || 'Job')}</div>
-        <div class="job-meta">${esc(j.suburb || '')} &nbsp;·&nbsp; ${sydneyDate(j.date)}</div>
-        ${j.price ? `<div class="job-meta" style="color:var(--green);font-weight:700;">$${esc(String(j.price))}</div>` : ''}
+  // ── Active jobs section ────────────────────────────────────
+  const activeCards = active.map(j => `
+    <div style="border:2px solid var(--orange);background:#FFFBF4;margin-bottom:10px;">
+      <div style="background:var(--orange);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--black);">⚡ New job — respond now</div>
+        <div style="font-size:10px;font-weight:700;color:var(--black);" id="timer-${j.job_id}">${formatTimeLeft(j.time_left)}</div>
       </div>
-      <div class="job-status ${j.status}">${j.status}</div>
+      <div style="padding:14px;">
+        <div style="font-size:15px;font-weight:700;color:var(--black);margin-bottom:4px;letter-spacing:-0.02em;">${esc(j.description)}</div>
+        <div style="font-size:12px;font-weight:500;color:var(--dim);margin-bottom:12px;">${esc(j.suburb)} ${esc(j.postcode)} &nbsp;·&nbsp; ${esc(j.job_type)}</div>
+        <a href="${esc(j.job_link)}" style="display:block;padding:13px;background:var(--black);color:var(--white);text-align:center;font-weight:700;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;text-decoration:none;">View job &amp; submit offer →</a>
+      </div>
     </div>
-  `).join('') : '<div style="padding:24px 0;text-align:center;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">No jobs yet</div>';
+  `).join('');
 
-  const won    = jobs.filter(j => j.status === 'won').length;
-  const missed = jobs.filter(j => j.status === 'missed').length;
+  // ── Pending section (responded, waiting for customer) ──────
+  const pendingCards = pending.map(j => `
+    <div style="border:1px solid var(--line);background:var(--white);margin-bottom:8px;">
+      <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--black);margin-bottom:2px;">${esc(j.description)}</div>
+          <div style="font-size:11px;font-weight:500;color:var(--muted);">${esc(j.suburb)} &nbsp;·&nbsp; Your offer: ${j.my_price ? '$'+esc(String(j.my_price)) : '—'} &nbsp;·&nbsp; ${j.my_eta ? esc(j.my_eta) : '—'}</div>
+        </div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;background:#FEF6E9;color:var(--orange);">Waiting</div>
+      </div>
+    </div>
+  `).join('');
+
+  // ── History list ────────────────────────────────────────────
+  const historyFiltered = historyJobs.filter(j => j.status === 'won' || j.status === 'missed' || j.status === 'pending');
+  // Show all historical jobs — active/pending are shown above, history shows everything else
+  const allHistory = historyJobs.filter(j => j.status !== 'active');
+  const historyList = allHistory.length
+    ? allHistory.map(j => `
+      <div class="job-item">
+        <div>
+          <div class="job-desc">${esc(j.description || 'Job')}</div>
+          <div class="job-meta">${esc(j.suburb || '')} &nbsp;·&nbsp; ${sydneyDate(j.date || j.sent_time || '')}</div>
+          ${j.price ? `<div class="job-meta" style="color:var(--green);font-weight:700;">$${esc(String(j.price))}</div>` : ''}
+        </div>
+        <div class="job-status ${j.status}">${j.status === 'won' ? 'won' : j.status === 'pending' ? 'pending' : 'missed'}</div>
+      </div>`)
+      .join('')
+    : '<div style="padding:24px 0;text-align:center;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">No jobs in this period</div>';
 
   document.getElementById('tabContent').innerHTML = `
     <div class="stat-grid" style="margin-top:12px;">
-      <div class="stat-card"><div class="stat-label">Jobs offered</div><div class="stat-value">${jobs.length}</div></div>
-      <div class="stat-card"><div class="stat-label">Jobs won</div><div class="stat-value" style="color:var(--green);">${won}</div></div>
+      <div class="stat-card"><div class="stat-label">Jobs offered</div><div class="stat-value">${all.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Jobs won</div><div class="stat-value" style="color:var(--green);">${won.length}</div></div>
     </div>
-    <div class="date-filter">
-      ${[7,30,90,0].map(d => `<button class="date-btn ${_dateRange===d?'active':''}" onclick="setDateRange(${d})">${d===0?'All':d+' days'}</button>`).join('')}
+
+    ${active.length || pending.length ? `
+      <div class="section" style="margin-top:12px;">
+        <div class="section-header">
+          <div class="section-title">Live now ${active.length ? `<span style="display:inline-block;background:var(--orange);color:var(--black);font-size:9px;font-weight:700;padding:1px 7px;margin-left:6px;">${active.length}</span>` : ''}</div>
+        </div>
+        <div class="section-body" style="padding:0;">
+          ${active.length ? activeCards : ''}
+          ${pending.length ? `
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:10px 14px 6px;">Offer submitted — awaiting customer</div>
+            ${pendingCards}
+          ` : ''}
+        </div>
+      </div>
+    ` : `
+      <div style="margin:12px 0 0;padding:20px 16px;background:var(--white);border:1px solid var(--line);text-align:center;">
+        <div style="font-size:14px;font-weight:700;color:var(--black);margin-bottom:6px;">No active jobs right now</div>
+        <div style="font-size:12px;font-weight:500;color:var(--muted);line-height:1.5;">You will get a notification when a new job comes in. Make sure you are set to <strong>On</strong> in settings.</div>
+      </div>
+    `}
+
+    <div class="section" style="margin-top:12px;">
+      <div class="section-header">
+        <div class="section-title">Job history</div>
+      </div>
+      <div class="section-body" style="padding-bottom:0;">
+        <div class="date-filter" style="padding:10px 0 4px;">
+          ${[7,30,90,0].map(d => `<button class="date-btn ${_dateRange===d?'active':''}" onclick="setDateRange(${d})">${d===0?'All':d+' days'}</button>`).join('')}
+        </div>
+      </div>
+      <div class="section-body" style="padding-top:0;">${historyList}</div>
     </div>
-    <div class="section">
-      <div class="section-header"><div class="section-title">Job history</div></div>
-      <div class="section-body">${list}</div>
-    </div>
+
     <div class="footer">noti<em>.</em></div>
+    <div style="text-align:center;padding:0 0 20px;font-size:11px;font-weight:600;color:var(--muted);"><a href="/support" style="color:var(--muted);text-decoration:none;">Need help? Chat with support</a></div>
   `;
+
+  // Start countdown timers for active jobs
+  startTimers(active);
+}
+
+let _timerInterval = null;
+function startTimers(activeJobs) {
+  if (_timerInterval) clearInterval(_timerInterval);
+  if (!activeJobs.length) return;
+  _timerInterval = setInterval(() => {
+    activeJobs.forEach(j => {
+      const el = document.getElementById('timer-' + j.job_id);
+      if (!el || !j.expires_at) return;
+      const left = Math.max(0, Math.round((new Date(j.expires_at) - Date.now()) / 1000));
+      el.textContent = formatTimeLeft(left);
+      if (left <= 120) el.style.color = 'var(--red)';
+      if (left === 0)  { clearInterval(_timerInterval); loadData(); }
+    });
+  }, 1000);
+}
+
+function formatTimeLeft(seconds) {
+  if (seconds === null || seconds === undefined) return '';
+  if (seconds <= 0) return 'Expired';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2,'0')}`;
 }
 
 function setDateRange(days){ _dateRange = days; renderJobs(); }
@@ -780,8 +874,109 @@ function renderAccount(){
         <a href="/upgrade" style="display:block;width:100%;padding:14px;background:var(--orange);color:var(--black);text-align:center;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;text-decoration:none;">Upgrade to premium</a>
       </div>
     ` : ''}
+
+    <div class="section">
+      <div class="section-header"><div class="section-title">Documents</div></div>
+      <div class="section-body">
+        <div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:14px;line-height:1.5;">View or update your licence and insurance documents. Uploading new documents will reset your verification status pending review.</div>
+
+        <div class="field" style="margin-bottom:12px;">
+          <div class="field-label">Licence document</div>
+          ${a.licence_file_url
+            ? `<a href="${esc(a.licence_file_url)}" target="_blank" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current licence ↗</a>`
+            : `<div style="font-size:12px;color:var(--muted);">No licence uploaded</div>`}
+        </div>
+
+        <div class="field" style="margin-bottom:16px;">
+          <div class="field-label">Insurance certificate</div>
+          ${a.insurance_file_url
+            ? `<a href="${esc(a.insurance_file_url)}" target="_blank" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current insurance ↗</a>`
+            : `<div style="font-size:12px;color:var(--muted);">No insurance uploaded</div>`}
+        </div>
+
+        <div style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px;">
+          <div class="field-label" style="margin-bottom:10px;">Update documents</div>
+          <div class="field">
+            <label class="field-label">New licence document</label>
+            <input type="file" id="newLicenceFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;color:var(--dim);padding:6px 0;" />
+          </div>
+          <div class="field">
+            <label class="field-label">Licence expiry</label>
+            <input type="date" id="newLicenceExpiry" value="${esc(a.licence_expiry||'')}" style="font-size:13px;padding:8px 0;border:none;border-bottom:1.5px solid var(--line);background:transparent;font-family:inherit;outline:none;width:100%;" />
+          </div>
+          <div class="field">
+            <label class="field-label">New insurance document</label>
+            <input type="file" id="newInsuranceFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;color:var(--dim);padding:6px 0;" />
+          </div>
+          <div class="field">
+            <label class="field-label">Insurance expiry</label>
+            <input type="date" id="newInsuranceExpiry" value="${esc(a.insurance_expiry||'')}" style="font-size:13px;padding:8px 0;border:none;border-bottom:1.5px solid var(--line);background:transparent;font-family:inherit;outline:none;width:100%;" />
+          </div>
+          <div id="docNotice"></div>
+          <div class="btn-wrap" style="padding:12px 0 0;"><button class="btn btn-black" id="uploadDocsBtn" onclick="uploadDocs()">Update documents</button></div>
+        </div>
+      </div>
+    </div>
+
     <div class="footer">noti<em>.</em></div>
+    <div style="text-align:center;padding:0 0 20px;font-size:11px;font-weight:600;color:var(--muted);"><a href="/support" style="color:var(--muted);text-decoration:none;">Need help? Chat with support</a></div>
   `;
+}
+
+async function uploadDocs() {
+  const btn = document.getElementById('uploadDocsBtn');
+  const notice = document.getElementById('docNotice');
+  const licenceFile  = document.getElementById('newLicenceFile')?.files[0];
+  const insuranceFile = document.getElementById('newInsuranceFile')?.files[0];
+  const licenceExpiry  = document.getElementById('newLicenceExpiry')?.value;
+  const insuranceExpiry = document.getElementById('newInsuranceExpiry')?.value;
+
+  if (!licenceFile && !insuranceFile) {
+    notice.innerHTML = '<div class="notice err" style="margin:10px 0;">Please select at least one file to upload.</div>';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Uploading...';
+  notice.innerHTML = '';
+
+  try {
+    const payload = { session: _session };
+
+    if (licenceFile) {
+      const data = await fileToBase64(licenceFile);
+      payload.licenceData    = data.split(',')[1];
+      payload.licenceMime    = licenceFile.type || 'application/pdf';
+      payload.licenceExpiry  = licenceExpiry || '';
+    }
+    if (insuranceFile) {
+      const data = await fileToBase64(insuranceFile);
+      payload.insuranceData    = data.split(',')[1];
+      payload.insuranceMime    = insuranceFile.type || 'application/pdf';
+      payload.insuranceExpiry  = insuranceExpiry || '';
+    }
+
+    const r = await post('/dashboard/documents', payload);
+    if (r.expired) { clearSession(); return; }
+    if (r.success) {
+      notice.innerHTML = '<div class="notice ok" style="margin:10px 0;">Documents updated. We will review them shortly.</div>';
+      btn.textContent = 'Updated';
+    } else {
+      notice.innerHTML = `<div class="notice err" style="margin:10px 0;">${esc(r.message || 'Upload failed.')}</div>`;
+      btn.disabled = false; btn.textContent = 'Update documents';
+    }
+  } catch(e) {
+    notice.innerHTML = '<div class="notice err" style="margin:10px 0;">Something went wrong.</div>';
+    btn.disabled = false; btn.textContent = 'Update documents';
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function isExpiringSoon(dateStr){
@@ -794,6 +989,11 @@ function isExpiringSoon(dateStr){
 
 // ─── START ─────────────────────────────────────────────────
 init();
+
+// Refresh when specialist comes back to the app (e.g. after tapping a push notification)
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && _session) loadData();
+});
 </script>
 </body>
 </html>

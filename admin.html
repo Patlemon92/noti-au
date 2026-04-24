@@ -355,21 +355,23 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   cursor: pointer;
   border: none;
   background: none;
   color: #666;
   font-family: var(--font);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   text-transform: uppercase;
   position: relative;
   -webkit-tap-highlight-color: transparent;
+  min-width: 0;
+  padding: 0 2px;
 }
 .mobile-nav-item.active { color: var(--orange); }
-.mobile-nav-item .nav-icon { font-size: 18px; }
+.mobile-nav-item .nav-icon { font-size: 20px; line-height: 1; }
 .mobile-nav-badge {
   position: absolute;
   top: 6px; right: calc(50% - 16px);
@@ -389,7 +391,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   .mobile-nav { display: flex; }
 
   .main { flex-direction: column; }
-  .content { padding: 12px 12px 72px; }
+  .content { padding: 10px 10px 72px; }
 
   /* Topbar compact */
   .topbar { padding: 0 14px; gap: 10px; }
@@ -397,8 +399,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   #lastUpdated { display: none; }
 
   /* Stat grid — 2 cols on mobile */
-  .stat-grid { grid-template-columns: 1fr 1fr; }
-  .stat-val { font-size: 22px; }
+  .stat-grid { grid-template-columns: 1fr 1fr; gap: 1px; }
+  .stat-val { font-size: 26px; }
+  .stat-card { padding: 14px 14px; }
+  .stat-label { font-size: 9px; margin-bottom: 6px; }
 
   /* Tables — horizontal scroll */
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -714,10 +718,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 <div class="mobile-nav" id="mobileNav">
   <div class="mobile-nav-inner">
     <button class="mobile-nav-item active" id="mnav-overview" onclick="switchTab('overview')">
-      <span class="nav-icon">◉</span>Overview
+      <span class="nav-icon">◉</span>Home
     </button>
     <button class="mobile-nav-item" id="mnav-specialists" onclick="switchTab('specialists')" style="position:relative;">
-      <span class="nav-icon">👤</span>Specialists
+      <span class="nav-icon">👤</span>People
       <span class="mobile-nav-badge" id="mbadge-pending" style="display:none;">0</span>
     </button>
     <button class="mobile-nav-item" id="mnav-jobs" onclick="switchTab('jobs')">
@@ -727,7 +731,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <span class="nav-icon">📱</span>SMS
     </button>
     <button class="mobile-nav-item" id="mnav-support" onclick="switchTab('support')">
-      <span class="nav-icon">🎧</span>Support
+      <span class="nav-icon">🎧</span>Chat
     </button>
   </div>
 </div>
@@ -860,15 +864,16 @@ async function loadData() {
 }
 
 function renderAll() {
-  renderStats();
-  renderPendingTable();
-  renderLiveJobs();
-  renderSpecialists();
-  renderJobs();
-  renderMessages();
-  renderSMSLog();
-  renderConversations();
-  updateBadges();
+  if (!_data) return;
+  try { renderStats(); } catch(e) { console.error('renderStats', e); }
+  try { renderPendingTable(); } catch(e) { console.error('renderPendingTable', e); }
+  try { renderLiveJobs(); } catch(e) { console.error('renderLiveJobs', e); }
+  try { renderSpecialists(); } catch(e) { console.error('renderSpecialists', e); }
+  try { renderJobs(); } catch(e) { console.error('renderJobs', e); }
+  try { renderMessages(); } catch(e) { console.error('renderMessages', e); }
+  try { renderSMSLog(); } catch(e) { console.error('renderSMSLog', e); }
+  try { renderConversations(); } catch(e) { console.error('renderConversations', e); }
+  try { updateBadges(); } catch(e) { console.error('updateBadges', e); }
 }
 
 // ── STATS ─────────────────────────────────────────────────────

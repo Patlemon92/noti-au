@@ -301,16 +301,23 @@
     font-size: 11px; font-weight: 500;
   }
   .photo-plus {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
     font-size: 22px; font-weight: 300; color: var(--dim);
     line-height: 1;
+    z-index: 1;
+    pointer-events: none;
   }
+  .photo-slot.has-photo .photo-plus { display: none; }
   .photo-slot img {
     position: absolute; inset: 0;
     width: 100%; height: 100%; object-fit: cover;
+    z-index: 2;
   }
   .photo-input {
     position: absolute; inset: 0;
     opacity: 0; cursor: pointer;
+    z-index: 3;
   }
   .photo-input:disabled { cursor: not-allowed; }
   .photo-remove {
@@ -324,7 +331,7 @@
     cursor: pointer;
     display: none;
     align-items: center; justify-content: center;
-    z-index: 2;
+    z-index: 4;
   }
   .photo-slot.has-photo .photo-remove { display: flex; }
   .photo-hint {
@@ -394,7 +401,9 @@
     font-size: 14px; font-weight: 600;
     color: var(--orange);
     margin-top: 4px;
+    text-decoration: none;
   }
+  .quote-call:active { opacity: 0.7; }
 
   /* ── TRADIE BLOCK (accepted confirmation) ────────────────── */
   .tradie-block {
@@ -426,7 +435,10 @@
     font-size: 14px; font-weight: 600;
     color: var(--green);
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    text-decoration: none;
+    display: inline-block;
   }
+  .tradie-phone:active { opacity: 0.7; }
 
   /* ── STARS (review) ──────────────────────────────────────── */
   .star-row {
@@ -513,6 +525,7 @@ let _data = null;
 const esc = v => String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const fmt = v => String(v||"").trim();
 const ini = n => (n||"?").trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+const telHref = p => "tel:" + String(p||"").replace(/[^0-9+]/g, "");
 const tag = document.getElementById("topTag");
 
 // ─── API ──────────────────────────────────────────────────
@@ -658,8 +671,17 @@ function showConfirm(job, loc, returning) {
 // ── WAITING ───────────────────────────────────────────────
 function showWaiting(job, stage, loc) {
   const windowMins = job.job_type === "QUOTE" ? 60 : 10;
+  // Prefer the real dispatch deadline. next_rebatch_time is set
+  // when the job is dispatched (created_at + window). quote_lock_time
+  // is the same for QUOTE type. Falls back to created_at + window for
+  // pre-dispatch states or backwards compatibility.
+  const dispatchEnd = job.job_type === "QUOTE"
+    ? (job.quote_lock_time   || null)
+    : (job.next_rebatch_time || null);
   const createdAt  = job.created_at ? new Date(job.created_at).getTime() : Date.now();
-  const expiresAt  = createdAt + (windowMins * 60 * 1000);
+  const expiresAt  = dispatchEnd
+    ? new Date(dispatchEnd).getTime()
+    : createdAt + (windowMins * 60 * 1000);
   const secsLeft   = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
   const mins       = Math.floor(secsLeft / 60);
   const secs       = String(secsLeft % 60).padStart(2, '0');
@@ -773,7 +795,7 @@ function showQuoteCards(job, cards, loc) {
           </div>
           ${c.eta   ? `<div class="quote-eta">${esc(c.eta)}</div>` : ''}
           ${c.price ? `<div class="quote-eta">$${esc(String(c.price))}</div>` : ''}
-          <div class="quote-call">${esc(c.phone)}</div>
+          <a class="quote-call" href="${telHref(c.phone)}">${esc(c.phone)}</a>
         </div>
       </div>`;
   }).join('') : `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">No quotes yet</div>`;
@@ -804,7 +826,7 @@ function showAccepted(job, tradie, allowRating, loc) {
         <div>
           <div class="tradie-name">${esc(name)}</div>
           ${tradie && tradie.rating ? `<div class="tradie-meta">${parseFloat(tradie.rating).toFixed(1)} ★</div>` : ""}
-          ${phone ? `<div class="tradie-phone">${esc(phone)}</div>` : ""}
+          ${phone ? `<a class="tradie-phone" href="${telHref(phone)}">${esc(phone)}</a>` : ""}
         </div>
       </div>
       ${(job.price || job.eta) ? `
@@ -883,7 +905,7 @@ function showTradie(d) {
         <div class="section-label">Customer details</div>
         <div class="data-list">
           ${job.customer_name ? `<div class="data-row"><span class="data-key">Name</span><span class="data-val">${esc(job.customer_name)}</span></div>` : ''}
-          ${custPhone ? `<div class="data-row"><span class="data-key">Mobile</span><span class="data-val" style="color:var(--orange);">${esc(custPhone)}</span></div>` : ''}
+          ${custPhone ? `<div class="data-row"><span class="data-key">Mobile</span><a class="data-val" href="${telHref(custPhone)}" style="color:var(--orange);text-decoration:none;">${esc(custPhone)}</a></div>` : ''}
           ${address ? `<div class="data-row"><span class="data-key">Address</span><span class="data-val">${esc(address)}</span></div>` : ''}
         </div>
       </div>
@@ -895,10 +917,15 @@ function showTradie(d) {
   }
 
   // Tradie sees job and submits price + ETA
-  // Calculate countdown from job created time
+  // Use dispatch deadline if available, otherwise fall back to created_at + window
   const windowMins  = job.job_type === "QUOTE" ? 60 : 10;
+  const dispatchEnd = job.job_type === "QUOTE"
+    ? (job.quote_lock_time   || null)
+    : (job.next_rebatch_time || null);
   const createdAt   = job.created_at ? new Date(job.created_at).getTime() : Date.now();
-  const expiresAt   = createdAt + (windowMins * 60 * 1000);
+  const expiresAt   = dispatchEnd
+    ? new Date(dispatchEnd).getTime()
+    : createdAt + (windowMins * 60 * 1000);
   const secsLeft    = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
   const isExpired   = secsLeft === 0;
 

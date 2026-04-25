@@ -4,81 +4,218 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Request a Tradie — noti.</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --black:  #0C0C0C; --white: #FFFFFF; --off: #F5F5F3;
-      --line:   #E8E8E6; --muted: #999994; --dim: #666663;
-      --orange: #F5A623; --green: #0A7A3E; --red: #B52222;
-      --font:   'Montserrat', sans-serif;
-    }
-    body { font-family: var(--font); background: transparent; color: var(--black); -webkit-font-smoothing: antialiased; }
-    .wrap { max-width: 520px; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --font:        -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  --black:       #0f172a;
+  --white:       #ffffff;
+  --line:        #e2e8f0;
+  --muted:       #64748b;
+  --dim:         #94a3b8;
+  --off:         #f8fafc;
+  --orange:      #ea580c;
+  --green:       #059669;
+  --red:         #dc2626;
+  --slate-100:   #f1f5f9;
+  --emerald-50:  #ecfdf5;
+  --emerald-200: #a7f3d0;
+  --noti-light:  #fff7ed;
+  --noti-200:    #fed7aa;
+  --blue-600:    #2563eb;
+}
 
-    .hdr { padding-bottom: 14px; }
-    .hdr-kick { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange); margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
-    .hdr-kick::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
-    .hdr-title { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 4px; }
-    .hdr-sub { font-size: 12px; font-weight: 500; color: var(--muted); }
+body {
+  font-family: var(--font);
+  background: var(--off);
+  color: var(--black);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+  min-height: 100vh;
+  padding: 24px 16px 40px;
+}
 
-    .card { background: var(--white); border: 1px solid var(--line); padding: 20px; }
+.wrap { max-width: 480px; margin: 0 auto; }
 
-    .type-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-    .type-opt { border: 1.5px solid var(--line); padding: 10px 12px; cursor: pointer; transition: all 0.12s; }
-    .type-opt input { display: none; }
-    .type-opt.sel { border-color: var(--orange); background: #FEF6E9; }
-    .type-name { font-size: 13px; font-weight: 700; }
-    .type-desc { font-size: 10px; font-weight: 500; color: var(--muted); margin-top: 1px; }
+/* HEADER */
+.hdr { padding-bottom: 18px; }
+.hdr-kick {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.hdr-kick::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--orange); flex-shrink: 0;
+}
+.hdr-title {
+  font-size: 24px; font-weight: 600;
+  letter-spacing: -0.02em; line-height: 1.2;
+  margin-bottom: 4px;
+}
+.hdr-sub { font-size: 13px; color: var(--muted); font-weight: 500; }
 
-    .divider { height: 1px; background: var(--line); margin: 0 -20px 14px; }
+/* CARD */
+.card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
 
-    .field { margin-bottom: 12px; }
-    .field:last-of-type { margin-bottom: 0; }
-    .lbl { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
-    input, select, textarea {
-      width: 100%; background: transparent; border: none;
-      border-bottom: 1.5px solid var(--line); padding: 7px 0;
-      font: inherit; font-size: 14px; font-weight: 500; color: var(--black);
-      outline: none; border-radius: 0; -webkit-appearance: none;
-    }
-    input:focus, select:focus, textarea:focus { border-bottom-color: var(--black); }
-    textarea { min-height: 68px; resize: none; line-height: 1.5; }
-    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.section-label {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px;
+}
 
-    .photo-zone {
-      border: 1.5px dashed var(--line); background: var(--off); padding: 10px 14px;
-      display: flex; align-items: center; gap: 10px; cursor: pointer;
-      position: relative; margin-top: 5px; transition: border-color 0.15s;
-    }
-    .photo-zone:hover { border-color: var(--orange); }
-    .photo-zone.has { border-color: var(--green); border-style: solid; background: #F0FAF4; }
-    .photo-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: none; padding: 0; }
-    .photo-lbl { font-size: 12px; font-weight: 600; color: var(--dim); }
-    .photo-sub { font-size: 10px; color: var(--muted); }
+/* TYPE TOGGLE */
+.type-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.type-opt {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 12px;
+  cursor: pointer;
+  transition: all 0.12s;
+  background: var(--white);
+  text-align: left;
+  font: inherit;
+}
+.type-opt:hover { border-color: var(--dim); }
+.type-opt.sel { background: var(--black); border-color: var(--black); }
+.type-name {
+  font-size: 14px; font-weight: 600;
+  color: var(--black);
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+.type-opt.sel .type-name { color: var(--white); }
+.type-desc {
+  font-size: 11px; font-weight: 500;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.type-opt.sel .type-desc { color: var(--dim); }
 
-    .btn {
-      display: block; width: 100%; padding: 14px; background: var(--orange);
-      color: var(--black); border: none; border-radius: 0; font: inherit;
-      font-size: 14px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
-      cursor: pointer; margin-top: 16px; transition: opacity 0.15s;
-    }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn:hover:not(:disabled) { opacity: 0.88; }
+/* FIELDS */
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field-row { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+.field-row.even { grid-template-columns: 1fr 1fr; }
+.lbl {
+  display: block;
+  font-size: 12px; font-weight: 500;
+  color: #334155;
+  margin-bottom: 6px;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 14px; font-weight: 500;
+  color: var(--black);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none; appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+input::placeholder, textarea::placeholder { color: var(--dim); }
+textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 
-    .notice { padding: 10px 14px; font-size: 12px; font-weight: 600; line-height: 1.5; border-left: 3px solid var(--muted); background: var(--off); color: var(--dim); margin-top: 10px; }
-    .notice.ok  { border-left-color: var(--green); color: var(--green); background: #F0FAF4; }
-    .notice.err { border-left-color: var(--red);   color: var(--red);   background: #FDF0F0; }
+select {
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
 
-    .foot { font-size: 10px; font-weight: 500; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+/* PHOTO */
+.photo-zone {
+  border: 1.5px dashed var(--line);
+  background: var(--off);
+  padding: 14px;
+  border-radius: 8px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; position: relative;
+  margin-top: 4px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.photo-zone:hover { border-color: var(--dim); background: var(--slate-100); }
+.photo-zone.has {
+  border-color: var(--green); border-style: solid;
+  background: var(--emerald-50);
+}
+.photo-zone input {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer;
+  width: 100%; height: 100%; border: none; padding: 0;
+}
+.photo-icon {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.photo-zone.has .photo-icon { color: var(--green); }
+.photo-lbl { font-size: 13px; font-weight: 600; color: var(--black); }
+.photo-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-    @media (max-width: 400px) {
-      .type-row { grid-template-columns: 1fr; }
-      .g2 { grid-template-columns: 1fr; }
-    }
-  </style>
+/* BUTTON */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px 18px;
+  background: var(--black);
+  color: var(--white);
+  border: 1px solid var(--black);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px; font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s, transform 0.1s;
+}
+.btn:hover:not(:disabled) { background: #000; }
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* NOTICE */
+.notice {
+  padding: 12px 14px;
+  font-size: 13px; font-weight: 500;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.notice.ok  { background: var(--emerald-50); color: #065f46; border-color: var(--emerald-200); }
+.notice.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+
+.foot {
+  font-size: 11px; font-weight: 500;
+  color: var(--muted);
+  margin-top: 12px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+@media (max-width: 360px) {
+  .type-row { grid-template-columns: 1fr; }
+  .field-row { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -89,126 +226,222 @@
     <div class="hdr-sub">We will connect you with local tradies fast.</div>
   </div>
 
+  <!-- Job type toggle -->
   <div class="card">
-
+    <div class="section-label">What do you need?</div>
     <div class="type-row">
-      <label class="type-opt sel" id="opt-urgent">
-        <input type="radio" name="jobType" value="JOB" checked />
-        <div class="type-name">Urgent repair</div>
-        <div class="type-desc">Something needs fixing now</div>
-      </label>
-      <label class="type-opt" id="opt-quote">
-        <input type="radio" name="jobType" value="QUOTE" />
-        <div class="type-name">Quote or inspection</div>
-        <div class="type-desc">I want prices first</div>
-      </label>
+      <button type="button" class="type-opt sel" data-type="JOB">
+        <div class="type-name">Urgent</div>
+        <div class="type-desc">Need someone fast</div>
+      </button>
+      <button type="button" class="type-opt" data-type="QUOTE">
+        <div class="type-name">Quote</div>
+        <div class="type-desc">Compare prices, no rush</div>
+      </button>
     </div>
+  </div>
 
-    <div class="divider"></div>
+  <!-- Job details -->
+  <div class="card">
+    <div class="section-label">Job details</div>
 
     <div class="field">
-      <label class="lbl">What is the job?</label>
-      <textarea id="description" placeholder="e.g. Leaking tap under the kitchen sink"></textarea>
+      <label class="lbl">Job title</label>
+      <input type="text" id="description" maxlength="120" placeholder="e.g. Bathroom reno" />
     </div>
 
-    <div class="field g2">
-      <div>
-        <label class="lbl">Suburb</label>
-        <input type="text" id="suburb" />
-      </div>
-      <div>
-        <label class="lbl">Postcode</label>
-        <input type="text" id="postcode" inputmode="numeric" maxlength="4" />
-      </div>
+    <div class="field">
+      <label class="lbl">Additional details (optional)</label>
+      <textarea id="customerNote" rows="3" maxlength="2000" placeholder="Extra info that helps the tradie quote accurately. e.g. Want to retile the floor, replace the vanity, keep the bath. About 6 sqm."></textarea>
     </div>
 
     <div class="field">
       <label class="lbl">Photo (optional)</label>
       <div class="photo-zone" id="photoZone">
         <input type="file" id="photoFile" accept="image/*" />
-        <span style="font-size:18px;flex-shrink:0;">📷</span>
+        <svg class="photo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         <div>
           <div class="photo-lbl" id="photoLbl">Tap to add a photo</div>
           <div class="photo-sub" id="photoSub">Helps tradies understand the job</div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="divider"></div>
+  <!-- Location -->
+  <div class="card">
+    <div class="section-label">Where is the job?</div>
 
-    <div class="field g2">
-      <div>
-        <label class="lbl">Your name</label>
-        <input type="text" id="name" />
+    <div class="field-row">
+      <div class="field">
+        <label class="lbl">Suburb</label>
+        <input type="text" id="suburb" />
       </div>
-      <div>
-        <label class="lbl">Mobile</label>
-        <input type="tel" id="phone" />
+      <div class="field">
+        <label class="lbl">Postcode</label>
+        <input type="text" id="postcode" inputmode="numeric" maxlength="4" />
       </div>
     </div>
 
-    <button class="btn" id="submitBtn">Find specialists</button>
-    <div id="notice"></div>
+    <div class="field-row">
+      <div class="field">
+        <label class="lbl">Address</label>
+        <input type="text" id="address" placeholder="42 Smith Street" />
+      </div>
+      <div class="field">
+        <label class="lbl">State</label>
+        <select id="state">
+          <option value="" selected></option>
+          <option value="NSW">NSW</option>
+          <option value="VIC">VIC</option>
+          <option value="QLD">QLD</option>
+          <option value="WA">WA</option>
+          <option value="SA">SA</option>
+          <option value="TAS">TAS</option>
+          <option value="ACT">ACT</option>
+          <option value="NT">NT</option>
+        </select>
+      </div>
+    </div>
   </div>
+
+  <!-- Contact -->
+  <div class="card">
+    <div class="section-label">Your details</div>
+
+    <div class="field-row even">
+      <div class="field">
+        <label class="lbl">Your name</label>
+        <input type="text" id="name" placeholder="First and last name" />
+      </div>
+      <div class="field">
+        <label class="lbl">Mobile</label>
+        <input type="tel" id="phone" placeholder="04xx xxx xxx" />
+      </div>
+    </div>
+  </div>
+
+  <div id="notice"></div>
+  <button class="btn" id="submitBtn">Find specialists</button>
 
   <div class="foot">By submitting you agree to receive SMS updates about your job.</div>
 
 </div>
+
 <script>
 const API = "https://noti-api.ancient-bread-01fe.workers.dev";
 
+// ── Job-type toggle ───────────────────────────────────────
+let selectedType = 'JOB';
 document.querySelectorAll('.type-opt').forEach(function(opt){
   opt.addEventListener('click', function(){
     document.querySelectorAll('.type-opt').forEach(function(o){ o.classList.remove('sel'); });
     opt.classList.add('sel');
-    opt.querySelector('input').checked = true;
+    selectedType = opt.dataset.type;
   });
 });
 
+// ── Photo input ───────────────────────────────────────────
 var photoInput = document.getElementById('photoFile');
 photoInput.addEventListener('change', function(){
   var file = photoInput.files[0];
   if (!file) return;
   document.getElementById('photoZone').classList.add('has');
   document.getElementById('photoLbl').textContent = file.name;
-  document.getElementById('photoSub').textContent = '';
+  document.getElementById('photoSub').textContent = 'Tap to change';
 });
 
+// ── Postcode → state auto-fill ────────────────────────────
+function postcodeToState(pc){
+  var n = parseInt(String(pc||'').trim(), 10);
+  if (!n || isNaN(n)) return '';
+  if (n >= 200  && n <= 299)                                 return 'ACT';
+  if ((n >= 1000 && n <= 1999) || (n >= 2000 && n <= 2599) ||
+      (n >= 2620 && n <= 2899) || (n >= 2921 && n <= 2999))  return 'NSW';
+  if ((n >= 2600 && n <= 2618) || (n >= 2900 && n <= 2920))  return 'ACT';
+  if ((n >= 3000 && n <= 3999) || (n >= 8000 && n <= 8999))  return 'VIC';
+  if ((n >= 4000 && n <= 4999) || (n >= 9000 && n <= 9999))  return 'QLD';
+  if (n >= 5000 && n <= 5799)                                return 'SA';
+  if (n >= 5800 && n <= 5999)                                return 'NT';
+  if (n >= 6000 && n <= 6999)                                return 'WA';
+  if (n >= 7000 && n <= 7999)                                return 'TAS';
+  if (n >= 800  && n <= 999)                                 return 'NT';
+  return '';
+}
+document.getElementById('postcode').addEventListener('input', function(e){
+  var guess = postcodeToState(e.target.value);
+  var sel   = document.getElementById('state');
+  if (guess && !sel.value) sel.value = guess;
+});
+
+// ── Helpers ───────────────────────────────────────────────
 function val(id){ return (document.getElementById(id).value||'').trim(); }
 function cleanPhone(p){ return p.replace(/\s+/g,'').replace(/[^0-9]/g,''); }
-function fileToBase64(file){ return new Promise(function(res,rej){ var r=new FileReader(); r.onload=function(){ res(r.result); }; r.onerror=rej; r.readAsDataURL(file); }); }
-function note(msg,type){ var el=document.getElementById('notice'); el.className='notice '+type; el.textContent=msg; }
+function fileToBase64(file){
+  return new Promise(function(res, rej){
+    var r = new FileReader();
+    r.onload  = function(){ res(r.result); };
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+function note(msg, type){
+  var el = document.getElementById('notice');
+  el.innerHTML = '<div class="notice ' + type + '">' + msg + '</div>';
+}
+function clearNotice(){ document.getElementById('notice').innerHTML = ''; }
 
+// ── Submit ────────────────────────────────────────────────
 document.getElementById('submitBtn').addEventListener('click', async function(){
   var btn = document.getElementById('submitBtn');
-  if (!val('description')) { note('Please describe the job.','err'); return; }
-  if (!val('suburb'))      { note('Please enter your suburb.','err'); return; }
-  if (!val('name'))        { note('Please enter your name.','err'); return; }
-  if (!val('phone'))       { note('Please enter your mobile number.','err'); return; }
 
-  btn.disabled=true; btn.textContent='Finding tradies...';
-  document.getElementById('notice').className=''; document.getElementById('notice').textContent='';
+  // Validation — same fields the SMS confirm page requires
+  if (!val('description')) { note('Please describe the job.','err');     return; }
+  if (!val('name'))        { note('Please enter your name.','err');      return; }
+  if (!val('phone'))       { note('Please enter your mobile number.','err'); return; }
+  if (!val('address'))     { note('Please enter your address.','err');   return; }
+  if (!val('suburb'))      { note('Please enter your suburb.','err');    return; }
+  if (!val('postcode'))    { note('Please enter your postcode.','err');  return; }
+
+  btn.disabled = true; btn.textContent = 'Finding tradies...';
+  clearNotice();
 
   try {
-    var photoB64='', photoMime='', pf=photoInput.files[0];
-    if (pf){ var pd=await fileToBase64(pf); photoB64=pd.split(',')[1]; photoMime=pf.type||'image/jpeg'; }
+    var photoB64 = '', photoMime = '';
+    var pf = photoInput.files[0];
+    if (pf){
+      var pd = await fileToBase64(pf);
+      photoB64  = pd.split(',')[1];
+      photoMime = pf.type || 'image/jpeg';
+    }
 
-    var res = await fetch(API, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      // POST to /job/new
     var res = await fetch(API + '/job/new', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ phone:cleanPhone(val('phone')), name:val('name'),
-        description:val('description'), suburb:val('suburb'), postcode:val('postcode'),
-        job_type:document.querySelector('.type-opt.sel input').value,
-        photo:photoB64, photoMime:photoMime
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone:         cleanPhone(val('phone')),
+        name:          val('name'),
+        description:   val('description'),
+        customer_note: val('customerNote'),
+        suburb:        val('suburb'),
+        postcode:      val('postcode'),
+        state:         val('state'),
+        address:       val('address'),
+        job_type:      selectedType,
+        photo:         photoB64,
+        photo_mime:    photoMime
       })
     });
     var data = JSON.parse(await res.text());
-    if (!data.success){ note(data.message||'Something went wrong. Please try again.','err'); btn.disabled=false; btn.textContent='Find specialists'; return; }
+    if (!data.success){
+      note(data.message || 'Something went wrong. Please try again.', 'err');
+      btn.disabled = false; btn.textContent = 'Find specialists';
+      return;
+    }
     window.location.href = '/jobs.html?jobId=' + data.jobId + '&t=' + data.token;
   } catch(e){
-    note('Something went wrong. Please try again.','err'); btn.disabled=false; btn.textContent='Find specialists';
+    note('Something went wrong. Please try again.', 'err');
+    btn.disabled = false; btn.textContent = 'Find specialists';
   }
 });
 </script>

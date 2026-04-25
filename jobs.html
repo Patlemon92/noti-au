@@ -736,13 +736,19 @@ function showCustomer(d) {
   const job   = d.job || {};
   const stage = fmt(d.stage).toUpperCase();
   const loc   = [job.suburb, job.postcode].filter(Boolean).join(" · ");
+  const otherJobs = d.other_jobs || [];
 
-  if (stage === "NEW" || stage === "DRAFT")       return showConfirm(job, loc, d.returning === true);
-  if (stage === "AWAITING_CUSTOMER")               return showOfferCards(job, d.quote_cards||[], loc);
-  if (stage === "ACCEPTED" || stage === "CLOSED")  return showAccepted(job, d.tradie, d.allow_rating, loc);
-  if (stage === "QUOTE_OPEN")                      return showQuoteLive(job, d.quote_cards||[], loc);
-  if (stage === "QUOTE_LOCKED")                    return showQuoteCards(job, d.quote_cards||[], loc);
-  showWaiting(job, stage, loc);
+  if (stage === "NEW" || stage === "DRAFT")        return showConfirm(job, loc, d.returning === true);
+  if (stage === "AWAITING_CUSTOMER")               return showOfferCards(job, d.quote_cards||[], loc, otherJobs);
+  // QUOTE-type CLOSED jobs still show the cards forever.
+  // For non-quote CLOSED/ACCEPTED → the standard accepted view.
+  if (job.job_type === "QUOTE" &&
+      (stage === "QUOTE_LOCKED" || stage === "CLOSED")) {
+    return showQuoteCards(job, d.quote_cards||[], loc, stage === "CLOSED", otherJobs);
+  }
+  if (stage === "ACCEPTED" || stage === "CLOSED")  return showAccepted(job, d.tradie, d.allow_rating, loc, otherJobs);
+  if (stage === "QUOTE_OPEN")                      return showQuoteLive(job, d.quote_cards||[], loc, otherJobs);
+  showWaiting(job, stage, loc, otherJobs);
 }
 
 // ── CONFIRM ───────────────────────────────────────────────
@@ -897,7 +903,7 @@ function postcodeToState(pc) {
 }
 
 // ── WAITING ───────────────────────────────────────────────
-function showWaiting(job, stage, loc) {
+function showWaiting(job, stage, loc, otherJobs) {
   const windowMins = job.job_type === "QUOTE" ? 60 : 10;
   // Prefer the real dispatch deadline. next_rebatch_time is set
   // when the job is dispatched (created_at + window). quote_lock_time
@@ -926,6 +932,7 @@ function showWaiting(job, stage, loc) {
       <div style="margin-top:24px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Responses close in</div>
       <div id="custCountdown" style="font-size:40px;font-weight:800;letter-spacing:-0.04em;color:var(--orange);margin-top:4px;">${mins}:${secs}</div>` : ''}
     </div>
+    ${otherJobsHtml(otherJobs)}
   `);
 
   // Countdown for customer
@@ -946,7 +953,7 @@ function showWaiting(job, stage, loc) {
 
 // ── OFFER CARDS — JOB type ────────────────────────────────
 // Customer sees all responding tradies as cards and picks one
-function showOfferCards(job, cards, loc) {
+function showOfferCards(job, cards, loc, otherJobs) {
   const hasCards = cards && cards.length > 0;
 
   const cardHtml = hasCards ? cards.map((c, i) => {
@@ -986,6 +993,7 @@ function showOfferCards(job, cards, loc) {
       <div class="quote-list">${cardHtml}</div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
+    ${otherJobsHtml(otherJobs)}
   `);
 
   if (!hasCards) setTimeout(() => load(), 10000);
@@ -1013,7 +1021,7 @@ window.acceptTradie = async function(tradieId, idx) {
 // Customer sees countdown PLUS quotes as they come in.
 // Auto-refreshes every 15s. When QUOTE_LOCKED hits, the next
 // load will route to showQuoteCards (final view).
-function showQuoteLive(job, cards, loc) {
+function showQuoteLive(job, cards, loc, otherJobs) {
   // Time left until quote_lock_time
   const lockTime  = job.quote_lock_time
     ? new Date(job.quote_lock_time).getTime()
@@ -1065,6 +1073,7 @@ function showQuoteLive(job, cards, loc) {
       <div class="notice-wrap animate d2">
         <div class="notice hi">Call the tradie you prefer to arrange a time.</div>
       </div>` : ''}
+    ${otherJobsHtml(otherJobs)}
   `);
 
   // Countdown tick
@@ -1089,7 +1098,9 @@ function showQuoteLive(job, cards, loc) {
 
 // ── QUOTE CARDS — QUOTE type ──────────────────────────────
 // Customer sees all cards with phone numbers and calls directly
-function showQuoteCards(job, cards, loc) {
+// Used for QUOTE_LOCKED (60min window just closed) and CLOSED
+// (job ended ~2 mins later — link still works forever).
+function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
   const list = cards.length ? cards.map(c => {
     const isPremium = c.premium && c.verified;
     return `
@@ -1109,19 +1120,20 @@ function showQuoteCards(job, cards, loc) {
   }).join('') : `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">No quotes yet</div>`;
 
   render(`
-    ${heroHtml("Your job", job.description||"Your job", loc, "QUOTE_LOCKED")}
+    ${heroHtml("Your job", job.description||"Your job", loc, isClosed ? "CLOSED" : "QUOTE_LOCKED")}
     <div class="section animate d1">
       <div class="section-label">${cards.length} tradie${cards.length !== 1 ? 's' : ''} responded</div>
       <div class="quote-list">${list}</div>
     </div>
     <div class="notice-wrap animate d2">
-      <div class="notice hi">Call the tradie you prefer to arrange a time.</div>
+      <div class="notice hi">${cards.length > 0 ? 'Call the tradie you prefer to arrange a time.' : 'No tradies responded in time. Send another SMS to start a new request.'}</div>
     </div>
+    ${otherJobsHtml(otherJobs)}
   `);
 }
 
 // ── ACCEPTED ──────────────────────────────────────────────
-function showAccepted(job, tradie, allowRating, loc) {
+function showAccepted(job, tradie, allowRating, loc, otherJobs) {
   const name  = tradie ? fmt(tradie.name)  : "Your tradie";
   const phone = tradie ? fmt(tradie.phone) : "";
 
@@ -1159,6 +1171,7 @@ function showAccepted(job, tradie, allowRating, loc) {
         <div id="rNotice" style="margin-bottom:12px;"></div>
         <button class="btn btn-black" id="rateBtn" disabled>Submit review</button>
       </div>` : ""}
+    ${otherJobsHtml(otherJobs)}
   `);
 
   if (allowRating) wireStars();
@@ -1194,13 +1207,21 @@ function showTradie(d) {
 
   // Tradie has already submitted on a QUOTE-type job — show
   // customer contact details so they can call. Window may still
-  // be open (other tradies still responding) but THIS tradie has
-  // already submitted their price.
-  if (job.job_type === "QUOTE" && stage === "QUOTE_OPEN" && myDispatch && myDispatch.responded) {
+  // be open (QUOTE_OPEN — others still responding), closed
+  // (QUOTE_LOCKED — quotes finalised), or fully done (CLOSED —
+  // job ended ~2 mins after lock). Either way THIS tradie has
+  // already submitted and gets the customer's details.
+  if (job.job_type === "QUOTE" &&
+      (stage === "QUOTE_OPEN" || stage === "QUOTE_LOCKED" || stage === "CLOSED") &&
+      myDispatch && myDispatch.responded) {
     const cName  = custContact ? esc(custContact.name)  : '';
     const cPhone = custContact ? custContact.phone : '';
+    let heroLabel;
+    if (stage === "QUOTE_OPEN")        heroLabel = "Quote sent";
+    else if (stage === "QUOTE_LOCKED") heroLabel = "Quotes closed";
+    else                                heroLabel = "Job complete";
     render(`
-      ${heroHtml("Quote sent", job.description||"Job", loc, "QUOTE_OPEN")}
+      ${heroHtml(heroLabel, job.description||"Job", loc, stage)}
       <div class="section animate d1">
         <div class="section-label">Customer details</div>
         <div class="data-list">
@@ -1398,6 +1419,43 @@ function err(msg) {
 function render(html) {
   document.getElementById("page").innerHTML =
     html + `<div class="footer">noti<em>.</em></div><div style="text-align:center;padding:0 0 20px;font-size:11px;font-weight:600;color:var(--muted);"><a href="/support" style="color:var(--muted);text-decoration:none;">Need help? Chat with support</a></div>`;
+}
+
+// "Your other jobs" — small section linking to the customer's
+// other recent jobs. Used on every customer-facing page so they
+// can hop between parallel quote requests.
+function otherJobsHtml(jobs) {
+  if (!jobs || !jobs.length) return '';
+  const statusLabel = (s) => {
+    if (s === 'NEW' || s === 'DRAFT')   return 'Confirm';
+    if (s === 'SENT_TO_TRADIES')        return 'Live';
+    if (s === 'AWAITING_CUSTOMER')      return 'Offer ready';
+    if (s === 'QUOTE_OPEN')             return 'Quotes open';
+    if (s === 'QUOTE_LOCKED')           return 'Quotes ready';
+    if (s === 'ACCEPTED')               return 'Confirmed';
+    if (s === 'CLOSED')                 return 'Closed';
+    return s || '';
+  };
+  const statusColor = (s) => {
+    if (s === 'CLOSED') return 'var(--muted)';
+    if (s === 'ACCEPTED') return 'var(--green)';
+    return 'var(--orange)';
+  };
+  return `
+    <div class="section animate d3" style="padding:14px 16px;">
+      <div class="section-label">Your other jobs</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${jobs.map(j => `
+          <a href="/job/${esc(j.job_number)}/${esc(j.token)}"
+             style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:inherit;background:var(--white);">
+            <div style="min-width:0;flex:1;">
+              <div style="font-size:13px;font-weight:600;color:var(--black);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(j.description || j.job_number)}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(j.job_type === 'QUOTE' ? 'Quote' : 'Urgent')} · ${esc(j.job_number)}</div>
+            </div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${statusColor(j.status)};white-space:nowrap;">${esc(statusLabel(j.status))}</div>
+          </a>`).join('')}
+      </div>
+    </div>`;
 }
 
 function get(id) { return document.getElementById(id); }

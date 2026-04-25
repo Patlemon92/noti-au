@@ -277,6 +277,60 @@
     font-size: 13px; color: var(--muted); line-height: 1.55;
   }
 
+  /* ── JOB/QUOTE TOGGLE ────────────────────────────────────── */
+  .job-type-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .job-type-opt {
+    padding: 14px 12px;
+    text-align: left;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    cursor: pointer;
+    font: inherit;
+    transition: all 0.12s;
+  }
+  .job-type-opt:hover { border-color: var(--dim); }
+  .job-type-opt.sel {
+    background: var(--black);
+    border-color: var(--black);
+  }
+  .job-type-name {
+    font-size: 14px; font-weight: 600;
+    color: var(--black);
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+  }
+  .job-type-opt.sel .job-type-name { color: var(--white); }
+  .job-type-desc {
+    font-size: 11px; font-weight: 500;
+    color: var(--muted);
+    line-height: 1.35;
+  }
+  .job-type-opt.sel .job-type-desc { color: var(--dim); }
+
+  /* Select dropdown styling — match input style */
+  select {
+    width: 100%;
+    padding: 11px 32px 11px 12px;
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    color: var(--black);
+    background-color: var(--white);
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    -webkit-appearance: none; appearance: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  select:focus {
+    outline: none;
+    border-color: var(--blue-600);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
   /* ── PHOTO UPLOAD ────────────────────────────────────────── */
   .photo-row {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
@@ -602,10 +656,27 @@ function showCustomer(d) {
 
 // ── CONFIRM ───────────────────────────────────────────────
 function showConfirm(job, loc, returning) {
+  // Initial values
+  const currentType = (job.job_type === 'QUOTE') ? 'QUOTE' : 'JOB';
+  const currentState = job.state || postcodeToState(job.postcode || '');
+
   render(`
     ${heroHtml("Your job", job.description || "New job", loc, "NEW")}
     <div class="section animate d1">
       ${returning ? '<div class="notice hi" style="margin-bottom:16px;">Your details are pre-filled from last time.</div>' : ""}
+      <div class="section-label">What do you need?</div>
+      <div class="job-type-row">
+        <button type="button" class="job-type-opt ${currentType==='JOB' ? 'sel' : ''}" data-type="JOB">
+          <div class="job-type-name">Urgent</div>
+          <div class="job-type-desc">Need someone fast</div>
+        </button>
+        <button type="button" class="job-type-opt ${currentType==='QUOTE' ? 'sel' : ''}" data-type="QUOTE">
+          <div class="job-type-name">Quote</div>
+          <div class="job-type-desc">Compare prices, no rush</div>
+        </button>
+      </div>
+    </div>
+    <div class="section animate d1">
       <div class="section-label">Confirm details</div>
       <div class="field">
         <label class="field-label">Your name</label>
@@ -622,12 +693,28 @@ function showConfirm(job, loc, returning) {
         </div>
         <div class="field">
           <label class="field-label">Postcode</label>
-          <input id="cPostcode" value="${esc(job.postcode||"")}" />
+          <input id="cPostcode" inputmode="numeric" maxlength="4" value="${esc(job.postcode||"")}" />
         </div>
       </div>
-      <div class="field">
-        <label class="field-label">Address</label>
-        <input id="cAddr" value="${esc(job.address||"")}" placeholder="42 Smith Street" />
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Address</label>
+          <input id="cAddr" value="${esc(job.address||"")}" placeholder="42 Smith Street" />
+        </div>
+        <div class="field">
+          <label class="field-label">State</label>
+          <select id="cState">
+            <option value=""    ${!currentState ? 'selected' : ''}></option>
+            <option value="NSW" ${currentState==='NSW' ? 'selected' : ''}>NSW</option>
+            <option value="VIC" ${currentState==='VIC' ? 'selected' : ''}>VIC</option>
+            <option value="QLD" ${currentState==='QLD' ? 'selected' : ''}>QLD</option>
+            <option value="WA"  ${currentState==='WA'  ? 'selected' : ''}>WA</option>
+            <option value="SA"  ${currentState==='SA'  ? 'selected' : ''}>SA</option>
+            <option value="TAS" ${currentState==='TAS' ? 'selected' : ''}>TAS</option>
+            <option value="ACT" ${currentState==='ACT' ? 'selected' : ''}>ACT</option>
+            <option value="NT"  ${currentState==='NT'  ? 'selected' : ''}>NT</option>
+          </select>
+        </div>
       </div>
       <div class="field" style="margin-top:20px;">
         <label class="field-label">Photos (optional)</label>
@@ -651,6 +738,22 @@ function showConfirm(job, loc, returning) {
   // Initialise photo upload slots
   initPhotoUpload();
 
+  // Wire up the JOB/QUOTE toggle
+  let selectedType = currentType;
+  document.querySelectorAll('.job-type-opt').forEach(btn => {
+    btn.onclick = () => {
+      selectedType = btn.dataset.type;
+      document.querySelectorAll('.job-type-opt').forEach(b => b.classList.toggle('sel', b === btn));
+    };
+  });
+
+  // Postcode → state auto-fill (only fills if state field is empty)
+  get("cPostcode").addEventListener('input', (e) => {
+    const guess = postcodeToState(e.target.value);
+    const sel   = get("cState");
+    if (guess && !sel.value) sel.value = guess;
+  });
+
   get("submitBtn").onclick = async () => {
     const btn = get("submitBtn"), n = get("nWrap");
     if (!get("cName").value.trim())   { note(n,"Please enter your name.","err"); return; }
@@ -658,7 +761,16 @@ function showConfirm(job, loc, returning) {
     if (!get("cSuburb").value.trim()) { note(n,"Please enter your suburb.","err"); return; }
     disable(btn, "Sending...");
     try {
-      const r1 = await api({ action:"update_job", name:get("cName").value, description:get("cDesc").value, suburb:get("cSuburb").value, postcode:get("cPostcode").value, address:get("cAddr").value });
+      const r1 = await api({
+        action:      "update_job",
+        name:        get("cName").value,
+        description: get("cDesc").value,
+        suburb:      get("cSuburb").value,
+        postcode:    get("cPostcode").value,
+        state:       get("cState").value,
+        address:     get("cAddr").value,
+        job_type:    selectedType
+      });
       if (!r1.success) { note(n, r1.message||"Update failed", "err"); enable(btn,"Find specialists"); return; }
       const r2 = await api({ action:"submit_job" });
       if (!r2.success) { note(n, r2.message||"Could not send", "err"); enable(btn,"Find specialists"); return; }
@@ -666,6 +778,26 @@ function showConfirm(job, loc, returning) {
       setTimeout(load, 900);
     } catch(e) { note(n,"Something went wrong.","err"); enable(btn,"Find specialists"); }
   };
+}
+
+// Australian postcode → state. Returns '' if unknown.
+function postcodeToState(pc) {
+  const n = parseInt(String(pc||'').trim(), 10);
+  if (!n || isNaN(n)) return '';
+  if (n >= 200  && n <= 299)                              return 'ACT';
+  if ((n >= 1000 && n <= 1999) || (n >= 2000 && n <= 2599) ||
+      (n >= 2620 && n <= 2899) || (n >= 2921 && n <= 2999)) return 'NSW';
+  if ((n >= 2600 && n <= 2618) || (n >= 2900 && n <= 2920)) return 'ACT';
+  if ((n >= 3000 && n <= 3999) || (n >= 8000 && n <= 8999)) return 'VIC';
+  if ((n >= 4000 && n <= 4999) || (n >= 9000 && n <= 9999)) return 'QLD';
+  if (n >= 5000 && n <= 5799)                              return 'SA';
+  if (n >= 5800 && n <= 5999)                              return 'NT';
+  if (n >= 6000 && n <= 6797)                              return 'WA';
+  if (n >= 6800 && n <= 6999)                              return 'WA';
+  if (n >= 7000 && n <= 7999)                              return 'TAS';
+  if (n >= 800  && n <= 899)                               return 'NT';
+  if (n >= 900  && n <= 999)                               return 'NT';
+  return '';
 }
 
 // ── WAITING ───────────────────────────────────────────────
@@ -898,7 +1030,7 @@ function showTradie(d) {
   // Tradie has won — show customer details with address
   if (stage === "ACCEPTED") {
     const custPhone = job.customer_phone || '';
-    const address   = [job.address_unit ? job.address_unit + '/' : '', job.address, job.suburb, job.postcode].filter(Boolean).join(' ');
+    const address   = [job.address_unit ? job.address_unit + '/' : '', job.address, job.suburb, job.state, job.postcode].filter(Boolean).join(' ');
     render(`
       ${heroHtml("Job confirmed", job.description||"Job", loc, "ACCEPTED")}
       <div class="section animate d1">
@@ -909,7 +1041,15 @@ function showTradie(d) {
           ${address ? `<div class="data-row"><span class="data-key">Address</span><span class="data-val">${esc(address)}</span></div>` : ''}
         </div>
       </div>
-      <div class="notice-wrap animate d2">
+      ${(job.price || job.eta) ? `
+        <div class="section animate d2">
+          <div class="section-label">Your offer</div>
+          <div class="data-list">
+            ${job.price ? `<div class="data-row"><span class="data-key">Agreed price</span><span class="data-val" style="font-size:18px;font-weight:600;letter-spacing:-0.02em;">$${esc(String(job.price))}</span></div>` : ''}
+            ${job.eta   ? `<div class="data-row"><span class="data-key">ETA</span><span class="data-val">${esc(job.eta)}</span></div>` : ''}
+          </div>
+        </div>` : ''}
+      <div class="notice-wrap animate d3">
         <div class="notice ok">You are confirmed. Contact your customer to arrange access.</div>
       </div>
     `);

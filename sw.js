@@ -1,54 +1,74 @@
-// =========================
-// sw.js — Noti Service Worker
-// Handles web push notifications for tradie job alerts.
-// Must be served from the root of noti.au
-// =========================
+// =============================================================
+// Noti service worker — handles push notifications
+// =============================================================
+// Registered by tradie.html and admin.html via:
+//   navigator.serviceWorker.register('/sw.js')
+//
+// This file MUST be served from the root of noti.au so the scope
+// covers the whole site. Cloudflare Pages serves it from /sw.js
+// when this file lives at the root of the repo.
+// =============================================================
 
-self.addEventListener('install', function(e){
+const CACHE_VERSION = 'noti-v1';
+
+// Install — activate immediately, don't wait for tabs to close
+self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', function(e){
-  e.waitUntil(clients.claim());
+// Activate — take control of all clients right away
+self.addEventListener('activate', (e) => {
+  e.waitUntil(self.clients.claim());
 });
 
-// Handle incoming push notification
-self.addEventListener('push', function(e){
-  var data = {};
-  try { data = e.data.json(); } catch(err){ data = { title: 'Noti', body: e.data ? e.data.text() : 'New job alert' }; }
+// Receive a push from the server
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (e) {
+    payload = {
+      title: 'Noti',
+      body: event.data ? event.data.text() : 'New job'
+    };
+  }
 
-  var title   = data.title || 'noti.';
-  var options = {
-    body:    data.body    || 'A new job is available.',
-    icon:    data.icon    || '/icon-192.png',
-    badge:   data.badge   || '/icon-72.png',
-    tag:     data.tag     || 'noti-job',
-    data:    { url: data.url || '/tradie' },
-    actions: data.actions || [],
-    requireInteraction: true,
-    vibrate: [200, 100, 200]
+  const title = payload.title || 'Noti';
+  const options = {
+    body:    payload.body || '',
+    icon:    payload.icon  || '/icon-192.png',
+    badge:   payload.badge || '/icon-72.png',
+    tag:     payload.tag   || 'noti-default',
+    data:    { url: payload.url || 'https://noti.au/tradie' },
+    requireInteraction: payload.requireInteraction === true,
+    vibrate: payload.vibrate || [200, 100, 200]
   };
 
-  e.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  );
 });
 
-// Handle notification click — open the job link
-self.addEventListener('notificationclick', function(e){
-  e.notification.close();
-  var url = (e.notification.data && e.notification.data.url) ? e.notification.data.url : '/tradie';
+// Tap on a notification — focus existing tab or open new one
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || 'https://noti.au/tradie';
 
-  e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients){
-      // If dashboard already open, navigate to job URL and focus
-      for (var i = 0; i < windowClients.length; i++){
-        var client = windowClients[i];
-        if (client.url.indexOf('noti.au') !== -1 && 'focus' in client){
-          client.navigate(url);
-          return client.focus();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
+      // If a Noti tab is already open, focus it and navigate
+      for (const w of wins) {
+        if (w.url.includes('noti.au') && 'focus' in w) {
+          if ('navigate' in w) {
+            try { w.navigate(url); } catch(e) {}
+          }
+          return w.focus();
         }
       }
-      // Otherwise open the job link directly
-      if (clients.openWindow) return clients.openWindow(url);
+      // Otherwise open a new window
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(url);
+      }
     })
   );
 });

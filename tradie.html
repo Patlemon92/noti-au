@@ -1219,7 +1219,7 @@ function initPhotoUpload() {
         slot.classList.remove('uploading');
         slot.classList.add('has-photo');
         const next = document.getElementById('slot' + (index + 1));
-        if (next) next.querySelector('.photo-input').disabled = false;
+        if (next) next.querySelectoar('.photo-input').disabled = false;
       } catch(e) { slot.classList.remove('uploading'); }
     });
   });

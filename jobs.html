@@ -1421,41 +1421,13 @@ function render(html) {
     html + `<div class="footer">noti<em>.</em></div><div style="text-align:center;padding:0 0 20px;font-size:11px;font-weight:600;color:var(--muted);"><a href="/support" style="color:var(--muted);text-decoration:none;">Need help? Chat with support</a></div>`;
 }
 
-// "Your other jobs" — small section linking to the customer's
-// other recent jobs. Used on every customer-facing page so they
-// can hop between parallel quote requests.
+// "Your other jobs" section — temporarily disabled.
+// Currently returns empty so nothing renders. The data still
+// comes back from the API as d.other_jobs and is threaded
+// through every show* function, so we can re-enable later
+// just by restoring the body of this function.
 function otherJobsHtml(jobs) {
-  if (!jobs || !jobs.length) return '';
-  const statusLabel = (s) => {
-    if (s === 'NEW' || s === 'DRAFT')   return 'Confirm';
-    if (s === 'SENT_TO_TRADIES')        return 'Live';
-    if (s === 'AWAITING_CUSTOMER')      return 'Offer ready';
-    if (s === 'QUOTE_OPEN')             return 'Quotes open';
-    if (s === 'QUOTE_LOCKED')           return 'Quotes ready';
-    if (s === 'ACCEPTED')               return 'Confirmed';
-    if (s === 'CLOSED')                 return 'Closed';
-    return s || '';
-  };
-  const statusColor = (s) => {
-    if (s === 'CLOSED') return 'var(--muted)';
-    if (s === 'ACCEPTED') return 'var(--green)';
-    return 'var(--orange)';
-  };
-  return `
-    <div class="section animate d3" style="padding:14px 16px;">
-      <div class="section-label">Your other jobs</div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        ${jobs.map(j => `
-          <a href="/job/${esc(j.job_number)}/${esc(j.token)}"
-             style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;text-decoration:none;color:inherit;background:var(--white);">
-            <div style="min-width:0;flex:1;">
-              <div style="font-size:13px;font-weight:600;color:var(--black);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(j.description || j.job_number)}</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:2px;">${esc(j.job_type === 'QUOTE' ? 'Quote' : 'Urgent')} · ${esc(j.job_number)}</div>
-            </div>
-            <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${statusColor(j.status)};white-space:nowrap;">${esc(statusLabel(j.status))}</div>
-          </a>`).join('')}
-      </div>
-    </div>`;
+  return '';
 }
 
 function get(id) { return document.getElementById(id); }

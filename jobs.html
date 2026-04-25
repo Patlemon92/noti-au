@@ -499,6 +499,45 @@
     word-wrap: break-word;
   }
 
+  /* Quote selection — "I went with this tradie" */
+  .quote-action {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .quote-pick-btn {
+    display: block; width: 100%;
+    padding: 10px 14px;
+    background: var(--black); color: var(--white);
+    border: 1px solid var(--black); border-radius: 8px;
+    font: inherit; font-size: 13px; font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .quote-pick-btn:hover { background: #000; }
+  .quote-pick-btn:active { transform: scale(0.98); }
+  .quote-pick-btn.outline {
+    background: var(--white); color: var(--black);
+    border-color: var(--line);
+  }
+  .quote-pick-btn.outline:hover {
+    background: var(--off); border-color: var(--dim);
+  }
+  .quote-picked-badge {
+    font-size: 12px; font-weight: 600;
+    color: var(--green);
+    background: var(--emerald-50);
+    border: 1px solid var(--emerald-200);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: center;
+    letter-spacing: -0.01em;
+  }
+  .quote-item.is-picked {
+    border-color: var(--green) !important;
+    background: var(--emerald-50);
+  }
+
   /* Customer's longer note shown to tradie before they quote */
   .customer-note {
     margin-top: 14px;
@@ -1101,10 +1140,31 @@ function showQuoteLive(job, cards, loc, otherJobs) {
 // Used for QUOTE_LOCKED (60min window just closed) and CLOSED
 // (job ended ~2 mins later — link still works forever).
 function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
+  const pickedId  = job.accepted_by_tradie_id || '';
+  const hasPick   = !!pickedId;
+  const reviewed  = !!job.review_submitted;
+  const pickedCard = hasPick ? cards.find(c => c.tradie_id === pickedId) : null;
+
   const list = cards.length ? cards.map(c => {
     const isPremium = c.premium && c.verified;
+    const isPicked  = c.tradie_id === pickedId;
+
+    // Selection / change button block
+    let actionHtml;
+    if (reviewed && isPicked) {
+      actionHtml = `<div class="quote-picked-badge">You hired this tradie</div>`;
+    } else if (reviewed) {
+      actionHtml = '';
+    } else if (isPicked) {
+      actionHtml = `<div class="quote-picked-badge">Selected — you went with this tradie</div>`;
+    } else if (hasPick) {
+      actionHtml = `<button class="quote-pick-btn outline" onclick="pickQuote('${esc(c.tradie_id)}', ${JSON.stringify(c.name)})">Pick this tradie instead</button>`;
+    } else {
+      actionHtml = `<button class="quote-pick-btn" onclick="pickQuote('${esc(c.tradie_id)}', ${JSON.stringify(c.name)})">I went with this tradie</button>`;
+    }
+
     return `
-      <div class="quote-item" style="${isPremium ? 'border-left:3px solid var(--orange);' : ''}">
+      <div class="quote-item ${isPicked ? 'is-picked' : ''}" style="${isPremium ? 'border-left:3px solid var(--orange);' : ''}">
         <div class="quote-initial" style="${isPremium ? 'background:var(--orange);color:var(--black);' : ''}">${ini(c.name)}</div>
         <div class="quote-info">
           <div class="quote-name">
@@ -1115,9 +1175,40 @@ function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
           ${c.price ? `<div class="quote-eta">$${esc(String(c.price))}</div>` : ''}
           <a class="quote-call" href="${telHref(c.phone)}">${esc(c.phone)}</a>
           ${c.note ? `<div class="quote-note">${esc(c.note)}</div>` : ''}
+          ${actionHtml ? `<div class="quote-action">${actionHtml}</div>` : ''}
         </div>
       </div>`;
   }).join('') : `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">No quotes yet</div>`;
+
+  // Notice strip — adapts to selection state
+  let notice;
+  if (cards.length === 0) {
+    notice = `<div class="notice hi">No tradies responded in time. Send another SMS to start a new request.</div>`;
+  } else if (reviewed) {
+    notice = `<div class="notice ok">Thanks for your review.</div>`;
+  } else if (hasPick && pickedCard) {
+    notice = `<div class="notice ok">You went with <strong>${esc(pickedCard.name)}</strong>. Once the work is done, leave a review below.</div>`;
+  } else {
+    notice = `<div class="notice hi">Call the tradie you prefer to arrange a time. Once you've hired one, tap "I went with this tradie" so we can follow up for a review.</div>`;
+  }
+
+  // Review form — only after they've picked AND not yet reviewed
+  const reviewSection = (hasPick && !reviewed && pickedCard) ? `
+    <div class="section animate d3" id="rSection">
+      <div class="section-label">How did it go?</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Rate <strong>${esc(pickedCard.name)}</strong></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Your rating helps other customers and rewards good tradies.</div>
+      <div class="star-row" id="stars">
+        ${[1,2,3,4,5].map(n => `<button class="star" data-v="${n}">★</button>`).join('')}
+      </div>
+      <div class="field">
+        <label class="field-label">Comment (optional)</label>
+        <textarea id="rComment"></textarea>
+      </div>
+      <div id="rNotice" style="margin-bottom:12px;"></div>
+      <button class="btn btn-black" id="rateBtn" disabled>Submit review</button>
+    </div>
+  ` : '';
 
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, isClosed ? "CLOSED" : "QUOTE_LOCKED")}
@@ -1126,11 +1217,31 @@ function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
       <div class="quote-list">${list}</div>
     </div>
     <div class="notice-wrap animate d2">
-      <div class="notice hi">${cards.length > 0 ? 'Call the tradie you prefer to arrange a time.' : 'No tradies responded in time. Send another SMS to start a new request.'}</div>
+      ${notice}
     </div>
+    ${reviewSection}
     ${otherJobsHtml(otherJobs)}
   `);
+
+  if (hasPick && !reviewed && pickedCard) wireStars();
 }
+
+// Customer taps "I went with this tradie" on a quote card
+async function pickQuote(tradieId, tradieName) {
+  if (!confirm(`Mark ${tradieName} as the tradie you hired? You can change this later if needed.`)) return;
+  try {
+    const r = await api({ action: 'select_quote', tradie_id: tradieId });
+    if (!r.success) {
+      alert(r.message || 'Could not save your selection. Please try again.');
+      return;
+    }
+    // Reload to show the review form for the picked tradie
+    load();
+  } catch (e) {
+    alert('Could not save your selection. Please try again.');
+  }
+}
+window.pickQuote = pickQuote;
 
 // ── ACCEPTED ──────────────────────────────────────────────
 function showAccepted(job, tradie, allowRating, loc, otherJobs) {

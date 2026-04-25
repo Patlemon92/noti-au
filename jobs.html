@@ -1,119 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#0f172a" />
-<title>noti.</title>
-
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>noti.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
   /* ══════════════════════════════════════════════════════════════
-     FIELDOPS TOKENS — applied to Noti
-     Keeping Noti's orange as the brand accent (per the guide note
-     "Noti is orange by convention") and emerald for confirmed states.
-     Slate provides the structural/neutral system.
+     PURE RESKIN — FieldOps tokens applied to the original markup.
+     Every original CSS variable is redefined to the new palette,
+     so any inline style="color:var(--orange)" still works.
+     No HTML/JS changed in this file.
      ══════════════════════════════════════════════════════════════ */
   :root {
-    /* Neutrals — FieldOps slate scale */
-    --slate-900: #0f172a;
-    --slate-700: #334155;
-    --slate-500: #64748b;
-    --slate-400: #94a3b8;
-    --slate-200: #e2e8f0;
-    --slate-100: #f1f5f9;
-    --slate-50:  #f8fafc;
+    /* Original variable names — repointed to new palette */
+    --font:   -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    --ease:   cubic-bezier(0.16, 1, 0.3, 1);
+    --black:  #0f172a;       /* slate-900 instead of pure black */
+    --white:  #ffffff;
+    --line:   #e2e8f0;       /* slate-200 */
+    --muted:  #64748b;       /* slate-500 */
+    --dim:    #94a3b8;       /* slate-400 */
+    --off:    #f8fafc;       /* slate-50 */
+    --orange: #ea580c;       /* Noti brand orange — kept */
+    --green:  #059669;       /* emerald-600 */
+    --red:    #dc2626;
 
-    /* Semantic families */
-    --blue-600:     #2563eb;
-    --emerald-600:  #059669;
-    --emerald-500:  #10b981;
-    --emerald-50:   #ecfdf5;
-    --emerald-200:  #a7f3d0;
-    --amber-100:    #fef3c7;
-    --amber-600:    #d97706;
-    --amber-200:    #fde68a;
-    --red-600:      #dc2626;
-    --red-50:       #fef2f2;
-    --red-200:      #fecaca;
-
-    /* Brand */
-    --noti:         #ea580c;
-    --noti-light:   #fff7ed;
-
-    /* Semantic shorthand (used throughout) */
-    --bg:           var(--slate-50);
-    --surface:      #ffffff;
-    --text:         var(--slate-900);
-    --muted:        var(--slate-500);
-    --line:         var(--slate-200);
-    --line-soft:    var(--slate-100);
-
-    /* Radius scale */
-    --r-md:  6px;
-    --r-lg:  8px;
-    --r-xl:  12px;
-    --r-2xl: 16px;
+    /* Additional FieldOps tokens used below */
+    --slate-100:  #f1f5f9;
+    --emerald-50: #ecfdf5;
+    --emerald-200:#a7f3d0;
+    --noti-light: #fff7ed;
+    --blue-600:   #2563eb;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color: var(--text);
-    background: var(--bg);
-    font-variant-numeric: tabular-nums;
+    color: var(--black);
+    background: var(--off);
     font-size: 14px;
     line-height: 1.5;
+    font-variant-numeric: tabular-nums;
   }
 
   body {
-    min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100vh; min-height: 100dvh;
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* ── TOPBAR ───────────────────────────────────────────────── */
+  /* ── LOADING SCREEN ──────────────────────────────────────── */
+  .loading-page {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+    background: var(--off);
+  }
+  .loader {
+    width: 32px; height: 32px;
+    border: 2.5px solid var(--line);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-label {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ── SHELL & TOPBAR ──────────────────────────────────────── */
+  .shell { min-height: 100vh; }
   .topbar {
     position: sticky; top: 0; z-index: 50;
     padding: 12px 16px;
     padding-top: max(12px, env(safe-area-inset-top));
-    background: var(--surface);
+    background: var(--white);
     border-bottom: 1px solid var(--line);
     display: flex; justify-content: space-between; align-items: center;
   }
-  .brand {
+  .logo {
     font-size: 20px; font-weight: 700; letter-spacing: -0.03em;
-    color: var(--text);
+    color: var(--black);
   }
-  .brand .dot { color: var(--noti); }
+  .logo em { color: var(--orange); font-style: normal; }
   .topbar-tag {
     font-size: 10px; font-weight: 600;
     letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--muted);
   }
 
-  /* ── PAGE CONTAINER ──────────────────────────────────────── */
+  /* ── PAGE ────────────────────────────────────────────────── */
   .page { padding: 0 0 40px; }
 
   /* ── HERO ────────────────────────────────────────────────── */
   .hero {
     padding: 20px 16px 16px;
-    background: var(--surface);
+    background: var(--white);
     border-bottom: 1px solid var(--line);
   }
   .hero-kicker {
     font-size: 10px; font-weight: 600;
     letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 6px;
+    color: var(--muted); margin-bottom: 6px;
   }
   .hero-title {
     font-size: 22px; font-weight: 600;
-    letter-spacing: -0.02em; color: var(--text);
-    line-height: 1.25;
-    margin-bottom: 4px;
+    letter-spacing: -0.02em; color: var(--black);
+    line-height: 1.25; margin-bottom: 4px;
   }
   .hero-sub {
     font-size: 13px; color: var(--muted); font-weight: 500;
@@ -121,18 +120,20 @@
   .hero-status {
     margin-top: 12px;
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 10px; border-radius: var(--r-md);
+    padding: 4px 10px; border-radius: 6px;
     background: var(--slate-100);
-    font-size: 11px; font-weight: 600; color: var(--slate-700);
   }
   .status-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: var(--slate-400);
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--dim);
   }
-  .status-dot.pulse { background: var(--noti); animation: pulse 1.4s ease-in-out infinite; }
-  .status-dot.moving { background: var(--amber-600); }
-  .status-dot.live   { background: var(--noti); }
-  .status-dot.done   { background: var(--emerald-600); }
-
+  .status-dot.live  { background: var(--orange); }
+  .status-dot.pulse { background: var(--orange); animation: pulse 1.4s ease-in-out infinite; }
+  .status-dot.moving { background: #d97706; }
+  .status-dot.done  { background: var(--green); }
+  .status-label {
+    font-size: 11px; font-weight: 600; color: #334155;
+  }
   @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50%      { opacity: 0.4; transform: scale(1.3); }
@@ -140,17 +141,16 @@
 
   /* ── SECTIONS (cards) ────────────────────────────────────── */
   .section {
-    background: var(--surface);
+    background: var(--white);
     margin: 12px 16px;
     border: 1px solid var(--line);
-    border-radius: var(--r-xl);
+    border-radius: 12px;
     padding: 16px;
   }
   .section-label {
     font-size: 10px; font-weight: 600;
     letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
+    color: var(--muted); margin-bottom: 12px;
   }
 
   /* ── FIELDS ──────────────────────────────────────────────── */
@@ -160,28 +160,26 @@
   .field-label {
     display: block;
     font-size: 12px; font-weight: 500;
-    color: var(--slate-700);
-    margin-bottom: 6px;
+    color: #334155; margin-bottom: 6px;
   }
   input, textarea {
     width: 100%;
     padding: 11px 12px;
     font-family: inherit;
     font-size: 14px; font-weight: 500;
-    color: var(--text);
-    background: var(--surface);
+    color: var(--black);
+    background: var(--white);
     border: 1px solid var(--line);
-    border-radius: var(--r-lg);
+    border-radius: 8px;
     transition: border-color 0.15s, box-shadow 0.15s;
-    -webkit-appearance: none;
-    appearance: none;
+    -webkit-appearance: none; appearance: none;
   }
   input:focus, textarea:focus {
     outline: none;
     border-color: var(--blue-600);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   }
-  input::placeholder, textarea::placeholder { color: var(--slate-400); }
+  input::placeholder, textarea::placeholder { color: var(--dim); }
   textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 
   /* ── BUTTONS ─────────────────────────────────────────────── */
@@ -189,8 +187,9 @@
   .btn {
     width: 100%;
     padding: 14px 18px;
-    font-size: 14px; font-weight: 600; font-family: inherit;
-    border-radius: var(--r-lg);
+    font-size: 14px; font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
     border: 1px solid transparent;
     cursor: pointer;
     transition: transform 0.1s, background 0.15s;
@@ -198,36 +197,18 @@
   }
   .btn:active:not(:disabled) { transform: scale(0.98); }
   .btn:disabled { opacity: 0.5; cursor: default; }
-
-  .btn-primary {
-    background: var(--slate-900);
-    color: #fff;
-    border-color: var(--slate-900);
+  .btn-black {
+    background: var(--black);
+    color: var(--white);
+    border-color: var(--black);
   }
-  .btn-primary:hover:not(:disabled) { background: #000; }
+  .btn-black:hover:not(:disabled) { background: #000; }
 
-  .btn-brand {
-    background: var(--noti);
-    color: #fff;
-    border-color: var(--noti);
-  }
-  .btn-brand:hover:not(:disabled) { background: #c2410c; }
-
-  .btn-secondary {
-    background: var(--surface);
-    color: var(--text);
-    border-color: var(--line);
-  }
-  .btn-secondary:hover:not(:disabled) { border-color: var(--slate-400); }
-
-  /* keep legacy .btn-black alias for any legacy reference */
-  .btn-black { @apply: none; background: var(--slate-900); color: #fff; border-color: var(--slate-900); }
-
-  /* ── DATA LIST (key / value pairs) ────────────────────────── */
+  /* ── DATA LIST (key/value rows) ──────────────────────────── */
   .data-list { }
   .data-row {
     display: flex; justify-content: space-between; align-items: baseline;
-    padding: 10px 0; border-top: 1px solid var(--line-soft);
+    padding: 10px 0; border-top: 1px solid var(--slate-100);
     gap: 12px;
   }
   .data-row:first-child { border-top: none; padding-top: 0; }
@@ -237,32 +218,30 @@
     flex-shrink: 0;
   }
   .data-val {
-    font-size: 14px; font-weight: 500; color: var(--text);
+    font-size: 14px; font-weight: 500; color: var(--black);
     text-align: right;
   }
-  .data-val.mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13px; }
-  .data-val.big  { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
 
   /* ── NOTICE ──────────────────────────────────────────────── */
   .notice-wrap { padding: 0 16px; }
   .notice {
     padding: 12px 14px;
     font-size: 13px; line-height: 1.5; font-weight: 500;
-    border-radius: var(--r-lg);
+    border-radius: 8px;
     border: 1px solid transparent;
     margin-bottom: 12px;
   }
   .notice.hi  { background: var(--noti-light); color: #9a3412; border-color: #fed7aa; }
   .notice.ok  { background: var(--emerald-50); color: #065f46; border-color: var(--emerald-200); }
-  .notice.err { background: var(--red-50); color: #991b1b; border-color: var(--red-200); }
+  .notice.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
 
   /* ── WAITING BLOCK ───────────────────────────────────────── */
   .waiting-block {
     margin: 12px 16px;
     padding: 32px 24px;
-    background: var(--surface);
+    background: var(--white);
     border: 1px solid var(--line);
-    border-radius: var(--r-xl);
+    border-radius: 12px;
     text-align: center;
   }
   .waiting-icon {
@@ -275,14 +254,13 @@
   }
   .waiting-icon-dot {
     width: 14px; height: 14px; border-radius: 50%;
-    background: var(--noti);
+    background: var(--orange);
     animation: pulse 1.4s ease-in-out infinite;
   }
   .waiting-icon::before {
-    content: ''; position: absolute;
-    inset: -6px;
+    content: ''; position: absolute; inset: -6px;
     border-radius: 50%;
-    border: 2px solid var(--noti);
+    border: 2px solid var(--orange);
     opacity: 0.2;
     animation: ripple 1.8s ease-out infinite;
   }
@@ -292,84 +270,40 @@
   }
   .waiting-title {
     font-size: 17px; font-weight: 600;
-    color: var(--text); letter-spacing: -0.01em;
+    color: var(--black); letter-spacing: -0.01em;
     margin-bottom: 6px;
   }
   .waiting-sub {
     font-size: 13px; color: var(--muted); line-height: 1.55;
   }
 
-  /* ── TIMER (countdown) ───────────────────────────────────── */
-  .timer {
-    margin: 12px 16px;
-    padding: 14px 16px;
-    background: var(--slate-900);
-    color: #fff;
-    border-radius: var(--r-xl);
-    display: flex; justify-content: space-between; align-items: center;
-    gap: 16px;
-  }
-  .timer-label {
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--slate-400);
-  }
-  .timer-sub {
-    font-size: 11px; color: var(--slate-400); margin-top: 2px;
-  }
-  .timer-val {
-    font-size: 24px; font-weight: 600;
-    letter-spacing: -0.02em; color: var(--noti);
-    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  }
-  .timer-val.expired { color: var(--slate-500); }
-  .timer-val.urgent  { color: #fca5a5; }
-
-  /* Cohesive inline version (big countdown inside waiting card) */
-  .big-countdown {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid var(--line-soft);
-  }
-  .big-countdown-label {
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 6px;
-  }
-  .big-countdown-val {
-    font-size: 36px; font-weight: 600;
-    letter-spacing: -0.03em; color: var(--noti);
-    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  }
-
   /* ── PHOTO UPLOAD ────────────────────────────────────────── */
-  .photo-hint {
-    font-size: 12px; color: var(--muted); font-weight: 500;
-    margin-top: 8px;
-  }
   .photo-row {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    margin-top: 6px;
   }
   .photo-slot {
     aspect-ratio: 1;
-    background: var(--slate-50);
+    background: var(--off);
     border: 1.5px dashed var(--line);
-    border-radius: var(--r-lg);
+    border-radius: 8px;
     position: relative;
     overflow: hidden;
     display: flex; align-items: center; justify-content: center;
     transition: border-color 0.15s;
   }
-  .photo-slot:hover { border-color: var(--slate-400); }
+  .photo-slot:hover { border-color: var(--dim); }
   .photo-slot.has-photo { border-style: solid; border-color: var(--line); }
   .photo-slot.uploading::after {
     content: 'Uploading…'; position: absolute; inset: 0;
-    background: rgba(15, 23, 42, 0.7); color: #fff;
+    background: rgba(15, 23, 42, 0.7); color: var(--white);
     display: flex; align-items: center; justify-content: center;
     font-size: 11px; font-weight: 500;
   }
-  .photo-slot svg { color: var(--slate-400); width: 22px; height: 22px; }
+  .photo-plus {
+    font-size: 22px; font-weight: 300; color: var(--dim);
+    line-height: 1;
+  }
   .photo-slot img {
     position: absolute; inset: 0;
     width: 100%; height: 100%; object-fit: cover;
@@ -379,79 +313,87 @@
     opacity: 0; cursor: pointer;
   }
   .photo-input:disabled { cursor: not-allowed; }
+  .photo-remove {
+    position: absolute; top: 4px; right: 4px;
+    width: 22px; height: 22px;
+    background: rgba(15, 23, 42, 0.75);
+    color: var(--white);
+    border: none;
+    border-radius: 50%;
+    font-size: 11px; font-weight: 600;
+    cursor: pointer;
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 2;
+  }
+  .photo-slot.has-photo .photo-remove { display: flex; }
+  .photo-hint {
+    font-size: 12px; color: var(--muted); font-weight: 500;
+    margin-top: 8px;
+  }
   .job-photos {
     margin-top: 12px;
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
   }
   .job-photo {
     width: 100%; aspect-ratio: 1; object-fit: cover;
-    border-radius: var(--r-lg); border: 1px solid var(--line);
+    border-radius: 8px; border: 1px solid var(--line);
   }
 
   /* ── QUOTE / OFFER CARDS ─────────────────────────────────── */
+  /* Two markups share .quote-item:
+     JOB type: vertical stack (inner grid + nWrap + button)
+     QUOTE type: horizontal — initial sits next to .quote-info via flex */
   .quote-list { display: flex; flex-direction: column; gap: 10px; }
   .quote-item {
     padding: 14px;
     border: 1px solid var(--line);
-    border-radius: var(--r-xl);
-    background: var(--surface);
+    border-radius: 12px;
+    background: var(--white);
+    display: flex;
+    flex-direction: column;
     transition: border-color 0.15s;
   }
-  .quote-item:hover { border-color: var(--slate-400); }
-  .quote-item.premium {
-    border-color: var(--noti);
+  .quote-item:hover { border-color: var(--dim); }
+  .quote-item.premium-card {
+    border-color: var(--orange);
     background: var(--noti-light);
   }
-
-  .quote-header {
-    display: grid; grid-template-columns: auto 1fr auto;
-    gap: 12px; align-items: start;
+  /* QUOTE-type: when .quote-info exists, lay initial + info side by side */
+  .quote-item:has(.quote-info) {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 14px;
   }
   .quote-initial {
     width: 40px; height: 40px;
     border-radius: 50%;
     background: var(--slate-100);
-    color: var(--slate-700);
+    color: #334155;
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; font-weight: 600;
     letter-spacing: 0.02em; flex-shrink: 0;
   }
-  .quote-item.premium .quote-initial {
-    background: var(--noti); color: #fff;
-  }
-  .quote-info { min-width: 0; }
+  .quote-info { flex: 1; min-width: 0; }
   .quote-name {
     font-size: 14px; font-weight: 600;
-    color: var(--text); letter-spacing: -0.01em;
+    color: var(--black); letter-spacing: -0.01em;
     margin-bottom: 2px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .quote-name .pro-tag {
-    display: inline-block; margin-left: 6px;
-    font-size: 9px; font-weight: 600;
-    letter-spacing: 0.06em; text-transform: uppercase;
-    background: var(--noti); color: #fff;
-    padding: 2px 6px; border-radius: var(--r-md);
-    vertical-align: 1px;
   }
   .quote-eta {
     font-size: 12px; color: var(--muted); font-weight: 500;
     margin-bottom: 2px;
   }
-  .quote-rating { color: var(--amber-600); font-weight: 600; }
   .quote-price {
     font-size: 18px; font-weight: 600;
-    letter-spacing: -0.02em; color: var(--text);
+    letter-spacing: -0.02em; color: var(--black);
     text-align: right; white-space: nowrap;
   }
   .quote-call {
-    display: inline-flex; align-items: center; gap: 4px;
-    margin-top: 6px;
-    font-size: 14px; font-weight: 600;
-    color: var(--noti); text-decoration: none;
-    padding: 6px 10px; background: var(--noti-light);
-    border-radius: var(--r-md);
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 14px; font-weight: 600;
+    color: var(--orange);
+    margin-top: 4px;
   }
 
   /* ── TRADIE BLOCK (accepted confirmation) ────────────────── */
@@ -461,24 +403,29 @@
     padding: 14px;
     background: var(--emerald-50);
     border: 1px solid var(--emerald-200);
-    border-radius: var(--r-xl);
+    border-radius: 12px;
     margin-bottom: 14px;
   }
   .tradie-initial {
     width: 48px; height: 48px;
     border-radius: 50%;
-    background: var(--emerald-600); color: #fff;
+    background: var(--green); color: var(--white);
     display: flex; align-items: center; justify-content: center;
     font-size: 16px; font-weight: 600;
   }
-  .tradie-name { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
-  .tradie-meta { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+  .tradie-name {
+    font-size: 16px; font-weight: 600;
+    letter-spacing: -0.01em; color: var(--black);
+  }
+  .tradie-meta {
+    font-size: 12px; color: var(--muted); font-weight: 500;
+    margin-top: 2px;
+  }
   .tradie-phone {
     margin-top: 4px;
     font-size: 14px; font-weight: 600;
-    color: var(--emerald-600);
+    color: var(--green);
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-    text-decoration: none;
   }
 
   /* ── STARS (review) ──────────────────────────────────────── */
@@ -489,47 +436,40 @@
   .star {
     background: none; border: none;
     font-size: 30px; line-height: 1;
-    color: var(--slate-200); cursor: pointer;
+    color: var(--line); cursor: pointer;
     transition: color 0.15s, transform 0.1s;
     padding: 6px;
   }
   .star:hover { transform: scale(1.1); }
   .star:active { transform: scale(0.95); }
-  .star.on { color: var(--amber-600); }
+  .star.on { color: #d97706; }
 
   /* ── ANIMATIONS ──────────────────────────────────────────── */
-  .animate { opacity: 0; transform: translateY(6px); animation: in 0.4s ease-out forwards; }
+  .animate { opacity: 0; transform: translateY(6px); animation: in 0.4s var(--ease) forwards; }
   .d1 { animation-delay: 0.06s; }
   .d2 { animation-delay: 0.12s; }
   .d3 { animation-delay: 0.18s; }
-  @keyframes in {
-    to { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes in { to { opacity: 1; transform: translateY(0); } }
 
   /* ── FOOTER ──────────────────────────────────────────────── */
   .footer {
     text-align: center;
     font-size: 18px; font-weight: 700;
     letter-spacing: -0.03em;
-    color: var(--slate-200);
+    color: var(--line);
     margin-top: 40px;
+    padding: 0 0 8px;
   }
-  .footer em { color: var(--noti); font-style: normal; }
-  .support-link {
-    text-align: center; padding: 10px 0 0;
-    font-size: 12px; font-weight: 500; color: var(--muted);
-  }
-  .support-link a { color: var(--muted); text-decoration: none; }
+  .footer em { color: var(--orange); font-style: normal; }
 
-  /* ── RESPONSIVE ──────────────────────────────────────────── */
+  /* ── RESPONSIVE (desktop centred) ────────────────────────── */
   @media (min-width: 560px) {
     body { background: var(--slate-100); }
-    .topbar, .page { max-width: 480px; margin-left: auto; margin-right: auto; }
-    .topbar, .hero, .section, .waiting-block, .timer, .notice-wrap, .btn-wrap {
+    .shell, .topbar, .page {
       max-width: 480px; margin-left: auto; margin-right: auto;
     }
-    .page {
-      min-height: 100vh; background: var(--surface);
+    .shell {
+      min-height: 100vh; background: var(--white);
       box-shadow: 0 0 0 1px var(--line), 0 10px 40px rgba(15, 23, 42, 0.06);
     }
   }
@@ -538,64 +478,67 @@
 <body>
 
 <div class="topbar">
-  <div class="brand">noti<span class="dot">.</span></div>
+  <div class="logo">noti<em>.</em></div>
   <div class="topbar-tag" id="topTag"></div>
 </div>
 
-<div class="page" id="page">
-  <div class="waiting-block">
-    <div class="waiting-icon"><div class="waiting-icon-dot"></div></div>
-    <div class="waiting-title">Loading</div>
-    <div class="waiting-sub">Just a moment…</div>
+<div class="shell">
+  <div class="page" id="page">
+    <div class="loading-page">
+      <div class="loader"></div>
+      <div class="loading-label">Loading</div>
+    </div>
   </div>
 </div>
 
 <script>
 // ─── CONFIG ───────────────────────────────────────────────
 const API = "https://noti-api.ancient-bread-01fe.workers.dev";
-let _data = null;
 
 // ─── URL PARSING ──────────────────────────────────────────
-const params = new URLSearchParams(location.search);
-const jobId  = params.get("jobId");
-const token  = params.get("t");
-const tag    = document.getElementById("topTag");
+// Cloudflare rewrites /job/JN10001/token → /jobs.html?jobId=JN10001&t=token
+// So we always read from query string. Path parsing kept as fallback only.
+const QS    = new URLSearchParams(location.search);
+const parts = location.pathname.split("/").filter(Boolean);
 
-if (!jobId || !token) {
-  err("Invalid link. Please check your SMS.");
-  throw new Error("Missing params");
-}
+let jobId = QS.get("jobId") || QS.get("id") || "";
+let token = QS.get("t") || "";
+
+// Path fallback (direct access without Cloudflare rewrite)
+if (!jobId && parts[0] === "job") { jobId = parts[1] || ""; token = parts[2] || ""; }
+
+let _data = null;
 
 // ─── HELPERS ──────────────────────────────────────────────
-function esc(s) { return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-function fmt(s) { return String(s||"").trim(); }
-function ini(name) {
-  const parts = fmt(name).split(/\s+/).filter(Boolean);
-  return (parts[0]?.[0]||"") + (parts[1]?.[0]||"") || "?";
-}
+const esc = v => String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const fmt = v => String(v||"").trim();
+const ini = n => (n||"?").trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+const tag = document.getElementById("topTag");
 
 // ─── API ──────────────────────────────────────────────────
 async function api(payload) {
-  const res = await fetch(`${API}/job/action`, {
-    method:  "POST",
-    headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ jobId, t:token, ...payload })
+  const r = await fetch(`${API}/job/action`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jobId, token, t: token, ...payload })
   });
-  return JSON.parse(await res.text());
+  return JSON.parse(await r.text());
 }
 
 async function load() {
+  if (!jobId || !token) { err("This link is missing information."); return; }
   try {
-    const r = await api({ action:"load" });
-    if (!r.success) { err(r.message||"Could not load this job."); return; }
-    _data = r;
-    route(r);
-  } catch(e) { err("Connection issue. Try again in a moment."); }
+    const r    = await fetch(`${API}/job/${encodeURIComponent(jobId)}/${encodeURIComponent(token)}`);
+    const data = JSON.parse(await r.text());
+    if (!data.success) { err(data.message || "This link is invalid or expired."); return; }
+    _data = data;
+    route(data);
+  } catch(e) { err("Could not load this job. Please try again."); }
 }
 
 // ─── ROUTER ───────────────────────────────────────────────
 function route(d) {
-  if (d.role === "tradie_locked")     { showLocked(); return; }
+  if (d.role === "tradie_locked") { showLocked(); return; }
   if (d.role === "specialist")        { showTradie(d); return; }
   showCustomer(d);
 }
@@ -605,9 +548,9 @@ function stageMeta(s) {
   const m = {
     NEW:                    ["live",   "Confirm your job"],
     DRAFT:                  ["live",   "Confirm your job"],
-    SENT_TO_TRADIES:        ["pulse",  "Finding specialists"],
+    SENT_TO_TRADIES:        ["pulse",  "Finding tradies"],
     AWAITING_CUSTOMER:      ["moving", "Offer ready"],
-    AWAITING_TRADIE_DETAILS:["moving", "Specialist responding"],
+    AWAITING_TRADIE_DETAILS:["moving", "Tradie responding"],
     ACCEPTED:               ["done",   "Confirmed"],
     CLOSED:                 ["done",   "Complete"],
     QUOTE_OPEN:             ["pulse",  "Quotes open"],
@@ -626,7 +569,7 @@ function heroHtml(eyebrow, title, sub, stage) {
       ${sub ? `<div class="hero-sub">${esc(sub)}</div>` : ""}
       <div class="hero-status">
         <div class="status-dot ${dotCls}"></div>
-        ${esc(stageLabel)}
+        <div class="status-label">${esc(stageLabel)}</div>
       </div>
     </div>`;
 }
@@ -647,50 +590,52 @@ function showCustomer(d) {
 // ── CONFIRM ───────────────────────────────────────────────
 function showConfirm(job, loc, returning) {
   render(`
-    ${heroHtml(returning ? "Welcome back" : "Confirm your job", job.description||"Your request", loc, "NEW")}
+    ${heroHtml("Your job", job.description || "New job", loc, "NEW")}
     <div class="section animate d1">
-      <div class="section-label">Your details</div>
+      ${returning ? '<div class="notice hi" style="margin-bottom:16px;">Your details are pre-filled from last time.</div>' : ""}
+      <div class="section-label">Confirm details</div>
       <div class="field">
         <label class="field-label">Your name</label>
-        <input id="cName" value="${esc(job.name||'')}" placeholder="First and last name" autocomplete="name" />
+        <input id="cName" value="${esc(job.name||"")}" placeholder="First and last name" />
       </div>
       <div class="field">
-        <label class="field-label">What do you need done?</label>
-        <textarea id="cDesc" placeholder="Describe the job">${esc(job.description||'')}</textarea>
+        <label class="field-label">Description</label>
+        <textarea id="cDesc">${esc(job.description||"")}</textarea>
       </div>
-      <div class="field field-row">
-        <div>
+      <div class="field-row">
+        <div class="field">
           <label class="field-label">Suburb</label>
-          <input id="cSuburb" value="${esc(job.suburb||'')}" autocomplete="address-level2" />
+          <input id="cSuburb" value="${esc(job.suburb||"")}" />
         </div>
-        <div>
+        <div class="field">
           <label class="field-label">Postcode</label>
-          <input id="cPostcode" value="${esc(job.postcode||'')}" inputmode="numeric" autocomplete="postal-code" />
+          <input id="cPostcode" value="${esc(job.postcode||"")}" />
         </div>
       </div>
       <div class="field">
-        <label class="field-label">Street address</label>
-        <input id="cAddr" value="${esc(job.address||'')}" placeholder="42 Smith Street" autocomplete="street-address" />
+        <label class="field-label">Address</label>
+        <input id="cAddr" value="${esc(job.address||"")}" placeholder="42 Smith Street" />
       </div>
-    </div>
-    <div class="section animate d2">
-      <div class="section-label">Photos <span style="font-weight:500;color:var(--slate-400);text-transform:none;letter-spacing:0;">· Optional</span></div>
-      <div class="photo-row" id="photoRow">
-        ${[0,1,2].map(i => `
-          <div class="photo-slot" id="slot${i}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
-            <input type="file" class="photo-input" accept="image/*" data-index="${i}" ${i > 0 ? 'disabled' : ''} />
-          </div>
-        `).join('')}
+      <div class="field" style="margin-top:20px;">
+        <label class="field-label">Photos (optional)</label>
+        <div class="photo-row" id="photoRow">
+          ${[1,2,3].map(i => `
+            <div class="photo-slot" id="slot${i}">
+              <input type="file" class="photo-input" data-index="${i}" accept="image/*" ${i>1?'disabled':''} />
+              <div class="photo-plus">+</div>
+              <button class="photo-remove" data-index="${i}" type="button">✕</button>
+            </div>`).join('')}
+        </div>
+        <div class="photo-hint">Add photos to help the tradie understand the job</div>
       </div>
-      <div class="photo-hint">Photos help specialists understand the job faster.</div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
-    <div class="btn-wrap animate d3">
-      <button class="btn btn-primary" id="submitBtn">Find a specialist</button>
+    <div class="btn-wrap animate d2">
+      <button class="btn btn-black" id="submitBtn">Find specialists</button>
     </div>
   `);
 
+  // Initialise photo upload slots
   initPhotoUpload();
 
   get("submitBtn").onclick = async () => {
@@ -698,15 +643,15 @@ function showConfirm(job, loc, returning) {
     if (!get("cName").value.trim())   { note(n,"Please enter your name.","err"); return; }
     if (!get("cAddr").value.trim())   { note(n,"Please enter your address.","err"); return; }
     if (!get("cSuburb").value.trim()) { note(n,"Please enter your suburb.","err"); return; }
-    disable(btn, "Sending…");
+    disable(btn, "Sending...");
     try {
       const r1 = await api({ action:"update_job", name:get("cName").value, description:get("cDesc").value, suburb:get("cSuburb").value, postcode:get("cPostcode").value, address:get("cAddr").value });
-      if (!r1.success) { note(n, r1.message||"Update failed", "err"); enable(btn,"Find a specialist"); return; }
+      if (!r1.success) { note(n, r1.message||"Update failed", "err"); enable(btn,"Find specialists"); return; }
       const r2 = await api({ action:"submit_job" });
-      if (!r2.success) { note(n, r2.message||"Could not send", "err"); enable(btn,"Find a specialist"); return; }
+      if (!r2.success) { note(n, r2.message||"Could not send", "err"); enable(btn,"Find specialists"); return; }
       btn.textContent = "Sent";
       setTimeout(load, 900);
-    } catch(e) { note(n,"Something went wrong.","err"); enable(btn,"Find a specialist"); }
+    } catch(e) { note(n,"Something went wrong.","err"); enable(btn,"Find specialists"); }
   };
 }
 
@@ -725,13 +670,11 @@ function showWaiting(job, stage, loc) {
       <div class="waiting-icon">
         <div class="waiting-icon-dot"></div>
       </div>
-      <div class="waiting-title">Finding specialists nearby</div>
-      <div class="waiting-sub">Specialists in your area are being notified.<br>We'll send an SMS as soon as one responds.</div>
+      <div class="waiting-title">Finding tradies nearby</div>
+      <div class="waiting-sub">Tradies in your area are being notified.<br>You will get an SMS as soon as one responds.</div>
       ${secsLeft > 0 ? `
-        <div class="big-countdown">
-          <div class="big-countdown-label">Responses close in</div>
-          <div id="custCountdown" class="big-countdown-val">${mins}:${secs}</div>
-        </div>` : ''}
+      <div style="margin-top:24px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Responses close in</div>
+      <div id="custCountdown" style="font-size:40px;font-weight:800;letter-spacing:-0.04em;color:var(--orange);margin-top:4px;">${mins}:${secs}</div>` : ''}
     </div>
   `);
 
@@ -752,42 +695,43 @@ function showWaiting(job, stage, loc) {
 }
 
 // ── OFFER CARDS — JOB type ────────────────────────────────
-// Customer sees all responding specialists as cards and picks one
+// Customer sees all responding tradies as cards and picks one
 function showOfferCards(job, cards, loc) {
   const hasCards = cards && cards.length > 0;
 
   const cardHtml = hasCards ? cards.map((c, i) => {
     const isPremium  = c.premium && c.verified;
     const initials   = ini(c.name);
-    const price      = c.price ? `$${parseFloat(c.price).toFixed(2)}` : '—';
-    const eta        = c.eta   ? esc(c.eta) : 'ASAP';
+    const price      = c.price  ? `$${esc(String(c.price))}` : '—';
+    const eta        = c.eta    ? esc(c.eta) : 'ASAP';
     const rating     = c.rating ? `${parseFloat(c.rating).toFixed(1)} ★` : '';
 
     return `
-      <div class="quote-item${isPremium ? ' premium' : ''}">
-        <div class="quote-header">
-          <div class="quote-initial">${initials}</div>
-          <div class="quote-info">
-            <div class="quote-name">${esc(c.name)}${isPremium ? '<span class="pro-tag">Verified</span>' : ''}</div>
-            ${rating ? `<div class="quote-eta"><span class="quote-rating">${rating}</span></div>` : ''}
-            <div class="quote-eta">Can arrive in ${eta}</div>
+      <div class="quote-item${isPremium ? ' premium-card' : ''}" style="${isPremium ? 'border:2px solid var(--orange);background:#FFFBF4;' : ''}">
+        ${isPremium ? `<div style="font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--orange);margin-bottom:8px;">Verified Premium</div>` : ''}
+        <div style="display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;">
+          <div class="quote-initial" style="${isPremium ? 'background:var(--orange);color:var(--black);' : ''}">${initials}</div>
+          <div>
+            <div class="quote-name">${esc(c.name)}</div>
+            ${rating ? `<div class="quote-eta">${rating}</div>` : ''}
+            <div class="quote-eta">${eta}</div>
           </div>
           <div class="quote-price">${price}</div>
         </div>
-        <div id="nWrap${i}" style="margin-top:10px;"></div>
-        <button class="btn btn-primary" style="margin-top:12px;" onclick="acceptTradie('${esc(c.tradie_id)}',${i})">Choose ${esc(c.name.split(' ')[0] || 'specialist')}</button>
+        <div id="nWrap${i}" style="margin-top:8px;"></div>
+        <button class="btn btn-black" style="margin-top:12px;padding:14px;" onclick="acceptTradie('${esc(c.tradie_id)}',${i})">Choose this tradie</button>
       </div>`;
   }).join('') : `
-    <div class="waiting-block" style="margin:0;">
+    <div class="waiting-block">
       <div class="waiting-icon"><div class="waiting-icon-dot"></div></div>
-      <div class="waiting-title">Waiting for offers</div>
-      <div class="waiting-sub">Specialists are reviewing your job.<br>This page will update automatically.</div>
+      <div class="waiting-title">Waiting for responses</div>
+      <div class="waiting-sub">Tradies are reviewing your job.<br>This page will update automatically.</div>
     </div>`;
 
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, "AWAITING_CUSTOMER")}
     <div class="section animate d1">
-      ${hasCards ? `<div class="section-label">${cards.length} offer${cards.length !== 1 ? 's' : ''} — pick one</div>` : ''}
+      ${hasCards ? `<div class="section-label">${cards.length} tradie${cards.length !== 1 ? 's' : ''} responded</div>` : ''}
       <div class="quote-list">${cardHtml}</div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
@@ -797,25 +741,19 @@ function showOfferCards(job, cards, loc) {
 }
 
 window.acceptTradie = async function(tradieId, idx) {
-  const btns = document.querySelectorAll('.quote-item .btn');
-  const btn  = btns[idx];
-  const n    = get('nWrap' + idx) || get('nWrap');
-  btns.forEach(b => b.disabled = true);
-  if (btn) btn.textContent = 'Confirming…';
+  const btn = document.querySelectorAll('.quote-item .btn')[idx];
+  const n   = get('nWrap' + idx) || get('nWrap');
+  if (btn) { btn.disabled = true; btn.textContent = 'Confirming...'; }
   try {
     const r = await api({ action:'accept', tradie_id: tradieId });
     if (!r.success) {
-      btns.forEach((b, i) => {
-        b.disabled = false;
-      });
-      if (btn) btn.textContent = 'Choose this specialist';
+      if (btn) { btn.disabled = false; btn.textContent = 'Choose this tradie'; }
       note(n, r.message || 'Something went wrong.', 'err');
       return;
     }
     setTimeout(load, 600);
   } catch(e) {
-    btns.forEach(b => b.disabled = false);
-    if (btn) btn.textContent = 'Choose this specialist';
+    if (btn) { btn.disabled = false; btn.textContent = 'Choose this tradie'; }
     note(n, 'Something went wrong.', 'err');
   }
 };
@@ -826,56 +764,57 @@ function showQuoteCards(job, cards, loc) {
   const list = cards.length ? cards.map(c => {
     const isPremium = c.premium && c.verified;
     return `
-      <div class="quote-item${isPremium ? ' premium' : ''}">
-        <div class="quote-header">
-          <div class="quote-initial">${ini(c.name)}</div>
-          <div class="quote-info">
-            <div class="quote-name">${esc(c.name)}${isPremium ? '<span class="pro-tag">Verified</span>' : ''}</div>
-            ${c.eta   ? `<div class="quote-eta">${esc(c.eta)}</div>` : ''}
-            ${c.phone ? `<a class="quote-call" href="tel:${esc(c.phone)}">📞 ${esc(c.phone)}</a>` : ''}
+      <div class="quote-item" style="${isPremium ? 'border-left:3px solid var(--orange);' : ''}">
+        <div class="quote-initial" style="${isPremium ? 'background:var(--orange);color:var(--black);' : ''}">${ini(c.name)}</div>
+        <div class="quote-info">
+          <div class="quote-name">
+            ${esc(c.name)}
+            ${isPremium ? `<span style="margin-left:6px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--orange);color:var(--black);padding:2px 6px;">Verified</span>` : ''}
           </div>
-          ${c.price ? `<div class="quote-price">$${parseFloat(c.price).toFixed(2)}</div>` : ''}
+          ${c.eta   ? `<div class="quote-eta">${esc(c.eta)}</div>` : ''}
+          ${c.price ? `<div class="quote-eta">$${esc(String(c.price))}</div>` : ''}
+          <div class="quote-call">${esc(c.phone)}</div>
         </div>
       </div>`;
-  }).join('') : `<div class="waiting-block" style="margin:0;"><div class="waiting-title">No quotes yet</div><div class="waiting-sub">We'll keep you updated.</div></div>`;
+  }).join('') : `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">No quotes yet</div>`;
 
   render(`
-    ${heroHtml("Your quote", job.description||"Your job", loc, "QUOTE_LOCKED")}
+    ${heroHtml("Your job", job.description||"Your job", loc, "QUOTE_LOCKED")}
     <div class="section animate d1">
-      <div class="section-label">${cards.length} specialist${cards.length !== 1 ? 's' : ''} responded</div>
+      <div class="section-label">${cards.length} tradie${cards.length !== 1 ? 's' : ''} responded</div>
       <div class="quote-list">${list}</div>
     </div>
     <div class="notice-wrap animate d2">
-      <div class="notice hi">Call the specialist you prefer to arrange a time.</div>
+      <div class="notice hi">Call the tradie you prefer to arrange a time.</div>
     </div>
   `);
 }
 
 // ── ACCEPTED ──────────────────────────────────────────────
 function showAccepted(job, tradie, allowRating, loc) {
-  const name  = tradie ? fmt(tradie.name)  : "Your specialist";
+  const name  = tradie ? fmt(tradie.name)  : "Your tradie";
   const phone = tradie ? fmt(tradie.phone) : "";
 
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, "ACCEPTED")}
     <div class="section animate d1">
-      <div class="section-label">Confirmed specialist</div>
+      <div class="section-label">Your confirmed tradie</div>
       <div class="tradie-block">
         <div class="tradie-initial">${esc(ini(name))}</div>
         <div>
           <div class="tradie-name">${esc(name)}</div>
-          ${tradie && tradie.rating ? `<div class="tradie-meta">${parseFloat(tradie.rating).toFixed(1)} ★ rating</div>` : ""}
-          ${phone ? `<a class="tradie-phone" href="tel:${esc(phone)}">${esc(phone)}</a>` : ""}
+          ${tradie && tradie.rating ? `<div class="tradie-meta">${parseFloat(tradie.rating).toFixed(1)} ★</div>` : ""}
+          ${phone ? `<div class="tradie-phone">${esc(phone)}</div>` : ""}
         </div>
       </div>
       ${(job.price || job.eta) ? `
         <div class="data-list">
-          ${job.price ? `<div class="data-row"><span class="data-key">Agreed price</span><span class="data-val big">$${parseFloat(job.price).toFixed(2)}</span></div>` : ""}
+          ${job.price ? `<div class="data-row"><span class="data-key">Agreed price</span><span class="data-val" style="font-size:20px;letter-spacing:-0.03em;">$${esc(String(job.price))}</span></div>` : ""}
           ${job.eta   ? `<div class="data-row"><span class="data-key">ETA</span><span class="data-val">${esc(job.eta)}</span></div>` : ""}
         </div>` : ""}
     </div>
     <div class="notice-wrap animate d2">
-      <div class="notice hi">Contact your specialist directly to confirm timing.</div>
+      <div class="notice hi">Contact your tradie directly to confirm timing.</div>
     </div>
     ${allowRating ? `
       <div class="section animate d3" id="rSection">
@@ -884,11 +823,11 @@ function showAccepted(job, tradie, allowRating, loc) {
           ${[1,2,3,4,5].map(n => `<button class="star" data-v="${n}">★</button>`).join("")}
         </div>
         <div class="field">
-          <label class="field-label">Comment <span style="color:var(--slate-400);font-weight:500;">· Optional</span></label>
-          <textarea id="rComment" placeholder="Share more about your experience…"></textarea>
+          <label class="field-label">Comment (optional)</label>
+          <textarea id="rComment"></textarea>
         </div>
         <div id="rNotice" style="margin-bottom:12px;"></div>
-        <button class="btn btn-primary" id="rateBtn" disabled>Submit review</button>
+        <button class="btn btn-black" id="rateBtn" disabled>Submit review</button>
       </div>` : ""}
   `);
 
@@ -906,11 +845,11 @@ function wireStars() {
   }));
   rateBtn.onclick = async () => {
     const n = get("rNotice");
-    disable(rateBtn, "Submitting…");
+    disable(rateBtn, "Submitting...");
     try {
       const r = await api({ action:"rating", rating:sel, comment:get("rComment").value });
       if (!r.success) { note(n,r.message||"Error","err"); enable(rateBtn,"Submit review"); return; }
-      get("rSection").innerHTML = `<div class="notice ok">Thanks for your review — it helps other customers.</div>`;
+      get("rSection").innerHTML = `<div class="notice ok">Thanks for your review.</div>`;
     } catch(e) { note(n,"Something went wrong.","err"); enable(rateBtn,"Submit review"); }
   };
 }
@@ -921,43 +860,42 @@ function showTradie(d) {
   const stage = fmt(d.stage).toUpperCase();
   const loc   = [job.suburb, job.postcode].filter(Boolean).join(" · ");
 
-  // Specialist has already submitted their offer — waiting on customer
+  // Tradie has already submitted their offer — waiting on customer
   if (stage === "AWAITING_CUSTOMER") {
     render(`
-      ${heroHtml("Offer sent", job.description||"Job", loc, "AWAITING_CUSTOMER")}
+      ${heroHtml("Job", job.description||"Job", loc, "AWAITING_CUSTOMER")}
       <div class="waiting-block animate d1">
         <div class="waiting-icon"><div class="waiting-icon-dot"></div></div>
-        <div class="waiting-title">Offer sent — waiting on customer</div>
-        <div class="waiting-sub">You'll get an SMS either way.</div>
+        <div class="waiting-title">Offer sent</div>
+        <div class="waiting-sub">Waiting for the customer to respond.<br>You will get an SMS either way.</div>
       </div>
     `);
     return;
   }
 
-  // Specialist has won — show customer details with address
+  // Tradie has won — show customer details with address
   if (stage === "ACCEPTED") {
     const custPhone = job.customer_phone || '';
     const address   = [job.address_unit ? job.address_unit + '/' : '', job.address, job.suburb, job.postcode].filter(Boolean).join(' ');
     render(`
-      ${heroHtml("You won this job", job.description||"Job", loc, "ACCEPTED")}
+      ${heroHtml("Job confirmed", job.description||"Job", loc, "ACCEPTED")}
       <div class="section animate d1">
         <div class="section-label">Customer details</div>
         <div class="data-list">
           ${job.customer_name ? `<div class="data-row"><span class="data-key">Name</span><span class="data-val">${esc(job.customer_name)}</span></div>` : ''}
-          ${custPhone ? `<div class="data-row"><span class="data-key">Mobile</span><a class="data-val mono" href="tel:${esc(custPhone)}" style="color:var(--noti);text-decoration:none;">${esc(custPhone)}</a></div>` : ''}
+          ${custPhone ? `<div class="data-row"><span class="data-key">Mobile</span><span class="data-val" style="color:var(--orange);">${esc(custPhone)}</span></div>` : ''}
           ${address ? `<div class="data-row"><span class="data-key">Address</span><span class="data-val">${esc(address)}</span></div>` : ''}
-          ${job.price ? `<div class="data-row"><span class="data-key">Your price</span><span class="data-val big">$${parseFloat(job.price).toFixed(2)}</span></div>` : ''}
-          ${job.eta   ? `<div class="data-row"><span class="data-key">ETA quoted</span><span class="data-val">${esc(job.eta)}</span></div>` : ''}
         </div>
       </div>
       <div class="notice-wrap animate d2">
-        <div class="notice ok">You're confirmed. Contact the customer to arrange access.</div>
+        <div class="notice ok">You are confirmed. Contact your customer to arrange access.</div>
       </div>
     `);
     return;
   }
 
-  // Specialist sees job and submits price + ETA
+  // Tradie sees job and submits price + ETA
+  // Calculate countdown from job created time
   const windowMins  = job.job_type === "QUOTE" ? 60 : 10;
   const createdAt   = job.created_at ? new Date(job.created_at).getTime() : Date.now();
   const expiresAt   = createdAt + (windowMins * 60 * 1000);
@@ -967,42 +905,39 @@ function showTradie(d) {
   render(`
     ${heroHtml("New job", job.description||"New job", loc, "SENT_TO_TRADIES")}
     ${job.job_type === "JOB" ? `
-      <div class="timer animate d1">
-        <div>
-          <div class="timer-label">${isExpired ? 'Window closed' : 'Time to respond'}</div>
-          ${!isExpired ? `<div class="timer-sub">Quote fast to win this job</div>` : ''}
-        </div>
-        <div id="countdown" class="timer-val ${isExpired ? 'expired' : ''}">
-          ${isExpired ? '0:00' : Math.floor(secsLeft/60)+':'+String(secsLeft%60).padStart(2,'0')}
-        </div>
-      </div>` : ''}
-    <div class="section animate d2">
+    <div style="background:${isExpired ? 'var(--off)' : '#0C0C0C'};padding:20px 24px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${isExpired ? 'var(--muted)' : 'var(--muted)'};">
+        ${isExpired ? 'Window closed' : 'Time to respond'}
+      </div>
+      <div id="countdown" style="font-size:32px;font-weight:800;letter-spacing:-0.04em;color:${isExpired ? 'var(--muted)' : 'var(--orange)'};">
+        ${isExpired ? '0:00' : Math.floor(secsLeft/60)+':'+String(secsLeft%60).padStart(2,'0')}
+      </div>
+    </div>` : ''}
+    <div class="section animate d1">
       <div class="section-label">Job details</div>
       <div class="data-list">
         <div class="data-row"><span class="data-key">Location</span><span class="data-val">${esc(loc || 'Not specified')}</span></div>
-        <div class="data-row"><span class="data-key">Type</span><span class="data-val">${job.job_type === "QUOTE" ? 'Quote · 60 min window' : 'Job · be quick'}</span></div>
+        ${job.job_type === "QUOTE" ? `<div class="data-row"><span class="data-key">Type</span><span class="data-val">Quote — 60 min window</span></div>` : `<div class="data-row"><span class="data-key">Type</span><span class="data-val">Job — be quick</span></div>`}
       </div>
       ${job.photo_urls && job.photo_urls.length ? `
         <div class="job-photos">
           ${job.photo_urls.map(u => `<img class="job-photo" src="${esc(u)}" />`).join('')}
         </div>` : ''}
     </div>
-    <div class="section animate d3">
+    <div class="section animate d2">
       <div class="section-label">Your offer</div>
-      <div class="field field-row">
-        <div>
-          <label class="field-label">Your price ($)</label>
-          <input id="tPrice" type="number" inputmode="decimal" placeholder="280" />
-        </div>
-        <div>
-          <label class="field-label">When?</label>
-          <input id="tEta" placeholder="30 min" />
-        </div>
+      <div class="field">
+        <label class="field-label">Your price ($)</label>
+        <input id="tPrice" type="number" inputmode="decimal" placeholder="e.g. 280" />
+      </div>
+      <div class="field">
+        <label class="field-label">When can you be there?</label>
+        <input id="tEta" placeholder="e.g. 30 mins  ·  Tomorrow 2pm" />
       </div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
     <div class="btn-wrap animate d3">
-      <button class="btn btn-primary" id="quoteBtn">Send offer to customer</button>
+      <button class="btn btn-black" id="quoteBtn">Send offer to customer</button>
     </div>
   `);
 
@@ -1015,14 +950,15 @@ function showTradie(d) {
       if (!el) { clearInterval(tick); return; }
       if (secs <= 0) {
         el.textContent = '0:00';
-        el.className = 'timer-val expired';
+        el.style.color = 'var(--muted)';
         clearInterval(tick);
         return;
       }
       const mins = Math.floor(secs / 60);
       const s    = String(secs % 60).padStart(2, '0');
       el.textContent = `${mins}:${s}`;
-      if (secs <= 120) el.className = 'timer-val urgent';
+      // Turn red in last 2 minutes
+      if (secs <= 120) el.style.color = 'var(--red)';
     }, 1000);
   }
 
@@ -1032,11 +968,11 @@ function showTradie(d) {
     const eta   = get("tEta").value.trim();
     if (!price) { note(n,"Please enter your price.","err"); return; }
     if (!eta)   { note(n,"Please enter when you can be there.","err"); return; }
-    disable(btn,"Sending…");
+    disable(btn,"Sending...");
     try {
       const r = await api({ action:"quote", price, eta });
       if (!r.success) { note(n,r.message||"Error","err"); enable(btn,"Send offer to customer"); return; }
-      note(n,"Offer sent. We'll text you when the customer responds.","ok");
+      note(n,"Offer sent. You will get an SMS when the customer responds.","ok");
       btn.textContent = "Offer sent";
       btn.disabled    = true;
     } catch(e) { note(n,"Something went wrong.","err"); enable(btn,"Send offer to customer"); }
@@ -1049,13 +985,13 @@ function showLocked() {
   render(`
     <div class="hero animate">
       <div class="hero-kicker">Job status</div>
-      <div class="hero-title">This one went to another specialist</div>
-      <div class="hero-status"><div class="status-dot done"></div>Taken</div>
+      <div class="hero-title">This one went to another tradie</div>
+      <div class="hero-status"><div class="status-dot done"></div><div class="status-label">Taken</div></div>
     </div>
     <div class="waiting-block animate d1">
-      <div class="waiting-icon"><div class="waiting-icon-dot" style="background:var(--slate-900);animation:none;"></div></div>
+      <div class="waiting-icon"><div class="waiting-icon-dot" style="background:var(--black);"></div></div>
       <div class="waiting-title">Stay live for the next one</div>
-      <div class="waiting-sub">Jobs move fast. Reply ON to make sure you're active when the next one hits.</div>
+      <div class="waiting-sub">Jobs move fast. Reply ON to make sure you are active when the next one hits.</div>
     </div>
   `);
 }
@@ -1075,9 +1011,7 @@ function err(msg) {
 // ─── DOM UTILS ────────────────────────────────────────────
 function render(html) {
   document.getElementById("page").innerHTML =
-    html +
-    `<div class="footer">noti<em>.</em></div>` +
-    `<div class="support-link"><a href="/support">Need help? Chat with support</a></div>`;
+    html + `<div class="footer">noti<em>.</em></div><div style="text-align:center;padding:0 0 20px;font-size:11px;font-weight:600;color:var(--muted);"><a href="/support" style="color:var(--muted);text-decoration:none;">Need help? Chat with support</a></div>`;
 }
 
 function get(id) { return document.getElementById(id); }

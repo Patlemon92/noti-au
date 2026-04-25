@@ -399,7 +399,39 @@
   .job-photo {
     width: 100%; aspect-ratio: 1; object-fit: cover;
     border-radius: 8px; border: 1px solid var(--line);
+    cursor: pointer;
+    transition: transform 0.12s, opacity 0.12s;
+    -webkit-touch-callout: none; /* disable iOS long-press menu */
   }
+  .job-photo:active { transform: scale(0.97); opacity: 0.85; }
+
+  /* ── PHOTO LIGHTBOX ──────────────────────────────────────── */
+  .lb-overlay {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(15, 23, 42, 0.94);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .lb-overlay.active { opacity: 1; pointer-events: auto; }
+  .lb-img {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  .lb-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.15);
+    border: none; border-radius: 50%;
+    color: var(--white);
+    font-size: 22px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .lb-close:hover { background: rgba(255,255,255,0.25); }
 
   /* ── QUOTE / OFFER CARDS ─────────────────────────────────── */
   /* Two markups share .quote-item:
@@ -458,6 +490,35 @@
     text-decoration: none;
   }
   .quote-call:active { opacity: 0.7; }
+  .quote-note {
+    margin-top: 10px; padding-top: 10px;
+    border-top: 1px solid var(--line);
+    font-size: 13px; color: var(--dim);
+    line-height: 1.45;
+    font-style: italic;
+    word-wrap: break-word;
+  }
+
+  /* Customer's longer note shown to tradie before they quote */
+  .customer-note {
+    margin-top: 14px;
+    padding: 14px;
+    background: var(--off);
+    border-left: 3px solid var(--orange);
+    border-radius: 8px;
+  }
+  .customer-note-label {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .customer-note-body {
+    font-size: 14px; color: var(--black);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
 
   /* ── TRADIE BLOCK (accepted confirmation) ────────────────── */
   .tradie-block {
@@ -557,6 +618,12 @@
   </div>
 </div>
 
+<!-- Photo lightbox overlay (hidden by default) -->
+<div class="lb-overlay" id="lbOverlay" onclick="closeLightbox(event)">
+  <img class="lb-img" id="lbImg" src="" alt="" />
+  <button type="button" class="lb-close" onclick="closeLightbox(event)" aria-label="Close">✕</button>
+</div>
+
 <script>
 // ─── CONFIG ───────────────────────────────────────────────
 const API = "https://noti-api.ancient-bread-01fe.workers.dev";
@@ -580,6 +647,29 @@ const esc = v => String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replac
 const fmt = v => String(v||"").trim();
 const ini = n => (n||"?").trim().split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
 const telHref = p => "tel:" + String(p||"").replace(/[^0-9+]/g, "");
+
+// ── PHOTO LIGHTBOX ────────────────────────────────────────
+// Tap a job photo → in-page overlay shows full-size image.
+// Tap outside the image (on the dark backdrop) or the X to close.
+function openLightbox(url) {
+  const ov  = document.getElementById('lbOverlay');
+  const img = document.getElementById('lbImg');
+  if (!ov || !img) return;
+  img.src = url;
+  ov.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox(evt) {
+  // If the click landed directly on the image, don't close — only
+  // close on backdrop or X button. The X has its own onclick that
+  // also calls closeLightbox, but we can detect it via the class.
+  if (evt && evt.target && evt.target.classList.contains('lb-img')) return;
+  const ov = document.getElementById('lbOverlay');
+  if (ov) ov.classList.remove('active');
+  document.body.style.overflow = '';
+}
+window.openLightbox  = openLightbox;
+window.closeLightbox = closeLightbox;
 const tag = document.getElementById("topTag");
 
 // ─── API ──────────────────────────────────────────────────
@@ -650,6 +740,7 @@ function showCustomer(d) {
   if (stage === "NEW" || stage === "DRAFT")       return showConfirm(job, loc, d.returning === true);
   if (stage === "AWAITING_CUSTOMER")               return showOfferCards(job, d.quote_cards||[], loc);
   if (stage === "ACCEPTED" || stage === "CLOSED")  return showAccepted(job, d.tradie, d.allow_rating, loc);
+  if (stage === "QUOTE_OPEN")                      return showQuoteLive(job, d.quote_cards||[], loc);
   if (stage === "QUOTE_LOCKED")                    return showQuoteCards(job, d.quote_cards||[], loc);
   showWaiting(job, stage, loc);
 }
@@ -683,8 +774,12 @@ function showConfirm(job, loc, returning) {
         <input id="cName" value="${esc(job.name||"")}" placeholder="First and last name" />
       </div>
       <div class="field">
-        <label class="field-label">Description</label>
-        <textarea id="cDesc">${esc(job.description||"")}</textarea>
+        <label class="field-label">Job title</label>
+        <input id="cDesc" value="${esc(job.description||"")}" placeholder="e.g. Bathroom reno" maxlength="120" />
+      </div>
+      <div class="field">
+        <label class="field-label">Additional details (optional)</label>
+        <textarea id="cNote" rows="3" maxlength="2000" placeholder="Extra info that helps the tradie quote accurately. e.g. Want to retile the floor, replace the vanity, keep the bath. About 6 sqm.">${esc(job.customer_note||"")}</textarea>
       </div>
       <div class="field-row">
         <div class="field">
@@ -765,6 +860,7 @@ function showConfirm(job, loc, returning) {
         action:      "update_job",
         name:        get("cName").value,
         description: get("cDesc").value,
+        customer_note: (get("cNote")?.value || ''),
         suburb:      get("cSuburb").value,
         postcode:    get("cPostcode").value,
         state:       get("cState").value,
@@ -872,6 +968,7 @@ function showOfferCards(job, cards, loc) {
           </div>
           <div class="quote-price">${price}</div>
         </div>
+        ${c.note ? `<div class="quote-note">${esc(c.note)}</div>` : ''}
         <div id="nWrap${i}" style="margin-top:8px;"></div>
         <button class="btn btn-black" style="margin-top:12px;padding:14px;" onclick="acceptTradie('${esc(c.tradie_id)}',${i})">Choose this tradie</button>
       </div>`;
@@ -912,6 +1009,84 @@ window.acceptTradie = async function(tradieId, idx) {
   }
 };
 
+// ── QUOTE LIVE — QUOTE type, OPEN window ──────────────────
+// Customer sees countdown PLUS quotes as they come in.
+// Auto-refreshes every 15s. When QUOTE_LOCKED hits, the next
+// load will route to showQuoteCards (final view).
+function showQuoteLive(job, cards, loc) {
+  // Time left until quote_lock_time
+  const lockTime  = job.quote_lock_time
+    ? new Date(job.quote_lock_time).getTime()
+    : (job.created_at ? new Date(job.created_at).getTime() + 60*60*1000 : Date.now());
+  const secsLeft  = Math.max(0, Math.floor((lockTime - Date.now()) / 1000));
+  const mins      = Math.floor(secsLeft / 60);
+  const secs      = String(secsLeft % 60).padStart(2, '0');
+
+  const list = cards.length ? cards.map(c => {
+    const isPremium = c.premium && c.verified;
+    return `
+      <div class="quote-item" style="${isPremium ? 'border-left:3px solid var(--orange);' : ''}">
+        <div class="quote-initial" style="${isPremium ? 'background:var(--orange);color:var(--black);' : ''}">${ini(c.name)}</div>
+        <div class="quote-info">
+          <div class="quote-name">
+            ${esc(c.name)}
+            ${isPremium ? `<span style="margin-left:6px;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--orange);color:var(--black);padding:2px 6px;">Verified</span>` : ''}
+          </div>
+          ${c.eta   ? `<div class="quote-eta">${esc(c.eta)}</div>` : ''}
+          ${c.price ? `<div class="quote-eta">$${esc(String(c.price))}</div>` : ''}
+          <a class="quote-call" href="${telHref(c.phone)}">${esc(c.phone)}</a>
+          ${c.note ? `<div class="quote-note">${esc(c.note)}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('') : '';
+
+  // Pad with placeholder for any missing slots (we expect up to 5)
+  const remaining = Math.max(0, 5 - cards.length);
+  const waitingMsg = cards.length === 0
+    ? 'Waiting for tradies to send their quote...'
+    : (remaining > 0 ? `Waiting on up to ${remaining} more` : 'All quotes received');
+
+  render(`
+    ${heroHtml("Your job", job.description||"Your job", loc, "QUOTE_OPEN")}
+    <div style="background:#0C0C0C;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">
+        Quotes close in
+      </div>
+      <div id="qlCountdown" style="font-size:28px;font-weight:600;letter-spacing:-0.02em;color:var(--orange);font-variant-numeric:tabular-nums;">
+        ${mins}:${secs}
+      </div>
+    </div>
+    <div class="section animate d1">
+      <div class="section-label">${cards.length} ${cards.length === 1 ? 'quote' : 'quotes'} so far</div>
+      ${list || `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:500;">No quotes yet — they'll appear here as soon as tradies respond.</div>`}
+      ${cards.length > 0 ? `<div style="padding:14px 0 4px;text-align:center;font-size:12px;color:var(--muted);font-weight:500;">${waitingMsg}</div>` : ''}
+    </div>
+    ${cards.length > 0 ? `
+      <div class="notice-wrap animate d2">
+        <div class="notice hi">Call the tradie you prefer to arrange a time.</div>
+      </div>` : ''}
+  `);
+
+  // Countdown tick
+  const tickEl = document.getElementById('qlCountdown');
+  if (tickEl) {
+    const interval = setInterval(() => {
+      const left = Math.max(0, Math.floor((lockTime - Date.now()) / 1000));
+      if (left === 0) {
+        tickEl.textContent = '0:00';
+        clearInterval(interval);
+        // Reload — server will route us to QUOTE_LOCKED view
+        setTimeout(load, 500);
+        return;
+      }
+      tickEl.textContent = `${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`;
+    }, 1000);
+  }
+
+  // Auto-refresh every 15s to pick up new quotes
+  setTimeout(() => { if (_data && _data.stage === 'QUOTE_OPEN') load(); }, 15000);
+}
+
 // ── QUOTE CARDS — QUOTE type ──────────────────────────────
 // Customer sees all cards with phone numbers and calls directly
 function showQuoteCards(job, cards, loc) {
@@ -928,6 +1103,7 @@ function showQuoteCards(job, cards, loc) {
           ${c.eta   ? `<div class="quote-eta">${esc(c.eta)}</div>` : ''}
           ${c.price ? `<div class="quote-eta">$${esc(String(c.price))}</div>` : ''}
           <a class="quote-call" href="${telHref(c.phone)}">${esc(c.phone)}</a>
+          ${c.note ? `<div class="quote-note">${esc(c.note)}</div>` : ''}
         </div>
       </div>`;
   }).join('') : `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">No quotes yet</div>`;
@@ -1013,6 +1189,39 @@ function showTradie(d) {
   const job   = d.job || {};
   const stage = fmt(d.stage).toUpperCase();
   const loc   = [job.suburb, job.postcode].filter(Boolean).join(" · ");
+  const myDispatch = d.my_dispatch || null;
+  const custContact = d.customer_contact || null;
+
+  // Tradie has already submitted on a QUOTE-type job — show
+  // customer contact details so they can call. Window may still
+  // be open (other tradies still responding) but THIS tradie has
+  // already submitted their price.
+  if (job.job_type === "QUOTE" && stage === "QUOTE_OPEN" && myDispatch && myDispatch.responded) {
+    const cName  = custContact ? esc(custContact.name)  : '';
+    const cPhone = custContact ? custContact.phone : '';
+    render(`
+      ${heroHtml("Quote sent", job.description||"Job", loc, "QUOTE_OPEN")}
+      <div class="section animate d1">
+        <div class="section-label">Customer details</div>
+        <div class="data-list">
+          ${cName  ? `<div class="data-row"><span class="data-key">Name</span><span class="data-val">${cName}</span></div>` : ''}
+          ${cPhone ? `<div class="data-row"><span class="data-key">Mobile</span><a class="data-val" href="${telHref(cPhone)}" style="color:var(--orange);text-decoration:none;">${esc(cPhone)}</a></div>` : ''}
+        </div>
+      </div>
+      ${(myDispatch.my_price || myDispatch.my_eta) ? `
+        <div class="section animate d2">
+          <div class="section-label">Your quote</div>
+          <div class="data-list">
+            ${myDispatch.my_price ? `<div class="data-row"><span class="data-key">Price</span><span class="data-val" style="font-size:18px;font-weight:600;letter-spacing:-0.02em;">$${esc(String(myDispatch.my_price))}</span></div>` : ''}
+            ${myDispatch.my_eta   ? `<div class="data-row"><span class="data-key">When</span><span class="data-val">${esc(myDispatch.my_eta)}</span></div>` : ''}
+          </div>
+        </div>` : ''}
+      <div class="notice-wrap animate d3">
+        <div class="notice ok">Call the customer to discuss the job and arrange a site visit.</div>
+      </div>
+    `);
+    return;
+  }
 
   // Tradie has already submitted their offer — waiting on customer
   if (stage === "AWAITING_CUSTOMER") {
@@ -1086,9 +1295,14 @@ function showTradie(d) {
         <div class="data-row"><span class="data-key">Location</span><span class="data-val">${esc(loc || 'Not specified')}</span></div>
         ${job.job_type === "QUOTE" ? `<div class="data-row"><span class="data-key">Type</span><span class="data-val">Quote — 60 min window</span></div>` : `<div class="data-row"><span class="data-key">Type</span><span class="data-val">Job — be quick</span></div>`}
       </div>
+      ${job.customer_note ? `
+        <div class="customer-note">
+          <div class="customer-note-label">From the customer</div>
+          <div class="customer-note-body">${esc(job.customer_note)}</div>
+        </div>` : ''}
       ${job.photo_urls && job.photo_urls.length ? `
         <div class="job-photos">
-          ${job.photo_urls.map(u => `<img class="job-photo" src="${esc(u)}" />`).join('')}
+          ${job.photo_urls.map(u => `<img class="job-photo" src="${esc(u)}" onclick="openLightbox('${esc(u)}')" />`).join('')}
         </div>` : ''}
     </div>
     <div class="section animate d2">
@@ -1100,6 +1314,10 @@ function showTradie(d) {
       <div class="field">
         <label class="field-label">When can you be there?</label>
         <input id="tEta" placeholder="e.g. 30 mins  ·  Tomorrow 2pm" />
+      </div>
+      <div class="field">
+        <label class="field-label">Note for the customer (optional)</label>
+        <textarea id="tNote" maxlength="200" rows="2" placeholder="e.g. Includes parts and labour. Old vanity removal not included."></textarea>
       </div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
@@ -1133,11 +1351,12 @@ function showTradie(d) {
     const btn   = get("quoteBtn"), n = get("nWrap");
     const price = get("tPrice").value.trim();
     const eta   = get("tEta").value.trim();
+    const noteText = (get("tNote")?.value || '').trim();
     if (!price) { note(n,"Please enter your price.","err"); return; }
     if (!eta)   { note(n,"Please enter when you can be there.","err"); return; }
     disable(btn,"Sending...");
     try {
-      const r = await api({ action:"quote", price, eta });
+      const r = await api({ action:"quote", price, eta, note: noteText });
       if (!r.success) { note(n,r.message||"Error","err"); enable(btn,"Send offer to customer"); return; }
       note(n,"Offer sent. You will get an SMS when the customer responds.","ok");
       btn.textContent = "Offer sent";

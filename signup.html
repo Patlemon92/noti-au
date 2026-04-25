@@ -3,971 +3,693 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-  <meta name="apple-mobile-web-app-title" content="noti." />
-  <meta name="theme-color" content="#0C0C0C" />
-  <link rel="apple-touch-icon" href="/icon-192.png" />
-  <link rel="manifest" href="/manifest.json" />
-  <title>noti. — specialist dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <title>noti. — specialist signup</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --black:  #0C0C0C; --white: #FFFFFF; --off: #F5F5F3;
-      --line:   #E8E8E6; --muted: #999994; --dim: #666663;
-      --orange: #F5A623; --green: #0A7A3E; --red: #B52222;
-      --font:   'Montserrat', sans-serif;
-    }
-    html { font-size: 15px; background: var(--off); }
-    body { font-family: var(--font); color: var(--black); -webkit-font-smoothing: antialiased; min-height: 100dvh; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* TOPBAR */
-    .topbar { position: fixed; top:0; left:0; right:0; z-index:100; height:56px; background:var(--black); display:flex; align-items:center; justify-content:space-between; padding:0 20px; }
-    .logo { font-size:18px; font-weight:800; color:var(--white); letter-spacing:-0.03em; }
-    .logo em { color:var(--orange); font-style:normal; }
-    .topbar-right { display:flex; align-items:center; gap:12px; }
-    .plan-badge { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:4px 8px; }
-    .plan-badge.premium { background:var(--orange); color:var(--black); }
-    .plan-badge.basic   { background:#222; color:var(--muted); }
-    .logout-btn { font-size:11px; font-weight:600; color:var(--muted); background:none; border:none; cursor:pointer; letter-spacing:0.04em; text-transform:uppercase; }
+:root {
+  --font:        -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  --black:       #0f172a;
+  --white:       #ffffff;
+  --line:        #e2e8f0;
+  --muted:       #64748b;
+  --dim:         #94a3b8;
+  --off:         #f8fafc;
+  --orange:      #ea580c;
+  --green:       #059669;
+  --red:         #dc2626;
+  --blue-600:    #2563eb;
+  --slate-100:   #f1f5f9;
+  --emerald-50:  #ecfdf5;
+  --emerald-200: #a7f3d0;
+  --noti-light:  #fff7ed;
+  --noti-200:    #fed7aa;
+  --ease:        cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-    /* SHELL */
-    .shell { padding-top:56px; padding-bottom:72px; }
-    .page  { max-width:480px; margin:0 auto; }
+html { font-size: 15px; background: var(--off); }
 
-    /* NAV */
-    .nav { position:fixed; bottom:0; left:0; right:0; z-index:100; background:var(--white); border-top:1px solid var(--line); display:flex; height:56px; }
-    .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; border:none; background:none; -webkit-tap-highlight-color:transparent; }
-    .nav-icon { font-size:18px; }
-    .nav-label { font-size:9px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--muted); }
-    .nav-item.active .nav-label { color:var(--orange); }
-    .nav-item.active .nav-icon  { filter: none; }
+body {
+  font-family: var(--font);
+  background: var(--off);
+  color: var(--black);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+  padding: 0 0 60px;
+}
 
-    /* SECTIONS */
-    .section { background:var(--white); border:1px solid var(--line); margin:12px 16px; }
-    .section-header { padding:16px 18px 0; }
-    .section-title { font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
-    .section-body { padding:0 18px 18px; }
+/* ── HEADER ── */
+.form-header {
+  background: var(--white);
+  border-bottom: 1px solid var(--line);
+  padding: 28px 24px 24px;
+  text-align: center;
+}
 
-    /* STAT CARDS */
-    .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); margin:0 16px 12px; }
-    .stat-card { background:var(--white); padding:16px; }
-    .stat-label { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
-    .stat-value { font-size:26px; font-weight:700; letter-spacing:-0.04em; color:var(--black); }
-    .stat-sub   { font-size:11px; font-weight:500; color:var(--muted); margin-top:2px; }
+.form-header-kicker {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.form-header-kicker::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--orange);
+}
 
-    /* RATING */
-    .rating-display { display:flex; align-items:baseline; gap:6px; margin-bottom:4px; }
-    .rating-number  { font-size:36px; font-weight:700; letter-spacing:-0.04em; }
-    .rating-stars   { font-size:16px; color:var(--orange); }
-    .rating-count   { font-size:12px; font-weight:500; color:var(--muted); }
+.form-header-title {
+  font-size: 28px; font-weight: 600;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
 
-    /* JOB LIST */
-    .job-item { padding:14px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:flex-start; }
-    .job-item:last-child { border-bottom:none; }
-    .job-desc { font-size:13px; font-weight:600; color:var(--black); margin-bottom:3px; line-height:1.3; }
-    .job-meta { font-size:11px; font-weight:500; color:var(--muted); }
-    .job-status { font-size:10px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:3px 8px; flex-shrink:0; margin-left:10px; margin-top:2px; }
-    .job-status.won     { background:#F0FAF4; color:var(--green); }
-    .job-status.missed  { background:var(--off); color:var(--muted); }
-    .job-status.pending { background:#FEF6E9; color:#7A4A00; }
+.form-header-sub {
+  font-size: 14px; font-weight: 500;
+  color: var(--muted);
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.55;
+}
 
-    /* FIELDS */
-    .field { margin-bottom:16px; }
-    .field:last-child { margin-bottom:0; }
-    .field-label { display:block; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
-    input, select, textarea {
-      width:100%; background:transparent; border:none;
-      border-bottom:1.5px solid var(--line); padding:8px 0;
-      font:inherit; font-size:14px; font-weight:500; color:var(--black);
-      outline:none; border-radius:0; -webkit-appearance:none;
-    }
-    input:focus, select:focus { border-bottom-color:var(--black); }
-    select {
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-      background-repeat:no-repeat; background-position:right 2px center; padding-right:20px;
-    }
-    .mode-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:4px; }
-    .mode-opt { border:1.5px solid var(--line); padding:10px 8px; text-align:center; cursor:pointer; transition:all 0.12s; }
-    .mode-opt input { display:none; }
-    .mode-opt.sel { border-color:var(--orange); background:#FEF6E9; }
-    .mode-name { font-size:12px; font-weight:700; color:var(--black); }
-    .mode-desc { font-size:10px; font-weight:500; color:var(--muted); margin-top:2px; }
+/* ── INFO STRIP ── */
+.info-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border-bottom: 1px solid var(--line);
+  background-color: var(--white);
+}
 
-    /* BUTTONS */
-    .btn { display:block; width:100%; padding:14px; border:none; border-radius:0; font:inherit; font-size:14px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; cursor:pointer; transition:opacity 0.15s; }
-    .btn-orange { background:var(--orange); color:var(--black); }
-    .btn-black  { background:var(--black);  color:var(--white); }
-    .btn-outline{ background:transparent; color:var(--black); border:1.5px solid var(--line); }
-    .btn:disabled { opacity:0.4; cursor:not-allowed; }
-    .btn:hover:not(:disabled) { opacity:0.88; }
-    .btn-wrap { padding:0 16px; margin-bottom:10px; }
+.info-box {
+  background: var(--white);
+  padding: 18px 20px;
+}
 
-    /* NOTICE */
-    .notice { padding:12px 16px; font-size:12px; font-weight:600; line-height:1.5; border-left:3px solid var(--muted); background:var(--off); color:var(--dim); margin:0 16px 10px; }
-    .notice.ok  { border-left-color:var(--green); color:var(--green); background:#F0FAF4; }
-    .notice.err { border-left-color:var(--red);   color:var(--red);   background:#FDF0F0; }
-    .notice.hi  { border-left-color:var(--orange); color:#7A4A00; background:#FEF6E9; }
+.info-label {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
 
-    /* LOGIN */
-    .login-wrap { max-width:360px; margin:80px auto 0; padding:0 20px; }
-    .login-logo { font-size:28px; font-weight:800; letter-spacing:-0.03em; margin-bottom:6px; }
-    .login-logo em { color:var(--orange); font-style:normal; }
-    .login-sub { font-size:13px; font-weight:500; color:var(--muted); margin-bottom:28px; line-height:1.5; }
-    .login-card { background:var(--white); border:1px solid var(--line); padding:24px; }
+.info-text {
+  font-size: 13px; font-weight: 500;
+  color: #334155;
+  line-height: 1.55;
+}
 
-    /* PREMIUM LOCK */
-    .premium-lock { text-align:center; padding:32px 24px; }
-    .premium-lock-icon { font-size:32px; margin-bottom:12px; }
-    .premium-lock-title { font-size:16px; font-weight:700; letter-spacing:-0.02em; margin-bottom:6px; }
-    .premium-lock-sub { font-size:12px; font-weight:500; color:var(--muted); line-height:1.55; margin-bottom:16px; }
+/* ── FORM ── */
+.form-wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
 
-    /* DATE FILTER */
-    .date-filter { display:flex; gap:8px; margin:0 16px 12px; flex-wrap:wrap; }
-    .date-btn { padding:6px 12px; font:inherit; font-size:11px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; border:1.5px solid var(--line); background:var(--white); cursor:pointer; }
-    .date-btn.active { border-color:var(--orange); background:#FEF6E9; color:var(--black); }
+.section {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 16px;
+}
 
-    /* LOADING */
-    .loading { text-align:center; padding:60px 0; font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
-    .spinner { width:24px; height:24px; border:2px solid var(--line); border-top-color:var(--black); border-radius:50%; animation:spin 0.7s linear infinite; margin:0 auto 14px; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+.section-title {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
 
-    /* PUSH BANNER */
-    .push-banner {
-      margin: 12px 16px 0;
-      background: var(--black);
-      padding: 16px 18px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .push-banner-icon { font-size: 24px; flex-shrink: 0; }
-    .push-banner-title { font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 2px; }
-    .push-banner-sub { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); line-height: 1.5; }
-    .push-banner-btn {
-      margin-left: auto; flex-shrink: 0;
-      padding: 8px 14px; background: var(--orange); color: var(--black);
-      border: none; font: inherit; font-size: 11px; font-weight: 700;
-      letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
-      white-space: nowrap;
-    }
-    .push-enabled-badge {
-      margin: 12px 16px 0;
-      padding: 10px 14px;
-      background: #F0FAF4;
-      border-left: 3px solid var(--green);
-      font-size: 11px; font-weight: 700; color: var(--green);
-      display: flex; align-items: center; gap: 8px;
-    }
+.field { margin-bottom: 18px; }
+.field:last-child { margin-bottom: 0; }
 
-    /* ADD TO HOMESCREEN STEPS */
-    .push-steps { width: 100%; display: flex; flex-direction: column; gap: 10px; }
-    .push-step {
-      display: flex; align-items: flex-start; gap: 12px;
-      background: rgba(255,255,255,0.06); padding: 10px 12px;
-    }
-    .push-step-num {
-      width: 22px; height: 22px; border-radius: 50%;
-      background: var(--orange); color: var(--black);
-      font-size: 11px; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; margin-top: 1px;
-    }
-    .push-step-text {
-      font-size: 12px; font-weight: 500;
-      color: rgba(255,255,255,0.8); line-height: 1.5;
-    }
-    .push-step-text strong { color: var(--white); font-weight: 700; }
+.field-label {
+  display: block;
+  font-size: 12px; font-weight: 500;
+  color: #334155;
+  margin-bottom: 6px;
+}
 
-    .footer { text-align:center; padding:24px 0; font-size:10px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--line); }
-    .footer em { color:var(--orange); font-style:normal; }
-  </style>
+.field-hint {
+  font-size: 11px; font-weight: 500;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+input[type=text],
+input[type=email],
+input[type=tel],
+input[type=date],
+select,
+textarea {
+  width: 100%;
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 14px; font-weight: 500;
+  color: var(--black);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--blue-600);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+input::placeholder, textarea::placeholder { color: var(--dim); }
+
+select {
+  background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ── TRADE GRID ── */
+.trade-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.trade-grid label {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px; font-weight: 500;
+  color: var(--black);
+  background: var(--white);
+  transition: all 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.trade-grid label:hover { border-color: var(--dim); }
+
+.trade-grid label input { display: none; }
+
+.trade-grid label .trade-check {
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  color: transparent;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.trade-grid label input:checked + .trade-check {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: var(--white);
+}
+
+.trade-grid label:has(input:checked) {
+  border-color: var(--orange);
+  background: var(--noti-light);
+}
+
+/* ── UPLOAD ── */
+.upload-zone {
+  border: 1.5px dashed var(--line);
+  background: var(--off);
+  border-radius: 8px;
+  padding: 18px 16px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; position: relative;
+  transition: all 0.15s;
+}
+
+.upload-zone:hover { border-color: var(--dim); background: var(--slate-100); }
+
+.upload-zone.has {
+  border-color: var(--green); border-style: solid;
+  background: var(--emerald-50);
+}
+
+.upload-zone input[type=file] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer;
+  width: 100%; height: 100%;
+  border: none; padding: 0;
+  background: transparent;
+}
+
+.upload-icon {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.upload-zone.has .upload-icon { color: var(--green); }
+
+.upload-label {
+  font-size: 13px; font-weight: 600;
+  color: var(--black);
+}
+
+.upload-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.upload-filename {
+  font-size: 12px;
+  color: var(--green);
+  font-weight: 600;
+  margin-top: 4px;
+  word-break: break-all;
+}
+
+/* ── CHECKBOX LIST ── */
+.check-list {
+  display: flex; flex-direction: column;
+  gap: 10px;
+}
+
+.check-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.check-item:hover { border-color: var(--dim); }
+
+.check-item input[type=checkbox] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0; height: 0;
+}
+
+.check-box {
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  color: transparent;
+  transition: all 0.12s;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.check-item:has(input:checked) .check-box {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: var(--white);
+}
+
+.check-item:has(input:checked) {
+  border-color: var(--noti-200);
+  background: var(--noti-light);
+}
+
+.check-text {
+  font-size: 13px; font-weight: 500;
+  color: var(--black);
+  line-height: 1.5;
+}
+
+.check-text a { color: var(--blue-600); text-decoration: none; }
+.check-text a:hover { text-decoration: underline; }
+
+/* ── SUBMIT ── */
+.submit-section {
+  margin-top: 16px;
+  padding: 0 16px;
+}
+
+.btn-submit {
+  display: block;
+  width: 100%;
+  padding: 16px 24px;
+  background: var(--black);
+  color: var(--white);
+  border: 1px solid var(--black);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, opacity 0.15s;
+}
+
+.btn-submit:hover:not(:disabled) { background: #000; }
+.btn-submit:active:not(:disabled) { transform: scale(0.99); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  padding: 32px 16px 16px;
+}
+
+.footer-note {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+/* ── NOTICES (used by JS for errors / success) ── */
+.notice {
+  padding: 12px 14px;
+  font-size: 13px; font-weight: 500;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+.notice.ok  { background: var(--emerald-50); color: #065f46; border-color: var(--emerald-200); }
+.notice.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .form-header { padding: 24px 20px 20px; }
+  .form-header-title { font-size: 24px; }
+  .info-strip { grid-template-columns: 1fr; }
+  .info-box { padding: 14px 18px; }
+  .grid-2 { grid-template-columns: 1fr; gap: 14px; }
+  .trade-grid { grid-template-columns: 1fr; }
+  .section { padding: 20px; }
+}
+</style>
 </head>
 <body>
 
-<div id="root">
-  <div class="loading"><div class="spinner"></div>Loading</div>
+
+
+<div class="form-header">
+  <div class="form-header-kicker">Specialist signup</div>
+  <div class="form-header-title">Get your first 5 job offers free</div>
+  <div class="form-header-sub">No credit card required. One trial per business. Job offers delivered directly to your phone.</div>
+</div>
+
+<div class="info-strip">
+  <div class="info-box">
+    <div class="info-label">Why we ask for this</div>
+    <div class="info-text">Your licence and insurance details keep the platform fair and help customers trust who they are dealing with.</div>
+  </div>
+  <div class="info-box">
+    <div class="info-label">What happens next</div>
+    <div class="info-text">Once approved you will start receiving job offers by SMS. Reply ON to go live.</div>
+  </div>
+  <div class="info-box">
+    <div class="info-label">How the trial works</div>
+    <div class="info-text">Your business gets 5 free job offers. After that choose a paid plan to keep receiving jobs.</div>
+  </div>
+</div>
+
+<div class="form-wrap">
+
+  <!-- BUSINESS DETAILS -->
+  <div class="section">
+    <div class="section-title">Business details</div>
+
+    <div class="field">
+      <label class="field-label">Business name</label>
+      <input type="text" id="businessName" required />
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">ABN</label>
+        <input type="text" id="abn" maxlength="11" inputmode="numeric" required />
+      </div>
+      <div class="field">
+        <label class="field-label">Business email</label>
+        <input type="email" id="email" required />
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Business address</label>
+      <input type="text" id="businessAddress" placeholder="Street address" required />
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">Suburb</label>
+        <input type="text" id="businessSuburb" required />
+      </div>
+      <div class="field">
+        <label class="field-label">Postcode</label>
+        <input type="text" id="businessPostcode" inputmode="numeric" maxlength="4" required />
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">State</label>
+      <select id="businessState" required>
+        <option value="">Select state</option>
+        <option value="NSW">NSW</option>
+        <option value="VIC">VIC</option>
+        <option value="QLD">QLD</option>
+        <option value="WA">WA</option>
+        <option value="SA">SA</option>
+        <option value="TAS">TAS</option>
+        <option value="ACT">ACT</option>
+        <option value="NT">NT</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Service areas</label>
+      <textarea id="serviceAreas" placeholder="e.g. Campbelltown, Camden, Narellan, 2560"></textarea>
+      <div class="field-hint">Enter suburbs or postcodes separated by commas</div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Trade type (select all that apply)</label>
+      <div class="trade-grid" id="tradeGrid">
+        <!-- populated by JS -->
+      </div>
+      <div class="field" id="otherTradeField" style="display:none;margin-top:12px;">
+        <label class="field-label">Describe your trade</label>
+        <input type="text" id="otherTrade" placeholder="e.g. Glazier, Concreter, Stonemason" />
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CONTACTS -->
+  <div class="section">
+    <div class="section-title">Decision-maker contacts</div>
+    <div class="field-hint" style="margin-bottom:20px;">These are the people who receive job offers — usually the owner, admin or scheduler.</div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">Primary contact name</label>
+        <input type="text" id="primaryContactName" required />
+      </div>
+      <div class="field">
+        <label class="field-label">Primary mobile</label>
+        <input type="tel" id="primaryPhone" required />
+      </div>
+      <div class="field">
+        <label class="field-label">Second contact name (optional)</label>
+        <input type="text" id="secondaryContactName" />
+      </div>
+      <div class="field">
+        <label class="field-label">Second mobile (optional)</label>
+        <input type="tel" id="secondaryPhone" />
+      </div>
+    </div>
+  </div>
+
+  <!-- LICENCE -->
+  <div class="section">
+    <div class="section-title">Licence <span style="font-size:10px;font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0;">(optional)</span></div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">Licence number</label>
+        <input type="text" id="licenceNumber" />
+      </div>
+      <div class="field">
+        <label class="field-label">Licence state</label>
+        <select id="licenceState" required>
+          <option value="">Select state</option>
+          <option>NSW</option><option>VIC</option><option>QLD</option>
+          <option>SA</option><option>WA</option><option>TAS</option>
+          <option>ACT</option><option>NT</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Licence expiry</label>
+        <input type="date" id="licenceExpiry" />
+      </div>
+    </div>
+    <div class="field" style="margin-top:20px;">
+      <label class="field-label">Licence document</label>
+      <div class="upload-zone" id="licenceZone">
+        <input type="file" id="licenceFile" accept=".pdf,.jpg,.jpeg,.png" />
+        <div class="upload-icon">&#128196;</div>
+        <div class="upload-label">Tap to upload licence</div>
+        <div class="upload-sub">PDF, JPG or PNG — max 10MB</div>
+        <div class="upload-filename" id="licenceFilename"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSURANCE -->
+  <div class="section">
+    <div class="section-title">Insurance</div>
+    <div class="grid-2">
+      <div class="field">
+        <label class="field-label">Insurance provider</label>
+        <input type="text" id="insuranceProvider" required />
+      </div>
+      <div class="field">
+        <label class="field-label">Public liability cover</label>
+        <select id="insuranceAmount" required>
+          <option value="">Select amount</option>
+          <option>$5M</option><option>$10M</option><option>$20M</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Insurance expiry</label>
+        <input type="date" id="insuranceExpiry" required />
+      </div>
+    </div>
+    <div class="field" style="margin-top:20px;">
+      <label class="field-label">Insurance document</label>
+      <div class="upload-zone" id="insuranceZone">
+        <input type="file" id="insuranceFile" accept=".pdf,.jpg,.jpeg,.png" required />
+        <div class="upload-icon">&#128196;</div>
+        <div class="upload-label">Tap to upload insurance</div>
+        <div class="upload-sub">PDF, JPG or PNG — max 10MB</div>
+        <div class="upload-filename" id="insuranceFilename"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGREEMENT -->
+  <div class="section">
+    <div class="section-title">Agreement</div>
+    <div class="check-list" id="checkList">
+      <label class="check-item" data-required="true">
+        <input type="checkbox" />
+        <div class="check-box">&#10003;</div>
+        <div class="check-text">I confirm this signup is for a real business and the details provided are accurate.</div>
+      </label>
+      <label class="check-item" data-required="true">
+        <input type="checkbox" />
+        <div class="check-box">&#10003;</div>
+        <div class="check-text">I understand the free trial is limited to one per business and includes 5 job offers.</div>
+      </label>
+      <label class="check-item" data-required="true">
+        <input type="checkbox" />
+        <div class="check-box">&#10003;</div>
+        <div class="check-text">I understand my business may be paused if insurance or licence details are expired or missing.</div>
+      </label>
+      <label class="check-item" data-required="true">
+        <input type="checkbox" />
+        <div class="check-box">&#10003;</div>
+        <div class="check-text">I agree that Noti may contact me by SMS or email about job offers, account updates and expiry reminders.</div>
+      </label>
+    </div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="submit-section">
+    <button class="btn-submit" id="submitBtn">Start free trial</button>
+    <div id="formNotice"></div>
+    <div class="footer-note">No credit card required. Your details are used to activate your account and send job offers.</div>
+    <div class="footer">noti<em>.</em></div>
+  </div>
+
 </div>
 
 <script>
 const API = "https://noti-api.ancient-bread-01fe.workers.dev";
-const SESSION_KEY = 'noti_tradie_session';
 
-let _data      = null;
-let _session   = localStorage.getItem(SESSION_KEY) || '';
-let _tab       = 'jobs';
-let _dateRange = 30;
+const TRADES = [
+  "Plumber","Electrician","Builder","Carpenter","Handyman",
+  "Air Conditioning","Gas Fitter","Waterproofing","Roofing","Concreter",
+  "Glazier","Fencing","Cleaner","Carpet & Upholstery Cleaning","Pest Control",
+  "Gardening / Landscaping","Pool Maintenance","Locksmith","Security Systems",
+  "Painter","Tiler","Plasterer","Flooring","Appliance Repair","Rubbish Removal","Other"
+];
 
-// ─── HELPERS ─────────────────────────────────────────────
-const esc = v => String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const fmt = v => String(v||'').trim();
+const selectedTrades = new Set();
+
+// Build trade grid
+const grid = document.getElementById('tradeGrid');
+TRADES.forEach(trade => {
+  const label = document.createElement('label');
+  label.className = 'trade-option';
+  label.innerHTML = `<input type="checkbox" value="${trade}" /><div class="trade-check">&#10003;</div>${trade}`;
+  label.addEventListener('click', () => {
+    const cb = label.querySelector('input');
+    cb.checked = !cb.checked;
+    if (cb.checked){ selectedTrades.add(trade); label.classList.add('selected'); }
+    else            { selectedTrades.delete(trade); label.classList.remove('selected'); }
+    // Show other text box when Other is selected
+    const otherField = document.getElementById('otherTradeField');
+    if (otherField) otherField.style.display = selectedTrades.has('Other') ? 'block' : 'none';
+  });
+  grid.appendChild(label);
+});
+
+// Checkbox toggle style
+document.querySelectorAll('.check-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const cb = item.querySelector('input');
+    cb.checked = !cb.checked;
+    item.classList.toggle('checked', cb.checked);
+  });
+});
+
+// File upload display
+function wireUpload(inputId, zoneId, filenameId) {
+  const input    = document.getElementById(inputId);
+  const zone     = document.getElementById(zoneId);
+  const filename = document.getElementById(filenameId);
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (file){
+      zone.classList.add('has-file');
+      filename.textContent = file.name;
+    }
+  });
+}
+
+wireUpload('licenceFile',   'licenceZone',   'licenceFilename');
+wireUpload('insuranceFile', 'insuranceZone', 'insuranceFilename');
+
+// Helpers
+function val(id){ return (document.getElementById(id).value || '').trim(); }
 function cleanPhone(p){ return p.replace(/\s+/g,'').replace(/[^0-9]/g,''); }
+function isValidABN(a){ return /^\d{11}$/.test(a.replace(/\s/g,'')); }
 
-// Format UTC timestamp to Sydney time
-function sydneyTime(utcStr) {
-  if (!utcStr) return '';
-  try {
-    return new Date(utcStr).toLocaleString('en-AU', {
-      timeZone: 'Australia/Sydney',
-      day:   '2-digit',
-      month: 'short',
-      year:  'numeric',
-      hour:  '2-digit',
-      minute:'2-digit',
-      hour12: true
-    });
-  } catch(e) { return utcStr; }
-}
-
-function sydneyDate(utcStr) {
-  if (!utcStr) return '';
-  try {
-    return new Date(utcStr).toLocaleDateString('en-AU', {
-      timeZone: 'Australia/Sydney',
-      day:   '2-digit',
-      month: 'short',
-      year:  'numeric'
-    });
-  } catch(e) { return utcStr; }
-}
-
-async function post(endpoint, payload){
-  const res = await fetch(`${API}${endpoint}`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(payload)
-  });
-  return JSON.parse(await res.text());
-}
-
-function setSession(token){ _session = token; localStorage.setItem(SESSION_KEY, token); }
-function clearSession(){ _session = ''; localStorage.removeItem(SESSION_KEY); showLogin(); }
-
-// ─── PUSH NOTIFICATIONS ───────────────────────────────────
-// VAPID public key loaded from API response after login
-let VAPID_PUBLIC_KEY = '';
-const PUSH_KEY         = 'noti_push_enabled';
-
-// ── Device detection ──
-function isIphone(){
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-}
-
-// Running as installed PWA (added to home screen)
-function isStandalone(){
-  return window.navigator.standalone === true ||
-         window.matchMedia('(display-mode: standalone)').matches;
-}
-
-function isChromeiOS(){
-  return /CriOS/i.test(navigator.userAgent);
-}
-
-function isFirefoxiOS(){
-  return /FxiOS/i.test(navigator.userAgent);
-}
-
-function isPushSupported(){
-  return 'serviceWorker' in navigator && 'PushManager' in window;
-}
-
-function isPushEnabled(){
-  return localStorage.getItem(PUSH_KEY) === 'true';
-}
-
-function urlBase64ToUint8Array(base64String){
-  var padding = '='.repeat((4 - base64String.length % 4) % 4);
-  var base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  var raw     = window.atob(base64);
-  var output  = new Uint8Array(raw.length);
-  for (var i = 0; i < raw.length; ++i){ output[i] = raw.charCodeAt(i); }
-  return output;
-}
-
-async function registerServiceWorker(){
-  if (!isPushSupported()) return null;
-  try { return await navigator.serviceWorker.register('/sw.js'); }
-  catch(e){ console.log('SW registration failed:', e); return null; }
-}
-
-async function subscribeToPush(){
-  try {
-    const reg = await registerServiceWorker();
-    if (!reg) return false;
-    await reg.update();
-    const sub     = await reg.pushManager.subscribe({
-      userVisibleOnly:      true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-    });
-    const subJson = sub.toJSON();
-    const r = await post('/dashboard/push', {
-      session:  _session,
-      endpoint: subJson.endpoint,
-      p256dh:   subJson.keys.p256dh,
-      auth:     subJson.keys.auth
-    });
-    if (r.success){ localStorage.setItem(PUSH_KEY, 'true'); return true; }
-    return false;
-  } catch(e){ console.log('Push subscription failed:', e); return false; }
-}
-
-// ── Push banner logic ──
-// Four states:
-// 1. Already enabled           → green confirmation
-// 2. iPhone, not on homescreen → show add-to-homescreen guide
-// 3. iPhone, on homescreen     → show enable button
-// 4. Android / desktop         → show enable button directly
-
-function renderPushBanner(){
-  // Already set up
-  if (isPushEnabled()){
-    return `
-      <div class="push-enabled-badge">
-        <span>⚡</span> Job alerts are on — you will get notified the moment a job comes in
-      </div>`;
-  }
-
-  // iPhone not on home screen — need to add first
-  if (isIphone() && !isStandalone()){
-    return `
-      <div class="push-banner" id="pushBanner" style="flex-direction:column;align-items:flex-start;gap:12px;">
-        <div style="display:flex;align-items:center;gap:12px;width:100%;">
-          <div class="push-banner-icon">⚡</div>
-          <div style="flex:1;">
-            <div class="push-banner-title">Get jobs faster</div>
-            <div class="push-banner-sub">Add Noti to your home screen to get instant job alerts — first to know means first to win</div>
-          </div>
-        </div>
-        <div class="push-steps" id="iosSteps">
-          <!-- Steps populated by wirePushBanner() based on browser -->
-        </div>
-      </div>`;
-  }
-
-  // iPhone on home screen OR Android/desktop — show enable button
-  if (!isPushSupported()){
-    return ''; // browser does not support push at all
-  }
-
-  return `
-    <div class="push-banner" id="pushBanner">
-      <div class="push-banner-icon">⚡</div>
-      <div>
-        <div class="push-banner-title">Get jobs faster</div>
-        <div class="push-banner-sub">Enable instant alerts and be first to every job the moment it lands</div>
-      </div>
-      <button class="push-banner-btn" id="pushEnableBtn">Enable alerts</button>
-    </div>`;
-}
-
-function wirePushBanner(){
-  // Populate iOS steps based on which browser they are using
-  var stepsEl = document.getElementById('iosSteps');
-  if (stepsEl){
-    var step1, step2, step3;
-
-    if (isChromeiOS()){
-      step1 = 'Tap the <strong>Share</strong> button at the top right of Chrome <span style="font-size:14px;">⋯</span> then tap <strong>Share...</strong>';
-      step2 = 'Tap <strong>Add to Home Screen</strong> from the share menu';
-    } else if (isFirefoxiOS()){
-      step1 = 'Tap the <strong>menu button</strong> at the bottom right <span style="font-size:14px;">☰</span>';
-      step2 = 'Tap <strong>Share</strong> then tap <strong>Add to Home Screen</strong>';
-    } else {
-      // Safari default
-      step1 = 'Tap the <strong>Share</strong> button at the bottom of Safari <span style="font-size:15px;">⬆</span>';
-      step2 = 'Scroll down and tap <strong>Add to Home Screen</strong>';
-    }
-
-    step3 = 'Open <strong>noti.</strong> from your home screen and tap <strong>Enable alerts</strong>';
-
-    stepsEl.innerHTML =
-      '<div class="push-step"><div class="push-step-num">1</div><div class="push-step-text">' + step1 + '</div></div>' +
-      '<div class="push-step"><div class="push-step-num">2</div><div class="push-step-text">' + step2 + '</div></div>' +
-      '<div class="push-step"><div class="push-step-num">3</div><div class="push-step-text">' + step3 + '</div></div>';
-  }
-
-  var btn = document.getElementById('pushEnableBtn');
-  if (!btn) return;
-  btn.addEventListener('click', async function(){
-    btn.textContent = 'Setting up...';
-    btn.disabled    = true;
-    var ok = await subscribeToPush();
-    if (ok){
-      document.getElementById('pushBanner').outerHTML = `
-        <div class="push-enabled-badge">
-          <span>⚡</span> Job alerts are on — you will get notified the moment a job comes in
-        </div>`;
-    } else {
-      // Permission denied or error
-      document.getElementById('pushBanner').outerHTML = `
-        <div class="push-banner" style="flex-direction:column;align-items:flex-start;gap:8px;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div class="push-banner-icon">⚡</div>
-            <div>
-              <div class="push-banner-title">Alerts blocked</div>
-              <div class="push-banner-sub">To fix this: go to your phone Settings → Safari or Chrome → Notifications → find noti.au and allow notifications. Then come back and try again.</div>
-            </div>
-          </div>
-        </div>`;
-    }
-  });
-}
-
-// ─── INIT ─────────────────────────────────────────────────
-async function init(){
-  if (_session){
-    await loadDashboard();
-  } else {
-    showLogin();
-  }
-}
-
-// ─── LOGIN ─────────────────────────────────────────────────
-function showLogin(step){
-  step = step || 'phone';
-  document.getElementById('root').innerHTML = `
-    <div class="login-wrap">
-      <div class="login-logo">noti<em>.</em></div>
-      <div class="login-sub">Specialist dashboard. Enter your mobile to log in.</div>
-      <div class="login-card">
-        ${step === 'phone' ? `
-          <div class="field">
-            <label class="field-label">Mobile number</label>
-            <input type="tel" id="loginPhone" placeholder="04xx xxx xxx" />
-          </div>
-          <div id="loginNotice"></div>
-          <button class="btn btn-orange" id="loginBtn" style="margin-top:16px;">Send code</button>
-        ` : `
-          <div class="field">
-            <label class="field-label">Enter the 6-digit code sent to your phone</label>
-            <input type="number" id="loginCode" placeholder="123456" maxlength="6" inputmode="numeric" style="font-size:24px;letter-spacing:0.1em;" />
-          </div>
-          <div id="loginNotice"></div>
-          <button class="btn btn-orange" id="verifyBtn" style="margin-top:16px;">Log in</button>
-          <button class="btn btn-outline" id="backBtn" style="margin-top:8px;">Back</button>
-        `}
-      </div>
-      <div class="footer" style="margin-top:20px;">noti<em>.</em></div>
-    </div>
-  `;
-
-  if (step === 'phone'){
-    document.getElementById('loginBtn').onclick = async () => {
-      const btn   = document.getElementById('loginBtn');
-      const phone = cleanPhone(document.getElementById('loginPhone').value);
-      if (!phone){ showLoginNotice('Please enter your mobile number.','err'); return; }
-      btn.disabled = true; btn.textContent = 'Sending...';
-      try {
-        const r = await post('/dashboard/code', { phone });
-        if (!r.success){ showLoginNotice(r.message||'Something went wrong.','err'); btn.disabled=false; btn.textContent='Send code'; return; }
-        localStorage.setItem('noti_login_phone', phone);
-        showLogin('code');
-      } catch(e){ showLoginNotice('Something went wrong.','err'); btn.disabled=false; btn.textContent='Send code'; }
-    };
-    document.getElementById('loginPhone').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('loginBtn').click(); });
-  } else {
-    document.getElementById('verifyBtn').onclick = async () => {
-      const btn   = document.getElementById('verifyBtn');
-      const phone = localStorage.getItem('noti_login_phone') || '';
-      const code  = document.getElementById('loginCode').value.trim();
-      if (!code){ showLoginNotice('Please enter the code.','err'); return; }
-      btn.disabled=true; btn.textContent='Logging in...';
-      try {
-        const r = await post('/dashboard/verify', { phone, code });
-        if (!r.success){ showLoginNotice(r.message||'Incorrect code.','err'); btn.disabled=false; btn.textContent='Log in'; return; }
-        setSession(r.token);
-        await loadDashboard();
-      } catch(e){ showLoginNotice('Something went wrong.','err'); btn.disabled=false; btn.textContent='Log in'; }
-    };
-    document.getElementById('backBtn').onclick = () => showLogin('phone');
-    document.getElementById('loginCode').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('verifyBtn').click(); });
-  }
-}
-
-function showLoginNotice(msg, type){
-  const el = document.getElementById('loginNotice');
-  if (el) el.innerHTML = `<div class="notice ${type}" style="margin:10px 0 0;">${esc(msg)}</div>`;
-}
-
-// ─── LOAD DASHBOARD ───────────────────────────────────────
-async function loadDashboard(){
-  document.getElementById('root').innerHTML = '<div class="loading"><div class="spinner"></div>Loading</div>';
-  try {
-    const r = await post('/dashboard/data', { session: _session });
-    if (!r.success){
-      if (r.expired){ clearSession(); return; }
-      document.getElementById('root').innerHTML = `<div class="notice err" style="margin:40px 16px;">${esc(r.message)}</div>`;
-      return;
-    }
-    _data = r;
-    if (r.vapid_public_key) VAPID_PUBLIC_KEY = r.vapid_public_key;
-    renderDashboard();
-  } catch(e){
-    document.getElementById('root').innerHTML = '<div class="notice err" style="margin:40px 16px;">Could not load dashboard. Please try again.</div>';
-  }
-}
-
-// ─── RENDER SHELL ─────────────────────────────────────────
-function renderDashboard(){
-  const isPremium = _data.is_premium;
-  const account   = _data.account || {};
-
-  document.getElementById('root').innerHTML = `
-    <div class="topbar">
-      <div class="logo">noti<em>.</em></div>
-      <div class="topbar-right">
-        <div class="plan-badge ${isPremium ? 'premium' : 'basic'}">${isPremium ? 'Premium' : 'Basic'}</div>
-        <button class="logout-btn" id="logoutBtn">Log out</button>
-      </div>
-    </div>
-    <div class="shell">
-      <div class="page">
-        ${renderPushBanner()}
-        <div id="tabContent"></div>
-      </div>
-    </div>
-    <div class="nav">
-      <button class="nav-item ${_tab==='jobs'?'active':''}"     onclick="switchTab('jobs')">     <span class="nav-icon">📋</span><span class="nav-label">Jobs</span></button>
-      ${isPremium ? `<button class="nav-item ${_tab==='stats'?'active':''}" onclick="switchTab('stats')"><span class="nav-icon">📈</span><span class="nav-label">Stats</span></button>` : ''}
-      <button class="nav-item ${_tab==='settings'?'active':''}" onclick="switchTab('settings')"> <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></button>
-      <button class="nav-item ${_tab==='account'?'active':''}"  onclick="switchTab('account')">  <span class="nav-icon">👤</span><span class="nav-label">Account</span></button>
-    </div>
-  `;
-
-  document.getElementById('logoutBtn').onclick = clearSession;
-  renderTab();
-  wirePushBanner();
-}
-
-function switchTab(tab){ _tab = tab; renderDashboard(); }
-
-function renderTab(){
-  if (_tab === 'jobs')     renderJobs();
-  if (_tab === 'stats')    renderStats();
-  if (_tab === 'settings') renderSettings();
-  if (_tab === 'account')  renderAccount();
-}
-
-// ─── JOBS TAB ─────────────────────────────────────────────
-let _jobView = 'active'; // active | history
-
-function renderJobs(){
-  const all     = _data.jobs || [];
-  const active  = all.filter(j => j.status === 'active');
-  const pending = all.filter(j => j.status === 'pending');
-  const won     = all.filter(j => j.status === 'won');
-  const missed  = all.filter(j => j.status === 'missed');
-
-  const historyJobs = (_jobView === 'history') ? all.filter(j => {
-    if (_dateRange === 0) return true;
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - _dateRange);
-    return new Date(j.date) >= cutoff;
-  }) : [];
-
-  // ── Active jobs section ────────────────────────────────────
-  const activeCards = active.map(j => `
-    <div style="border:2px solid var(--orange);background:#FFFBF4;margin-bottom:10px;">
-      <div style="background:var(--orange);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--black);">⚡ New job — respond now</div>
-        <div style="font-size:10px;font-weight:700;color:var(--black);" id="timer-${j.job_id}">${formatTimeLeft(j.time_left)}</div>
-      </div>
-      <div style="padding:14px;">
-        <div style="font-size:15px;font-weight:700;color:var(--black);margin-bottom:4px;letter-spacing:-0.02em;">${esc(j.description)}</div>
-        <div style="font-size:12px;font-weight:500;color:var(--dim);margin-bottom:12px;">${esc(j.suburb)} ${esc(j.postcode)} &nbsp;·&nbsp; ${esc(j.job_type)}</div>
-        <a href="${esc(j.job_link)}" style="display:block;padding:13px;background:var(--black);color:var(--white);text-align:center;font-weight:700;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;text-decoration:none;">View job &amp; submit offer →</a>
-      </div>
-    </div>
-  `).join('');
-
-  // ── Pending section (responded, waiting for customer) ──────
-  const pendingCards = pending.map(j => `
-    <div style="border:1px solid var(--line);background:var(--white);margin-bottom:8px;">
-      <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--black);margin-bottom:2px;">${esc(j.description)}</div>
-          <div style="font-size:11px;font-weight:500;color:var(--muted);">${esc(j.suburb)} &nbsp;·&nbsp; Your offer: ${j.my_price ? '$'+esc(String(j.my_price)) : '—'} &nbsp;·&nbsp; ${j.my_eta ? esc(j.my_eta) : '—'}</div>
-        </div>
-        <div style="font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;background:#FEF6E9;color:var(--orange);">Waiting</div>
-      </div>
-    </div>
-  `).join('');
-
-  // ── History list ────────────────────────────────────────────
-  const historyFiltered = historyJobs.filter(j => j.status === 'won' || j.status === 'missed');
-  const historyList = historyFiltered.length
-    ? historyFiltered.map(j => `
-      <div class="job-item">
-        <div>
-          <div class="job-desc">${esc(j.description || 'Job')}</div>
-          <div class="job-meta">${esc(j.suburb || '')} &nbsp;·&nbsp; ${sydneyDate(j.date)}</div>
-          ${j.price ? `<div class="job-meta" style="color:var(--green);font-weight:700;">$${esc(String(j.price))}</div>` : ''}
-        </div>
-        <div class="job-status ${j.status}">${j.status}</div>
-      </div>`)
-      .join('')
-    : '<div style="padding:24px 0;text-align:center;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;">No jobs in this period</div>';
-
-  document.getElementById('tabContent').innerHTML = `
-    <div class="stat-grid" style="margin-top:12px;">
-      <div class="stat-card"><div class="stat-label">Jobs offered</div><div class="stat-value">${all.length}</div></div>
-      <div class="stat-card"><div class="stat-label">Jobs won</div><div class="stat-value" style="color:var(--green);">${won.length}</div></div>
-    </div>
-
-    ${active.length || pending.length ? `
-      <div class="section" style="margin-top:12px;">
-        <div class="section-header">
-          <div class="section-title">Live now ${active.length ? `<span style="display:inline-block;background:var(--orange);color:var(--black);font-size:9px;font-weight:700;padding:1px 7px;margin-left:6px;">${active.length}</span>` : ''}</div>
-        </div>
-        <div class="section-body" style="padding:0;">
-          ${active.length ? activeCards : ''}
-          ${pending.length ? `
-            <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:10px 14px 6px;">Offer submitted — awaiting customer</div>
-            ${pendingCards}
-          ` : ''}
-        </div>
-      </div>
-    ` : `
-      <div style="margin:12px 0 0;padding:20px 16px;background:var(--white);border:1px solid var(--line);text-align:center;">
-        <div style="font-size:14px;font-weight:700;color:var(--black);margin-bottom:6px;">No active jobs right now</div>
-        <div style="font-size:12px;font-weight:500;color:var(--muted);line-height:1.5;">You will get a notification when a new job comes in. Make sure you are set to <strong>On</strong> in settings.</div>
-      </div>
-    `}
-
-    <div class="section" style="margin-top:12px;">
-      <div class="section-header">
-        <div class="section-title">Job history</div>
-      </div>
-      <div class="section-body" style="padding-bottom:0;">
-        <div class="date-filter" style="padding:10px 0 4px;">
-          ${[7,30,90,0].map(d => `<button class="date-btn ${_dateRange===d?'active':''}" onclick="setDateRange(${d})">${d===0?'All':d+' days'}</button>`).join('')}
-        </div>
-      </div>
-      <div class="section-body" style="padding-top:0;">${historyList}</div>
-    </div>
-
-    <div class="footer">noti<em>.</em></div>
-    <div style="text-align:center;padding:0 0 20px;font-size:11px;font-weight:600;color:var(--muted);"><a href="/support" style="color:var(--muted);text-decoration:none;">Need help? Chat with support</a></div>
-  `;
-
-  // Start countdown timers for active jobs
-  startTimers(active);
-}
-
-let _timerInterval = null;
-function startTimers(activeJobs) {
-  if (_timerInterval) clearInterval(_timerInterval);
-  if (!activeJobs.length) return;
-  _timerInterval = setInterval(() => {
-    activeJobs.forEach(j => {
-      const el = document.getElementById('timer-' + j.job_id);
-      if (!el || !j.expires_at) return;
-      const left = Math.max(0, Math.round((new Date(j.expires_at) - Date.now()) / 1000));
-      el.textContent = formatTimeLeft(left);
-      if (left <= 120) el.style.color = 'var(--red)';
-      if (left === 0)  { clearInterval(_timerInterval); loadData(); }
-    });
-  }, 1000);
-}
-
-function formatTimeLeft(seconds) {
-  if (seconds === null || seconds === undefined) return '';
-  if (seconds <= 0) return 'Expired';
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2,'0')}`;
-}
-
-function setDateRange(days){ _dateRange = days; renderJobs(); }
-
-// ─── STATS TAB (PREMIUM ONLY) ─────────────────────────────
-function renderStats(){
-  if (!_data.is_premium){
-    document.getElementById('tabContent').innerHTML = `
-      <div class="section" style="margin-top:12px;">
-        <div class="premium-lock">
-          <div class="premium-lock-icon">📈</div>
-          <div class="premium-lock-title">Performance stats</div>
-          <div class="premium-lock-sub">Upgrade to premium to see your response rate, win rate, revenue and rating history.</div>
-          <a href="/upgrade" style="display:block;width:100%;padding:14px;background:var(--orange);color:var(--black);text-align:center;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;text-decoration:none;">Upgrade to premium</a>
-        </div>
-      </div>
-    `;
-    return;
-  }
-
-  const s = _data.stats || {};
-
-  document.getElementById('tabContent').innerHTML = `
-    <div class="stat-grid" style="margin-top:12px;">
-      <div class="stat-card">
-        <div class="stat-label">Rating</div>
-        <div class="rating-display">
-          <div class="rating-number">${s.rating || '5.0'}</div>
-          <div class="rating-stars">★</div>
-        </div>
-        <div class="rating-count">${s.review_count || 0} review${s.review_count !== 1 ? 's' : ''}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Win rate</div>
-        <div class="stat-value">${s.win_rate || 0}%</div>
-        <div class="stat-sub">${s.jobs_won || 0} of ${s.jobs_offered || 0} offers</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Jobs offered</div>
-        <div class="stat-value">${s.jobs_offered || 0}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Revenue won</div>
-        <div class="stat-value" style="font-size:20px;">$${(s.revenue_won||0).toLocaleString()}</div>
-        <div class="stat-sub">avg $${s.avg_job_value || 0}</div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-header"><div class="section-title">Recent reviews</div></div>
-      <div class="section-body">
-        ${(s.rating_history || []).slice(-5).reverse().map(r => `
-          <div class="job-item">
-            <div>
-              <div class="job-desc" style="color:var(--orange);">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
-              ${r.comment ? `<div class="job-meta">${esc(r.comment)}</div>` : ''}
-              <div class="job-meta">${sydneyDate(r.date)}</div>
-            </div>
-          </div>
-        `).join('') || '<div style="padding:16px 0;font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">No reviews yet</div>'}
-      </div>
-    </div>
-    <div class="footer">noti<em>.</em></div>
-  `;
-}
-
-// ─── SETTINGS TAB ─────────────────────────────────────────
-function renderSettings(){
-  const account = _data.account || {};
-  const modes   = [
-    { val: 'ON',          name: 'On',           desc: 'All jobs'     },
-    { val: 'URGENT_ONLY', name: 'Urgent only',  desc: 'Repairs only' },
-    { val: 'OFF',         name: 'Off',          desc: 'Paused'       }
-  ];
-
-  document.getElementById('tabContent').innerHTML = `
-    <div class="section" style="margin-top:12px;">
-      <div class="section-header"><div class="section-title">Availability</div></div>
-      <div class="section-body">
-        <div class="mode-row" id="modeRow">
-          ${modes.map(m => `
-            <label class="mode-opt ${account.mode === m.val ? 'sel' : ''}" id="mode-${m.val}">
-              <input type="radio" name="mode" value="${m.val}" ${account.mode === m.val ? 'checked' : ''} />
-              <div class="mode-name">${m.name}</div>
-              <div class="mode-desc">${m.desc}</div>
-            </label>
-          `).join('')}
-        </div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-header"><div class="section-title">Service areas</div></div>
-      <div class="section-body">
-        <div class="field">
-          <label class="field-label">Suburbs or postcodes</label>
-          <textarea id="serviceAreas" style="min-height:80px;resize:none;line-height:1.5;font-size:13px;">${esc(account.service_areas || '')}</textarea>
-        </div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-header"><div class="section-title">Contact</div></div>
-      <div class="section-body">
-        <div class="field">
-          <label class="field-label">Email</label>
-          <input type="email" id="settingsEmail" value="${esc(account.email || '')}" />
-        </div>
-      </div>
-    </div>
-    <div id="settingsNotice"></div>
-    <div class="btn-wrap"><button class="btn btn-black" id="saveBtn">Save settings</button></div>
-    <div class="footer">noti<em>.</em></div>
-  `;
-
-  // Mode selection
-  document.querySelectorAll('.mode-opt').forEach(opt => {
-    opt.addEventListener('click', () => {
-      document.querySelectorAll('.mode-opt').forEach(o => o.classList.remove('sel'));
-      opt.classList.add('sel');
-      opt.querySelector('input').checked = true;
-    });
-  });
-
-  document.getElementById('saveBtn').onclick = async () => {
-    const btn  = document.getElementById('saveBtn');
-    const mode = document.querySelector('.mode-opt.sel input').value;
-    btn.disabled = true; btn.textContent = 'Saving...';
-    try {
-      const r = await post('/dashboard/settings', {
-        session:      _session,
-        mode:         mode,
-        serviceAreas: document.getElementById('serviceAreas').value,
-        email:        document.getElementById('settingsEmail').value
-      });
-      if (r.expired){ clearSession(); return; }
-      const n = document.getElementById('settingsNotice');
-      if (r.success){
-        n.innerHTML = '<div class="notice ok">Settings saved.</div>';
-        _data.account.mode         = mode;
-        _data.account.service_areas = document.getElementById('serviceAreas').value;
-        _data.account.email        = document.getElementById('settingsEmail').value;
-      } else {
-        n.innerHTML = `<div class="notice err">${esc(r.message || 'Save failed.')}</div>`;
-      }
-    } catch(e){
-      document.getElementById('settingsNotice').innerHTML = '<div class="notice err">Something went wrong.</div>';
-    } finally {
-      btn.disabled = false; btn.textContent = 'Save settings';
-    }
-  };
-}
-
-// ─── ACCOUNT TAB ──────────────────────────────────────────
-function renderAccount(){
-  const a = _data.account || {};
-  const isPremium = _data.is_premium;
-
-  const licenceWarning  = isExpiringSoon(a.licence_expiry);
-  const insuranceWarning = isExpiringSoon(a.insurance_expiry);
-
-  document.getElementById('tabContent').innerHTML = `
-    <div class="stat-grid" style="margin-top:12px;">
-      <div class="stat-card">
-        <div class="stat-label">Rating</div>
-        <div class="stat-value">${a.rating || '5.0'} <span style="font-size:16px;color:var(--orange);">★</span></div>
-        <div class="stat-sub">${a.review_count || 0} reviews</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Plan</div>
-        <div class="stat-value" style="font-size:18px;text-transform:uppercase;">${esc(a.plan || '')}</div>
-        ${a.plan === 'TRIAL' ? `<div class="stat-sub">${a.trial_used || 0} of ${a.trial_limit || 5} jobs used</div>` : ''}
-      </div>
-    </div>
-
-    ${licenceWarning ? `<div class="notice hi">Licence expires ${esc(a.licence_expiry)} — please update before it lapses.</div>` : ''}
-    ${insuranceWarning ? `<div class="notice hi">Insurance expires ${esc(a.insurance_expiry)} — please update before it lapses.</div>` : ''}
-
-    <div class="section">
-      <div class="section-header"><div class="section-title">Business</div></div>
-      <div class="section-body">
-        <div class="job-item"><div class="job-meta">Business</div><div class="job-desc">${esc(a.business_name || '')}</div></div>
-        <div class="job-item"><div class="job-meta">Trade</div><div class="job-desc">${esc(a.trade_type || '')}</div></div>
-        <div class="job-item"><div class="job-meta">Mobile</div><div class="job-desc">${esc(a.primary_phone || '')}</div></div>
-        <div class="job-item"><div class="job-meta">Verification</div><div class="job-desc" style="color:${a.verification_level==='VERIFIED'?'var(--green)':a.verification_level==='FLAGGED'?'var(--red)':'var(--muted)'}">${esc(a.verification_level || 'Pending')}</div></div>
-        <div class="job-item"><div class="job-meta">Licence expiry</div><div class="job-desc">${esc(a.licence_expiry || 'Not set')}</div></div>
-        <div class="job-item" style="border:none;"><div class="job-meta">Insurance expiry</div><div class="job-desc">${esc(a.insurance_expiry || 'Not set')}</div></div>
-      </div>
-    </div>
-
-    ${!isPremium ? `
-      <div class="btn-wrap">
-        <a href="/upgrade" style="display:block;width:100%;padding:14px;background:var(--orange);color:var(--black);text-align:center;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;text-decoration:none;">Upgrade to premium</a>
-      </div>
-    ` : ''}
-
-    <div class="section">
-      <div class="section-header"><div class="section-title">Documents</div></div>
-      <div class="section-body">
-        <div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:14px;line-height:1.5;">View or update your licence and insurance documents. Uploading new documents will reset your verification status pending review.</div>
-
-        <div class="field" style="margin-bottom:12px;">
-          <div class="field-label">Licence document</div>
-          ${a.licence_file_url
-            ? `<a href="${esc(a.licence_file_url)}" target="_blank" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current licence ↗</a>`
-            : `<div style="font-size:12px;color:var(--muted);">No licence uploaded</div>`}
-        </div>
-
-        <div class="field" style="margin-bottom:16px;">
-          <div class="field-label">Insurance certificate</div>
-          ${a.insurance_file_url
-            ? `<a href="${esc(a.insurance_file_url)}" target="_blank" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current insurance ↗</a>`
-            : `<div style="font-size:12px;color:var(--muted);">No insurance uploaded</div>`}
-        </div>
-
-        <div style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px;">
-          <div class="field-label" style="margin-bottom:10px;">Update documents</div>
-          <div class="field">
-            <label class="field-label">New licence document</label>
-            <input type="file" id="newLicenceFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;color:var(--dim);padding:6px 0;" />
-          </div>
-          <div class="field">
-            <label class="field-label">Licence expiry</label>
-            <input type="date" id="newLicenceExpiry" value="${esc(a.licence_expiry||'')}" style="font-size:13px;padding:8px 0;border:none;border-bottom:1.5px solid var(--line);background:transparent;font-family:inherit;outline:none;width:100%;" />
-          </div>
-          <div class="field">
-            <label class="field-label">New insurance document</label>
-            <input type="file" id="newInsuranceFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;color:var(--dim);padding:6px 0;" />
-          </div>
-          <div class="field">
-            <label class="field-label">Insurance expiry</label>
-            <input type="date" id="newInsuranceExpiry" value="${esc(a.insurance_expiry||'')}" style="font-size:13px;padding:8px 0;border:none;border-bottom:1.5px solid var(--line);background:transparent;font-family:inherit;outline:none;width:100%;" />
-          </div>
-          <div id="docNotice"></div>
-          <div class="btn-wrap" style="padding:12px 0 0;"><button class="btn btn-black" id="uploadDocsBtn" onclick="uploadDocs()">Update documents</button></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer">noti<em>.</em></div>
-    <div style="text-align:center;padding:0 0 20px;font-size:11px;font-weight:600;color:var(--muted);"><a href="/support" style="color:var(--muted);text-decoration:none;">Need help? Chat with support</a></div>
-  `;
-}
-
-async function uploadDocs() {
-  const btn = document.getElementById('uploadDocsBtn');
-  const notice = document.getElementById('docNotice');
-  const licenceFile  = document.getElementById('newLicenceFile')?.files[0];
-  const insuranceFile = document.getElementById('newInsuranceFile')?.files[0];
-  const licenceExpiry  = document.getElementById('newLicenceExpiry')?.value;
-  const insuranceExpiry = document.getElementById('newInsuranceExpiry')?.value;
-
-  if (!licenceFile && !insuranceFile) {
-    notice.innerHTML = '<div class="notice err" style="margin:10px 0;">Please select at least one file to upload.</div>';
-    return;
-  }
-
-  btn.disabled = true; btn.textContent = 'Uploading...';
-  notice.innerHTML = '';
-
-  try {
-    const payload = { session: _session };
-
-    if (licenceFile) {
-      const data = await fileToBase64(licenceFile);
-      payload.licenceData    = data.split(',')[1];
-      payload.licenceMime    = licenceFile.type || 'application/pdf';
-      payload.licenceExpiry  = licenceExpiry || '';
-    }
-    if (insuranceFile) {
-      const data = await fileToBase64(insuranceFile);
-      payload.insuranceData    = data.split(',')[1];
-      payload.insuranceMime    = insuranceFile.type || 'application/pdf';
-      payload.insuranceExpiry  = insuranceExpiry || '';
-    }
-
-    const r = await post('/dashboard/documents', payload);
-    if (r.expired) { clearSession(); return; }
-    if (r.success) {
-      notice.innerHTML = '<div class="notice ok" style="margin:10px 0;">Documents updated. We will review them shortly.</div>';
-      btn.textContent = 'Updated';
-    } else {
-      notice.innerHTML = `<div class="notice err" style="margin:10px 0;">${esc(r.message || 'Upload failed.')}</div>`;
-      btn.disabled = false; btn.textContent = 'Update documents';
-    }
-  } catch(e) {
-    notice.innerHTML = '<div class="notice err" style="margin:10px 0;">Something went wrong.</div>';
-    btn.disabled = false; btn.textContent = 'Update documents';
-  }
-}
-
-function fileToBase64(file) {
+function fileToBase64(file){
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload  = () => resolve(reader.result);
@@ -976,20 +698,151 @@ function fileToBase64(file) {
   });
 }
 
-function isExpiringSoon(dateStr){
-  if (!dateStr) return false;
-  const d = new Date(dateStr);
-  if (isNaN(d)) return false;
-  const daysUntil = (d - new Date()) / (1000 * 60 * 60 * 24);
-  return daysUntil <= 30 && daysUntil > 0;
+function note(msg, type){
+  const el = document.getElementById('formNotice');
+  el.className = 'notice ' + type;
+  el.textContent = msg;
 }
 
-// ─── START ─────────────────────────────────────────────────
-init();
+// Submit
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('submitBtn');
 
-// Refresh when specialist comes back to the app (e.g. after tapping a push notification)
-document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'visible' && _session) loadData();
+  // Validation
+  if (!val('businessName'))      { note('Business name is required.', 'err'); return; }
+  if (selectedTrades.size === 0) { note('Please select at least one trade type.', 'err'); return; }
+  if (selectedTrades.has('Other') && !document.getElementById('otherTrade')?.value?.trim()) {
+    note('Please describe your trade in the Other field.', 'err'); return;
+  }
+  if (!isValidABN(val('abn')))   { note('Please enter a valid 11 digit ABN.', 'err'); return; }
+  if (!val('email'))             { note('Business email is required.', 'err'); return; }
+  if (!val('primaryPhone'))      { note('Primary mobile number is required.', 'err'); return; }
+  if (!val('businessAddress'))   { note('Business address is required.', 'err'); return; }
+  if (!val('businessSuburb'))    { note('Business suburb is required.', 'err'); return; }
+  if (!val('businessPostcode'))  { note('Business postcode is required.', 'err'); return; }
+  if (!val('businessState'))     { note('Business state is required.', 'err'); return; }
+  // licence number optional
+  // licence state optional
+  if (!val('insuranceProvider')) { note('Insurance provider is required.', 'err'); return; }
+  if (!val('insuranceAmount'))   { note('Please select a public liability cover amount.', 'err'); return; }
+  if (!val('insuranceExpiry'))   { note('Insurance expiry date is required.', 'err'); return; }
+
+  const insuranceFile = document.getElementById('insuranceFile').files[0];
+  if (!insuranceFile){ note('Insurance document is required.', 'err'); return; }
+
+  const allChecked = [...document.querySelectorAll('.check-item[data-required] input')].every(cb => cb.checked);
+  if (!allChecked){ note('Please agree to all items before continuing.', 'err'); return; }
+
+  const MAX = 10 * 1024 * 1024;
+  const licenceFile = document.getElementById('licenceFile').files[0];
+  if (licenceFile    && licenceFile.size    > MAX){ note('Licence file must be under 10MB.', 'err'); return; }
+  if (insuranceFile.size > MAX){ note('Insurance file must be under 10MB.', 'err'); return; }
+
+  btn.disabled    = true;
+  btn.textContent = 'Submitting...';
+  document.getElementById('formNotice').className = '';
+  document.getElementById('formNotice').textContent = '';
+
+  try {
+    // Encode files to base64
+    let licenceB64   = '';
+    let licenceMime  = '';
+    let insuranceB64 = '';
+    let insuranceMime= '';
+
+    if (licenceFile){
+      const lData  = await fileToBase64(licenceFile);
+      licenceB64   = lData.split(',')[1];
+      licenceMime  = licenceFile.type || 'application/pdf';
+    }
+
+    const iData    = await fileToBase64(insuranceFile);
+    insuranceB64   = iData.split(',')[1];
+    insuranceMime  = insuranceFile.type || 'application/pdf';
+
+    // Map trade display names to system codes
+    const TRADE_MAP = {
+      'Plumber':                'PLUMBER',
+      'Electrician':            'ELECTRICIAN',
+      'Builder':                'BUILDER',
+      'Carpenter':              'CARPENTER',
+      'Handyman':               'HANDYMAN',
+      'Air Conditioning':       'AIR_CONDITIONING',
+      'Gas Fitter':             'GAS_FITTER',
+      'Waterproofing':          'WATERPROOFING',
+      'Roofing':                'ROOFING',
+      'Concreter':              'CONCRETER',
+      'Glazier':                'GLAZIER',
+      'Fencing':                'FENCING',
+      'Cleaner':                'CLEANER',
+      'Carpet & Upholstery Cleaning': 'CARPET_CLEANING',
+      'Pest Control':           'PEST_CONTROL',
+      'Gardening / Landscaping':'GARDENING',
+      'Pool Maintenance':       'POOL',
+      'Locksmith':              'LOCKSMITH',
+      'Security Systems':       'SECURITY',
+      'Painter':                'PAINTER',
+      'Tiler':                  'TILER',
+      'Plasterer':              'PLASTERER',
+      'Flooring':               'FLOORING',
+      'Appliance Repair':       'APPLIANCE',
+      'Rubbish Removal':        'RUBBISH',
+      'Other':                  'HANDYMAN'
+    };
+    // If Other is selected, use the text box value as trade description
+    const otherText   = document.getElementById('otherTrade')?.value?.trim() || '';
+    if (selectedTrades.has('Other') && otherText) {
+      TRADE_MAP['Other'] = otherText.toUpperCase().replace(/\s+/g, '_');
+    }
+    const tradeCodes  = [...selectedTrades].map(t => TRADE_MAP[t] || t.toUpperCase());
+    const primaryTrade = tradeCodes[0];
+
+    // Build payload
+    const payload = {
+      businessName:      val('businessName'),
+      tradeType:         primaryTrade,
+      abn:               val('abn').replace(/\s/g,''),
+      email:             val('email'),
+      serviceAreas:      val('serviceAreas'),
+      businessAddress:   val('businessAddress'),
+      businessSuburb:    val('businessSuburb'),
+      businessPostcode:  val('businessPostcode'),
+      businessState:     val('businessState'),
+      primaryPhone:      cleanPhone(val('primaryPhone')),
+      secondaryPhone:    cleanPhone(val('secondaryPhone')),
+      licenceNumber:     val('licenceNumber'),
+      licenceState:      val('licenceState'),
+      licenceExpiry:     val('licenceExpiry'),
+      insuranceProvider: val('insuranceProvider'),
+      insuranceAmount:   val('insuranceAmount'),
+      insuranceExpiry:   val('insuranceExpiry'),
+      licenceData:       licenceB64,
+      licenceMime:       licenceMime,
+      insuranceData:     insuranceB64,
+      insuranceMime:     insuranceMime
+    };
+
+    const res  = await fetch(`${API}/signup`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload)
+    });
+
+    const data = JSON.parse(await res.text());
+
+    if (!data.success){
+      note(data.message || 'Signup failed. Please try again.', 'err');
+      btn.disabled = false; btn.textContent = 'Start free trial';
+      return;
+    }
+
+    btn.textContent = 'Done';
+    note('You are in. Check your phone for an SMS.\n\nReply ON to start receiving jobs.', 'ok');
+
+  } catch(err){
+    note('Something went wrong. Please try again.', 'err');
+    btn.disabled = false; btn.textContent = 'Start free trial';
+  }
 });
 </script>
 </body>

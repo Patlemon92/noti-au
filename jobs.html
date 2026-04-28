@@ -499,7 +499,7 @@
     word-wrap: break-word;
   }
 
-  /* Quote selection — "I went with this tradie" */
+  /* Quote selection — "I went with this specialist" */
   .quote-action {
     margin-top: 12px; padding-top: 12px;
     border-top: 1px solid var(--line);
@@ -744,9 +744,9 @@ function stageMeta(s) {
   const m = {
     NEW:                    ["live",   "Confirm your job"],
     DRAFT:                  ["live",   "Confirm your job"],
-    SENT_TO_TRADIES:        ["pulse",  "Finding tradies"],
+    SENT_TO_TRADIES:        ["pulse",  "Finding specialists"],
     AWAITING_CUSTOMER:      ["moving", "Offer ready"],
-    AWAITING_TRADIE_DETAILS:["moving", "Tradie responding"],
+    AWAITING_TRADIE_DETAILS:["moving", "Specialist responding"],
     ACCEPTED:               ["done",   "Confirmed"],
     CLOSED:                 ["done",   "Complete"],
     QUOTE_OPEN:             ["pulse",  "Quotes open"],
@@ -824,7 +824,7 @@ function showConfirm(job, loc, returning) {
       </div>
       <div class="field">
         <label class="field-label">Additional details (optional)</label>
-        <textarea id="cNote" rows="3" maxlength="2000" placeholder="Extra info that helps the tradie quote accurately. e.g. Want to retile the floor, replace the vanity, keep the bath. About 6 sqm.">${esc(job.customer_note||"")}</textarea>
+        <textarea id="cNote" rows="3" maxlength="2000" placeholder="Extra info that helps the specialist quote accurately. e.g. Want to retile the floor, replace the vanity, keep the bath. About 6 sqm.">${esc(job.customer_note||"")}</textarea>
       </div>
       <div class="field-row">
         <div class="field">
@@ -866,7 +866,7 @@ function showConfirm(job, loc, returning) {
               <button class="photo-remove" data-index="${i}" type="button">✕</button>
             </div>`).join('')}
         </div>
-        <div class="photo-hint">Add photos to help the tradie understand the job</div>
+        <div class="photo-hint">Add photos to help the specialist understand the job</div>
       </div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
@@ -965,8 +965,8 @@ function showWaiting(job, stage, loc, otherJobs) {
       <div class="waiting-icon">
         <div class="waiting-icon-dot"></div>
       </div>
-      <div class="waiting-title">Finding tradies nearby</div>
-      <div class="waiting-sub">Tradies in your area are being notified.<br>You will get an SMS as soon as one responds.</div>
+      <div class="waiting-title">Finding specialists nearby</div>
+      <div class="waiting-sub">Noti Specialists in your area are being notified.<br>You will get an SMS as soon as one responds.</div>
       ${secsLeft > 0 ? `
       <div style="margin-top:24px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Responses close in</div>
       <div id="custCountdown" style="font-size:40px;font-weight:800;letter-spacing:-0.04em;color:var(--orange);margin-top:4px;">${mins}:${secs}</div>` : ''}
@@ -1016,19 +1016,19 @@ function showOfferCards(job, cards, loc, otherJobs) {
         </div>
         ${c.note ? `<div class="quote-note">${esc(c.note)}</div>` : ''}
         <div id="nWrap${i}" style="margin-top:8px;"></div>
-        <button class="btn btn-black" style="margin-top:12px;padding:14px;" onclick="acceptTradie('${esc(c.tradie_id)}',${i})">Choose this tradie</button>
+        <button class="btn btn-black" style="margin-top:12px;padding:14px;" onclick="acceptTradie('${esc(c.tradie_id)}',${i})">Choose this specialist</button>
       </div>`;
   }).join('') : `
     <div class="waiting-block">
       <div class="waiting-icon"><div class="waiting-icon-dot"></div></div>
       <div class="waiting-title">Waiting for responses</div>
-      <div class="waiting-sub">Tradies are reviewing your job.<br>This page will update automatically.</div>
+      <div class="waiting-sub">Noti Specialists are reviewing your job.<br>This page will update automatically.</div>
     </div>`;
 
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, "AWAITING_CUSTOMER")}
     <div class="section animate d1">
-      ${hasCards ? `<div class="section-label">${cards.length} tradie${cards.length !== 1 ? 's' : ''} responded</div>` : ''}
+      ${hasCards ? `<div class="section-label">${cards.length} specialist${cards.length !== 1 ? 's' : ''} responded</div>` : ''}
       <div class="quote-list">${cardHtml}</div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
@@ -1045,13 +1045,13 @@ window.acceptTradie = async function(tradieId, idx) {
   try {
     const r = await api({ action:'accept', tradie_id: tradieId });
     if (!r.success) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Choose this tradie'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Choose this specialist'; }
       note(n, r.message || 'Something went wrong.', 'err');
       return;
     }
     setTimeout(load, 600);
   } catch(e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Choose this tradie'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Choose this specialist'; }
     note(n, 'Something went wrong.', 'err');
   }
 };
@@ -1090,7 +1090,7 @@ function showQuoteLive(job, cards, loc, otherJobs) {
   // Pad with placeholder for any missing slots (we expect up to 5)
   const remaining = Math.max(0, 5 - cards.length);
   const waitingMsg = cards.length === 0
-    ? 'Waiting for tradies to send their quote...'
+    ? 'Waiting for specialists to send their quote...'
     : (remaining > 0 ? `Waiting on up to ${remaining} more` : 'All quotes received');
 
   render(`
@@ -1105,12 +1105,12 @@ function showQuoteLive(job, cards, loc, otherJobs) {
     </div>
     <div class="section animate d1">
       <div class="section-label">${cards.length} ${cards.length === 1 ? 'quote' : 'quotes'} so far</div>
-      ${list || `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:500;">No quotes yet — they'll appear here as soon as tradies respond.</div>`}
+      ${list || `<div style="padding:24px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:500;">No quotes yet — they'll appear here as soon as specialists respond.</div>`}
       ${cards.length > 0 ? `<div style="padding:14px 0 4px;text-align:center;font-size:12px;color:var(--muted);font-weight:500;">${waitingMsg}</div>` : ''}
     </div>
     ${cards.length > 0 ? `
       <div class="notice-wrap animate d2">
-        <div class="notice hi">Call the tradie you prefer to arrange a time.</div>
+        <div class="notice hi">Call the specialist you prefer to arrange a time.</div>
       </div>` : ''}
     ${otherJobsHtml(otherJobs)}
   `);
@@ -1152,15 +1152,15 @@ function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
     // Selection / change button block
     let actionHtml;
     if (reviewed && isPicked) {
-      actionHtml = `<div class="quote-picked-badge">You hired this tradie</div>`;
+      actionHtml = `<div class="quote-picked-badge">You hired this specialist</div>`;
     } else if (reviewed) {
       actionHtml = '';
     } else if (isPicked) {
-      actionHtml = `<div class="quote-picked-badge">Selected — you went with this tradie</div>`;
+      actionHtml = `<div class="quote-picked-badge">Selected — you went with this specialist</div>`;
     } else if (hasPick) {
-      actionHtml = `<button class="quote-pick-btn outline" onclick="pickQuote('${esc(c.tradie_id)}', ${JSON.stringify(c.name)})">Pick this tradie instead</button>`;
+      actionHtml = `<button class="quote-pick-btn outline" onclick="pickQuote('${esc(c.tradie_id)}', ${JSON.stringify(c.name)})">Pick this specialist instead</button>`;
     } else {
-      actionHtml = `<button class="quote-pick-btn" onclick="pickQuote('${esc(c.tradie_id)}', ${JSON.stringify(c.name)})">I went with this tradie</button>`;
+      actionHtml = `<button class="quote-pick-btn" onclick="pickQuote('${esc(c.tradie_id)}', ${JSON.stringify(c.name)})">I went with this specialist</button>`;
     }
 
     return `
@@ -1183,13 +1183,13 @@ function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
   // Notice strip — adapts to selection state
   let notice;
   if (cards.length === 0) {
-    notice = `<div class="notice hi">No tradies responded in time. Send another SMS to start a new request.</div>`;
+    notice = `<div class="notice hi">No specialists responded in time. Send another SMS to start a new request.</div>`;
   } else if (reviewed) {
     notice = `<div class="notice ok">Thanks for your review.</div>`;
   } else if (hasPick && pickedCard) {
     notice = `<div class="notice ok">You went with <strong>${esc(pickedCard.name)}</strong>. Once the work is done, leave a review below.</div>`;
   } else {
-    notice = `<div class="notice hi">Call the tradie you prefer to arrange a time. Once you've hired one, tap "I went with this tradie" so we can follow up for a review.</div>`;
+    notice = `<div class="notice hi">Call the specialist you prefer to arrange a time. Once you've hired one, tap "I went with this specialist" so we can follow up for a review.</div>`;
   }
 
   // Review form — only after they've picked AND not yet reviewed
@@ -1197,7 +1197,7 @@ function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
     <div class="section animate d3" id="rSection">
       <div class="section-label">How did it go?</div>
       <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Rate <strong>${esc(pickedCard.name)}</strong></div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Your rating helps other customers and rewards good tradies.</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Your rating helps other customers and rewards good specialists.</div>
       <div class="star-row" id="stars">
         ${[1,2,3,4,5].map(n => `<button class="star" data-v="${n}">★</button>`).join('')}
       </div>
@@ -1213,7 +1213,7 @@ function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, isClosed ? "CLOSED" : "QUOTE_LOCKED")}
     <div class="section animate d1">
-      <div class="section-label">${cards.length} tradie${cards.length !== 1 ? 's' : ''} responded</div>
+      <div class="section-label">${cards.length} specialist${cards.length !== 1 ? 's' : ''} responded</div>
       <div class="quote-list">${list}</div>
     </div>
     <div class="notice-wrap animate d2">
@@ -1226,9 +1226,9 @@ function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
   if (hasPick && !reviewed && pickedCard) wireStars();
 }
 
-// Customer taps "I went with this tradie" on a quote card
+// Customer taps "I went with this specialist" on a quote card
 async function pickQuote(tradieId, tradieName) {
-  if (!confirm(`Mark ${tradieName} as the tradie you hired? You can change this later if needed.`)) return;
+  if (!confirm(`Mark ${tradieName} as the specialist you hired? You can change this later if needed.`)) return;
   try {
     const r = await api({ action: 'select_quote', tradie_id: tradieId });
     if (!r.success) {
@@ -1251,7 +1251,7 @@ function showAccepted(job, tradie, allowRating, loc, otherJobs) {
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, "ACCEPTED")}
     <div class="section animate d1">
-      <div class="section-label">Your confirmed tradie</div>
+      <div class="section-label">Your confirmed specialist</div>
       <div class="tradie-block">
         <div class="tradie-initial">${esc(ini(name))}</div>
         <div>
@@ -1267,7 +1267,7 @@ function showAccepted(job, tradie, allowRating, loc, otherJobs) {
         </div>` : ""}
     </div>
     <div class="notice-wrap animate d2">
-      <div class="notice hi">Contact your tradie directly to confirm timing.</div>
+      <div class="notice hi">Contact your specialist directly to confirm timing.</div>
     </div>
     ${allowRating ? `
       <div class="section animate d3" id="rSection">
@@ -1503,7 +1503,7 @@ function showLocked() {
   render(`
     <div class="hero animate">
       <div class="hero-kicker">Job status</div>
-      <div class="hero-title">This one went to another tradie</div>
+      <div class="hero-title">This one went to another specialist</div>
       <div class="hero-status"><div class="status-dot done"></div><div class="status-label">Taken</div></div>
     </div>
     <div class="waiting-block animate d1">

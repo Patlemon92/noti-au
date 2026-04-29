@@ -39,7 +39,9 @@ self.addEventListener('push', (event) => {
     icon:    payload.icon  || '/icon-192.png',
     badge:   payload.badge || '/icon-72.png',
     tag:     payload.tag   || 'noti-default',
-    data:    { url: payload.url || 'https://noti.au/tradie' },
+    // Fallback URL points to the specialist dashboard explicitly
+    // (not /specialist which can hit unintended URL rewrites).
+    data:    { url: payload.url || 'https://noti.au/specialist.html' },
     requireInteraction: payload.requireInteraction === true,
     vibrate: payload.vibrate || [200, 100, 200]
   };
@@ -52,7 +54,7 @@ self.addEventListener('push', (event) => {
 // Tap on a notification — focus existing tab or open new one
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || 'https://noti.au/tradie';
+  const url = event.notification.data?.url || 'https://noti.au/specialist.html';
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {

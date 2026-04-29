@@ -971,6 +971,11 @@ function showWaiting(job, stage, loc, otherJobs) {
       <div style="margin-top:24px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);">Responses close in</div>
       <div id="custCountdown" style="font-size:40px;font-weight:800;letter-spacing:-0.04em;color:var(--orange);margin-top:4px;">${mins}:${secs}</div>` : ''}
     </div>
+    ${job.job_type === 'QUOTE' ? `
+      <div class="notice-wrap animate d2">
+        <div class="notice hi">We're putting together your shortlist. The prices specialists send are <strong>rough estimates</strong> — most will want to see the job before giving a final price.</div>
+      </div>
+    ` : ''}
     ${otherJobsHtml(otherJobs)}
   `);
 
@@ -1110,7 +1115,7 @@ function showQuoteLive(job, cards, loc, otherJobs) {
     </div>
     ${cards.length > 0 ? `
       <div class="notice-wrap animate d2">
-        <div class="notice hi">Call the specialist you prefer to arrange a time.</div>
+        <div class="notice hi">Estimates rolling in. <strong>Rough prices only</strong> — chat with any specialist that interests you and agree on a final price before work starts.</div>
       </div>` : ''}
     ${otherJobsHtml(otherJobs)}
   `);
@@ -1212,6 +1217,11 @@ function showQuoteCards(job, cards, loc, isClosed, otherJobs) {
 
   render(`
     ${heroHtml("Your job", job.description||"Your job", loc, isClosed ? "CLOSED" : "QUOTE_LOCKED")}
+    ${cards.length > 0 ? `
+      <div class="notice-wrap animate d1">
+        <div class="notice hi"><strong>Rough estimates only.</strong> These prices help you shortlist — chat with each specialist, walk through the job, and agree on a final price before they start.</div>
+      </div>
+    ` : ''}
     <div class="section animate d1">
       <div class="section-label">${cards.length} specialist${cards.length !== 1 ? 's' : ''} responded</div>
       <div class="quote-list">${list}</div>
@@ -1267,7 +1277,7 @@ function showAccepted(job, tradie, allowRating, loc, otherJobs) {
         </div>` : ""}
     </div>
     <div class="notice-wrap animate d2">
-      <div class="notice hi">Contact your specialist directly to confirm timing.</div>
+      <div class="notice hi">${job.job_type === 'QUOTE' ? 'Walk through the job with your specialist and <strong>agree on a final price</strong> before any work starts.' : 'Confirm timing with your specialist. Agreed price was based on what you described — make sure it still applies in person.'}</div>
     </div>
     ${allowRating ? `
       <div class="section animate d3" id="rSection">
@@ -1451,6 +1461,9 @@ function showTradie(d) {
         <label class="field-label">Note for the customer (optional)</label>
         <textarea id="tNote" maxlength="200" rows="2" placeholder="e.g. Includes parts and labour. Old vanity removal not included."></textarea>
       </div>
+    </div>
+    <div class="notice-wrap animate d3">
+      <div class="notice hi">Your <strong>rough estimate</strong> for the customer. Walk them through the job in person before agreeing a final price.</div>
     </div>
     <div id="nWrap" class="notice-wrap"></div>
     <div class="btn-wrap animate d3">

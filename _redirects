@@ -13,4 +13,9 @@
 /upgrade              https://buy.stripe.com/5kQ3cu9rC5wlccpd0reAg01    302
 /sw.js                /sw.js                               200
 /manifest.json        /manifest.json                       200
+/specialist            /specialist.html                   200
+/tradie                /specialist.html                   200
+/tradie.html           /specialist.html                   301
+
+
 

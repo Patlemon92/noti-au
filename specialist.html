@@ -614,6 +614,193 @@
   border-color: var(--orange);
   color: var(--white);
 }
+
+/* ── DASHBOARD REBUILD: account/settings layout ───────────── */
+
+/* Per-section save bar at the bottom of an editable section */
+.save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--off);
+}
+.save-bar.dirty { background: var(--noti-light); border-top-color: var(--noti-200, #fed7aa); }
+.save-bar-status {
+  flex: 1;
+  font-size: 12px; font-weight: 500;
+  color: var(--muted);
+}
+.save-bar.dirty .save-bar-status { color: #9a3412; font-weight: 600; }
+.save-bar-btn {
+  padding: 9px 18px;
+  font: inherit; font-size: 13px; font-weight: 600;
+  letter-spacing: -0.01em;
+  background: var(--black); color: var(--white);
+  border: 1px solid var(--black); border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+}
+.save-bar-btn:hover:not(:disabled) { background: #000; }
+.save-bar-btn:active:not(:disabled) { transform: scale(0.98); }
+.save-bar-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Read-only field row for things like primary phone (login) */
+.readonly-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 12px;
+  background: var(--off);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+}
+.readonly-row .ro-key {
+  font-size: 12px; font-weight: 500; color: var(--muted);
+}
+.readonly-row .ro-val {
+  font-size: 14px; font-weight: 500; color: var(--black);
+}
+.readonly-hint {
+  font-size: 11px; color: var(--muted);
+  margin-top: 6px; line-height: 1.5;
+}
+.readonly-hint a { color: var(--orange); text-decoration: none; font-weight: 600; }
+.readonly-hint a:hover { text-decoration: underline; }
+
+/* Stat tiles for Plan section */
+.account-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.account-tile {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.account-tile-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.account-tile-value {
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--black);
+  line-height: 1;
+}
+.account-tile-sub {
+  font-size: 12px; color: var(--muted); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* Sign-out section */
+.danger-section {
+  padding: 16px;
+  margin-top: 8px;
+  text-align: center;
+}
+.btn-signout {
+  width: 100%;
+  padding: 12px 18px;
+  background: var(--white);
+  color: var(--red, #dc2626);
+  border: 1px solid var(--red, #dc2626);
+  border-radius: 8px;
+  font: inherit; font-size: 13px; font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-signout:hover { background: #fef2f2; }
+
+/* Document upload row */
+.doc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--off);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.doc-row-status { color: var(--muted); font-weight: 500; }
+.doc-row-status.ok { color: var(--green); }
+.doc-row-link {
+  color: var(--orange);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 13px;
+}
+.doc-row-link:hover { text-decoration: underline; }
+.file-input-wrap {
+  margin-top: 8px;
+  font-size: 12px; color: var(--muted);
+}
+.file-input-wrap input[type=file] {
+  font-size: 12px;
+  padding: 6px 0;
+  width: 100%;
+  color: var(--dim);
+}
+
+/* Section sub-label, used to group fields within a section */
+.section-sub {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 0 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.section-sub:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+/* ── DESKTOP RESPONSIVE ───────────────────────────────────── */
+@media (min-width: 768px) {
+  body { background: var(--slate-100, #f1f5f9); }
+
+  /* Wider centred container on desktop */
+  .topbar, .shell, .tab-content, .account-tiles, .footer { max-width: 760px; }
+  .topbar, .shell, .tab-content { margin-left: auto; margin-right: auto; }
+
+  /* Two-column layout for fields where it makes sense */
+  .field-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .field-grid-3 {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 14px;
+  }
+  .field-grid-2 .field, .field-grid-3 .field { margin-bottom: 0; }
+
+  /* Account tiles: 4 across instead of 2 */
+  .account-tiles { grid-template-columns: repeat(4, 1fr); }
+
+  /* Trades grid: 4 columns on desktop */
+  #settingsTradeGrid { grid-template-columns: repeat(4, 1fr) !important; }
+
+  /* Mode row: keep 3 across but more breathing room */
+  .mode-row { gap: 12px; }
+
+  /* Save bar: sticky to section bottom on desktop */
+  .save-bar { padding: 16px 20px; }
+}
+
+/* On mobile, keep field grids stacked (default) */
+.field-grid-2 .field, .field-grid-3 .field { margin-bottom: 14px; }
   </style>
 </head>
 <body>
@@ -630,6 +817,28 @@ let _data      = null;
 let _session   = localStorage.getItem(SESSION_KEY) || '';
 let _tab       = 'jobs';
 let _dateRange = 30;
+
+// Dirty-form tracking — maps form key -> dirty boolean.
+// Used to warn user when switching tabs / closing window with
+// unsaved changes. Each editable section in renderAccount and
+// renderSettings registers itself here.
+const _dirtyForms = new Map();
+function _dirtyFormCount() {
+  let n = 0;
+  for (const v of _dirtyForms.values()) if (v) n++;
+  return n;
+}
+function _resetDirtyForms() { _dirtyForms.clear(); }
+
+// Browser-level warning when closing the tab/window with unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  if (_dirtyFormCount() > 0) {
+    // Modern browsers ignore custom message but show their own
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+});
 
 // ─── HELPERS ─────────────────────────────────────────────
 const esc = v => String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -947,6 +1156,8 @@ async function loadDashboard(){
     }
     _data = r;
     if (r.vapid_public_key) VAPID_PUBLIC_KEY = r.vapid_public_key;
+    // Fresh data == any pending dirty state is now "saved" or moot
+    _resetDirtyForms();
     renderDashboard();
   } catch(e){
     document.getElementById('root').innerHTML = '<div class="notice err" style="margin:40px 16px;">Could not load dashboard. Please try again.</div>';
@@ -1028,7 +1239,16 @@ function renderCompleteProfileBanner(account) {
   `;
 }
 
-function switchTab(tab){ _tab = tab; renderDashboard(); }
+function switchTab(tab){
+  // Warn if there are unsaved changes in the current tab
+  if (_dirtyFormCount() > 0) {
+    const ok = confirm("You have unsaved changes. Discard them and switch tabs?");
+    if (!ok) return;
+    _resetDirtyForms();
+  }
+  _tab = tab;
+  renderDashboard();
+}
 
 function renderTab(){
   if (_tab === 'jobs')     renderJobs();
@@ -1236,14 +1456,17 @@ function renderStats(){
   `;
 }
 
-// ─── SETTINGS TAB ─────────────────────────────────────────
+// ─── SETTINGS TAB — operating preferences only ────────────
+// Day-to-day toggles: mode, trades, service areas.
+// Profile/business stuff lives in Account.
 function renderSettings(){
   const account = _data.account || {};
   const profileIncomplete = account.profile_complete === false;
-  const modes   = [
-    { val: 'ON',          name: 'On',           desc: 'All jobs'     },
-    { val: 'URGENT_ONLY', name: 'Urgent only',  desc: 'Repairs only' },
-    { val: 'OFF',         name: 'Off',          desc: 'Paused'       }
+
+  const modes = [
+    { val: 'ON',          name: 'On',          desc: 'All jobs'      },
+    { val: 'URGENT_ONLY', name: 'Urgent only', desc: 'Repairs only'  },
+    { val: 'OFF',         name: 'Off',         desc: 'Paused'        }
   ];
 
   // Trade list — display name -> internal code (matches signup forms)
@@ -1261,8 +1484,26 @@ function renderSettings(){
   ];
   const currentTrades = new Set(account.trade_types || (account.trade_type ? [account.trade_type] : []));
 
-  // Trades section — always visible. Tradie can add/remove trades.
-  const tradesSection = `
+  document.getElementById('tabContent').innerHTML = `
+    <!-- Mode — saves on tap -->
+    <div class="section">
+      <div class="section-header"><div class="section-title">Mode</div></div>
+      <div class="section-body">
+        <div class="mode-row" id="modeRow">
+          ${modes.map(m => `
+            <label class="mode-opt ${account.mode === m.val ? 'sel' : ''}" id="mode-${m.val}">
+              <input type="radio" name="mode" value="${m.val}" ${account.mode === m.val ? 'checked' : ''} />
+              <div class="mode-name">${m.name}</div>
+              <div class="mode-desc">${m.desc}</div>
+            </label>
+          `).join('')}
+        </div>
+        <div id="modeNotice" style="margin-top:10px;"></div>
+        ${profileIncomplete ? `<div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5;">You'll be able to go live once your profile is verified.</div>` : ''}
+      </div>
+    </div>
+
+    <!-- Trades + Service areas — share a Save bar -->
     <div class="section">
       <div class="section-header"><div class="section-title">Trades</div></div>
       <div class="section-body">
@@ -1277,103 +1518,49 @@ function renderSettings(){
           `).join('')}
         </div>
       </div>
+      <div class="section-header" style="border-top:1px solid var(--line);padding-top:14px;margin-top:8px;"><div class="section-title">Service areas</div></div>
+      <div class="section-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.55;">Suburbs or postcodes you'll travel to. Comma separated.</div>
+        <textarea id="serviceAreas" data-dirty-track style="min-height:80px;resize:vertical;line-height:1.5;font-size:13px;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;color:var(--black);" placeholder="e.g. Bondi, Bondi Junction, 2026, 2027">${esc(account.service_areas || '')}</textarea>
+      </div>
+      <div class="save-bar" id="settingsSaveBar">
+        <div class="save-bar-status" id="settingsStatus">Saved</div>
+        <button class="save-bar-btn" id="settingsSaveBtn" disabled>Save changes</button>
+      </div>
     </div>
-  `;
 
-  // Business details section — shown for slim signups still
-  // completing their profile. Once profile_complete=true, hidden
-  // (existing tradies don't need to see this every time they
-  // visit settings).
-  const businessSection = profileIncomplete ? `
-    <div class="section">
-      <div class="section-header"><div class="section-title">Business details</div></div>
-      <div class="section-body">
-        <div class="field">
-          <label class="field-label">Business name</label>
-          <input type="text" id="settingsBusinessName" value="${esc(account.business_name || '')}" />
-        </div>
-        <div class="field">
-          <label class="field-label">ABN</label>
-          <input type="text" id="settingsABN" maxlength="11" inputmode="numeric" value="${esc(account.abn || '')}" />
-        </div>
-        <div class="field">
-          <label class="field-label">Business address</label>
-          <input type="text" id="settingsAddress" placeholder="Street address" value="${esc(account.business_address || '')}" />
-        </div>
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
-          <div class="field">
-            <label class="field-label">Suburb</label>
-            <input type="text" id="settingsSuburb" value="${esc(account.business_suburb || '')}" />
-          </div>
-          <div class="field">
-            <label class="field-label">Postcode</label>
-            <input type="text" id="settingsPostcode" maxlength="4" inputmode="numeric" value="${esc(account.business_postcode || '')}" />
-          </div>
-        </div>
-        <div class="field">
-          <label class="field-label">State</label>
-          <select id="settingsState" style="width:100%;padding:8px 0;border:none;border-bottom:1.5px solid var(--line);background:transparent;font-family:inherit;outline:none;font-size:13px;">
-            <option value="">Select state</option>
-            ${['NSW','VIC','QLD','WA','SA','TAS','ACT','NT'].map(s =>
-              `<option value="${s}" ${account.business_state===s?'selected':''}>${s}</option>`
-            ).join('')}
-          </select>
-        </div>
-      </div>
-    </div>
-  ` : '';
-
-  document.getElementById('tabContent').innerHTML = `
-    ${businessSection}
-    ${tradesSection}
-    <div class="section" style="margin-top:12px;">
-      <div class="section-header"><div class="section-title">Availability</div></div>
-      <div class="section-body">
-        <div class="mode-row" id="modeRow">
-          ${modes.map(m => `
-            <label class="mode-opt ${account.mode === m.val ? 'sel' : ''}" id="mode-${m.val}">
-              <input type="radio" name="mode" value="${m.val}" ${account.mode === m.val ? 'checked' : ''} />
-              <div class="mode-name">${m.name}</div>
-              <div class="mode-desc">${m.desc}</div>
-            </label>
-          `).join('')}
-        </div>
-        ${profileIncomplete ? `<div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5;">You'll be able to go live once your profile is verified.</div>` : ''}
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-header"><div class="section-title">Service areas</div></div>
-      <div class="section-body">
-        <div class="field">
-          <label class="field-label">Suburbs or postcodes</label>
-          <textarea id="serviceAreas" style="min-height:80px;resize:none;line-height:1.5;font-size:13px;">${esc(account.service_areas || '')}</textarea>
-        </div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="section-header"><div class="section-title">Contact</div></div>
-      <div class="section-body">
-        <div class="field">
-          <label class="field-label">Email</label>
-          <input type="email" id="settingsEmail" value="${esc(account.email || '')}" />
-        </div>
-      </div>
-    </div>
-    <div id="settingsNotice"></div>
-    <div class="btn-wrap"><button class="btn btn-black" id="saveBtn">Save settings</button></div>
     <div class="footer">noti<em>.</em></div>
   `;
 
-  // Mode selection
+  // ── Mode: instant save on tap ────────────────────────────
   document.querySelectorAll('.mode-opt').forEach(opt => {
-    opt.addEventListener('click', () => {
+    opt.addEventListener('click', async () => {
+      const newMode = opt.querySelector('input').value;
+      // Optimistic UI
       document.querySelectorAll('.mode-opt').forEach(o => o.classList.remove('sel'));
       opt.classList.add('sel');
       opt.querySelector('input').checked = true;
+
+      const noticeEl = document.getElementById('modeNotice');
+      noticeEl.innerHTML = '';
+      try {
+        const r = await post('/dashboard/settings', { session: _session, mode: newMode });
+        if (r.expired) { clearSession(); return; }
+        if (!r.success) {
+          noticeEl.innerHTML = `<div class="notice err">${esc(r.message || 'Could not change mode.')}</div>`;
+          // Revert UI
+          await loadDashboard();
+          return;
+        }
+        // Quietly refresh the source-of-truth so subsequent reads are right
+        if (_data && _data.account) _data.account.mode = newMode;
+      } catch(e) {
+        noticeEl.innerHTML = '<div class="notice err">Could not change mode.</div>';
+      }
     });
   });
 
-  // Trade pill selection
+  // ── Trade pills: toggle + mark dirty ─────────────────────
   document.querySelectorAll('#settingsTradeGrid .trade-pill').forEach(pill => {
     pill.addEventListener('click', (e) => {
       if (e.target.tagName === 'INPUT') return;
@@ -1381,196 +1568,476 @@ function renderSettings(){
       cb.checked = !cb.checked;
       pill.classList.toggle('sel', cb.checked);
       pill.querySelector('.trade-pill-check').textContent = cb.checked ? '✓' : '';
+      _markSettingsDirty();
     });
   });
 
-  document.getElementById('saveBtn').onclick = async () => {
-    const btn  = document.getElementById('saveBtn');
-    const mode = document.querySelector('.mode-opt.sel input').value;
-    btn.disabled = true; btn.textContent = 'Saving...';
+  // ── Dirty tracking for trades + service areas ────────────
+  const initialTrades = [...currentTrades].sort().join(',');
+  const initialAreas  = (account.service_areas || '').trim();
 
-    // Optional business detail fields — only present in DOM if profile incomplete
-    const payload = {
-      session:      _session,
-      mode:         mode,
-      serviceAreas: document.getElementById('serviceAreas').value,
-      email:        document.getElementById('settingsEmail').value
-    };
-
-    // Multi-trade selection — collect ticked trades from the grid
+  function isDirty() {
     const ticked = [...document.querySelectorAll('#settingsTradeGrid input:checked')]
-                     .map(cb => cb.value);
-    if (ticked.length) payload.tradeTypes = ticked;
+      .map(cb => cb.value).sort().join(',');
+    const areas  = (document.getElementById('serviceAreas')?.value || '').trim();
+    return ticked !== initialTrades || areas !== initialAreas;
+  }
 
-    const businessName  = document.getElementById('settingsBusinessName')?.value;
-    const abn           = document.getElementById('settingsABN')?.value;
-    const businessAddr  = document.getElementById('settingsAddress')?.value;
-    const suburb        = document.getElementById('settingsSuburb')?.value;
-    const postcode      = document.getElementById('settingsPostcode')?.value;
-    const state         = document.getElementById('settingsState')?.value;
-    if (businessName) payload.businessName = businessName;
-    if (abn)          payload.abn = abn;
-    if (businessAddr) payload.businessAddress = businessAddr;
-    if (suburb)       payload.businessSuburb = suburb;
-    if (postcode)     payload.businessPostcode = postcode;
-    if (state)        payload.businessState = state;
+  function _markSettingsDirty() {
+    const dirty = isDirty();
+    const bar   = document.getElementById('settingsSaveBar');
+    const btn   = document.getElementById('settingsSaveBtn');
+    const stat  = document.getElementById('settingsStatus');
+    if (!bar) return;
+    bar.classList.toggle('dirty', dirty);
+    btn.disabled = !dirty;
+    stat.textContent = dirty ? 'Unsaved changes' : 'Saved';
+    _dirtyForms.set('settings', dirty);
+  }
+  window._markSettingsDirty = _markSettingsDirty;
+  document.getElementById('serviceAreas')?.addEventListener('input', _markSettingsDirty);
 
+  // ── Save handler ─────────────────────────────────────────
+  document.getElementById('settingsSaveBtn').onclick = async () => {
+    const btn  = document.getElementById('settingsSaveBtn');
+    const stat = document.getElementById('settingsStatus');
+    const ticked = [...document.querySelectorAll('#settingsTradeGrid input:checked')]
+      .map(cb => cb.value);
+    if (!ticked.length) {
+      stat.textContent = 'Select at least one trade';
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Saving...';
     try {
-      const r = await post('/dashboard/settings', payload);
-      if (r.expired){ clearSession(); return; }
-      const n = document.getElementById('settingsNotice');
-      if (r.success){
-        n.innerHTML = '<div class="notice ok">Settings saved.</div>';
-        // Reload data so banner + checklist refresh
-        await loadDashboard();
-      } else {
-        n.innerHTML = `<div class="notice err">${esc(r.message || 'Save failed.')}</div>`;
+      const r = await post('/dashboard/settings', {
+        session:      _session,
+        tradeTypes:   ticked,
+        serviceAreas: document.getElementById('serviceAreas').value
+      });
+      if (r.expired) { clearSession(); return; }
+      if (!r.success) {
+        stat.textContent = r.message || 'Save failed';
+        btn.disabled = false; btn.textContent = 'Save changes';
+        return;
       }
-    } catch(e){
-      document.getElementById('settingsNotice').innerHTML = '<div class="notice err">Something went wrong.</div>';
-    } finally {
-      btn.disabled = false; btn.textContent = 'Save settings';
+      // Mark clean and refresh
+      _dirtyForms.set('settings', false);
+      btn.textContent = 'Save changes';
+      stat.textContent = 'Saved ✓';
+      await loadDashboard();
+    } catch(e) {
+      stat.textContent = 'Something went wrong';
+      btn.disabled = false; btn.textContent = 'Save changes';
     }
   };
 }
 
-// ─── ACCOUNT TAB ──────────────────────────────────────────
+
+// ─── ACCOUNT TAB — full profile editing ───────────────────
+// Sectioned by topic. Each section has its own Save button so
+// changing one thing doesn't require refilling the rest.
 function renderAccount(){
   const a = _data.account || {};
   const isPremium = _data.is_premium;
 
-  const licenceWarning  = isExpiringSoon(a.licence_expiry);
+  const licenceWarning   = isExpiringSoon(a.licence_expiry);
   const insuranceWarning = isExpiringSoon(a.insurance_expiry);
+  const STATES = ['NSW','VIC','QLD','WA','SA','TAS','ACT','NT'];
 
   document.getElementById('tabContent').innerHTML = `
-    <div class="stat-grid" style="margin-top:12px;">
-      <div class="stat-card">
-        <div class="stat-label">Rating</div>
-        <div class="stat-value">${a.rating || '5.0'} <span style="font-size:16px;color:var(--orange);">★</span></div>
-        <div class="stat-sub">${a.review_count || 0} reviews</div>
+    <!-- Snapshot tiles -->
+    <div class="account-tiles">
+      <div class="account-tile">
+        <div class="account-tile-label">Rating</div>
+        <div class="account-tile-value">${(a.rating || 5.0).toFixed(1)} <span style="font-size:14px;color:var(--orange);">★</span></div>
+        <div class="account-tile-sub">${a.review_count || 0} reviews</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Plan</div>
-        <div class="stat-value" style="font-size:18px;text-transform:uppercase;">${esc(a.plan || '')}</div>
-        ${a.plan === 'TRIAL' ? `<div class="stat-sub">${a.trial_used || 0} of ${a.trial_limit || 5} jobs used</div>` : ''}
+      <div class="account-tile">
+        <div class="account-tile-label">Plan</div>
+        <div class="account-tile-value" style="font-size:18px;text-transform:uppercase;">${esc(a.plan || '—')}</div>
+        ${a.plan === 'TRIAL' ? `<div class="account-tile-sub">${a.trial_used || 0} of ${a.trial_limit || 5} used</div>` : ''}
       </div>
-    </div>
-
-    ${licenceWarning ? `<div class="notice hi">Licence expires ${esc(a.licence_expiry)} — please update before it lapses.</div>` : ''}
-    ${insuranceWarning ? `<div class="notice hi">Insurance expires ${esc(a.insurance_expiry)} — please update before it lapses.</div>` : ''}
-
-    <div class="section">
-      <div class="section-header"><div class="section-title">Business</div></div>
-      <div class="section-body">
-        <div class="job-item"><div class="job-meta">Business</div><div class="job-desc">${esc(a.business_name || '')}</div></div>
-        <div class="job-item"><div class="job-meta">Trade</div><div class="job-desc">${esc(a.trade_type || '')}</div></div>
-        <div class="job-item"><div class="job-meta">Mobile</div><div class="job-desc">${esc(a.primary_phone || '')}</div></div>
-        <div class="job-item"><div class="job-meta">Verification</div><div class="job-desc" style="color:${a.verification_level==='VERIFIED'?'var(--green)':a.verification_level==='FLAGGED'?'var(--red)':'var(--muted)'}">${esc(a.verification_level || 'Pending')}</div></div>
-        <div class="job-item"><div class="job-meta">Licence expiry</div><div class="job-desc">${esc(a.licence_expiry || 'Not set')}</div></div>
-        <div class="job-item" style="border:none;"><div class="job-meta">Insurance expiry</div><div class="job-desc">${esc(a.insurance_expiry || 'Not set')}</div></div>
+      <div class="account-tile">
+        <div class="account-tile-label">Verification</div>
+        <div class="account-tile-value" style="font-size:16px;color:${a.verification_level==='VERIFIED'?'var(--green)':a.verification_level==='FLAGGED'?'var(--red)':'var(--muted)'};">${esc(a.verification_level || 'Pending')}</div>
+      </div>
+      <div class="account-tile">
+        <div class="account-tile-label">Status</div>
+        <div class="account-tile-value" style="font-size:16px;">${esc(a.status || '—')}</div>
+        <div class="account-tile-sub">Mode: ${esc(a.mode || '—')}</div>
       </div>
     </div>
 
-    ${!isPremium ? `
-      <div class="btn-wrap">
-        <a href="/upgrade" style="display:block;width:100%;padding:14px;background:var(--orange);color:var(--black);text-align:center;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;text-decoration:none;">Upgrade to premium</a>
-      </div>
-    ` : ''}
+    ${licenceWarning   ? `<div class="notice hi" style="margin:12px 16px;">Licence expires ${esc(a.licence_expiry)} — please update before it lapses.</div>` : ''}
+    ${insuranceWarning ? `<div class="notice hi" style="margin:12px 16px;">Insurance expires ${esc(a.insurance_expiry)} — please update before it lapses.</div>` : ''}
 
+    <!-- ── BUSINESS DETAILS ── -->
     <div class="section">
-      <div class="section-header"><div class="section-title">Documents</div></div>
+      <div class="section-header"><div class="section-title">Business details</div></div>
       <div class="section-body">
-        <div style="font-size:11px;font-weight:500;color:var(--muted);margin-bottom:14px;line-height:1.5;">View or update your licence and insurance documents. Uploading new documents will reset your verification status pending review.</div>
+        <div class="field">
+          <label class="field-label">Business name</label>
+          <input type="text" id="acctBusinessName" value="${esc(a.business_name || '')}" />
+        </div>
+        <div class="field-grid-2">
+          <div class="field">
+            <label class="field-label">ABN</label>
+            <input type="text" id="acctABN" maxlength="11" inputmode="numeric" value="${esc(a.abn || '')}" />
+          </div>
+          <div class="field">
+            <label class="field-label">Business email</label>
+            <input type="email" id="acctEmail" value="${esc(a.email || '')}" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Street address</label>
+          <input type="text" id="acctAddress" placeholder="42 Smith Street" value="${esc(a.business_address || '')}" />
+        </div>
+        <div class="field-grid-3">
+          <div class="field">
+            <label class="field-label">Suburb</label>
+            <input type="text" id="acctSuburb" value="${esc(a.business_suburb || '')}" />
+          </div>
+          <div class="field">
+            <label class="field-label">Postcode</label>
+            <input type="text" id="acctPostcode" maxlength="4" inputmode="numeric" value="${esc(a.business_postcode || '')}" />
+          </div>
+          <div class="field">
+            <label class="field-label">State</label>
+            <select id="acctState">
+              <option value="">—</option>
+              ${STATES.map(s => `<option value="${s}" ${a.business_state===s?'selected':''}>${s}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="save-bar" data-form="business">
+        <div class="save-bar-status">Saved</div>
+        <button class="save-bar-btn" disabled>Save changes</button>
+      </div>
+    </div>
 
-        <div class="field" style="margin-bottom:12px;">
-          <div class="field-label">Licence document</div>
+    <!-- ── CONTACT PEOPLE ── -->
+    <div class="section">
+      <div class="section-header"><div class="section-title">Contact people</div></div>
+      <div class="section-body">
+        <div class="field">
+          <label class="field-label">Primary mobile (login number)</label>
+          <div class="readonly-row">
+            <span class="ro-val">${esc(a.primary_phone || '')}</span>
+            <span class="ro-key">Login number</span>
+          </div>
+          <div class="readonly-hint">Need to change this? <a href="/support">Contact support</a> — we'll verify it's you and update it.</div>
+        </div>
+        <div class="field">
+          <label class="field-label">Primary contact name</label>
+          <input type="text" id="acctPrimaryName" value="${esc(a.primary_contact_name || '')}" placeholder="First and last" />
+        </div>
+        <div class="field-grid-2">
+          <div class="field">
+            <label class="field-label">Secondary contact name (optional)</label>
+            <input type="text" id="acctSecondaryName" value="${esc(a.secondary_contact_name || '')}" placeholder="e.g. office manager" />
+          </div>
+          <div class="field">
+            <label class="field-label">Secondary mobile (optional)</label>
+            <input type="tel" id="acctSecondaryPhone" inputmode="numeric" value="${esc(a.secondary_phone || '')}" placeholder="04xx xxx xxx" />
+          </div>
+        </div>
+      </div>
+      <div class="save-bar" data-form="contact">
+        <div class="save-bar-status">Saved</div>
+        <button class="save-bar-btn" disabled>Save changes</button>
+      </div>
+    </div>
+
+    <!-- ── LICENCE ── -->
+    <div class="section">
+      <div class="section-header"><div class="section-title">Licence</div></div>
+      <div class="section-body">
+        <div class="doc-row">
+          <span>Licence document</span>
           ${a.licence_file_url
-            ? `<a href="#" onclick="openMyDoc(event,'licence')" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current licence ↗</a>`
-            : `<div style="font-size:12px;color:var(--muted);">No licence uploaded</div>`}
+            ? `<a class="doc-row-link" href="#" onclick="openMyDoc(event,'licence')">View current ↗</a>`
+            : `<span class="doc-row-status">Not uploaded</span>`}
         </div>
-
-        <div class="field" style="margin-bottom:16px;">
-          <div class="field-label">Insurance certificate</div>
-          ${a.insurance_file_url
-            ? `<a href="#" onclick="openMyDoc(event,'insurance')" style="font-size:13px;font-weight:600;color:var(--orange);text-decoration:none;">View current insurance ↗</a>`
-            : `<div style="font-size:12px;color:var(--muted);">No insurance uploaded</div>`}
+        <div class="file-input-wrap">
+          <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;">Replace document (optional)</label>
+          <input type="file" id="acctLicenceFile" accept=".pdf,.jpg,.jpeg,.png" />
         </div>
-
-        <div style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px;">
-          <div class="field-label" style="margin-bottom:10px;">Update documents</div>
+        <div class="field-grid-3" style="margin-top:14px;">
           <div class="field">
-            <label class="field-label">New licence document</label>
-            <input type="file" id="newLicenceFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;color:var(--dim);padding:6px 0;" />
+            <label class="field-label">Licence number</label>
+            <input type="text" id="acctLicenceNumber" value="${esc(a.licence_number || '')}" />
           </div>
           <div class="field">
-            <label class="field-label">Licence expiry</label>
-            <input type="date" id="newLicenceExpiry" value="${esc(a.licence_expiry||'')}" style="font-size:13px;padding:8px 0;border:none;border-bottom:1.5px solid var(--line);background:transparent;font-family:inherit;outline:none;width:100%;" />
+            <label class="field-label">State</label>
+            <select id="acctLicenceState">
+              <option value="">—</option>
+              ${STATES.map(s => `<option value="${s}" ${a.licence_state===s?'selected':''}>${s}</option>`).join('')}
+            </select>
           </div>
           <div class="field">
-            <label class="field-label">New insurance document</label>
-            <input type="file" id="newInsuranceFile" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;color:var(--dim);padding:6px 0;" />
+            <label class="field-label">Expiry</label>
+            <input type="date" id="acctLicenceExpiry" value="${esc(a.licence_expiry || '')}" />
           </div>
-          <div class="field">
-            <label class="field-label">Insurance expiry</label>
-            <input type="date" id="newInsuranceExpiry" value="${esc(a.insurance_expiry||'')}" style="font-size:13px;padding:8px 0;border:none;border-bottom:1.5px solid var(--line);background:transparent;font-family:inherit;outline:none;width:100%;" />
-          </div>
-          <div id="docNotice"></div>
-          <div class="btn-wrap" style="padding:12px 0 0;"><button class="btn btn-black" id="uploadDocsBtn" onclick="uploadDocs()">Update documents</button></div>
         </div>
       </div>
+      <div class="save-bar" data-form="licence">
+        <div class="save-bar-status">Saved</div>
+        <button class="save-bar-btn" disabled>Save changes</button>
+      </div>
+    </div>
+
+    <!-- ── INSURANCE ── -->
+    <div class="section">
+      <div class="section-header"><div class="section-title">Insurance</div></div>
+      <div class="section-body">
+        <div class="doc-row">
+          <span>Insurance certificate</span>
+          ${a.insurance_file_url
+            ? `<a class="doc-row-link" href="#" onclick="openMyDoc(event,'insurance')">View current ↗</a>`
+            : `<span class="doc-row-status">Not uploaded</span>`}
+        </div>
+        <div class="file-input-wrap">
+          <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;">Replace document (optional)</label>
+          <input type="file" id="acctInsuranceFile" accept=".pdf,.jpg,.jpeg,.png" />
+        </div>
+        <div class="field-grid-2" style="margin-top:14px;">
+          <div class="field">
+            <label class="field-label">Provider</label>
+            <input type="text" id="acctInsuranceProvider" value="${esc(a.insurance_provider || '')}" placeholder="e.g. AAMI, Allianz" />
+          </div>
+          <div class="field">
+            <label class="field-label">Public liability cover</label>
+            <input type="text" id="acctInsuranceAmount" value="${esc(a.insurance_amount || '')}" placeholder="e.g. $20m" />
+          </div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label class="field-label">Expiry</label>
+          <input type="date" id="acctInsuranceExpiry" value="${esc(a.insurance_expiry || '')}" />
+        </div>
+      </div>
+      <div class="save-bar" data-form="insurance">
+        <div class="save-bar-status">Saved</div>
+        <button class="save-bar-btn" disabled>Save changes</button>
+      </div>
+    </div>
+
+    <!-- ── PLAN & BILLING ── -->
+    <div class="section">
+      <div class="section-header"><div class="section-title">Plan &amp; billing</div></div>
+      <div class="section-body">
+        <div class="readonly-row">
+          <span class="ro-key">Current plan</span>
+          <span class="ro-val" style="text-transform:uppercase;">${esc(a.plan || '—')}</span>
+        </div>
+        ${a.plan === 'TRIAL' ? `
+          <div style="font-size:13px;color:var(--muted);margin:10px 0;line-height:1.55;">
+            You've used <strong style="color:var(--black);">${a.trial_used || 0}</strong> of <strong style="color:var(--black);">${a.trial_limit || 5}</strong> free job offers. Once you finish your trial you'll be prompted to choose a plan.
+          </div>
+        ` : ''}
+        ${!isPremium ? `
+          <div style="margin-top:14px;">
+            <a href="/upgrade" style="display:block;width:100%;padding:14px;background:var(--orange);color:var(--white);text-align:center;font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;text-decoration:none;border-radius:8px;">Upgrade to premium</a>
+          </div>
+        ` : `
+          <div style="margin-top:14px;">
+            <a href="/billing" style="display:block;width:100%;padding:12px;background:var(--white);color:var(--black);border:1px solid var(--line);text-align:center;font-weight:600;font-size:13px;text-decoration:none;border-radius:8px;">Manage subscription</a>
+          </div>
+        `}
+      </div>
+    </div>
+
+    <!-- ── SIGN OUT ── -->
+    <div class="danger-section">
+      <button class="btn-signout" onclick="signOut()">Sign out</button>
     </div>
 
     <div class="footer">noti<em>.</em></div>
     <div style="text-align:center;padding:0 0 20px;font-size:11px;font-weight:600;color:var(--muted);"><a href="/support" style="color:var(--muted);text-decoration:none;">Need help? Chat with support</a></div>
   `;
+
+  // ── Wire each editable section to its dirty-tracker + save ──
+  // The pattern: each section has data-form="X". Each input/select
+  // inside that section is part of the form. We snapshot initial
+  // values, then on input compare; if any differs, mark dirty.
+  setupAccountSection('business',  ['acctBusinessName','acctABN','acctEmail','acctAddress','acctSuburb','acctPostcode','acctState'],
+    () => ({
+      businessName:     valOf('acctBusinessName'),
+      abn:              valOf('acctABN'),
+      email:            valOf('acctEmail'),
+      businessAddress:  valOf('acctAddress'),
+      businessSuburb:   valOf('acctSuburb'),
+      businessPostcode: valOf('acctPostcode'),
+      businessState:    valOf('acctState')
+    })
+  );
+
+  setupAccountSection('contact',  ['acctPrimaryName','acctSecondaryName','acctSecondaryPhone'],
+    () => ({
+      primaryContactName:   valOf('acctPrimaryName'),
+      secondaryContactName: valOf('acctSecondaryName'),
+      secondaryPhone:       valOf('acctSecondaryPhone')
+    })
+  );
+
+  // Licence + insurance sections also include file inputs — they
+  // need a custom save path. They use the same dirty-tracker for
+  // text inputs, plus the file picker triggers dirty too.
+  setupAccountSection('licence', ['acctLicenceNumber','acctLicenceState','acctLicenceExpiry','acctLicenceFile'],
+    null, // custom save below
+    saveLicenceSection
+  );
+  setupAccountSection('insurance', ['acctInsuranceProvider','acctInsuranceAmount','acctInsuranceExpiry','acctInsuranceFile'],
+    null,
+    saveInsuranceSection
+  );
 }
 
-async function uploadDocs() {
-  const btn = document.getElementById('uploadDocsBtn');
-  const notice = document.getElementById('docNotice');
-  const licenceFile  = document.getElementById('newLicenceFile')?.files[0];
-  const insuranceFile = document.getElementById('newInsuranceFile')?.files[0];
-  const licenceExpiry  = document.getElementById('newLicenceExpiry')?.value;
-  const insuranceExpiry = document.getElementById('newInsuranceExpiry')?.value;
+// Helper: read input/select value safely
+function valOf(id) {
+  const el = document.getElementById(id);
+  return el ? (el.value || '').trim() : '';
+}
 
-  if (!licenceFile && !insuranceFile) {
-    notice.innerHTML = '<div class="notice err" style="margin:10px 0;">Please select at least one file to upload.</div>';
-    return;
+// Helper: wires up dirty tracking + save for an account section.
+// fieldIds = list of input IDs that belong to this section
+// payloadFn = () => object; if provided, used for the standard save
+// customSave = async () => {} alternative (e.g. for file uploads)
+function setupAccountSection(formKey, fieldIds, payloadFn, customSave) {
+  const bar    = document.querySelector(`.save-bar[data-form="${formKey}"]`);
+  if (!bar) return;
+  const btn    = bar.querySelector('.save-bar-btn');
+  const status = bar.querySelector('.save-bar-status');
+
+  // Snapshot baseline
+  const baseline = {};
+  fieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    baseline[id] = el.type === 'file' ? '' : (el.value || '');
+  });
+
+  function check() {
+    let dirty = false;
+    for (const id of fieldIds) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      if (el.type === 'file') {
+        if (el.files && el.files.length) { dirty = true; break; }
+      } else {
+        if ((el.value || '') !== baseline[id]) { dirty = true; break; }
+      }
+    }
+    bar.classList.toggle('dirty', dirty);
+    btn.disabled = !dirty;
+    status.textContent = dirty ? 'Unsaved changes' : 'Saved';
+    _dirtyForms.set(formKey, dirty);
   }
 
-  btn.disabled = true; btn.textContent = 'Uploading...';
-  notice.innerHTML = '';
+  // Wire each field to fire `check` on input/change
+  fieldIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', check);
+    el.addEventListener('change', check);
+  });
 
-  try {
-    const payload = { session: _session };
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = 'Saving...';
+    status.textContent = '';
+    try {
+      let result;
+      if (customSave) {
+        result = await customSave();
+      } else {
+        const payload = { session: _session, ...payloadFn() };
+        result = await post('/dashboard/settings', payload);
+      }
+      if (result.expired) { clearSession(); return; }
+      if (!result.success) {
+        status.textContent = result.message || 'Save failed';
+        btn.disabled = false; btn.textContent = 'Save changes';
+        return;
+      }
+      // Refresh data and reset baseline
+      _dirtyForms.set(formKey, false);
+      btn.textContent = 'Save changes';
+      status.textContent = 'Saved ✓';
+      await loadDashboard();
+    } catch(e) {
+      status.textContent = 'Something went wrong';
+      btn.disabled = false; btn.textContent = 'Save changes';
+    }
+  };
+}
 
-    if (licenceFile) {
-      const data = await fileToBase64(licenceFile);
-      payload.licenceData    = data.split(',')[1];
-      payload.licenceMime    = licenceFile.type || 'application/pdf';
-      payload.licenceExpiry  = licenceExpiry || '';
-    }
-    if (insuranceFile) {
-      const data = await fileToBase64(insuranceFile);
-      payload.insuranceData    = data.split(',')[1];
-      payload.insuranceMime    = insuranceFile.type || 'application/pdf';
-      payload.insuranceExpiry  = insuranceExpiry || '';
-    }
+// Custom save for the Licence section — sends file (if any) AND
+// metadata. If a file is selected, hits /dashboard/documents to
+// upload + sets PENDING status. Otherwise just updates the metadata.
+async function saveLicenceSection() {
+  const file    = document.getElementById('acctLicenceFile')?.files[0];
+  const number  = valOf('acctLicenceNumber');
+  const state   = valOf('acctLicenceState');
+  const expiry  = valOf('acctLicenceExpiry');
 
-    const r = await post('/dashboard/documents', payload);
-    if (r.expired) { clearSession(); return; }
-    if (r.success) {
-      notice.innerHTML = '<div class="notice ok" style="margin:10px 0;">Documents updated. We will review them shortly.</div>';
-      btn.textContent = 'Updated';
-    } else {
-      notice.innerHTML = `<div class="notice err" style="margin:10px 0;">${esc(r.message || 'Upload failed.')}</div>`;
-      btn.disabled = false; btn.textContent = 'Update documents';
-    }
-  } catch(e) {
-    notice.innerHTML = '<div class="notice err" style="margin:10px 0;">Something went wrong.</div>';
-    btn.disabled = false; btn.textContent = 'Update documents';
+  if (file) {
+    const data = await fileToBase64(file);
+    const docPayload = {
+      session:       _session,
+      licenceData:   data.split(',')[1],
+      licenceMime:   file.type || 'application/pdf',
+      licenceExpiry: expiry,
+      licenceNumber: number,
+      licenceState:  state
+    };
+    return await post('/dashboard/documents', docPayload);
+  } else {
+    return await post('/dashboard/settings', {
+      session:       _session,
+      licenceNumber: number,
+      licenceState:  state,
+      licenceExpiry: expiry
+    });
   }
 }
+
+async function saveInsuranceSection() {
+  const file     = document.getElementById('acctInsuranceFile')?.files[0];
+  const provider = valOf('acctInsuranceProvider');
+  const amount   = valOf('acctInsuranceAmount');
+  const expiry   = valOf('acctInsuranceExpiry');
+
+  if (file) {
+    const data = await fileToBase64(file);
+    const docPayload = {
+      session:           _session,
+      insuranceData:     data.split(',')[1],
+      insuranceMime:     file.type || 'application/pdf',
+      insuranceExpiry:   expiry,
+      insuranceProvider: provider,
+      insuranceAmount:   amount
+    };
+    return await post('/dashboard/documents', docPayload);
+  } else {
+    return await post('/dashboard/settings', {
+      session:           _session,
+      insuranceProvider: provider,
+      insuranceAmount:   amount,
+      insuranceExpiry:   expiry
+    });
+  }
+}
+
+// Sign out — clears the session and reloads to the login screen
+function signOut() {
+  if (_dirtyFormCount() > 0) {
+    if (!confirm("You have unsaved changes. Sign out anyway?")) return;
+  }
+  clearSession();
+}
+window.signOut = signOut;
+
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {

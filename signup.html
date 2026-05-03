@@ -195,7 +195,7 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
   gap: 8px;
 }
 
-.trade-grid label {
+.trade-grid .trade-chip {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--line);
@@ -206,13 +206,12 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
   background: var(--white);
   transition: all 0.12s;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.trade-grid label:hover { border-color: var(--dim); }
+.trade-grid .trade-chip:hover { border-color: var(--dim); }
 
-.trade-grid label input { display: none; }
-
-.trade-grid label .trade-check {
+.trade-grid .trade-chip .trade-check {
   width: 18px; height: 18px;
   border: 1.5px solid var(--line);
   border-radius: 4px;
@@ -223,67 +222,15 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
   flex-shrink: 0;
 }
 
-.trade-grid label input:checked + .trade-check {
-  background: var(--orange);
-  border-color: var(--orange);
-  color: var(--white);
-}
-
-.trade-grid label:has(input:checked) {
+.trade-grid .trade-chip.checked {
   border-color: var(--orange);
   background: var(--noti-light);
 }
 
-/* ── UPLOAD ── */
-.upload-zone {
-  border: 1.5px dashed var(--line);
-  background: var(--off);
-  border-radius: 8px;
-  padding: 18px 16px;
-  display: flex; align-items: center; gap: 12px;
-  cursor: pointer; position: relative;
-  transition: all 0.15s;
-}
-
-.upload-zone:hover { border-color: var(--dim); background: var(--slate-100); }
-
-.upload-zone.has {
-  border-color: var(--green); border-style: solid;
-  background: var(--emerald-50);
-}
-
-.upload-zone input[type=file] {
-  position: absolute; inset: 0;
-  opacity: 0; cursor: pointer;
-  width: 100%; height: 100%;
-  border: none; padding: 0;
-  background: transparent;
-}
-
-.upload-icon {
-  width: 22px; height: 22px;
-  flex-shrink: 0;
-  color: var(--muted);
-}
-.upload-zone.has .upload-icon { color: var(--green); }
-
-.upload-label {
-  font-size: 13px; font-weight: 600;
-  color: var(--black);
-}
-
-.upload-sub {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-}
-
-.upload-filename {
-  font-size: 12px;
-  color: var(--green);
-  font-weight: 600;
-  margin-top: 4px;
-  word-break: break-all;
+.trade-grid .trade-chip.checked .trade-check {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: var(--white);
 }
 
 /* ── CHECKBOX LIST ── */
@@ -301,16 +248,11 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
   cursor: pointer;
   transition: all 0.12s;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  position: relative;
 }
 
 .check-item:hover { border-color: var(--dim); }
-
-.check-item input[type=checkbox] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-  width: 0; height: 0;
-}
 
 .check-box {
   width: 18px; height: 18px;
@@ -324,13 +266,13 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
   margin-top: 1px;
 }
 
-.check-item:has(input:checked) .check-box {
+.check-item.checked .check-box {
   background: var(--orange);
   border-color: var(--orange);
   color: var(--white);
 }
 
-.check-item:has(input:checked) {
+.check-item.checked {
   border-color: var(--noti-200);
   background: var(--noti-light);
 }
@@ -345,11 +287,6 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
 .check-text a:hover { text-decoration: underline; }
 
 /* ── SUBMIT ── */
-.submit-section {
-  margin-top: 16px;
-  padding: 0 16px;
-}
-
 .btn-submit {
   display: block;
   width: 100%;
@@ -363,57 +300,66 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
   letter-spacing: -0.01em;
   cursor: pointer;
   transition: background 0.15s, transform 0.1s, opacity 0.15s;
+  margin-top: 16px;
 }
 
 .btn-submit:hover:not(:disabled) { background: #000; }
 .btn-submit:active:not(:disabled) { transform: scale(0.99); }
 .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── FOOTER ── */
-.footer {
-  text-align: center;
-  padding: 32px 16px 16px;
-}
-
-.footer-note {
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 500;
-  line-height: 1.55;
-}
-
-/* ── NOTICES (used by JS for errors / success) ── */
-.notice {
+/* ── NOTICES ── */
+.form-notice {
+  margin-top: 12px;
   padding: 12px 14px;
   font-size: 13px; font-weight: 500;
   line-height: 1.5;
   border: 1px solid transparent;
   border-radius: 8px;
-  margin: 12px 0;
 }
-.notice.ok  { background: var(--emerald-50); color: #065f46; border-color: var(--emerald-200); }
-.notice.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.form-notice.ok  { background: var(--emerald-50); color: #065f46; border-color: var(--emerald-200); }
+.form-notice.err { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
 
-/* ── RESPONSIVE ── */
-@media (max-width: 600px) {
-  .form-header { padding: 24px 20px 20px; }
-  .form-header-title { font-size: 24px; }
-  .info-strip { grid-template-columns: 1fr; }
-  .info-box { padding: 14px 18px; }
-  .grid-2 { grid-template-columns: 1fr; gap: 14px; }
-  .trade-grid { grid-template-columns: 1fr; }
-  .section { padding: 20px; }
+/* ── HERO (signup top) ── */
+.hero {
+  text-align: center;
+  padding: 28px 24px 0;
+  max-width: 680px;
+  margin: 0 auto;
 }
-
-
-/* Slim signup specific tweaks */
-.hero-tagline {
-  font-size: 14px;
-  font-weight: 500;
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--muted);
-  margin-top: 12px;
-  line-height: 1.55;
+  margin-bottom: 8px;
 }
+.hero-eyebrow::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--orange);
+  display: inline-block;
+}
+.hero-title {
+  font-size: 28px; font-weight: 600;
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+.hero-sub {
+  font-size: 14px; font-weight: 500;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── CARD WRAPPER ── */
+.card {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ── FOOTER LINK ── */
 .full-link {
   display: block;
   text-align: center;
@@ -425,6 +371,17 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
 }
 .full-link:hover { color: var(--black); }
 .full-link u { text-decoration: underline; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .hero { padding: 24px 20px 0; }
+  .hero-title { font-size: 24px; }
+  .grid-2 { grid-template-columns: 1fr; gap: 14px; }
+  .trade-grid { grid-template-columns: 1fr; }
+  .section { padding: 20px; }
+  input, select, textarea { font-size: 16px; } /* prevents iOS zoom */
+}
+
   </style>
 </head>
 <body>
@@ -433,7 +390,7 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
 
   <!-- HEADER -->
   <div class="hero">
-    <div class="hero-eyebrow">●Specialist signup</div>
+    <div class="hero-eyebrow">Specialist signup</div>
     <h1 class="hero-title">Sign up to Noti</h1>
     <div class="hero-sub">Get jobs sent straight to your phone. First 5 free, no credit card required.</div>
   </div>
@@ -482,13 +439,13 @@ textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
     <div class="section">
       <div class="section-title">Agreement</div>
       <div class="check-list">
-        <div class="check-item">
-          <input type="checkbox" id="agreeReal" required />
-          <span>I confirm this signup is for a real business and the details are accurate.</span>
+        <div class="check-item" id="agreeReal" data-checked="false">
+          <div class="check-box">&#10003;</div>
+          <span class="check-text">I confirm this signup is for a real business and the details are accurate.</span>
         </div>
-        <div class="check-item">
-          <input type="checkbox" id="agreeContact" required />
-          <span>I agree that Noti may contact me by SMS or email about job offers, account updates and reminders.</span>
+        <div class="check-item" id="agreeContact" data-checked="false">
+          <div class="check-box">&#10003;</div>
+          <span class="check-text">I agree that Noti may contact me by SMS or email about job offers, account updates and reminders.</span>
         </div>
       </div>
     </div>
@@ -512,46 +469,49 @@ const TRADES = [
   "Painter","Tiler","Plasterer","Flooring","Appliance Repair","Rubbish Removal","Other"
 ];
 
+// ─── BUILD TRADE CHIPS ─────────────────────────────────────
+// Use <div> instead of <label> + <input> to avoid mobile click-routing bugs
 const selectedTrades = new Set();
 const grid = document.getElementById('tradeGrid');
+
 TRADES.forEach(trade => {
-  const label = document.createElement('label');
-  label.innerHTML = `<input type="checkbox" value="${trade}" /><div class="trade-check">&#10003;</div>${trade}`;
-  label.addEventListener('click', (e) => {
-    if (e.target.tagName === 'INPUT') return; // let native click handle it
-    const cb = label.querySelector('input');
-    cb.checked = !cb.checked;
-    if (cb.checked) selectedTrades.add(trade);
-    else            selectedTrades.delete(trade);
+  const chip = document.createElement('div');
+  chip.className = 'trade-chip';
+  chip.dataset.trade = trade;
+  chip.innerHTML = `<div class="trade-check">&#10003;</div>${trade}`;
+
+  chip.addEventListener('click', () => {
+    const isChecked = chip.classList.toggle('checked');
+    if (isChecked) selectedTrades.add(trade);
+    else           selectedTrades.delete(trade);
+
     // Show "Other" text input if Other is selected
     const otherField = document.getElementById('otherTradeField');
     if (otherField) otherField.style.display = selectedTrades.has('Other') ? 'block' : 'none';
   });
-  grid.appendChild(label);
+
+  grid.appendChild(chip);
 });
 
-// Checkbox visual toggle (matches signup-full.html)
+// ─── AGREEMENT CHECKBOXES ──────────────────────────────────
 document.querySelectorAll('.check-item').forEach(item => {
-  item.addEventListener('click', (e) => {
-    if (e.target.tagName === 'INPUT') return;
-    const cb = item.querySelector('input');
-    cb.checked = !cb.checked;
-    item.classList.toggle('checked', cb.checked);
-  });
-  const cb = item.querySelector('input');
-  cb.addEventListener('change', () => {
-    item.classList.toggle('checked', cb.checked);
+  item.addEventListener('click', () => {
+    const isChecked = item.classList.toggle('checked');
+    item.dataset.checked = isChecked ? 'true' : 'false';
   });
 });
 
+// ─── HELPERS ───────────────────────────────────────────────
 function val(id){ return (document.getElementById(id).value || '').trim(); }
 function cleanPhone(p){ return p.replace(/\s+/g,'').replace(/[^0-9]/g,''); }
+function isAgreeChecked(id){ return document.getElementById(id).classList.contains('checked'); }
 
 function note(html, kind){
   document.getElementById('formNotice').innerHTML =
     '<div class="form-notice ' + kind + '">' + html + '</div>';
 }
 
+// ─── SUBMIT ────────────────────────────────────────────────
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const btn = document.getElementById('submitBtn');
 
@@ -565,11 +525,11 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   }
   if (!val('businessSuburb'))      { note('Please enter your suburb.', 'err'); return; }
   if (!val('businessPostcode'))    { note('Please enter your postcode.', 'err'); return; }
-  if (!document.getElementById('agreeReal').checked || !document.getElementById('agreeContact').checked) {
+  if (!isAgreeChecked('agreeReal') || !isAgreeChecked('agreeContact')) {
     note('Please confirm both agreements above.', 'err'); return;
   }
 
-  // Map display names to system codes (matches signup-full.html)
+  // Map display names to system codes
   const TRADE_MAP = {
     'Plumber':                'PLUMBER',
     'Electrician':            'ELECTRICIAN',
@@ -629,10 +589,10 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       return;
     }
 
-    // Success — show celebration card and link to dashboard
+    // Success
     document.querySelector('.page').innerHTML = `
       <div class="hero">
-        <div class="hero-eyebrow" style="color:var(--green);">●Account created</div>
+        <div class="hero-eyebrow" style="color:var(--green);">Account created</div>
         <h1 class="hero-title">You're in.</h1>
         <div class="hero-sub">We've sent you a welcome SMS. Tap below to open your dashboard and finish setting up — takes about 2 minutes.</div>
       </div>

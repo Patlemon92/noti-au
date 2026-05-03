@@ -519,6 +519,101 @@
       color: var(--line);
     }
     .footer em { color: var(--orange); font-style: normal; }
+/* COMPLETE-PROFILE BANNER ─────────────────────────────────
+   Shown at the top of the dashboard for slim signups who
+   haven't finished their profile yet. */
+.complete-banner {
+  background: var(--noti-light, #fff7ed);
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px;
+}
+.cb-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.cb-title {
+  font-size: 14px; font-weight: 700;
+  color: #9a3412; letter-spacing: -0.01em;
+}
+.cb-pct {
+  font-size: 12px; font-weight: 600;
+  color: #9a3412;
+  background: rgba(154, 52, 18, 0.1);
+  padding: 3px 8px; border-radius: 100px;
+}
+.cb-bar {
+  height: 6px; border-radius: 100px;
+  background: rgba(154, 52, 18, 0.15);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.cb-bar-fill {
+  height: 100%;
+  background: var(--orange, #ea580c);
+  transition: width 0.3s;
+}
+.cb-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.cb-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 500;
+  color: #9a3412;
+}
+.cb-item.done {
+  color: var(--green, #059669);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+.cb-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: rgba(154, 52, 18, 0.1);
+  font-size: 12px; font-weight: 700;
+}
+.cb-item.done .cb-check {
+  background: rgba(5, 150, 105, 0.15);
+  color: var(--green, #059669);
+}
+.cb-cta {
+  font-size: 12px; font-weight: 500;
+  color: #9a3412; line-height: 1.5;
+}
+.cb-cta strong { font-weight: 700; }
+/* TRADE PILLS — Settings tab multi-select trades grid */
+.trade-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px; font-weight: 500;
+  color: var(--black);
+  background: var(--white);
+  transition: all 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.trade-pill:hover { border-color: var(--dim); }
+.trade-pill.sel {
+  border-color: var(--orange);
+  background: var(--noti-light, #fff7ed);
+}
+.trade-pill-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: transparent;
+  flex-shrink: 0;
+}
+.trade-pill.sel .trade-pill-check {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: var(--white);
+}
   </style>
 </head>
 <body>
@@ -862,6 +957,7 @@ async function loadDashboard(){
 function renderDashboard(){
   const isPremium = _data.is_premium;
   const account   = _data.account || {};
+  const profileIncomplete = account.profile_complete === false;
 
   document.getElementById('root').innerHTML = `
     <div class="topbar">
@@ -873,6 +969,7 @@ function renderDashboard(){
     </div>
     <div class="shell">
       <div class="page">
+        ${profileIncomplete ? renderCompleteProfileBanner(account) : ''}
         ${renderPushBanner()}
         <div id="tabContent"></div>
       </div>
@@ -886,8 +983,49 @@ function renderDashboard(){
   `;
 
   document.getElementById('logoutBtn').onclick = clearSession;
+
+  // If profile incomplete, force them to settings tab so they can finish
+  if (profileIncomplete && _tab === 'jobs') _tab = 'settings';
+
   renderTab();
   wirePushBanner();
+}
+
+// Banner shown at the top of the dashboard for slim signups
+// who haven't completed their profile yet. Counts how many
+// of the 3 required pieces are done and shows a progress hint.
+function renderCompleteProfileBanner(account) {
+  const hasBusiness  = !!(account.business_name && account.abn);
+  const hasLicence   = !!(account.licence_file_url || account.licence_number);
+  const hasInsurance = !!account.insurance_file_url;
+  const done = [hasBusiness, hasLicence, hasInsurance].filter(Boolean).length;
+  const total = 3;
+  const pct = Math.round((done / total) * 100);
+
+  return `
+    <div class="complete-banner">
+      <div class="cb-row">
+        <div class="cb-title">Finish your setup to start receiving jobs</div>
+        <div class="cb-pct">${done} of ${total}</div>
+      </div>
+      <div class="cb-bar"><div class="cb-bar-fill" style="width:${pct}%;"></div></div>
+      <div class="cb-list">
+        <div class="cb-item ${hasBusiness ? 'done' : ''}">
+          <span class="cb-check">${hasBusiness ? '✓' : '○'}</span>
+          Business details (name, ABN, address)
+        </div>
+        <div class="cb-item ${hasLicence ? 'done' : ''}">
+          <span class="cb-check">${hasLicence ? '✓' : '○'}</span>
+          Licence details + upload
+        </div>
+        <div class="cb-item ${hasInsurance ? 'done' : ''}">
+          <span class="cb-check">${hasInsurance ? '✓' : '○'}</span>
+          Insurance details + upload
+        </div>
+      </div>
+      <div class="cb-cta">Open the <strong>Settings</strong> tab below to fill these in.</div>
+    </div>
+  `;
 }
 
 function switchTab(tab){ _tab = tab; renderDashboard(); }
@@ -1101,13 +1239,93 @@ function renderStats(){
 // ─── SETTINGS TAB ─────────────────────────────────────────
 function renderSettings(){
   const account = _data.account || {};
+  const profileIncomplete = account.profile_complete === false;
   const modes   = [
     { val: 'ON',          name: 'On',           desc: 'All jobs'     },
     { val: 'URGENT_ONLY', name: 'Urgent only',  desc: 'Repairs only' },
     { val: 'OFF',         name: 'Off',          desc: 'Paused'       }
   ];
 
+  // Trade list — display name -> internal code (matches signup forms)
+  const TRADES = [
+    ['Plumber','PLUMBER'],['Electrician','ELECTRICIAN'],['Builder','BUILDER'],
+    ['Carpenter','CARPENTER'],['Handyman','HANDYMAN'],
+    ['Air Conditioning','AIR_CONDITIONING'],['Gas Fitter','GAS_FITTER'],
+    ['Waterproofing','WATERPROOFING'],['Roofing','ROOFING'],['Concreter','CONCRETER'],
+    ['Glazier','GLAZIER'],['Fencing','FENCING'],['Cleaner','CLEANER'],
+    ['Carpet & Upholstery Cleaning','CARPET_CLEANING'],['Pest Control','PEST_CONTROL'],
+    ['Gardening / Landscaping','GARDENING'],['Pool Maintenance','POOL'],
+    ['Locksmith','LOCKSMITH'],['Security Systems','SECURITY'],
+    ['Painter','PAINTER'],['Tiler','TILER'],['Plasterer','PLASTERER'],
+    ['Flooring','FLOORING'],['Appliance Repair','APPLIANCE'],['Rubbish Removal','RUBBISH']
+  ];
+  const currentTrades = new Set(account.trade_types || (account.trade_type ? [account.trade_type] : []));
+
+  // Trades section — always visible. Tradie can add/remove trades.
+  const tradesSection = `
+    <div class="section">
+      <div class="section-header"><div class="section-title">Trades</div></div>
+      <div class="section-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.55;">Select all trades you cover. You'll be matched on jobs in any of these.</div>
+        <div id="settingsTradeGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+          ${TRADES.map(([name, code]) => `
+            <label class="trade-pill ${currentTrades.has(code) ? 'sel' : ''}" data-code="${code}">
+              <input type="checkbox" value="${code}" ${currentTrades.has(code) ? 'checked' : ''} style="display:none;" />
+              <span class="trade-pill-check">${currentTrades.has(code) ? '✓' : ''}</span>
+              <span>${esc(name)}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Business details section — shown for slim signups still
+  // completing their profile. Once profile_complete=true, hidden
+  // (existing tradies don't need to see this every time they
+  // visit settings).
+  const businessSection = profileIncomplete ? `
+    <div class="section">
+      <div class="section-header"><div class="section-title">Business details</div></div>
+      <div class="section-body">
+        <div class="field">
+          <label class="field-label">Business name</label>
+          <input type="text" id="settingsBusinessName" value="${esc(account.business_name || '')}" />
+        </div>
+        <div class="field">
+          <label class="field-label">ABN</label>
+          <input type="text" id="settingsABN" maxlength="11" inputmode="numeric" value="${esc(account.abn || '')}" />
+        </div>
+        <div class="field">
+          <label class="field-label">Business address</label>
+          <input type="text" id="settingsAddress" placeholder="Street address" value="${esc(account.business_address || '')}" />
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+          <div class="field">
+            <label class="field-label">Suburb</label>
+            <input type="text" id="settingsSuburb" value="${esc(account.business_suburb || '')}" />
+          </div>
+          <div class="field">
+            <label class="field-label">Postcode</label>
+            <input type="text" id="settingsPostcode" maxlength="4" inputmode="numeric" value="${esc(account.business_postcode || '')}" />
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">State</label>
+          <select id="settingsState" style="width:100%;padding:8px 0;border:none;border-bottom:1.5px solid var(--line);background:transparent;font-family:inherit;outline:none;font-size:13px;">
+            <option value="">Select state</option>
+            ${['NSW','VIC','QLD','WA','SA','TAS','ACT','NT'].map(s =>
+              `<option value="${s}" ${account.business_state===s?'selected':''}>${s}</option>`
+            ).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+  ` : '';
+
   document.getElementById('tabContent').innerHTML = `
+    ${businessSection}
+    ${tradesSection}
     <div class="section" style="margin-top:12px;">
       <div class="section-header"><div class="section-title">Availability</div></div>
       <div class="section-body">
@@ -1120,6 +1338,7 @@ function renderSettings(){
             </label>
           `).join('')}
         </div>
+        ${profileIncomplete ? `<div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5;">You'll be able to go live once your profile is verified.</div>` : ''}
       </div>
     </div>
     <div class="section">
@@ -1154,24 +1373,56 @@ function renderSettings(){
     });
   });
 
+  // Trade pill selection
+  document.querySelectorAll('#settingsTradeGrid .trade-pill').forEach(pill => {
+    pill.addEventListener('click', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      const cb = pill.querySelector('input');
+      cb.checked = !cb.checked;
+      pill.classList.toggle('sel', cb.checked);
+      pill.querySelector('.trade-pill-check').textContent = cb.checked ? '✓' : '';
+    });
+  });
+
   document.getElementById('saveBtn').onclick = async () => {
     const btn  = document.getElementById('saveBtn');
     const mode = document.querySelector('.mode-opt.sel input').value;
     btn.disabled = true; btn.textContent = 'Saving...';
+
+    // Optional business detail fields — only present in DOM if profile incomplete
+    const payload = {
+      session:      _session,
+      mode:         mode,
+      serviceAreas: document.getElementById('serviceAreas').value,
+      email:        document.getElementById('settingsEmail').value
+    };
+
+    // Multi-trade selection — collect ticked trades from the grid
+    const ticked = [...document.querySelectorAll('#settingsTradeGrid input:checked')]
+                     .map(cb => cb.value);
+    if (ticked.length) payload.tradeTypes = ticked;
+
+    const businessName  = document.getElementById('settingsBusinessName')?.value;
+    const abn           = document.getElementById('settingsABN')?.value;
+    const businessAddr  = document.getElementById('settingsAddress')?.value;
+    const suburb        = document.getElementById('settingsSuburb')?.value;
+    const postcode      = document.getElementById('settingsPostcode')?.value;
+    const state         = document.getElementById('settingsState')?.value;
+    if (businessName) payload.businessName = businessName;
+    if (abn)          payload.abn = abn;
+    if (businessAddr) payload.businessAddress = businessAddr;
+    if (suburb)       payload.businessSuburb = suburb;
+    if (postcode)     payload.businessPostcode = postcode;
+    if (state)        payload.businessState = state;
+
     try {
-      const r = await post('/dashboard/settings', {
-        session:      _session,
-        mode:         mode,
-        serviceAreas: document.getElementById('serviceAreas').value,
-        email:        document.getElementById('settingsEmail').value
-      });
+      const r = await post('/dashboard/settings', payload);
       if (r.expired){ clearSession(); return; }
       const n = document.getElementById('settingsNotice');
       if (r.success){
         n.innerHTML = '<div class="notice ok">Settings saved.</div>';
-        _data.account.mode         = mode;
-        _data.account.service_areas = document.getElementById('serviceAreas').value;
-        _data.account.email        = document.getElementById('settingsEmail').value;
+        // Reload data so banner + checklist refresh
+        await loadDashboard();
       } else {
         n.innerHTML = `<div class="notice err">${esc(r.message || 'Save failed.')}</div>`;
       }

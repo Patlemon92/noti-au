@@ -5,8 +5,8 @@
 /health/manifest.json       /health/manifest-health.json           200
 
 # ─── Noti Trade (unchanged) ─────────────
-/job/:jobId/:token    /jobs.html?jobId=:jobId&t=:token    200
-/job/:jobId           /jobs.html?jobId=:jobId              200
+/job/:jobId/:token    /jobs?jobId=:jobId&t=:token    200
+/job/:jobId           /jobs?jobId=:jobId              200
 /review/:jobId/:token /review.html?jobId=:jobId&t=:token   200
 /review/:jobId        /review.html?jobId=:jobId            200
 /request              /job-request.html                    200

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#FAF6F0" />
+<link rel="manifest" href="/health/manifest-health.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
+<title>Today · Neeve</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+</head>
+<body>
+
+<main class="page">
+  <p class="label" id="greeting-time">Today</p>
+  <h1 class="title" id="greeting">Hi.</h1>
+
+  <!-- Today's hero card: latest readings -->
+  <section class="card">
+    <p class="label">Right now</p>
+    <div id="hero">
+      <div class="empty">Loading…</div>
+    </div>
+  </section>
+
+  <!-- Recent readings -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="title-sm">Recent readings</h2>
+      <a class="section-link" href="/health/v2/history.html">See all →</a>
+    </div>
+    <div class="card" id="recent">
+      <div class="empty">Loading…</div>
+    </div>
+  </section>
+
+  <!-- Sleep summary (when we have it) -->
+  <section class="section" id="sleep-section" style="display:none">
+    <h2 class="title-sm">Last night</h2>
+    <div class="card" id="sleep"></div>
+  </section>
+</main>
+
+<div id="nav-mount"></div>
+
+<script src="/health/v2/lib.js"></script>
+<script>
+document.getElementById('nav-mount').innerHTML = renderNav('today');
+
+// Greeting based on time of day
+const hour = new Date().getHours();
+let g = 'Good morning';
+if (hour >= 12 && hour < 18) g = 'Good afternoon';
+else if (hour >= 18 || hour < 5) g = 'Good evening';
+document.getElementById('greeting-time').textContent = g;
+
+(async function load() {
+  try {
+    const [{ devices }, { samples }] = await Promise.all([
+      api('/ring/status'),
+      api('/ring/samples?limit=200'),
+    ]);
+
+    // Greeting tries to use stored name; falls back to plain greeting.
+    const name = localStorage.getItem('neeve_name') || '';
+    document.getElementById('greeting').textContent = name ? `Hi ${name}.` : 'Hi.';
+
+    const latest = latestPerMetric(samples);
+    const grouped = groupByMetric(samples);
+    renderHero(latest, devices[0]);
+    renderRecent(samples.slice(0, 12));
+    renderSleep(grouped.sleep_stage);
+  } catch (e) {
+    console.error(e);
+    document.getElementById('hero').innerHTML =
+      `<div class="empty">Couldn't load: ${e.message}</div>`;
+    document.getElementById('recent').innerHTML = '';
+  }
+})();
+
+function renderHero(latest, device) {
+  const order = ['hr', 'spo2', 'steps', 'bp_sys', 'temp_skin'];
+  const rows = order
+    .filter(m => latest[m])
+    .map(m => {
+      const s = latest[m];
+      let valueHtml = `<span class="metric-value">${formatValue(m, s.value)}</span>
+                      <span class="metric-unit">${metricUnit(m, s.unit)}</span>`;
+      // BP shows systolic/diastolic together
+      if (m === 'bp_sys' && latest.bp_dia) {
+        valueHtml = `<span class="metric-value">${Math.round(s.value)}/${Math.round(latest.bp_dia.value)}</span>
+                     <span class="metric-unit">mmHg</span>`;
+      }
+      return `
+        <div class="metric-row">
+          <span class="metric-label">${metricLabel(m === 'bp_sys' ? 'bp_sys' : m)
+                                       .replace('BP systolic', 'Blood pressure')}</span>
+          <div>${valueHtml}
+            <div style="font-size:11px;color:var(--ink-mute);text-align:right;margin-top:2px">${formatAgo(s.ts)}</div>
+          </div>
+        </div>`;
+    });
+
+  let html = rows.length ? rows.join('') : '<div class="empty">No readings yet. Open the ring tab to pair.</div>';
+  if (device) {
+    html += `<div class="caption" style="margin-top:16px;text-align:center">
+               <span class="pill ${device.last_seen_at ? 'pill-sage' : ''}">
+                 ${device.name || 'Ring'} · ${device.last_seen_at ? 'connected' : 'offline'}
+               </span>
+             </div>`;
+  }
+  document.getElementById('hero').innerHTML = html;
+}
+
+function renderRecent(samples) {
+  if (!samples.length) {
+    document.getElementById('recent').innerHTML =
+      '<div class="empty">No readings yet.</div>';
+    return;
+  }
+  document.getElementById('recent').innerHTML = samples.map(s => `
+    <div class="metric-row">
+      <span class="metric-label">${metricLabel(s.metric)}</span>
+      <div style="text-align:right">
+        <span class="metric-value" style="font-size:18px">${formatValue(s.metric, s.value)}</span>
+        <span class="metric-unit">${metricUnit(s.metric, s.unit)}</span>
+        <div style="font-size:11px;color:var(--ink-mute);margin-top:2px">${formatAgo(s.ts)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSleep(sleepStages) {
+  if (!sleepStages || sleepStages.length === 0) return;
+  document.getElementById('sleep-section').style.display = 'block';
+  // Crude totals
+  const totals = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  for (const s of sleepStages) {
+    const dur = (s.meta && s.meta.duration_s) || 0;
+    totals[Math.round(s.value)] = (totals[Math.round(s.value)] || 0) + dur;
+  }
+  const labels = { 0: 'Awake', 1: 'Light', 2: 'Deep', 3: 'REM' };
+  const pillCls = { 0: 'pill-butter', 1: 'pill-sage', 2: 'pill-rose', 3: 'pill-rose' };
+  const html = [0, 1, 2, 3].map(k => {
+    const mins = Math.round(totals[k] / 60);
+    return `<div class="metric-row">
+      <span class="metric-label">${labels[k]}</span>
+      <span class="pill ${pillCls[k]}">${mins} min</span>
+    </div>`;
+  }).join('');
+  document.getElementById('sleep').innerHTML = html;
+}
+</script>
+</body>
+</html>

@@ -156,7 +156,7 @@ function renderNav(active) {
   const items = [
     { id: 'today',    href: '/health/v2/today.html',  label: 'Today',
       icon: '<path d="M3 12 12 3l9 9M5 10v10h14V10"/>' },
-    { id: 'alys',     href: '/health/alys.html',      label: 'Alys',
+    { id: 'alys',     href: '/health/v2/alys.html',   label: 'Alys',
       icon: '<path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.3A8 8 0 1 1 21 12Z"/>' },
     { id: 'checkin',  href: '/health/checkin.html',   label: 'Check-in',
       icon: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/>' },

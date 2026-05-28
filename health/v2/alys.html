@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#FAF6F0" />
+<title>Alys · Neeve</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+<style>
+.alys-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 24px;
+}
+.alys-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--terra); color: var(--bone);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500;
+  font-style: italic;
+}
+.alys-meta .alys-name {
+  font-family: 'Fraunces', serif; font-weight: 500; font-size: 20px;
+  color: var(--ink); line-height: 1;
+}
+.alys-meta .alys-sub {
+  font-size: 12px; color: var(--ink-mute); margin-top: 4px;
+}
+
+/* Chat feed */
+.chat { padding-bottom: 100px; }
+.msg-row { margin: 14px 0; display: flex; }
+.msg {
+  max-width: 78%; padding: 12px 16px; border-radius: 18px;
+  font-size: 15px; line-height: 1.5; word-wrap: break-word;
+}
+.msg-alys {
+  background: white; border: 1px solid var(--hair);
+  color: var(--ink); border-bottom-left-radius: 6px;
+}
+.msg-mine {
+  background: var(--ink); color: var(--bone);
+  border-bottom-right-radius: 6px;
+  margin-left: auto;
+}
+.msg-time {
+  font-size: 11px; color: var(--ink-mute);
+  margin-top: 4px; padding: 0 4px;
+}
+
+/* Composer */
+.composer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(250, 246, 240, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--hair);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  display: flex; gap: 10px; align-items: center;
+  z-index: 11;
+}
+.composer .input {
+  flex: 1; background: white; border: 1px solid var(--hair);
+  border-radius: 22px; padding: 11px 16px;
+  font-family: 'Inter Tight', sans-serif; font-size: 15px;
+  color: var(--ink); outline: none; min-height: 44px;
+  resize: none; max-height: 120px;
+}
+.composer .send {
+  background: var(--terra); color: white; border: none;
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.composer .send:disabled { opacity: 0.4; cursor: default; }
+
+/* Nav sits above composer */
+body { padding-bottom: 0 !important; }
+</style>
+</head>
+<body>
+
+<main class="page" style="padding-bottom:120px">
+  <div class="alys-header">
+    <div class="alys-avatar">A</div>
+    <div class="alys-meta">
+      <div class="alys-name">Alys</div>
+      <div class="alys-sub">Quietly paying attention.</div>
+    </div>
+  </div>
+
+  <div class="chat" id="chat">
+    <div class="empty">Loading…</div>
+  </div>
+</main>
+
+<div class="composer">
+  <textarea class="input" id="composer-input"
+            placeholder="Anything you want to tell her…"
+            rows="1"></textarea>
+  <button class="send" id="composer-send" onclick="sendMessage()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  </button>
+</div>
+
+<div id="nav-mount"></div>
+
+<script src="/health/v2/lib.js"></script>
+<script>
+document.getElementById('nav-mount').innerHTML = renderNav('alys');
+
+const chat = document.getElementById('chat');
+const input = document.getElementById('composer-input');
+const sendBtn = document.getElementById('composer-send');
+
+// Auto-grow textarea
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+});
+
+// Send on Enter (allow Shift+Enter for newlines)
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+async function load() {
+  try {
+    const { messages } = await api('/me/messages?limit=50');
+    renderMessages((messages || []).reverse());
+  } catch (e) {
+    chat.innerHTML = `<div class="empty">Couldn't load: ${e.message}</div>`;
+  }
+}
+
+function renderMessages(list) {
+  if (!list.length) {
+    chat.innerHTML = `<div class="empty" style="padding:40px 0">
+      It's quiet here. Say anything — small things matter.
+    </div>`;
+    return;
+  }
+  chat.innerHTML = list.map(m => {
+    const mine = m.direction === 'in';
+    const time = formatAgo(m.created_at);
+    return `
+      <div class="msg-row" style="${mine ? 'justify-content:flex-end' : ''}">
+        <div>
+          <div class="msg ${mine ? 'msg-mine' : 'msg-alys'}">${escapeHtml(m.body || '')}</div>
+          <div class="msg-time" style="text-align:${mine ? 'right' : 'left'}">${time}</div>
+        </div>
+      </div>`;
+  }).join('');
+  // Scroll to bottom
+  setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 50);
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+  sendBtn.disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Optimistic render
+  chat.insertAdjacentHTML('beforeend', `
+    <div class="msg-row" style="justify-content:flex-end">
+      <div>
+        <div class="msg msg-mine">${escapeHtml(text)}</div>
+        <div class="msg-time" style="text-align:right">sending…</div>
+      </div>
+    </div>`);
+  window.scrollTo(0, document.body.scrollHeight);
+
+  try {
+    await api('/me/message', { method: 'POST', body: JSON.stringify({ body: text }) });
+    // Re-fetch to get Alys's reply (it's queued/async via the buffer)
+    setTimeout(load, 800);
+    setTimeout(load, 3000);
+    setTimeout(load, 8000);
+  } catch (e) {
+    chat.insertAdjacentHTML('beforeend', `
+      <div class="msg-row"><div class="msg msg-alys" style="color:var(--rose-deep)">
+        Couldn't send: ${escapeHtml(e.message)}
+      </div></div>`);
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+load();
+</script>
+</body>
+</html>

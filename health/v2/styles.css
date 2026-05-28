@@ -109,10 +109,10 @@ body {
   color: var(--ink-soft);
 }
 
-/* Sparkline mini-chart */
+/* Sparkline mini-chart (taller now to fit a time axis) */
 .sparkline {
   width: 100%;
-  height: 80px;
+  height: 100px;
   margin-top: 8px;
 }
 

@@ -156,10 +156,10 @@ function renderCharts() {
 
   document.getElementById('charts').innerHTML = html || '<div class="empty">No readings in this range yet.</div>';
 
-  // Render sparklines
+  // Render sparklines with full samples (so the time axis works)
   metrics.filter(m => grouped[m] && grouped[m].length > 0).forEach(m => {
     const el = document.getElementById(`spark-${m}`);
-    if (el) renderSparkline(el, grouped[m].map(s => s.value));
+    if (el) renderSparkline(el, grouped[m]);
   });
 }
 

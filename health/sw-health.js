@@ -4,7 +4,9 @@
 // Handles: push events, notification clicks, minimal cache for offline.
 // =============================================================
 
-const CACHE_VERSION = 'noti-health-v3';
+// Bumped from v3 → v4: forces all clients to evict the previous cache,
+// which had been serving stale lib.js / styles.css to v2 pages.
+const CACHE_VERSION = 'noti-health-v4';
 const SHELL_ASSETS = [
   '/health/login',
   '/health/home',
@@ -32,10 +34,14 @@ self.addEventListener('activate', (event) => {
 // ── Fetch: network-first for HTML, cache-first for static assets ─
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  // Only handle /health/* requests — leave everything else for Trade's SW
   if (!url.pathname.startsWith('/health/')) return;
 
-  // For HTML navigations, network-first (always get latest)
+  // v2 PWA pages bypass the service worker entirely — they always
+  // pull fresh from Cloudflare Pages so a deploy is visible immediately.
+  // sw-health.js still caches v1 shell assets (login/home/manifest) for
+  // offline use.
+  if (url.pathname.startsWith('/health/v2/')) return;
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => caches.match('/health/home'))
@@ -43,7 +49,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For everything else, cache-first
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );

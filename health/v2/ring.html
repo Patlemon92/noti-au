@@ -138,8 +138,13 @@ function renderCharts() {
   const recent = cachedSamples.filter(s => new Date(s.ts).getTime() >= cutoff);
   const grouped = groupByMetric(recent);
 
-  // Which metrics to chart, in priority order
-  const metrics = ['hr', 'spo2', 'steps', 'bp_sys', 'temp_skin', 'sleep_stage'];
+  // Which metrics to chart, in priority order. Excludes sleep_stage
+  // (rendered as a hypnogram on Today) and ecg_summary (one-off, not a
+  // time series).
+  const metrics = [
+    'hr', 'hrv_rmssd', 'spo2', 'respiration_rate',
+    'steps', 'bp_sys', 'bp_dia', 'temp_skin', 'stress', 'vo2max',
+  ];
   const html = metrics
     .filter(m => grouped[m] && grouped[m].length > 0)
     .map(m => {

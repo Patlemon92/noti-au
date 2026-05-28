@@ -124,8 +124,9 @@
     await loadSession();
     render();
   } catch (e) {
+    if (e && e.message === 'empty') return; // empty-questions branch already rendered
     console.error('checkin boot:', e);
-    showEmpty("Couldn't load check-in", 'Try again in a moment.');
+    showEmpty("Couldn't load check-in", (e && e.message) ? String(e.message).slice(0, 200) : 'Try again in a moment.');
   }
 
   async function startNewSession() {
@@ -140,7 +141,7 @@
       if (r.success && r.sessionId) return r.sessionId;
       showEmpty('Nothing to check in on yet', r.message || 'Add at least one template in More → Profile, then come back.');
     } catch (e) {
-      showEmpty("Couldn't start check-in", 'Try again in a moment.');
+      showEmpty("Couldn't start check-in", (e && e.message) ? String(e.message).slice(0, 200) : 'Try again in a moment.');
     }
     return null;
   }

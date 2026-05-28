@@ -51,14 +51,17 @@
   margin-top: 4px; padding: 0 4px;
 }
 
-/* Composer */
+/* Composer sits ABOVE the bottom nav so users can still navigate.
+   Nav height ≈ 64px (8+8 padding + ~22 icon + 11 text + line-height).  */
 .composer {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: rgba(250, 246, 240, 0.92);
+  position: fixed;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  left: 0; right: 0;
+  background: rgba(250, 246, 240, 0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--hair);
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  padding: 10px 16px;
   display: flex; gap: 10px; align-items: center;
   z-index: 11;
 }

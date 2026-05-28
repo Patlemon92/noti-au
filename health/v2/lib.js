@@ -172,8 +172,10 @@ function renderSparkline(container, samples, options = {}) {
       ${fmt(t)}
     </text>`).join('');
 
+  const id = 'spk_' + Math.random().toString(36).slice(2, 8);
   container.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+    <svg id="${id}" viewBox="0 0 ${W} ${H}" width="100%" height="${H}"
+         preserveAspectRatio="none" style="touch-action:none">
       <line x1="${pad}" y1="${chartH}" x2="${W - pad}" y2="${chartH}"
             stroke="var(--hair)" stroke-width="1"/>
       <path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.5"
@@ -181,8 +183,60 @@ function renderSparkline(container, samples, options = {}) {
       ${pts.length < 60 ? pts.map(p =>
         `<circle cx="${p[0]}" cy="${p[1]}" r="1.5" fill="${stroke}"/>`).join('') : ''}
       ${ticks}
+      <line class="cursor" x1="0" y1="0" x2="0" y2="${chartH}"
+            stroke="${stroke}" stroke-width="1" stroke-dasharray="3,3"
+            opacity="0"/>
+      <circle class="cursorDot" cx="0" cy="0" r="4"
+              fill="${stroke}" opacity="0"/>
+      <g class="cursorLabel" opacity="0" transform="translate(0,0)">
+        <rect x="-32" y="-22" width="64" height="18" rx="4"
+              fill="var(--ink)" />
+        <text x="0" y="-10" text-anchor="middle"
+              font-family="Inter Tight, sans-serif" font-size="10"
+              fill="var(--bone)" class="cursorTxt"></text>
+      </g>
     </svg>
   `;
+
+  // Wire up touch/mouse scrubbing
+  const svg = document.getElementById(id);
+  const cursor = svg.querySelector('.cursor');
+  const dot    = svg.querySelector('.cursorDot');
+  const lblG   = svg.querySelector('.cursorLabel');
+  const lblT   = svg.querySelector('.cursorTxt');
+
+  function hit(clientX) {
+    const rect = svg.getBoundingClientRect();
+    const xRel = ((clientX - rect.left) / rect.width) * W;
+    // Find nearest sample
+    let best = 0, bestDist = Infinity;
+    for (let i = 0; i < arr.length; i++) {
+      const dx = Math.abs(xFor(arr[i].ts) - xRel);
+      if (dx < bestDist) { bestDist = dx; best = i; }
+    }
+    const a = arr[best];
+    const x = xFor(a.ts), y = yFor(a.v);
+    cursor.setAttribute('x1', x); cursor.setAttribute('x2', x);
+    cursor.setAttribute('opacity', 1);
+    dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+    dot.setAttribute('opacity', 1);
+    const lx = Math.max(34, Math.min(W - 34, x));
+    lblG.setAttribute('transform', `translate(${lx},${Math.max(20, y)})`);
+    lblG.setAttribute('opacity', 1);
+    const vStr  = (Number.isInteger(a.v) ? a.v : a.v.toFixed(1)).toString();
+    const tStr  = fmt(a.ts);
+    lblT.textContent = `${vStr} · ${tStr}`;
+  }
+  function clear() {
+    cursor.setAttribute('opacity', 0);
+    dot.setAttribute('opacity', 0);
+    lblG.setAttribute('opacity', 0);
+  }
+  svg.addEventListener('pointerdown', e => { svg.setPointerCapture(e.pointerId); hit(e.clientX); });
+  svg.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') hit(e.clientX); });
+  svg.addEventListener('pointerup',     clear);
+  svg.addEventListener('pointercancel', clear);
+  svg.addEventListener('pointerleave',  clear);
 }
 
 // Bottom nav HTML (call once per page; pass active tab id).

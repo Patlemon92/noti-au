@@ -348,6 +348,23 @@ function renderHypnogram(container, sleepSamples) {
   return totals;
 }
 
+// Wire a refresh callback to fire when the page becomes visible again
+// (user switched back from another app/tab without quitting). Also runs
+// the callback after a `pageshow` event so iOS bfcache restores trigger
+// a fresh load. Call once per page during init.
+function onResume(fn) {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      try { fn(); } catch (e) { console.error(e); }
+    }
+  });
+  window.addEventListener('pageshow', e => {
+    if (e.persisted) {
+      try { fn(); } catch (err) { console.error(err); }
+    }
+  });
+}
+
 // Bottom nav HTML (call once per page; pass active tab id).
 // Five items — covers everything the v1 PWA exposed so nothing's hidden:
 // Today (v2) · Alys (v1 chat) · Check-in (v1 daily) · Ring (v2 device) · More (v1 profile)

@@ -157,6 +157,8 @@ function renderCheckinPrompt(checkins) {
 load();
 // Auto-refresh every 20s so new ring samples appear without manual reload.
 setInterval(load, 20000);
+// And refresh immediately when the user returns to this tab/app.
+onResume(load);
 
 function renderSleepPreview(samples) {
   const sleep = (samples || []).filter(s => s.metric === 'sleep_stage');

@@ -2,25 +2,33 @@
 // Auth + API client + helpers.
 
 const API_BASE = 'https://api.noti.au';
-const TOKEN_KEY = 'neeve_token';
+// Token interop: v1 PWA pages (alys.html, profile.html, record.html,
+// export.html, checkin.html) read 'noti_token'. v2 lib reads/writes
+// BOTH so a user signing in via either side can navigate freely.
+const TOKEN_KEYS = ['neeve_token', 'noti_token'];
 
-// Token storage. The iOS app will inject the token via JS bridge before
-// loading the page; web users sign in via /health/login.html (v1 page).
 function getToken() {
-  // Order: query param (?token=...), iOS-injected window var, localStorage
   const urlToken = new URLSearchParams(window.location.search).get('token');
   if (urlToken) {
-    localStorage.setItem(TOKEN_KEY, urlToken);
-    // Clean the URL
+    setToken(urlToken);
     history.replaceState({}, '', window.location.pathname);
     return urlToken;
   }
-  if (window.NEEVE_TOKEN) return window.NEEVE_TOKEN;
-  return localStorage.getItem(TOKEN_KEY);
+  if (window.NEEVE_TOKEN) { setToken(window.NEEVE_TOKEN); return window.NEEVE_TOKEN; }
+  for (const k of TOKEN_KEYS) {
+    const v = localStorage.getItem(k);
+    if (v) return v;
+  }
+  return null;
 }
 
-function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
-function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+function setToken(t) {
+  for (const k of TOKEN_KEYS) localStorage.setItem(k, t);
+}
+function clearToken() {
+  for (const k of TOKEN_KEYS) localStorage.removeItem(k);
+  localStorage.removeItem('noti_user');
+}
 
 async function api(path, opts = {}) {
   const token = getToken();
@@ -141,16 +149,21 @@ function renderSparkline(container, values, options = {}) {
 }
 
 // Bottom nav HTML (call once per page; pass active tab id).
+// Five items — covers everything the v1 PWA exposed so nothing's hidden:
+// Today (v2) · Alys (v1 chat) · Check-in (v1 daily) · Ring (v2 device) · More (v1 profile)
+// 'More' page is v1 profile.html which links to records, export PDF, sign out.
 function renderNav(active) {
   const items = [
-    { id: 'today',  href: '/health/v2/today.html',  label: 'Today',
+    { id: 'today',    href: '/health/v2/today.html',  label: 'Today',
       icon: '<path d="M3 12 12 3l9 9M5 10v10h14V10"/>' },
-    { id: 'ring',   href: '/health/v2/ring.html',   label: 'Ring',
+    { id: 'alys',     href: '/health/alys.html',      label: 'Alys',
+      icon: '<path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.3A8 8 0 1 1 21 12Z"/>' },
+    { id: 'checkin',  href: '/health/checkin.html',   label: 'Check-in',
+      icon: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/>' },
+    { id: 'ring',     href: '/health/v2/ring.html',   label: 'Ring',
       icon: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>' },
-    { id: 'history', href: '/health/v2/history.html', label: 'History',
-      icon: '<path d="M3 12h4l3-7 4 14 3-7h4"/>' },
-    { id: 'settings', href: '/health/profile.html', label: 'Settings',
-      icon: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>' },
+    { id: 'more',     href: '/health/profile.html',   label: 'More',
+      icon: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>' },
   ];
   return `<nav class="nav">${items.map(i => `
     <a class="nav-item ${i.id === active ? 'active' : ''}" href="${i.href}">

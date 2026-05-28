@@ -1,0 +1,191 @@
+/* Neeve v2 design system — extracted from prototype/neeve-prototype.html */
+:root {
+  --bone:        #FAF6F0;
+  --bone-deep:   #F2EBE0;
+  --cream:       #F7EFE2;
+  --ink:         #2B221C;
+  --ink-soft:    #5C4F45;
+  --ink-mute:    #998578;
+  --hair:        #E5DCCE;
+  --rose:        #E0998B;
+  --rose-deep:   #C77A6C;
+  --terra:       #B85738;
+  --sage:        #A9B89A;
+  --sage-deep:   #7E927A;
+  --butter:      #EBC982;
+  --butter-deep: #C99B3F;
+  --plum:        #97718C;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bone);
+  color: var(--ink);
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+body {
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+  position: relative;
+}
+
+.page {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 24px 20px 96px;
+}
+
+/* Typography */
+.title {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 34px;
+  line-height: 1.15;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+}
+.title-sm {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--ink);
+}
+.label {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.body { color: var(--ink-soft); }
+.caption { color: var(--ink-mute); font-size: 13px; }
+
+/* Cards */
+.card {
+  background: white;
+  border: 1px solid var(--hair);
+  border-radius: 18px;
+  padding: 20px;
+  margin-top: 16px;
+}
+.card-cream {
+  background: var(--cream);
+  border: 1px solid var(--hair);
+  border-radius: 18px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+/* Hero metric row */
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hair);
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-value {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 28px;
+  color: var(--ink);
+}
+.metric-unit {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 13px;
+  color: var(--ink-mute);
+  margin-left: 4px;
+}
+.metric-label {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+/* Sparkline mini-chart */
+.sparkline {
+  width: 100%;
+  height: 80px;
+  margin-top: 8px;
+}
+
+/* Bottom nav (matches prototype) */
+.nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(250, 246, 240, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--hair);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 10;
+}
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+  font-size: 11px;
+  color: var(--ink-mute);
+  text-decoration: none;
+  font-weight: 500;
+}
+.nav-item.active { color: var(--terra); }
+.nav-item svg { width: 22px; height: 22px; stroke-width: 1.5; }
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  font-family: 'Inter Tight', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--terra); color: white; }
+.btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--hair); }
+
+/* Section spacing */
+.section { margin-top: 32px; }
+.section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+.section-link { color: var(--terra); font-size: 13px; text-decoration: none; }
+
+/* Loading / empty states */
+.empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--ink-mute);
+  font-size: 14px;
+}
+
+/* Pills (status / sleep stage labels) */
+.pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bone-deep);
+  color: var(--ink-soft);
+}
+.pill-sage  { background: rgba(169, 184, 154, 0.25); color: var(--sage-deep); }
+.pill-rose  { background: rgba(224, 153, 139, 0.25); color: var(--rose-deep); }
+.pill-butter { background: rgba(235, 201, 130, 0.3); color: var(--butter-deep); }

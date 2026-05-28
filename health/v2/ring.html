@@ -69,7 +69,9 @@ function setRange(days) {
   renderCharts();
 }
 
-(async function load() {
+let firstLoad = true;
+
+async function load() {
   try {
     const [{ devices }, { samples }] = await Promise.all([
       api('/ring/status'),
@@ -78,12 +80,24 @@ function setRange(days) {
     cachedDevice = devices[0];
     cachedSamples = samples;
     renderDevice();
-    setRange(7);
+    if (firstLoad) { setRange(7); firstLoad = false; }
+    else renderCharts();
   } catch (e) {
-    document.getElementById('device').innerHTML =
-      `<div class="empty">Couldn't load: ${e.message}</div>`;
+    if (firstLoad) {
+      document.getElementById('device').innerHTML =
+        `<div class="empty">Couldn't load: ${e.message}</div>`;
+    }
+    // On refresh failure, leave the existing data on screen.
   }
-})();
+}
+
+load();
+// Auto-refresh every 20s so new ring samples + last-sync appear in-place.
+setInterval(load, 20000);
+// Also refresh immediately when the user returns to this tab.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) load();
+});
 
 function renderDevice() {
   if (!cachedDevice) {

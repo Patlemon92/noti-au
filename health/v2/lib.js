@@ -70,8 +70,6 @@ function formatAgo(iso) {
 function formatValue(metric, value) {
   if (value == null) return '—';
   if (metric === 'temp_skin') return value.toFixed(1);
-  // Show sign for delta values so +0.15 vs -0.20 reads clearly
-  if (metric === 'temp_delta') return (value >= 0 ? '+' : '') + value.toFixed(2);
   if (Number.isInteger(value) || value === Math.round(value)) return Math.round(value).toString();
   return value.toFixed(1);
 }
@@ -82,7 +80,6 @@ function metricLabel(metric) {
     hrv_rmssd:        'HRV',
     spo2:             'Blood oxygen',
     temp_skin:        'Skin temp',
-    temp_delta:       'Skin temp Δ',
     steps:            'Steps today',
     sleep_stage:      'Sleep',
     ecg_summary:      'ECG',

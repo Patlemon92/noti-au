@@ -110,7 +110,7 @@
   let sessionId = new URLSearchParams(location.search).get('session');
   let session = null;
   let questions = [];
-  const answers = {};
+  let answers = {};
   let step = 0;
   let scaleValue = 5;
   let numericValue = null;
@@ -147,6 +147,16 @@
       showEmpty('All done for now', 'No questions queued. Try again later.');
       throw new Error('empty');
     }
+    // Resume — restore any saved answers and skip to the first unanswered.
+    answers = session.answers || {};
+    const savedStep = Number(session.step) || 0;
+    // Find first question whose key isn't in answers (yet), starting from
+    // the server's recorded step. This handles users who skip back/forward.
+    let resumeAt = Math.min(savedStep, questions.length);
+    for (let i = 0; i < questions.length; i++) {
+      if (!(questions[i].key in answers)) { resumeAt = Math.min(resumeAt, i); break; }
+    }
+    step = resumeAt;
   }
 
   // ── Render
@@ -341,12 +351,12 @@
   function advance(q, value, skipped) {
     const toSend = skipped ? null : value;
     answers[q.key] = toSend;
+    step++;
     fetch(API_BASE + '/session/' + sessionId + '/answer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: q.key, value: toSend }),
+      body: JSON.stringify({ key: q.key, value: toSend, step }),
     }).catch(() => {});
-    step++;
     if (step >= questions.length) return complete();
     render();
   }

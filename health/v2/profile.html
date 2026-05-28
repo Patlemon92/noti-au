@@ -40,9 +40,37 @@
   </section>
 
   <section class="section">
+    <div class="section-label">What Alys remembers</div>
+    <div class="card">
+      <p class="caption" style="margin-bottom:10px">
+        Anything you want her to know about you. Diagnoses, family, things she should keep in mind.
+      </p>
+      <textarea id="bio" rows="4"
+        style="width:100%;background:white;border:1px solid var(--hair);border-radius:12px;padding:12px;font-family:'Inter Tight',sans-serif;font-size:15px;color:var(--ink);resize:vertical"
+        placeholder="e.g. POTS diagnosis since 2019, partner Francesca also has ME/CFS, dog at the vet a lot…"></textarea>
+      <div style="text-align:right; margin-top:10px">
+        <button class="btn btn-primary" onclick="saveBio()">Save</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
     <div class="section-label">Daily schedule</div>
     <div class="card" id="schedule">
       <div class="empty">Loading…</div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-label">Notifications</div>
+    <div class="card">
+      <div class="row-link" style="cursor:default">
+        <div>
+          <div id="push-state">Push status…</div>
+          <div class="sub">Quiet by default. Just a soft 'check-in waiting' at your chosen times.</div>
+        </div>
+        <button class="btn btn-ghost" id="push-btn" onclick="togglePush()" style="display:none">Turn on</button>
+      </div>
     </div>
   </section>
 
@@ -100,6 +128,76 @@ function renderUser(u) {
     <div class="kv"><span class="k">Name</span><span class="v">${u.name || '—'}</span></div>
     <div class="kv"><span class="k">Phone</span><span class="v">${u.phone || '—'}</span></div>
   `;
+  document.getElementById('bio').value = u.bio || '';
+  refreshPushState();
+}
+
+async function saveBio() {
+  const bio = document.getElementById('bio').value.trim();
+  try {
+    await api('/me/bio', { method: 'POST', body: JSON.stringify({ bio }) });
+    alert('Saved.');
+  } catch (e) { alert('Couldn\'t save: ' + e.message); }
+}
+
+async function refreshPushState() {
+  const el = document.getElementById('push-state');
+  const btn = document.getElementById('push-btn');
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    el.textContent = 'Push not supported on this device.';
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    el.textContent = 'Push notifications are on.';
+    btn.textContent = 'Turn off';
+    btn.style.display = 'inline-block';
+  } else if (Notification.permission === 'denied') {
+    el.textContent = 'Notifications blocked. Enable them in Settings → Neeve → Notifications.';
+  } else {
+    el.textContent = 'Push notifications are off.';
+    btn.textContent = 'Turn on';
+    btn.style.display = 'inline-block';
+  }
+}
+
+async function togglePush() {
+  if (Notification.permission === 'granted') {
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = await reg?.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+    await api('/me/push/unsubscribe', { method: 'POST', body: JSON.stringify({ endpoint: sub?.endpoint }) }).catch(() => {});
+    refreshPushState();
+  } else {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { refreshPushState(); return; }
+    try {
+      const reg = await navigator.serviceWorker.register('/health/sw-health.js');
+      const { publicKey } = await api('/push/public-key').catch(() => ({ publicKey: null }));
+      if (!publicKey) { alert('Couldn\'t fetch push key.'); return; }
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(publicKey),
+      });
+      await api('/me/push/subscribe', { method: 'POST', body: JSON.stringify({
+        endpoint: sub.endpoint,
+        keys: sub.toJSON().keys,
+        platform: 'ios-pwa',
+        userAgent: navigator.userAgent,
+      })});
+      refreshPushState();
+    } catch (e) {
+      alert('Push registration failed: ' + e.message);
+    }
+  }
+}
+
+function urlB64ToUint8Array(b64) {
+  const padding = '='.repeat((4 - b64.length % 4) % 4);
+  const base64  = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
 }
 
 function renderSchedule(u) {

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#FAF6F0" />
+<title>Export · Neeve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+<style>
+.field-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--hair); }
+.field-row:last-child { border-bottom: none; }
+.field-row .k { color: var(--ink-soft); }
+.field-row select, .field-row input {
+  background: white; border: 1px solid var(--hair); border-radius: 10px;
+  padding: 8px 12px; font-family: 'Inter Tight', sans-serif; font-size: 15px;
+  color: var(--ink);
+}
+.toggle { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--hair); }
+.toggle:last-child { border-bottom: none; }
+.toggle input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--terra); }
+.toggle label { color: var(--ink); cursor: pointer; }
+.toggle .sub { color: var(--ink-mute); font-size: 12px; margin-top: 2px; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="label">Export</p>
+  <h1 class="title">A PDF for your doctor</h1>
+  <p class="caption" style="margin-bottom:20px">A clinical-style summary of your tracking — symptoms, sleep, ring metrics, patterns. The same report you can take to an appointment.</p>
+
+  <section class="section">
+    <div class="section-label">Date range</div>
+    <div class="card">
+      <div class="field-row">
+        <span class="k">Last</span>
+        <select id="days">
+          <option value="7">7 days</option>
+          <option value="14">14 days</option>
+          <option value="30" selected>30 days</option>
+          <option value="60">60 days</option>
+          <option value="90">90 days</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-label">Include</div>
+    <div class="card">
+      <div class="toggle">
+        <input type="checkbox" id="sec-summary" checked>
+        <label for="sec-summary">
+          <div>Summary</div>
+          <div class="sub">Headline patterns, baseline averages</div>
+        </label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="sec-checkins" checked>
+        <label for="sec-checkins">
+          <div>Daily check-ins</div>
+          <div class="sub">Every logged entry by date</div>
+        </label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="sec-ring" checked>
+        <label for="sec-ring">
+          <div>Ring data</div>
+          <div class="sub">HR, SpO2, sleep, steps, BP</div>
+        </label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="sec-patterns" checked>
+        <label for="sec-patterns">
+          <div>Detected patterns</div>
+          <div class="sub">Correlations the system has noticed</div>
+        </label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="sec-notes" checked>
+        <label for="sec-notes">
+          <div>Free-text notes</div>
+          <div class="sub">Things you wrote</div>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <div style="margin-top:24px; text-align:center">
+    <button class="btn btn-primary" id="go" onclick="generate()">Generate PDF</button>
+    <div id="status" class="caption" style="margin-top:12px"></div>
+  </div>
+</main>
+
+<div id="nav-mount"></div>
+<script src="/health/v2/lib.js"></script>
+<script>
+document.getElementById('nav-mount').innerHTML = renderNav('more');
+
+async function generate() {
+  const go = document.getElementById('go');
+  const status = document.getElementById('status');
+  go.disabled = true;
+  status.textContent = 'Generating…';
+
+  const days = Number(document.getElementById('days').value);
+  const sections = {
+    summary:  document.getElementById('sec-summary').checked,
+    checkins: document.getElementById('sec-checkins').checked,
+    ring:     document.getElementById('sec-ring').checked,
+    patterns: document.getElementById('sec-patterns').checked,
+    notes:    document.getElementById('sec-notes').checked,
+  };
+
+  try {
+    const token = getToken();
+    const res = await fetch('https://api.noti.au/me/export', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+      body: JSON.stringify({ days, sections }),
+    });
+    if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    // iOS WKWebView can't always trigger Blob downloads — open in new tab
+    // and let the user share/save. Native shell can call this same URL too.
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `neeve-${new Date().toISOString().slice(0,10)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    status.textContent = 'PDF generated and downloaded.';
+  } catch (e) {
+    status.textContent = 'Couldn\'t generate: ' + e.message;
+  } finally {
+    go.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

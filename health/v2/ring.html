@@ -34,9 +34,20 @@
     <div id="charts"></div>
   </section>
 
-  <!-- Native pairing hook (only relevant when in the WebView shell) -->
-  <section class="section" id="pair-section">
-    <button class="btn btn-ghost" onclick="callNative('scanForRing')">Scan for a new ring</button>
+  <!-- Actions — these all call into the native iOS app via the JS bridge -->
+  <section class="section" id="actions">
+    <h2 class="title-sm">Actions</h2>
+    <div class="card">
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <button class="btn btn-primary" onclick="callNative('measureHeartRate')">Measure heart rate</button>
+        <button class="btn btn-ghost"   onclick="callNative('syncNow')">Sync historical data</button>
+        <button class="btn btn-ghost"   onclick="callNative('scanForRing')">Pair another ring</button>
+      </div>
+      <p class="caption" style="margin-top:14px">
+        Measurements only work with the ring on your finger. Sync pulls
+        anything the ring has stored since the last connection.
+      </p>
+    </div>
   </section>
 </main>
 

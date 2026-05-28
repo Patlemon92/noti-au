@@ -134,10 +134,7 @@ function renderRingCard(device, samples) {
         <span class="name">No ring paired</span>
         <span class="conn"><span class="dot dot-off"></span>Not connected</span>
       </div>
-      <p class="caption">Pair a ring to start seeing heart rate, blood oxygen, steps and sleep here.</p>
-      <div class="ring-actions">
-        <button class="btn btn-primary" onclick="callNative('scanForRing')">Pair a ring</button>
-      </div>`;
+      <p class="caption">Open the Ring tab to pair a ring. Heart rate, blood oxygen, steps and sleep will show here once it's connected.</p>`;
     return;
   }
   const latest = latestPerMetric(samples);
@@ -172,12 +169,7 @@ function renderRingCard(device, samples) {
     </div>
     ${tiles.length
        ? `<div class="metric-grid">${tiles.join('')}</div>`
-       : `<p class="caption">No readings yet. Put the ring on and tap Measure.</p>`}
-    <div class="ring-actions">
-      <button class="btn btn-primary" onclick="callNative('measureHeartRate')">Measure</button>
-      <button class="btn btn-ghost"   onclick="callNative('syncNow')">Sync now</button>
-      <button class="btn btn-ghost"   onclick="callNative('scanForRing')">Pair another</button>
-    </div>`;
+       : `<p class="caption">No readings yet. Open the Ring tab to take a measurement.</p>`}`;
 }
 
 function renderWeek(checkins) {

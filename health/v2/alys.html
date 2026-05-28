@@ -139,7 +139,12 @@ input.addEventListener('keydown', (e) => {
 async function load() {
   try {
     const { messages } = await api('/me/messages?limit=50');
-    renderMessages((messages || []).reverse());
+    // Sort explicitly oldest → newest so chat reads top-to-bottom
+    // (newest at the bottom, like every other chat UI).
+    const sorted = (messages || []).slice().sort((a, b) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+    renderMessages(sorted);
   } catch (e) {
     chat.innerHTML = `<div class="empty">Couldn't load: ${e.message}</div>`;
   }
@@ -163,8 +168,10 @@ function renderMessages(list) {
         </div>
       </div>`;
   }).join('');
-  // Scroll to bottom
-  setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 50);
+  // Scroll to bottom after layout settles
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'auto' });
+  });
 }
 
 async function sendMessage() {

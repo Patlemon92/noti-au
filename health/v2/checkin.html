@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#FAF6F0" />
+<title>Check-in · Neeve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .checkin-page { padding: 18px 20px 120px; max-width: 540px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+  .back-btn { width: 36px; height: 36px; border-radius: 12px; background: white; border: 1px solid var(--hair); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+  .back-btn svg { stroke: var(--ink); }
+  .progress { flex: 1; display: flex; gap: 4px; }
+  .seg { flex: 1; height: 3px; border-radius: 2px; background: var(--bone-deep); }
+  .seg.done { background: var(--terra); }
+  .seg.cur { background: var(--rose); }
+
+  .slot-label { font-family: 'Inter Tight', sans-serif; font-size: 11px; letter-spacing: .08em; color: var(--ink-mute); text-transform: uppercase; margin-bottom: 10px; }
+  .qtext { font-family: 'Fraunces', serif; font-weight: 500; font-size: 30px; line-height: 1.18; color: var(--ink); letter-spacing: -.4px; margin-bottom: 28px; }
+
+  /* Scale */
+  .scale-card { background: white; border: 1px solid var(--hair); border-radius: 18px; padding: 22px 20px; }
+  .scale-num { font-family: 'Fraunces', serif; font-weight: 500; font-size: 56px; color: var(--ink); line-height: 1; letter-spacing: -2px; }
+  .scale-desc { font-size: 14px; color: var(--ink-soft); margin-top: 6px; font-weight: 500; }
+  .scale-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 40px; background: transparent; outline: none; margin: 20px 0 8px; padding: 0; }
+  .scale-slider::-webkit-slider-runnable-track { height: 40px; background: var(--bone-deep); border-radius: 20px; border: 1px solid var(--hair); }
+  .scale-slider::-moz-range-track { height: 40px; background: var(--bone-deep); border-radius: 20px; border: 1px solid var(--hair); }
+  .scale-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 32px; height: 32px; border-radius: 50%; background: var(--terra); border: 3px solid var(--bone); margin-top: 3px; cursor: grab; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+  .scale-slider::-moz-range-thumb { width: 32px; height: 32px; border-radius: 50%; background: var(--terra); border: 3px solid var(--bone); box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+  .scale-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-mute); }
+
+  /* Choice */
+  .chips { display: flex; flex-direction: column; gap: 10px; }
+  .chip { background: white; border: 1px solid var(--hair); border-radius: 16px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform .12s, background .12s, color .12s; }
+  .chip:active { transform: scale(.98); }
+  .chip.selected { background: var(--terra); border-color: var(--terra); }
+  .chip-label { font-size: 16px; font-weight: 500; color: var(--ink); text-transform: capitalize; }
+  .chip.selected .chip-label { color: var(--bone); }
+  .chip-side { font-size: 13px; color: var(--ink-mute); }
+  .chip.selected .chip-side { color: var(--bone); opacity: .8; }
+
+  /* Numeric */
+  .num-card { background: white; border: 1px solid var(--hair); border-radius: 18px; padding: 26px 20px; text-align: center; }
+  .num-big { font-family: 'Fraunces', serif; font-weight: 500; font-size: 60px; color: var(--ink); line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+  .num-unit { font-size: 14px; color: var(--ink-soft); margin-top: 4px; }
+  .num-hint { font-size: 12px; color: var(--ink-mute); text-align: center; margin: 10px 0 14px; }
+  .num-input-hidden { position: absolute; opacity: 0; pointer-events: none; }
+  .quick-row { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .quick { flex: 1; min-width: 52px; background: white; border: 1px solid var(--hair); border-radius: 12px; padding: 11px 0; text-align: center; font-size: 15px; color: var(--ink); font-weight: 500; cursor: pointer; }
+  .quick.active { background: var(--terra); color: var(--bone); border-color: var(--terra); }
+
+  /* Text */
+  .text-area { width: 100%; background: white; border: 1px solid var(--hair); border-radius: 16px; padding: 18px; min-height: 140px; font-size: 16px; color: var(--ink); font-family: 'Inter Tight', sans-serif; resize: none; outline: none; line-height: 1.5; }
+  .text-area::placeholder { color: var(--ink-mute); }
+  .text-note { font-size: 12px; color: var(--ink-mute); margin-top: 10px; text-align: center; }
+
+  /* Buttons */
+  .btn-primary { width: 100%; background: var(--ink); color: var(--bone); border: 0; padding: 16px; border-radius: 14px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: 'Inter Tight', sans-serif; margin-top: 20px; }
+  .btn-primary:disabled { opacity: .4; }
+  .skip-link { display: block; text-align: center; margin-top: 14px; font-size: 13px; color: var(--ink-mute); cursor: pointer; text-decoration: underline; }
+
+  .q-area { flex: 1; display: flex; flex-direction: column; animation: fadein .22s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .hidden { display: none; }
+
+  /* Done state */
+  .done-card { background: white; border: 1px solid var(--hair); border-radius: 18px; padding: 30px 22px; text-align: center; margin-top: 20px; }
+  .check-circle { width: 60px; height: 60px; border-radius: 50%; background: var(--terra); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; }
+  .done-title { font-family: 'Fraunces', serif; font-weight: 500; font-size: 26px; color: var(--ink); margin-bottom: 8px; letter-spacing: -.3px; }
+  .done-sub { font-size: 14px; color: var(--ink-soft); margin-bottom: 18px; line-height: 1.5; }
+  .alys-bubble { background: var(--cream); border: 1px solid var(--hair); border-radius: 14px 14px 14px 4px; padding: 14px 16px; text-align: left; margin-bottom: 14px; }
+  .alys-label { font-family: 'Inter Tight', sans-serif; font-size: 10px; color: var(--terra); font-weight: 500; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; }
+  .alys-text { font-size: 14px; color: var(--ink); line-height: 1.55; margin: 0; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink); }
+  .empty-state h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 24px; margin-bottom: 10px; }
+  .empty-state p { font-size: 14px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 18px; }
+
+  /* Nav */
+  .nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bone); border-top: 1px solid var(--hair); display: flex; justify-content: space-around; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); z-index: 50; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; text-decoration: none; color: var(--ink-mute); }
+  .nav-item.active { color: var(--terra); }
+  .nav-item svg { width: 22px; height: 22px; stroke-width: 1.6; }
+  .nav-item span { font-size: 10px; font-weight: 500; letter-spacing: .02em; }
+</style>
+</head>
+<body>
+<div class="checkin-page" id="page">
+  <div class="topbar" id="topbar">
+    <div class="back-btn" id="btn-back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+    </div>
+    <div class="progress" id="progress"></div>
+  </div>
+  <div id="main"></div>
+</div>
+<div id="nav-mount"></div>
+
+<script src="lib.js"></script>
+<script>
+(async function () {
+  // ── State
+  let sessionId = new URLSearchParams(location.search).get('session');
+  let session = null;
+  let questions = [];
+  const answers = {};
+  let step = 0;
+  let scaleValue = 5;
+  let numericValue = null;
+
+  document.getElementById('nav-mount').innerHTML = renderNav('checkin');
+
+  // ── Boot
+  try {
+    if (!sessionId) sessionId = await startNewSession();
+    if (!sessionId) return; // start failed — message already rendered
+    await loadSession();
+    render();
+  } catch (e) {
+    console.error('checkin boot:', e);
+    showEmpty("Couldn't load check-in", 'Try again in a moment.');
+  }
+
+  async function startNewSession() {
+    // Pick slot from local time. Morning before 14:00, evening after.
+    const hour = new Date().getHours();
+    const slot = hour < 14 ? 'morning' : 'evening';
+    try {
+      const r = await api('/me/start-checkin', {
+        method: 'POST',
+        body: JSON.stringify({ slot }),
+      });
+      if (r.success && r.sessionId) return r.sessionId;
+      showEmpty('Nothing to check in on yet', r.message || 'Add at least one template in More → Profile, then come back.');
+    } catch (e) {
+      showEmpty("Couldn't start check-in", 'Try again in a moment.');
+    }
+    return null;
+  }
+
+  async function loadSession() {
+    const res = await fetch(API_BASE + '/session/' + sessionId);
+    if (!res.ok) throw new Error('bad session');
+    session = await res.json();
+    if (session.error) throw new Error(session.error);
+    questions = [];
+    for (const s of session.sections || []) {
+      for (const q of s.questions || []) questions.push(q);
+    }
+    if (questions.length === 0) {
+      showEmpty('All done for now', 'No questions queued. Try again later.');
+      throw new Error('empty');
+    }
+  }
+
+  // ── Render
+  function render() {
+    renderProgress();
+    const q = questions[step];
+    if (!q) return complete();
+
+    const slotName = session.slot === 'morning' ? 'Morning' : 'Evening';
+    let html = '<div class="q-area">';
+    html += `<div class="slot-label">${slotName} · ${step + 1} of ${questions.length}</div>`;
+    html += `<h1 class="qtext">${escapeHtml(q.question)}</h1>`;
+
+    if (q.type === 'scale') html += renderScale(q);
+    else if (q.type === 'choice') html += renderChoice(q);
+    else if (q.type === 'numeric') html += renderNumeric(q);
+    else html += renderText(q);
+
+    html += '<a class="skip-link" id="skip">Skip this one</a>';
+    html += '</div>';
+
+    document.getElementById('main').innerHTML = html;
+    attachHandlers(q);
+  }
+
+  function renderProgress() {
+    document.getElementById('progress').innerHTML = questions.map((_, i) => {
+      if (i < step) return '<div class="seg done"></div>';
+      if (i === step) return '<div class="seg cur"></div>';
+      return '<div class="seg"></div>';
+    }).join('');
+  }
+
+  // Scale
+  const scaleWords = ['rough','rough','tough','tough','okay','okay','pretty good','pretty good','bright','bright','bright'];
+  function renderScale(q) {
+    scaleValue = answers[q.key] != null ? Number(answers[q.key]) : 5;
+    return `
+      <div class="scale-card">
+        <div class="scale-num" id="scale-num">${scaleValue}</div>
+        <div class="scale-desc" id="scale-desc">${scaleWords[scaleValue]}</div>
+        <input type="range" min="0" max="10" step="1" value="${scaleValue}" class="scale-slider" id="scale" />
+        <div class="scale-ends"><span>rough</span><span>bright</span></div>
+      </div>
+      <button class="btn-primary" id="next">Next</button>
+    `;
+  }
+
+  // Choice
+  const choiceSubtitle = {
+    low: 'not much', okay: 'got by', good: 'on top of it',
+    none: 'none at all', mild: 'a little', moderate: 'noticeable', rough: 'heavy', strong: 'strong',
+    no: 'no', yes: 'yes', a_little: 'a little', most_of_day: 'most of the day',
+    normal: 'normal', very_low: 'very low', somewhat: 'somewhat', a_bit: 'a bit', some: 'some',
+    poor: 'poor', light: 'light', heavy: 'heavy', medium: 'medium',
+    today: 'today', yesterday: 'yesterday', earlier: 'earlier', better: 'better', same: 'same', worse: 'worse',
+    dull: 'dull', throbbing: 'throbbing', sharp: 'sharp', visual: 'visual', pressure: 'pressure',
+    fatigue: 'fatigue', other: 'other',
+    helped: 'it helped', not_helped: "didn't help", almost: 'almost',
+    bloating: 'bloating', cramps: 'cramps', low_mood: 'low mood',
+    period: 'period', pre_period: 'pre-period', mid_cycle: 'mid-cycle', unsure: 'unsure',
+  };
+  function renderChoice(q) {
+    const opts = q.options || [];
+    const cur = answers[q.key] || null;
+    const chips = opts.map(o => {
+      const sub = choiceSubtitle[o] || '';
+      const sel = cur === o ? ' selected' : '';
+      return `<div class="chip${sel}" data-value="${o}">
+        <span class="chip-label">${o.replace(/_/g, ' ')}</span>
+        ${sub ? `<span class="chip-side">${sub}</span>` : ''}
+      </div>`;
+    }).join('');
+    return `<div class="chips">${chips}</div>`;
+  }
+
+  // Numeric
+  function quickPicks(key) {
+    if (key === 'sleep') return [5, 6, 6.5, 7, 8];
+    if (key === 'duration') return [1, 2, 4, 8, 12];
+    return [];
+  }
+  function unitFor(key) {
+    if (key === 'sleep' || key === 'duration') return 'hours';
+    if (key === 'weight') return 'kg';
+    return '';
+  }
+  function renderNumeric(q) {
+    numericValue = answers[q.key] != null ? Number(answers[q.key]) : null;
+    const picks = quickPicks(q.key);
+    const quickHTML = picks.length
+      ? `<div class="quick-row">${picks.map(n => `<div class="quick${numericValue === n ? ' active' : ''}" data-n="${n}">${n}</div>`).join('')}</div>`
+      : '';
+    const unit = unitFor(q.key);
+    return `
+      <div class="num-card" id="num-card">
+        <div class="num-big" id="num-big">${numericValue != null ? numericValue : '—'}</div>
+        ${unit ? `<div class="num-unit">${unit}</div>` : ''}
+      </div>
+      <p class="num-hint">roughly is fine · tap to type</p>
+      ${quickHTML}
+      <input type="number" inputmode="decimal" step="0.1" class="num-input-hidden" id="num-input" />
+      <button class="btn-primary" id="next">Next</button>
+    `;
+  }
+
+  // Text
+  function renderText(q) {
+    const val = answers[q.key] || '';
+    const placeholders = {
+      migraine_trigger: 'Heat, probably. Long day standing and I forgot to drink…',
+      pots_trigger: 'Stood up too fast from the couch.',
+      warning: 'Visual flickers in my peripheral, same as before.',
+      weight_notes: 'Bit bloated, period coming.',
+      extra_info: "Anything you'd like me to know…",
+      goal: "What you're hoping to understand…",
+      focus: 'What matters most right now…',
+    };
+    const ph = placeholders[q.key] || 'Type anything, or skip.';
+    return `
+      <textarea class="text-area" id="text" placeholder="${ph}">${escapeHtml(val)}</textarea>
+      <p class="text-note">Optional · type anything, or skip</p>
+      <button class="btn-primary" id="next">Next</button>
+    `;
+  }
+
+  // ── Handlers
+  function attachHandlers(q) {
+    document.getElementById('skip').onclick = () => advance(q, null, true);
+    document.getElementById('btn-back').onclick = () => {
+      if (step === 0) { window.location.href = 'today.html'; return; }
+      step--; render();
+    };
+
+    if (q.type === 'scale') {
+      const slider = document.getElementById('scale');
+      slider.oninput = () => {
+        scaleValue = Number(slider.value);
+        document.getElementById('scale-num').textContent = scaleValue;
+        document.getElementById('scale-desc').textContent = scaleWords[scaleValue];
+      };
+      document.getElementById('next').onclick = () => advance(q, scaleValue, false);
+    }
+
+    if (q.type === 'choice') {
+      document.querySelectorAll('.chip').forEach(el => {
+        el.onclick = () => {
+          const v = el.dataset.value;
+          document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+          el.classList.add('selected');
+          setTimeout(() => advance(q, v, false), 160);
+        };
+      });
+    }
+
+    if (q.type === 'numeric') {
+      const numBig = document.getElementById('num-big');
+      const input  = document.getElementById('num-input');
+      document.querySelectorAll('.quick').forEach(el => {
+        el.onclick = () => {
+          numericValue = Number(el.dataset.n);
+          numBig.textContent = numericValue;
+          document.querySelectorAll('.quick').forEach(x => x.classList.remove('active'));
+          el.classList.add('active');
+        };
+      });
+      document.getElementById('num-card').onclick = () => {
+        input.value = numericValue != null ? numericValue : '';
+        input.focus();
+      };
+      input.oninput = () => {
+        const v = input.value;
+        if (v === '') { numBig.textContent = '—'; numericValue = null; return; }
+        const n = Number(v);
+        if (!isNaN(n)) { numericValue = n; numBig.textContent = n; }
+      };
+      document.getElementById('next').onclick = () => {
+        if (numericValue == null || isNaN(numericValue)) return;
+        advance(q, numericValue, false);
+      };
+    }
+
+    if (q.type === 'text') {
+      document.getElementById('next').onclick = () => {
+        const v = document.getElementById('text').value.trim();
+        advance(q, v || null, !v);
+      };
+    }
+  }
+
+  // ── Advance + save
+  function advance(q, value, skipped) {
+    const toSend = skipped ? null : value;
+    answers[q.key] = toSend;
+    fetch(API_BASE + '/session/' + sessionId + '/answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: q.key, value: toSend }),
+    }).catch(() => {});
+    step++;
+    if (step >= questions.length) return complete();
+    render();
+  }
+
+  async function complete() {
+    document.getElementById('topbar').innerHTML = `<div class="progress">${questions.map(() => '<div class="seg done"></div>').join('')}</div>`;
+    const firstName = (session && session.user && session.user.name) ? session.user.name.split(' ')[0] : '';
+    document.getElementById('main').innerHTML = `
+      <div class="done-card">
+        <div class="check-circle">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--bone)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h2 class="done-title">All logged${firstName ? ', ' + firstName : ''}</h2>
+        <p class="done-sub">Thanks for taking the time.</p>
+        <div class="alys-bubble" id="alys-box" style="display:none">
+          <p class="alys-label">Alys</p>
+          <p class="alys-text" id="alys-text"></p>
+        </div>
+        <button class="btn-primary" onclick="window.location.href='today.html'">Back to today</button>
+      </div>
+    `;
+    try {
+      const res = await fetch(API_BASE + '/session/' + sessionId + '/complete', { method: 'POST' });
+      const data = await res.json();
+      if (data && data.reply) {
+        document.getElementById('alys-text').textContent = data.reply;
+        document.getElementById('alys-box').style.display = 'block';
+      }
+    } catch (_) {}
+  }
+
+  function showEmpty(title, body) {
+    document.getElementById('topbar').style.visibility = 'hidden';
+    document.getElementById('main').innerHTML = `
+      <div class="empty-state">
+        <h2>${escapeHtml(title)}</h2>
+        <p>${escapeHtml(body)}</p>
+        <button class="btn-primary" style="max-width:240px;margin:0 auto" onclick="window.location.href='today.html'">Back to today</button>
+      </div>`;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
+})();
+</script>
+</body>
+</html>

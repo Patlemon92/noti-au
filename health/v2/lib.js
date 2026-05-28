@@ -266,9 +266,11 @@ function renderHypnogram(container, sleepSamples) {
     }))
     .sort((a, b) => a.ts - b.ts);
 
-  // Group: take everything within 14h of the latest sample (one night)
+  // Group: take everything within 24h of the latest sample. 24h (not 14h)
+  // so any daytime nap that the SDK classifies as sleep shows up on the
+  // same hypnogram as last night's main session.
   const latest = arr[arr.length - 1].ts;
-  const window = 14 * 3600 * 1000;
+  const window = 24 * 3600 * 1000;
   const night = arr.filter(a => latest - a.ts <= window);
 
   const tMin = night[0].ts;

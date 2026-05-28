@@ -12,36 +12,79 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/health/v2/styles.css">
+<style>
+.greeting-time { color: var(--ink-mute); font-family: 'Inter Tight', sans-serif; font-weight: 500; font-size: 14px; margin-bottom: 4px; }
+.greeting { font-family: 'Fraunces', serif; font-weight: 500; font-size: 36px; line-height: 1.1; letter-spacing: -0.5px; color: var(--ink); margin-bottom: 28px; }
+.greeting em { font-style: italic; color: var(--terra); }
+
+/* Check-in prompt card (prototype style) */
+.prompt { background: var(--cream); border: 1px solid var(--hair); border-radius: 22px; padding: 24px; margin-bottom: 24px; }
+.prompt .lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--terra); font-weight: 500; margin-bottom: 8px; }
+.prompt .title2 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; color: var(--ink); margin-bottom: 6px; line-height: 1.25; }
+.prompt .sub { font-size: 14px; color: var(--ink-soft); margin-bottom: 18px; }
+.prompt .actions { display: flex; gap: 10px; }
+.prompt .actions .btn { padding: 12px 22px; }
+.prompt .est { float: right; font-size: 12px; color: var(--ink-mute); margin-top: 2px; }
+
+/* Ring status + tiles */
+.ring-card { background: white; border: 1px solid var(--hair); border-radius: 20px; padding: 20px; margin-bottom: 24px; }
+.ring-status { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.ring-status .name { font-family: 'Fraunces', serif; font-size: 18px; color: var(--ink); font-weight: 500; }
+.ring-status .conn { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); }
+.ring-status .dot { width: 8px; height: 8px; border-radius: 50%; }
+.ring-status .dot-on  { background: var(--sage-deep); }
+.ring-status .dot-off { background: var(--ink-mute); }
+
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.metric-tile { background: var(--cream); border-radius: 12px; padding: 14px; }
+.metric-tile .lbl { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-mute); font-weight: 500; margin-bottom: 4px; }
+.metric-tile .val { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; color: var(--ink); line-height: 1; }
+.metric-tile .unit { font-family: 'Inter Tight', sans-serif; font-size: 12px; color: var(--ink-mute); margin-left: 4px; }
+.metric-tile .ago { font-size: 11px; color: var(--ink-mute); margin-top: 4px; }
+
+.ring-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.ring-actions .btn { font-size: 13px; padding: 8px 14px; flex: 1 1 auto; min-width: 0; }
+
+/* This week — recent days (prototype style) */
+.section-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); font-weight: 500; margin-bottom: 10px; }
+.recent-day { background: white; border: 1px solid var(--hair); border-radius: 16px; padding: 16px; margin-bottom: 10px; display: flex; gap: 14px; }
+.recent-day .when-col { flex-shrink: 0; text-align: center; }
+.recent-day .date { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; color: var(--ink); line-height: 1; }
+.recent-day .month { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-mute); margin-top: 2px; }
+.recent-day .content { flex: 1; min-width: 0; }
+.recent-day .summary { font-size: 14px; color: var(--ink); line-height: 1.5; }
+.recent-day .summary em { font-style: normal; font-weight: 600; color: var(--terra); }
+.recent-day .note { font-size: 13px; color: var(--ink-soft); margin-top: 6px; font-style: italic; }
+</style>
 </head>
 <body>
 
 <main class="page">
-  <p class="label" id="greeting-time">Today</p>
-  <h1 class="title" id="greeting">Hi.</h1>
+  <p class="greeting-time" id="greeting-time">Today</p>
+  <h1 class="greeting" id="greeting">Hey.</h1>
 
-  <!-- Today's hero card: latest readings -->
-  <section class="card">
-    <p class="label">Right now</p>
-    <div id="hero">
-      <div class="empty">Loading…</div>
+  <!-- Check-in prompt (prototype-style) -->
+  <div class="prompt">
+    <div class="lbl">Today's check-in <span class="est">~2 min</span></div>
+    <div class="title2">A few quick things, whenever you're ready.</div>
+    <div class="sub">Helps the system see how today is going.</div>
+    <div class="actions">
+      <a class="btn btn-primary" href="/health/checkin.html">Start check-in</a>
+      <button class="btn btn-ghost" onclick="document.querySelector('.prompt').style.display='none'">Not today</button>
     </div>
-  </section>
+  </div>
 
-  <!-- Recent readings -->
+  <!-- Ring status + live data -->
+  <div class="ring-card" id="ring-card">
+    <div class="empty">Loading ring…</div>
+  </div>
+
+  <!-- This week -->
   <section class="section">
-    <div class="section-head">
-      <h2 class="title-sm">Recent readings</h2>
-      <a class="section-link" href="/health/v2/history.html">See all →</a>
-    </div>
-    <div class="card" id="recent">
+    <div class="section-label">Your week so far</div>
+    <div id="week">
       <div class="empty">Loading…</div>
     </div>
-  </section>
-
-  <!-- Sleep summary (when we have it) -->
-  <section class="section" id="sleep-section" style="display:none">
-    <h2 class="title-sm">Last night</h2>
-    <div class="card" id="sleep"></div>
   </section>
 </main>
 
@@ -51,108 +94,136 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('today');
 
-// Greeting based on time of day
-const hour = new Date().getHours();
-let g = 'Good morning';
-if (hour >= 12 && hour < 18) g = 'Good afternoon';
-else if (hour >= 18 || hour < 5) g = 'Good evening';
-document.getElementById('greeting-time').textContent = g;
+document.getElementById('greeting-time').textContent =
+  new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 
 (async function load() {
+  const name = localStorage.getItem('neeve_name') || '';
+  document.getElementById('greeting').innerHTML =
+    name ? `Hey <em>${escapeHtml(name)}</em>.` : 'Hey.';
+
+  // Three queries in parallel
+  let devices = [], samples = [], checkins = [];
   try {
-    const [{ devices }, { samples }] = await Promise.all([
-      api('/ring/status'),
-      api('/ring/samples?limit=200'),
+    const [ringStatus, ringSamples] = await Promise.all([
+      api('/ring/status').catch(() => ({ devices: [] })),
+      api('/ring/samples?limit=200').catch(() => ({ samples: [] })),
     ]);
+    devices = ringStatus.devices || [];
+    samples = ringSamples.samples || [];
+  } catch (e) { console.error(e); }
 
-    // Greeting tries to use stored name; falls back to plain greeting.
-    const name = localStorage.getItem('neeve_name') || '';
-    document.getElementById('greeting').textContent = name ? `Hi ${name}.` : 'Hi.';
+  try {
+    const r = await api('/me/checkins?days=7');
+    checkins = r.checkins || [];
+  } catch (e) { /* may not be wired yet */ }
 
-    const latest = latestPerMetric(samples);
-    const grouped = groupByMetric(samples);
-    renderHero(latest, devices[0]);
-    renderRecent(samples.slice(0, 12));
-    renderSleep(grouped.sleep_stage);
-  } catch (e) {
-    console.error(e);
-    document.getElementById('hero').innerHTML =
-      `<div class="empty">Couldn't load: ${e.message}</div>`;
-    document.getElementById('recent').innerHTML = '';
-  }
+  renderRingCard(devices[0], samples);
+  renderWeek(checkins);
 })();
 
-function renderHero(latest, device) {
-  const order = ['hr', 'spo2', 'steps', 'bp_sys', 'temp_skin'];
-  const rows = order
-    .filter(m => latest[m])
-    .map(m => {
-      const s = latest[m];
-      let valueHtml = `<span class="metric-value">${formatValue(m, s.value)}</span>
-                      <span class="metric-unit">${metricUnit(m, s.unit)}</span>`;
-      // BP shows systolic/diastolic together
-      if (m === 'bp_sys' && latest.bp_dia) {
-        valueHtml = `<span class="metric-value">${Math.round(s.value)}/${Math.round(latest.bp_dia.value)}</span>
-                     <span class="metric-unit">mmHg</span>`;
-      }
-      return `
-        <div class="metric-row">
-          <span class="metric-label">${metricLabel(m === 'bp_sys' ? 'bp_sys' : m)
-                                       .replace('BP systolic', 'Blood pressure')}</span>
-          <div>${valueHtml}
-            <div style="font-size:11px;color:var(--ink-mute);text-align:right;margin-top:2px">${formatAgo(s.ts)}</div>
-          </div>
-        </div>`;
-    });
-
-  let html = rows.length ? rows.join('') : '<div class="empty">No readings yet. Open the ring tab to pair.</div>';
-  if (device) {
-    html += `<div class="caption" style="margin-top:16px;text-align:center">
-               <span class="pill ${device.last_seen_at ? 'pill-sage' : ''}">
-                 ${device.name || 'Ring'} · ${device.last_seen_at ? 'connected' : 'offline'}
-               </span>
-             </div>`;
-  }
-  document.getElementById('hero').innerHTML = html;
+function escapeHtml(s) {
+  return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
 
-function renderRecent(samples) {
-  if (!samples.length) {
-    document.getElementById('recent').innerHTML =
-      '<div class="empty">No readings yet.</div>';
+function renderRingCard(device, samples) {
+  const el = document.getElementById('ring-card');
+  if (!device) {
+    el.innerHTML = `
+      <div class="ring-status">
+        <span class="name">No ring paired</span>
+        <span class="conn"><span class="dot dot-off"></span>Not connected</span>
+      </div>
+      <p class="caption">Pair a ring to start seeing heart rate, blood oxygen, steps and sleep here.</p>
+      <div class="ring-actions">
+        <button class="btn btn-primary" onclick="callNative('scanForRing')">Pair a ring</button>
+      </div>`;
     return;
   }
-  document.getElementById('recent').innerHTML = samples.map(s => `
-    <div class="metric-row">
-      <span class="metric-label">${metricLabel(s.metric)}</span>
-      <div style="text-align:right">
-        <span class="metric-value" style="font-size:18px">${formatValue(s.metric, s.value)}</span>
-        <span class="metric-unit">${metricUnit(s.metric, s.unit)}</span>
-        <div style="font-size:11px;color:var(--ink-mute);margin-top:2px">${formatAgo(s.ts)}</div>
-      </div>
+  const latest = latestPerMetric(samples);
+  const tiles = [];
+  const t = (m, label) => {
+    const s = latest[m]; if (!s) return;
+    let valHtml = `<span>${formatValue(m, s.value)}</span><span class="unit">${metricUnit(m, s.unit)}</span>`;
+    if (m === 'bp_sys' && latest.bp_dia) {
+      valHtml = `<span>${Math.round(s.value)}/${Math.round(latest.bp_dia.value)}</span><span class="unit">mmHg</span>`;
+    }
+    tiles.push(`
+      <div class="metric-tile">
+        <div class="lbl">${label}</div>
+        <div class="val">${valHtml}</div>
+        <div class="ago">${formatAgo(s.ts)}</div>
+      </div>`);
+  };
+  t('hr',        'Heart rate');
+  t('spo2',      'Blood oxygen');
+  t('steps',     'Steps today');
+  t('bp_sys',    'Blood pressure');
+  t('temp_skin', 'Skin temp');
+
+  const connOn = device.last_seen_at && (Date.now() - new Date(device.last_seen_at)) < 10 * 60 * 1000;
+  el.innerHTML = `
+    <div class="ring-status">
+      <span class="name">${escapeHtml(device.name || 'Ring')}</span>
+      <span class="conn">
+        <span class="dot ${connOn ? 'dot-on' : 'dot-off'}"></span>
+        ${connOn ? 'Connected' : 'Last seen ' + formatAgo(device.last_seen_at)}
+      </span>
     </div>
-  `).join('');
+    ${tiles.length
+       ? `<div class="metric-grid">${tiles.join('')}</div>`
+       : `<p class="caption">No readings yet. Put the ring on and tap Measure.</p>`}
+    <div class="ring-actions">
+      <button class="btn btn-primary" onclick="callNative('measureHeartRate')">Measure</button>
+      <button class="btn btn-ghost"   onclick="callNative('syncNow')">Sync now</button>
+      <button class="btn btn-ghost"   onclick="callNative('scanForRing')">Pair another</button>
+    </div>`;
 }
 
-function renderSleep(sleepStages) {
-  if (!sleepStages || sleepStages.length === 0) return;
-  document.getElementById('sleep-section').style.display = 'block';
-  // Crude totals
-  const totals = { 0: 0, 1: 0, 2: 0, 3: 0 };
-  for (const s of sleepStages) {
-    const dur = (s.meta && s.meta.duration_s) || 0;
-    totals[Math.round(s.value)] = (totals[Math.round(s.value)] || 0) + dur;
-  }
-  const labels = { 0: 'Awake', 1: 'Light', 2: 'Deep', 3: 'REM' };
-  const pillCls = { 0: 'pill-butter', 1: 'pill-sage', 2: 'pill-rose', 3: 'pill-rose' };
-  const html = [0, 1, 2, 3].map(k => {
-    const mins = Math.round(totals[k] / 60);
-    return `<div class="metric-row">
-      <span class="metric-label">${labels[k]}</span>
-      <span class="pill ${pillCls[k]}">${mins} min</span>
+function renderWeek(checkins) {
+  const el = document.getElementById('week');
+  if (!checkins.length) {
+    el.innerHTML = `<div class="empty" style="padding:20px 0">
+      Do a couple more check-ins and they'll show up here.
     </div>`;
+    return;
+  }
+  el.innerHTML = checkins.slice(0, 7).map(c => {
+    const dt = new Date(c.completed_at || c.started_at || c.created_at);
+    const summary = buildSummary(c);
+    return `
+      <div class="recent-day">
+        <div class="when-col">
+          <div class="date">${dt.getDate()}</div>
+          <div class="month">${dt.toLocaleDateString('en-AU', {weekday: 'short'})}</div>
+        </div>
+        <div class="content">
+          <div class="summary">${summary || '<em>Logged</em>'}</div>
+          ${c.note ? `<div class="note">${escapeHtml(c.note)}</div>` : ''}
+        </div>
+      </div>`;
   }).join('');
-  document.getElementById('sleep').innerHTML = html;
+}
+
+// Build a one-line summary from check-in answers — uses whichever keys
+// are populated. Shape varies; defensive.
+function buildSummary(c) {
+  const a = c.answers || {};
+  const parts = [];
+  if (a.sleep)    parts.push(`Slept <em>${a.sleep}h</em>`);
+  if (a.anxiety)  parts.push(`anxiety <em>${a.anxiety}</em>`);
+  if (a.fatigue)  parts.push(`fatigue <em>${a.fatigue}</em>`);
+  if (a.mood)     parts.push(`mood <em>${a.mood}</em>`);
+  if (a.fog)      parts.push(`fog <em>${a.fog}</em>`);
+  return parts.join(', ') + (parts.length ? '.' : '');
+}
+
+function callNative(method, args = {}) {
+  if (window.webkit?.messageHandlers?.neeve) {
+    window.webkit.messageHandlers.neeve.postMessage(JSON.stringify({ method, args }));
+  } else {
+    alert('That action only works in the Neeve app.');
+  }
 }
 </script>
 </body>

@@ -239,6 +239,110 @@ function renderSparkline(container, samples, options = {}) {
   svg.addEventListener('pointerleave',  clear);
 }
 
+// ── Sleep hypnogram ────────────────────────────────────────
+// Renders a stage-vs-time chart from sleep_stage samples:
+//   stage 0 = awake (yellow lane, top)
+//   stage 1 = light (rose lane)
+//   stage 2 = deep  (plum lane, bottom)
+//   stage 3 = rem   (terra lane, second-top)
+//
+// Each sample has ts (start) and meta.duration_s. We bucket all samples
+// of one night (samples whose ts is within ~24h of the latest), then
+// draw a coloured rectangle per stage block + thin connector lines.
+function renderHypnogram(container, sleepSamples) {
+  if (!sleepSamples || sleepSamples.length === 0) {
+    container.innerHTML = '<div class="empty" style="padding:24px 0">No sleep data yet.</div>';
+    return null; // no summary
+  }
+  // Sort ascending by ts
+  const arr = sleepSamples.slice()
+    .map(s => ({
+      ts: new Date(s.ts).getTime(),
+      stage: Math.round(s.value),
+      dur: (s.meta?.duration_s || 0) * 1000,
+    }))
+    .sort((a, b) => a.ts - b.ts);
+
+  // Group: take everything within 14h of the latest sample (one night)
+  const latest = arr[arr.length - 1].ts;
+  const window = 14 * 3600 * 1000;
+  const night = arr.filter(a => latest - a.ts <= window);
+
+  const tMin = night[0].ts;
+  const tMax = Math.max(latest, night[night.length - 1].ts + (night[night.length - 1].dur || 0));
+  const span = (tMax - tMin) || 1;
+
+  const W = container.clientWidth || 340;
+  const H = 140;
+  const pad = 6;
+  const axisH = 18;
+  const chartH = H - axisH;
+  const laneH = chartH / 4;
+
+  // Lane order (top → bottom): awake, rem, light, deep
+  const laneFor = stage => ({ 0: 0, 3: 1, 1: 2, 2: 3 }[stage] ?? 2);
+  const colorFor = stage => ({
+    0: 'var(--butter-deep)', // awake
+    3: 'var(--terra)',       // rem
+    1: 'var(--rose-deep)',   // light
+    2: 'var(--plum)',        // deep
+  }[stage] ?? 'var(--ink-mute)');
+
+  const xFor = t => pad + ((t - tMin) / span) * (W - pad * 2);
+
+  // Build blocks. Default duration: 5 min if not provided.
+  const rects = night.map(b => {
+    const x1 = xFor(b.ts);
+    const x2 = xFor(b.ts + (b.dur || 5 * 60 * 1000));
+    const w = Math.max(2, x2 - x1);
+    const lane = laneFor(b.stage);
+    const y = lane * laneH;
+    const h = laneH - 4;
+    return `<rect x="${x1}" y="${y + 2}" width="${w}" height="${h}"
+                   fill="${colorFor(b.stage)}" rx="2"/>`;
+  }).join('');
+
+  // Connector lines between adjacent blocks (stage transitions)
+  let lines = '';
+  for (let i = 1; i < night.length; i++) {
+    const a = night[i - 1];
+    const b = night[i];
+    if (a.stage === b.stage) continue;
+    const x = xFor(b.ts);
+    const y1 = laneFor(a.stage) * laneH + laneH / 2;
+    const y2 = laneFor(b.stage) * laneH + laneH / 2;
+    lines += `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"
+                    stroke="var(--ink-mute)" stroke-width="0.5" opacity="0.4"/>`;
+  }
+
+  const fmt = ms => new Date(ms).toLocaleTimeString('en-AU', {
+    hour: 'numeric', minute: '2-digit', hour12: false,
+  });
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+      ${lines}
+      ${rects}
+      <text x="${pad}" y="${H - 4}" font-size="10" fill="var(--ink-mute)"
+            font-family="Inter Tight, sans-serif">${fmt(tMin)}</text>
+      <text x="${W - pad}" y="${H - 4}" text-anchor="end" font-size="10"
+            fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmt(tMax)}</text>
+    </svg>
+  `;
+
+  // Return totals for the caller to render summary tiles
+  const totals = { awake: 0, light: 0, deep: 0, rem: 0 };
+  const keys = { 0: 'awake', 1: 'light', 2: 'deep', 3: 'rem' };
+  for (const b of night) {
+    const k = keys[b.stage];
+    if (k) totals[k] += (b.dur || 0) / 60000; // → minutes
+  }
+  totals.total = totals.awake + totals.light + totals.deep + totals.rem;
+  totals.startTs = tMin;
+  totals.endTs = tMax;
+  return totals;
+}
+
 // Bottom nav HTML (call once per page; pass active tab id).
 // Five items — covers everything the v1 PWA exposed so nothing's hidden:
 // Today (v2) · Alys (v1 chat) · Check-in (v1 daily) · Ring (v2 device) · More (v1 profile)

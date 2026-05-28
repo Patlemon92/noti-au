@@ -79,6 +79,18 @@
     <div class="empty">Loading ring…</div>
   </div>
 
+  <!-- Last night sleep (only renders if there's data) -->
+  <section class="section" id="sleep-section" style="display:none">
+    <div class="section-head">
+      <div class="section-label">Last night</div>
+      <a class="section-link" href="/health/v2/sleep.html">See detail →</a>
+    </div>
+    <div class="card">
+      <div id="sleep-hypno"></div>
+      <div id="sleep-totals" style="display:flex; justify-content:space-around; margin-top:8px; padding-top:12px; border-top:1px solid var(--hair)"></div>
+    </div>
+  </section>
+
   <!-- This week -->
   <section class="section">
     <div class="section-label">Your week so far</div>
@@ -120,7 +132,22 @@ document.getElementById('greeting-time').textContent =
 
   renderRingCard(devices[0], samples);
   renderWeek(checkins);
+  renderSleepPreview(samples);
 })();
+
+function renderSleepPreview(samples) {
+  const sleep = (samples || []).filter(s => s.metric === 'sleep_stage');
+  if (!sleep.length) return;
+  document.getElementById('sleep-section').style.display = 'block';
+  const totals = renderHypnogram(document.getElementById('sleep-hypno'), sleep);
+  if (!totals) return;
+  const m = mins => `${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;
+  document.getElementById('sleep-totals').innerHTML = `
+    <div style="text-align:center"><div class="caption">Deep</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.deep)}</div></div>
+    <div style="text-align:center"><div class="caption">Light</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.light)}</div></div>
+    <div style="text-align:center"><div class="caption">REM</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.rem)}</div></div>
+  `;
+}
 
 function escapeHtml(s) {
   return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

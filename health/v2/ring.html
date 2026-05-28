@@ -164,14 +164,14 @@ function renderCharts() {
 }
 
 // JS bridge — calls native code when running inside the iOS WebView shell.
-// Falls back gracefully when running in a regular browser.
+// Flutter webview_flutter exposes channels as window.<channelName>.postMessage(string).
+// (window.webkit.messageHandlers is the raw WKWebView API — Flutter's wrapper
+// does NOT register channels there, so that check would silently swallow calls.)
 function callNative(method, args = {}) {
-  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.neeve) {
-    window.webkit.messageHandlers.neeve.postMessage({ method, args });
-  } else if (window.neeveBridge) {
-    window.neeveBridge.postMessage(JSON.stringify({ method, args }));
+  if (window.neeve?.postMessage) {
+    window.neeve.postMessage(JSON.stringify({ method, args }));
   } else {
-    alert('Pairing happens in the Neeve app. Open it on your phone.');
+    alert('That action only works in the Neeve app.');
   }
 }
 </script>

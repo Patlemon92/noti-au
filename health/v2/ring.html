@@ -135,16 +135,19 @@ function renderCharts() {
   const recent = cachedSamples.filter(s => new Date(s.ts).getTime() >= cutoff);
   const grouped = groupByMetric(recent);
 
-  // Which metrics to chart, in priority order. Excludes sleep_stage
-  // (rendered as a hypnogram on Today) and ecg_summary (one-off, not a
-  // time series).
+  // Chart order. 'bp' is a virtual key — combines bp_sys + bp_dia into
+  // one card. Skips sleep_stage (hypnogram on Today) + ecg_summary
+  // (one-off, not a time series).
   const metrics = [
     'hr', 'hrv_rmssd', 'spo2', 'respiration_rate',
-    'steps', 'bp_sys', 'bp_dia', 'temp_skin', 'stress', 'vo2max',
+    'steps', 'bp', 'temp_skin', 'stress', 'vo2max',
   ];
   const html = metrics
-    .filter(m => grouped[m] && grouped[m].length > 0)
+    .filter(m => m === 'bp'
+      ? (grouped.bp_sys && grouped.bp_sys.length > 0) || (grouped.bp_dia && grouped.bp_dia.length > 0)
+      : grouped[m] && grouped[m].length > 0)
     .map(m => {
+      if (m === 'bp') return renderBpCard(grouped.bp_sys || [], grouped.bp_dia || []);
       const samples = grouped[m];
       const latest = samples[samples.length - 1];
       const avg = (samples.reduce((a, s) => a + s.value, 0) / samples.length);
@@ -172,11 +175,62 @@ function renderCharts() {
 
   document.getElementById('charts').innerHTML = html || '<div class="empty">No readings in this range yet.</div>';
 
-  // Render sparklines with full samples (so the time axis works)
-  metrics.filter(m => grouped[m] && grouped[m].length > 0).forEach(m => {
-    const el = document.getElementById(`spark-${m}`);
-    if (el) renderSparkline(el, grouped[m]);
+  // Render sparklines with full samples (so the time axis works).
+  // 'bp' renders two stacked lines (sys on top, dia below); the rest one.
+  metrics.forEach(m => {
+    if (m === 'bp') {
+      if (grouped.bp_sys && grouped.bp_sys.length) {
+        const el = document.getElementById('spark-bp-sys');
+        if (el) renderSparkline(el, grouped.bp_sys, { color: 'var(--terra)' });
+      }
+      if (grouped.bp_dia && grouped.bp_dia.length) {
+        const el = document.getElementById('spark-bp-dia');
+        if (el) renderSparkline(el, grouped.bp_dia, { color: 'var(--rose)' });
+      }
+      return;
+    }
+    if (grouped[m] && grouped[m].length > 0) {
+      const el = document.getElementById(`spark-${m}`);
+      if (el) renderSparkline(el, grouped[m]);
+    }
   });
+}
+
+function renderBpCard(sysS, diaS) {
+  const sysLatest = sysS.length ? sysS[sysS.length - 1].value : null;
+  const diaLatest = diaS.length ? diaS[diaS.length - 1].value : null;
+  const sysAvg = sysS.length ? Math.round(sysS.reduce((a, s) => a + s.value, 0) / sysS.length) : null;
+  const diaAvg = diaS.length ? Math.round(diaS.reduce((a, s) => a + s.value, 0) / diaS.length) : null;
+  const count = Math.max(sysS.length, diaS.length);
+  const latestStr = sysLatest != null && diaLatest != null
+    ? `${Math.round(sysLatest)}/${Math.round(diaLatest)}`
+    : (sysLatest != null ? `${Math.round(sysLatest)}/—` : `—/${Math.round(diaLatest)}`);
+  const avgStr = sysAvg != null && diaAvg != null ? `${sysAvg}/${diaAvg}` : '—';
+  return `
+    <div class="card">
+      <div class="section-head" style="margin-bottom:8px">
+        <h3 class="title-sm" style="font-size:18px">Blood pressure</h3>
+        <span class="caption">${count} reading${count === 1 ? '' : 's'}</span>
+      </div>
+      <div class="metric-row" style="border-bottom:none;padding:4px 0">
+        <span class="caption">Latest</span>
+        <span><span class="metric-value" style="font-size:20px">${latestStr}</span>
+              <span class="metric-unit">mmHg</span></span>
+      </div>
+      <div class="metric-row" style="border-bottom:none;padding:4px 0">
+        <span class="caption">Average</span>
+        <span class="caption">${avgStr} mmHg</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <span class="caption" style="width:30px">sys</span>
+        <div class="sparkline" id="spark-bp-sys" style="flex:1"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <span class="caption" style="width:30px">dia</span>
+        <div class="sparkline" id="spark-bp-dia" style="flex:1"></div>
+      </div>
+    </div>
+  `;
 }
 
 // JS bridge — Flutter webview_flutter exposes channels as

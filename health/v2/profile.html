@@ -111,7 +111,7 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('more');
 
-(async function load() {
+async function load() {
   try {
     const { user } = await api('/me');
     renderUser(user);
@@ -120,7 +120,9 @@ document.getElementById('nav-mount').innerHTML = renderNav('more');
     document.getElementById('who').innerHTML =
       `<div class="empty">Couldn't load: ${e.message}</div>`;
   }
-})();
+}
+load();
+onResume(load);
 
 function renderUser(u) {
   document.getElementById('hi').textContent = u.name ? `Hi ${u.name}.` : 'Your profile';

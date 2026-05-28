@@ -94,10 +94,7 @@ async function load() {
 load();
 // Auto-refresh every 20s so new ring samples + last-sync appear in-place.
 setInterval(load, 20000);
-// Also refresh immediately when the user returns to this tab.
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) load();
-});
+onResume(load);
 
 function renderDevice() {
   if (!cachedDevice) {

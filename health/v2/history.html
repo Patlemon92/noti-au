@@ -28,7 +28,7 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('history');
 
-(async function load() {
+async function load() {
   try {
     const { samples } = await api('/ring/samples?limit=500');
     if (!samples.length) {
@@ -66,7 +66,9 @@ document.getElementById('nav-mount').innerHTML = renderNav('history');
     document.getElementById('content').innerHTML =
       `<div class="empty">Couldn't load: ${e.message}</div>`;
   }
-})();
+}
+load();
+onResume(load);
 </script>
 </body>
 </html>

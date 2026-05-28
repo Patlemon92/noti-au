@@ -1,8 +1,20 @@
 # ─── Noti Health (rely on Cloudflare's auto .html serving) ─────────────
-/health                     /health/start.html                     200
-/health/checkin/:id         /health/checkin?session=:id       200
+/health                     /health/v2/today                       200
+/health/checkin/:id         /health/checkin?session=:id            200
 /health/sw.js               /health/sw-health.js                   200
 /health/manifest.json       /health/manifest-health.json           200
+
+# v1 pages → v2 equivalents (one place for the new design, no stale UI)
+/health/home                /health/v2/today                       301
+/health/home.html           /health/v2/today                       301
+/health/alys                /health/v2/alys                        301
+/health/alys.html           /health/v2/alys                        301
+/health/profile             /health/v2/profile                     301
+/health/profile.html        /health/v2/profile                     301
+/health/record              /health/v2/record                      301
+/health/record.html         /health/v2/record                      301
+/health/export              /health/v2/export                      301
+/health/export.html         /health/v2/export                      301
 
 # ─── Noti Trade (unchanged) ─────────────
 /job/:jobId/:token    /jobs.html?jobId=:jobId&t=:token    200

@@ -13,23 +13,33 @@
 .field-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--hair); }
 .field-row:last-child { border-bottom: none; }
 .field-row .k { color: var(--ink-soft); }
-.field-row select, .field-row input {
+.field-row select, .field-row input, .field-row textarea {
   background: white; border: 1px solid var(--hair); border-radius: 10px;
   padding: 8px 12px; font-family: 'Inter Tight', sans-serif; font-size: 15px;
   color: var(--ink);
 }
-.toggle { display: flex; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--hair); }
-.toggle:last-child { border-bottom: none; }
-.toggle input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--terra); }
-.toggle label { color: var(--ink); cursor: pointer; }
-.toggle .sub { color: var(--ink-mute); font-size: 12px; margin-top: 2px; }
+.sec-row {
+  display: flex; gap: 12px; align-items: flex-start; padding: 12px 0;
+  border-bottom: 1px solid var(--hair); cursor: pointer;
+}
+.sec-row:last-child { border-bottom: none; }
+.sec-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--terra); margin-top: 2px; }
+.sec-row .title { color: var(--ink); font-weight: 500; }
+.sec-row .sub { color: var(--ink-mute); font-size: 12px; margin-top: 2px; }
+.sec-row.locked { opacity: 0.85; cursor: default; }
+.sec-row.locked input { pointer-events: none; }
+.locked-pill {
+  font-size: 10px; padding: 1px 6px; border-radius: 4px;
+  background: var(--bone-deep); color: var(--ink-mute);
+  letter-spacing: 0.05em; text-transform: uppercase; margin-left: 6px;
+}
 </style>
 </head>
 <body>
 <main class="page">
   <p class="label">Export</p>
   <h1 class="title">A PDF for your doctor</h1>
-  <p class="caption" style="margin-bottom:20px">A clinical-style summary of your tracking — symptoms, sleep, ring metrics, patterns. The same report you can take to an appointment.</p>
+  <p class="caption" style="margin-bottom:20px">A clinical-style summary of your tracking, by condition. The same report you'd take to an appointment.</p>
 
   <section class="section">
     <div class="section-label">Date range</div>
@@ -66,51 +76,15 @@
       <div class="field-row" style="flex-direction:column; align-items:stretch; gap:8px">
         <span class="k">Cover note (optional)</span>
         <textarea id="note" rows="3"
-          style="width:100%;background:white;border:1px solid var(--hair);border-radius:10px;padding:12px;font-family:'Inter Tight',sans-serif;font-size:15px;color:var(--ink);resize:vertical"
-          placeholder="A short note that appears on the front page. e.g. 'For my appointment on June 3rd — recent changes since last visit.'"></textarea>
+          style="width:100%; resize:vertical"
+          placeholder="A short note for the front page. e.g. 'For my appointment on June 3rd — recent changes since last visit.'"></textarea>
       </div>
     </div>
   </section>
 
   <section class="section">
-    <div class="section-label">Include</div>
-    <div class="card">
-      <div class="toggle">
-        <input type="checkbox" id="sec-summary" checked>
-        <label for="sec-summary">
-          <div>Summary</div>
-          <div class="sub">Headline patterns, baseline averages</div>
-        </label>
-      </div>
-      <div class="toggle">
-        <input type="checkbox" id="sec-checkins" checked>
-        <label for="sec-checkins">
-          <div>Daily check-ins</div>
-          <div class="sub">Every logged entry by date</div>
-        </label>
-      </div>
-      <div class="toggle">
-        <input type="checkbox" id="sec-ring" checked>
-        <label for="sec-ring">
-          <div>Ring data</div>
-          <div class="sub">HR, SpO2, sleep, steps, BP</div>
-        </label>
-      </div>
-      <div class="toggle">
-        <input type="checkbox" id="sec-patterns" checked>
-        <label for="sec-patterns">
-          <div>Detected patterns</div>
-          <div class="sub">Correlations the system has noticed</div>
-        </label>
-      </div>
-      <div class="toggle">
-        <input type="checkbox" id="sec-notes" checked>
-        <label for="sec-notes">
-          <div>Free-text notes</div>
-          <div class="sub">Things you wrote</div>
-        </label>
-      </div>
-    </div>
+    <div class="section-label">Sections to include</div>
+    <div class="card" id="sections-list"></div>
   </section>
 
   <div style="margin-top:24px; text-align:center">
@@ -124,7 +98,39 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('more');
 
-// Apply default dates (last 30 days) on load
+// Section list matches the v1 export — these keys are what the
+// worker /me/export expects in body.sections (array form).
+const SECTIONS = [
+  { key: 'cover_findings', title: 'Cover & key findings',        sub: 'Always included · 2 pages',                   pages: 2, locked: true, on: true },
+  { key: 'mood',           title: 'Mood',                         sub: 'Daily averages, weekly trend · 1 page',       pages: 1, on: true },
+  { key: 'anxiety',        title: 'Anxiety',                      sub: 'Daily averages, patterns · 1 page',           pages: 1, on: true },
+  { key: 'depression',     title: 'Depression',                   sub: 'Low-mood markers, patterns · 1 page',         pages: 1, on: true },
+  { key: 'headaches',      title: 'Headaches',                    sub: 'Frequency, intensity, triggers · 1 page',     pages: 1, on: true },
+  { key: 'pots',           title: 'POTS',                         sub: 'Dizziness, standing, triggers · 1 page',      pages: 1, on: true },
+  { key: 'pain',           title: 'Pain',                         sub: 'Averages, sites, intensity · 1 page',         pages: 1, on: true },
+  { key: 'fatigue',        title: 'Fatigue',                      sub: 'Severity, context · 1 page',                  pages: 1, on: true },
+  { key: 'fog',            title: 'Brain fog',                    sub: 'Severity, context · 1 page',                  pages: 1, on: true },
+  { key: 'gut',            title: 'Gut & digestion',              sub: 'Symptoms, patterns · 1 page',                 pages: 1, on: true },
+  { key: 'cycle',          title: 'Cycle',                        sub: 'Phases, correlations · 1 page',               pages: 1, on: true },
+  { key: 'weight',         title: 'Weight',                       sub: 'Trend over period · 1 page',                  pages: 1, on: true },
+  { key: 'medications',    title: 'Medications',                  sub: 'Log of medications taken · 1 page',           pages: 1, on: true },
+  { key: 'lifestyle',      title: 'Sleep, hydration & lifestyle', sub: 'Averages, distribution · 1 page',             pages: 1, on: true },
+  { key: 'daily_log',      title: 'Daily log',                    sub: 'Scannable table, one row per day · 1 page',   pages: 1, on: true },
+  { key: 'own_words',      title: 'Notes & reflections',          sub: 'Free-text entries, grouped by theme · 1 page',pages: 1, on: true },
+];
+
+// Render sections
+document.getElementById('sections-list').innerHTML = SECTIONS.map(s => `
+  <label class="sec-row ${s.locked ? 'locked' : ''}">
+    <input type="checkbox" data-key="${s.key}" ${s.on ? 'checked' : ''} ${s.locked ? 'disabled' : ''}>
+    <div>
+      <div class="title">${s.title}${s.locked ? '<span class="locked-pill">always</span>' : ''}</div>
+      <div class="sub">${s.sub}</div>
+    </div>
+  </label>
+`).join('');
+
+// Default dates
 const today = new Date();
 const ago30 = new Date(today.getTime() - 30 * 86400 * 1000);
 document.getElementById('date-from').value = ago30.toISOString().slice(0,10);
@@ -146,44 +152,35 @@ async function generate() {
   go.disabled = true;
   status.textContent = 'Generating…';
 
-  const dateFrom  = document.getElementById('date-from').value;
-  const dateTo    = document.getElementById('date-to').value;
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
   const recipient = document.getElementById('recipient').value.trim();
   const note      = document.getElementById('note').value.trim();
-  // Derive 'days' from the date range so it works with the existing worker.
-  const days = Math.max(1, Math.round(
-    (new Date(dateTo).getTime() - new Date(dateFrom).getTime()) / 86400000
-  ));
-  const sections = {
-    summary:  document.getElementById('sec-summary').checked,
-    checkins: document.getElementById('sec-checkins').checked,
-    ring:     document.getElementById('sec-ring').checked,
-    patterns: document.getElementById('sec-patterns').checked,
-    notes:    document.getElementById('sec-notes').checked,
-  };
+  const sections = Array.from(document.querySelectorAll('#sections-list input[type=checkbox]'))
+    .filter(cb => cb.checked || cb.disabled) // locked sections always sent
+    .map(cb => cb.dataset.key);
+
+  // Worker expects { from, to, sections: [keys], recipient, note }.
+  // 'days' is also accepted as fallback if from/to missing.
+  const body = { from, to, sections, recipient, note };
 
   try {
     const token = getToken();
     const res = await fetch('https://api.noti.au/me/export', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token,
-      },
-      body: JSON.stringify({ days, dateFrom, dateTo, recipient, note, sections }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    // iOS WKWebView can't always trigger Blob downloads — open in new tab
-    // and let the user share/save. Native shell can call this same URL too.
     const a = document.createElement('a');
     a.href = url;
     a.download = `neeve-${new Date().toISOString().slice(0,10)}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    status.textContent = 'PDF generated and downloaded.';
+    status.textContent = 'PDF generated.';
   } catch (e) {
     status.textContent = 'Couldn\'t generate: ' + e.message;
   } finally {

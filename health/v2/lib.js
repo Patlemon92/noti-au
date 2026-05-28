@@ -118,32 +118,69 @@ function groupByMetric(samples) {
   return out;
 }
 
-// Render an SVG sparkline into a container.
-function renderSparkline(container, values, options = {}) {
-  if (!values || values.length === 0) {
+// Render an SVG sparkline with time axis. Pass samples [{ts, value}],
+// not bare values. The X-axis below the line shows start/middle/end times
+// (formatted as 'h:mm a' if span ≤ 24h, else 'Day Mon d').
+function renderSparkline(container, samples, options = {}) {
+  if (!samples || samples.length === 0) {
     container.innerHTML = '<div class="caption" style="padding:16px 0">No data yet.</div>';
     return;
   }
-  const W = container.clientWidth || 300;
-  const H = options.height || 80;
-  const pad = 4;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const stepX = (W - pad * 2) / Math.max(1, values.length - 1);
+  // Back-compat: if caller passed raw values not objects, wrap them.
+  const arr = samples.map((s, i) => typeof s === 'object'
+    ? { ts: new Date(s.ts).getTime(), v: s.value }
+    : { ts: i, v: s }
+  );
+  arr.sort((a, b) => a.ts - b.ts);
 
-  const pts = values.map((v, i) => {
-    const x = pad + i * stepX;
-    const y = H - pad - ((v - min) / range) * (H - pad * 2);
-    return [x, y];
-  });
+  const W   = container.clientWidth || 300;
+  const H   = options.height || 100;
+  const pad = 6;
+  const axisH = 18;
+  const chartH = H - axisH;
+
+  const vs   = arr.map(a => a.v);
+  const min  = Math.min(...vs);
+  const max  = Math.max(...vs);
+  const vrng = max - min || 1;
+
+  const tMin  = arr[0].ts;
+  const tMax  = arr[arr.length - 1].ts;
+  const tSpan = tMax - tMin || 1;
+
+  const xFor = t => pad + ((t - tMin) / tSpan) * (W - pad * 2);
+  const yFor = v => chartH - pad - ((v - min) / vrng) * (chartH - pad * 2);
+
+  const pts = arr.map(a => [xFor(a.ts), yFor(a.v)]);
   const d = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ');
-
   const stroke = options.color || 'var(--terra)';
+
+  // Time-axis formatting
+  const sameDay = tSpan < 28 * 3600 * 1000; // ≤ ~1 day
+  const fmt = ms => {
+    const d = new Date(ms);
+    return sameDay
+      ? d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase()
+      : d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  };
+
+  const tickTs = [tMin, tMin + tSpan / 2, tMax];
+  const ticks = tickTs.map(t => `
+    <text x="${xFor(t)}" y="${H - 4}" text-anchor="${
+      t === tMin ? 'start' : t === tMax ? 'end' : 'middle'
+    }" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">
+      ${fmt(t)}
+    </text>`).join('');
+
   container.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
-      <path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      ${pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="1.5" fill="${stroke}"/>`).join('')}
+      <line x1="${pad}" y1="${chartH}" x2="${W - pad}" y2="${chartH}"
+            stroke="var(--hair)" stroke-width="1"/>
+      <path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      ${pts.length < 60 ? pts.map(p =>
+        `<circle cx="${p[0]}" cy="${p[1]}" r="1.5" fill="${stroke}"/>`).join('') : ''}
+      ${ticks}
     </svg>
   `;
 }

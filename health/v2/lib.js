@@ -249,33 +249,58 @@ function renderSparkline(container, samples, options = {}) {
 //   stage 2 = deep  (plum lane, bottom)
 //   stage 3 = rem   (terra lane, second-top)
 //
-// Each sample has ts (start) and meta.duration_s. We bucket all samples
-// of one night (samples whose ts is within ~24h of the latest), then
-// draw a coloured rectangle per stage block + thin connector lines.
-function renderHypnogram(container, sleepSamples) {
-  if (!sleepSamples || sleepSamples.length === 0) {
+// When a `sleep_session` sample is provided for the same night, its
+// startTimeStamp/endTimeStamp pin the chart window and its
+// deep_s/light_s/rem_s give authoritative totals (more reliable than
+// summing per-stage durations on firmwares that emit sparse detail).
+//
+// Each stage sample has ts (start) and meta.duration_s. We bucket all
+// stage samples within ~24h of the latest, then draw one coloured
+// rectangle per block.
+function renderHypnogram(container, sleepSamples, sessionSamples) {
+  const hasStages   = Array.isArray(sleepSamples)   && sleepSamples.length > 0;
+  const hasSessions = Array.isArray(sessionSamples) && sessionSamples.length > 0;
+  if (!hasStages && !hasSessions) {
     container.innerHTML = '<div class="empty" style="padding:24px 0">No sleep data yet.</div>';
-    return null; // no summary
+    return null;
   }
-  // Sort ascending by ts
-  const arr = sleepSamples.slice()
-    .map(s => ({
-      ts: new Date(s.ts).getTime(),
-      stage: Math.round(s.value),
-      dur: (s.meta?.duration_s || 0) * 1000,
-    }))
+
+  // Pick the most-recent session (if any) as the chart window anchor.
+  const session = hasSessions
+    ? sessionSamples.slice().sort((a, b) => new Date(b.ts) - new Date(a.ts))[0]
+    : null;
+
+  // Sort stage samples ascending by ts. Defensively re-map raw SDK constants
+  // (0xF1=241 deep, 0xF2=242 light, 0xF3=243 rem, 0xF4=244 awake) in case any
+  // pre-fix rows are still in flight.
+  const remap = { 241: 2, 242: 1, 243: 3, 244: 0 };
+  const arr = (sleepSamples || []).slice()
+    .map(s => {
+      const raw = Math.round(s.value);
+      return {
+        ts: new Date(s.ts).getTime(),
+        stage: (raw in remap) ? remap[raw] : raw,
+        dur: (s.meta?.duration_s || 0) * 1000,
+      };
+    })
     .sort((a, b) => a.ts - b.ts);
 
-  // Group: take everything within 24h of the latest sample. 24h (not 14h)
-  // so any daytime nap that the SDK classifies as sleep shows up on the
-  // same hypnogram as last night's main session.
-  const latest = arr[arr.length - 1].ts;
-  const window = 24 * 3600 * 1000;
-  const night = arr.filter(a => latest - a.ts <= window);
-
-  const tMin = night[0].ts;
-  const tMax = Math.max(latest, night[night.length - 1].ts + (night[night.length - 1].dur || 0));
-  const span = (tMax - tMin) || 1;
+  // Default window: 24h around the latest stage sample so naps merge with
+  // last night. If a session row is present, prefer its explicit window.
+  let tMin, tMax;
+  if (session) {
+    tMin = new Date(session.ts).getTime();
+    const endIso = session.meta?.end_ts;
+    tMax = endIso ? new Date(endIso).getTime() : tMin + (session.value * 1000);
+  } else {
+    const latest = arr[arr.length - 1].ts;
+    const win = 24 * 3600 * 1000;
+    const filtered = arr.filter(a => latest - a.ts <= win);
+    tMin = filtered[0].ts;
+    tMax = Math.max(latest, filtered[filtered.length - 1].ts + (filtered[filtered.length - 1].dur || 0));
+  }
+  const night = arr.filter(a => a.ts >= tMin - 60_000 && a.ts <= tMax + 60_000);
+  const span  = (tMax - tMin) || 1;
 
   const W = container.clientWidth || 340;
   const H = 140;
@@ -335,12 +360,19 @@ function renderHypnogram(container, sleepSamples) {
     </svg>
   `;
 
-  // Return totals for the caller to render summary tiles
+  // Totals — prefer the session row's authoritative seconds when present,
+  // otherwise sum per-stage durations.
   const totals = { awake: 0, light: 0, deep: 0, rem: 0 };
-  const keys = { 0: 'awake', 1: 'light', 2: 'deep', 3: 'rem' };
-  for (const b of night) {
-    const k = keys[b.stage];
-    if (k) totals[k] += (b.dur || 0) / 60000; // → minutes
+  if (session && (session.meta?.deep_s != null || session.meta?.light_s != null || session.meta?.rem_s != null)) {
+    totals.deep  = (session.meta.deep_s  || 0) / 60;
+    totals.light = (session.meta.light_s || 0) / 60;
+    totals.rem   = (session.meta.rem_s   || 0) / 60;
+  } else {
+    const keys = { 0: 'awake', 1: 'light', 2: 'deep', 3: 'rem' };
+    for (const b of night) {
+      const k = keys[b.stage];
+      if (k) totals[k] += (b.dur || 0) / 60000;
+    }
   }
   totals.total = totals.awake + totals.light + totals.deep + totals.rem;
   totals.startTs = tMin;

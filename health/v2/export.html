@@ -35,14 +35,39 @@
     <div class="section-label">Date range</div>
     <div class="card">
       <div class="field-row">
-        <span class="k">Last</span>
-        <select id="days">
-          <option value="7">7 days</option>
-          <option value="14">14 days</option>
-          <option value="30" selected>30 days</option>
-          <option value="60">60 days</option>
-          <option value="90">90 days</option>
+        <span class="k">Quick</span>
+        <select id="quick-range" onchange="applyQuickRange()">
+          <option value="7">Last 7 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="60">Last 60 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="custom">Custom…</option>
         </select>
+      </div>
+      <div class="field-row">
+        <span class="k">From</span>
+        <input id="date-from" type="date">
+      </div>
+      <div class="field-row">
+        <span class="k">To</span>
+        <input id="date-to" type="date">
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-label">For your doctor</div>
+    <div class="card">
+      <div class="field-row" style="flex-direction:column; align-items:stretch; gap:8px">
+        <span class="k">Recipient (optional)</span>
+        <input id="recipient" type="text" placeholder="Dr Evelyn Chen, Neurology" style="width:100%">
+      </div>
+      <div class="field-row" style="flex-direction:column; align-items:stretch; gap:8px">
+        <span class="k">Cover note (optional)</span>
+        <textarea id="note" rows="3"
+          style="width:100%;background:white;border:1px solid var(--hair);border-radius:10px;padding:12px;font-family:'Inter Tight',sans-serif;font-size:15px;color:var(--ink);resize:vertical"
+          placeholder="A short note that appears on the front page. e.g. 'For my appointment on June 3rd — recent changes since last visit.'"></textarea>
       </div>
     </div>
   </section>
@@ -99,13 +124,36 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('more');
 
+// Apply default dates (last 30 days) on load
+const today = new Date();
+const ago30 = new Date(today.getTime() - 30 * 86400 * 1000);
+document.getElementById('date-from').value = ago30.toISOString().slice(0,10);
+document.getElementById('date-to').value   = today.toISOString().slice(0,10);
+
+function applyQuickRange() {
+  const v = document.getElementById('quick-range').value;
+  if (v === 'custom') return;
+  const days = Number(v);
+  const t = new Date();
+  const f = new Date(t.getTime() - days * 86400 * 1000);
+  document.getElementById('date-from').value = f.toISOString().slice(0,10);
+  document.getElementById('date-to').value   = t.toISOString().slice(0,10);
+}
+
 async function generate() {
   const go = document.getElementById('go');
   const status = document.getElementById('status');
   go.disabled = true;
   status.textContent = 'Generating…';
 
-  const days = Number(document.getElementById('days').value);
+  const dateFrom  = document.getElementById('date-from').value;
+  const dateTo    = document.getElementById('date-to').value;
+  const recipient = document.getElementById('recipient').value.trim();
+  const note      = document.getElementById('note').value.trim();
+  // Derive 'days' from the date range so it works with the existing worker.
+  const days = Math.max(1, Math.round(
+    (new Date(dateTo).getTime() - new Date(dateFrom).getTime()) / 86400000
+  ));
   const sections = {
     summary:  document.getElementById('sec-summary').checked,
     checkins: document.getElementById('sec-checkins').checked,
@@ -122,7 +170,7 @@ async function generate() {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + token,
       },
-      body: JSON.stringify({ days, sections }),
+      body: JSON.stringify({ days, dateFrom, dateTo, recipient, note, sections }),
     });
     if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
     const blob = await res.blob();

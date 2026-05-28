@@ -117,18 +117,6 @@
 
   document.getElementById('nav-mount').innerHTML = renderNav('checkin');
 
-  // ── Boot
-  try {
-    if (!sessionId) sessionId = await startNewSession();
-    if (!sessionId) return; // start failed — message already rendered
-    await loadSession();
-    render();
-  } catch (e) {
-    if (e && e.message === 'empty') return; // empty-questions branch already rendered
-    console.error('checkin boot:', e);
-    showEmpty("Couldn't load check-in", (e && e.message) ? String(e.message).slice(0, 200) : 'Try again in a moment.');
-  }
-
   async function startNewSession() {
     // Pick slot from local time. Morning before 14:00, evening after.
     const hour = new Date().getHours();
@@ -406,6 +394,19 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     }[c]));
+  }
+
+  // ── Boot (placed last so all const declarations above are initialised
+  // before render() runs after the first await).
+  try {
+    if (!sessionId) sessionId = await startNewSession();
+    if (!sessionId) return; // start failed — message already rendered
+    await loadSession();
+    render();
+  } catch (e) {
+    if (e && e.message === 'empty') return; // empty-questions branch already rendered
+    console.error('checkin boot:', e);
+    showEmpty("Couldn't load check-in", (e && e.message) ? String(e.message).slice(0, 200) : 'Try again in a moment.');
   }
 })();
 </script>

@@ -94,6 +94,19 @@
     </div>
   </section>
 
+  <section class="section" id="debug-section" style="display:none">
+    <div class="section-label">Developer</div>
+    <div class="card">
+      <a class="row-link" href="#" onclick="callNative('openDebug'); return false;">
+        <div>
+          <div>Ring debug</div>
+          <div class="sub">BLE state, live YC events, capabilities, last sync wear-count</div>
+        </div>
+        <span class="chev">›</span>
+      </a>
+    </div>
+  </section>
+
   <section class="section">
     <div class="section-label">Account</div>
     <div class="card">
@@ -238,6 +251,20 @@ function signOut() {
     clearToken();
     window.location.href = '/health/login.html';
   }
+}
+
+function callNative(method, args = {}) {
+  if (window.neeve?.postMessage) {
+    window.neeve.postMessage(JSON.stringify({ method, args }));
+  } else {
+    alert('That action only works in the Neeve app.');
+  }
+}
+
+// The Ring debug row is only useful inside the native shell (it pushes a
+// Flutter screen via the bridge). Hide it in plain-browser sessions.
+if (window.neeve?.postMessage) {
+  document.getElementById('debug-section').style.display = 'block';
 }
 </script>
 </body>

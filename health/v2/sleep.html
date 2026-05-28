@@ -66,9 +66,16 @@ document.getElementById('nav-mount').innerHTML = renderNav('today');
 
 async function load() {
   try {
-    const { samples } = await api('/ring/samples?limit=500');
-    const sleep = (samples || []).filter(s => s.metric === 'sleep_stage');
-    const totals = renderHypnogram(document.getElementById('hypnogram-card'), sleep);
+    // Pull sleep_stage + sleep_session over the last ~36h via the metric
+    // filter — otherwise live HR/SpO2/HRV rows crowd sleep out of any
+    // un-filtered limit window.
+    const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+    const q = `/ring/samples?metric=sleep_stage,sleep_session&limit=2000&since=${encodeURIComponent(since)}`;
+    const { samples } = await api(q);
+    const stages   = (samples || []).filter(s => s.metric === 'sleep_stage');
+    const sessions = (samples || []).filter(s => s.metric === 'sleep_session');
+    const totals = renderHypnogram(
+      document.getElementById('hypnogram-card'), stages, sessions);
     if (totals && totals.total > 0) renderTotals(totals);
   } catch (e) {
     document.getElementById('hypnogram-card').innerHTML =

@@ -114,14 +114,21 @@ async function load() {
   document.getElementById('greeting').innerHTML =
     name ? `Hey <em>${escapeHtml(name)}</em>.` : 'Hey.';
 
-  let devices = [], samples = [], checkins = [];
+  let devices = [], samples = [], sleepSamples = [], checkins = [];
   try {
-    const [ringStatus, ringSamples] = await Promise.all([
+    // Sleep is pulled SEPARATELY with a metric filter — otherwise live HR /
+    // SpO2 / HRV uploads quickly crowd sleep_stage out of the latest-300 window.
+    // since=36h covers last night even after a late-evening reload.
+    const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+    const sleepQ = `/ring/samples?metric=sleep_stage,sleep_session&limit=1000&since=${encodeURIComponent(since)}`;
+    const [ringStatus, ringSamples, sleepRes] = await Promise.all([
       api('/ring/status').catch(() => ({ devices: [] })),
       api('/ring/samples?limit=300').catch(() => ({ samples: [] })),
+      api(sleepQ).catch(() => ({ samples: [] })),
     ]);
-    devices = ringStatus.devices || [];
-    samples = ringSamples.samples || [];
+    devices      = ringStatus.devices || [];
+    samples      = ringSamples.samples || [];
+    sleepSamples = sleepRes.samples || [];
   } catch (e) { console.error(e); }
 
   try {
@@ -131,7 +138,7 @@ async function load() {
 
   renderRingCard(devices[0], samples);
   renderWeek(checkins);
-  renderSleepPreview(samples);
+  renderSleepPreview(sleepSamples);
   renderCheckinPrompt(checkins);
 }
 
@@ -161,10 +168,12 @@ setInterval(load, 20000);
 onResume(load);
 
 function renderSleepPreview(samples) {
-  const sleep = (samples || []).filter(s => s.metric === 'sleep_stage');
-  if (!sleep.length) return;
+  const stages   = (samples || []).filter(s => s.metric === 'sleep_stage');
+  const sessions = (samples || []).filter(s => s.metric === 'sleep_session');
+  if (!stages.length && !sessions.length) return;
   document.getElementById('sleep-section').style.display = 'block';
-  const totals = renderHypnogram(document.getElementById('sleep-hypno'), sleep);
+  const totals = renderHypnogram(
+    document.getElementById('sleep-hypno'), stages, sessions);
   if (!totals) return;
   const m = mins => `${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;
   document.getElementById('sleep-totals').innerHTML = `

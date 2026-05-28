@@ -109,17 +109,16 @@ document.getElementById('nav-mount').innerHTML = renderNav('today');
 document.getElementById('greeting-time').textContent =
   new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 
-(async function load() {
+async function load() {
   const name = localStorage.getItem('neeve_name') || '';
   document.getElementById('greeting').innerHTML =
     name ? `Hey <em>${escapeHtml(name)}</em>.` : 'Hey.';
 
-  // Three queries in parallel
   let devices = [], samples = [], checkins = [];
   try {
     const [ringStatus, ringSamples] = await Promise.all([
       api('/ring/status').catch(() => ({ devices: [] })),
-      api('/ring/samples?limit=200').catch(() => ({ samples: [] })),
+      api('/ring/samples?limit=300').catch(() => ({ samples: [] })),
     ]);
     devices = ringStatus.devices || [];
     samples = ringSamples.samples || [];
@@ -128,12 +127,16 @@ document.getElementById('greeting-time').textContent =
   try {
     const r = await api('/me/checkins?days=7');
     checkins = r.checkins || [];
-  } catch (e) { /* may not be wired yet */ }
+  } catch (e) {}
 
   renderRingCard(devices[0], samples);
   renderWeek(checkins);
   renderSleepPreview(samples);
-})();
+}
+
+load();
+// Auto-refresh every 20s so new ring samples appear without manual reload.
+setInterval(load, 20000);
 
 function renderSleepPreview(samples) {
   const sleep = (samples || []).filter(s => s.metric === 'sleep_stage');
@@ -179,11 +182,16 @@ function renderRingCard(device, samples) {
         <div class="ago">${formatAgo(s.ts)}</div>
       </div>`);
   };
-  t('hr',        'Heart rate');
-  t('spo2',      'Blood oxygen');
-  t('steps',     'Steps today');
-  t('bp_sys',    'Blood pressure');
-  t('temp_skin', 'Skin temp');
+  t('hr',                'Heart rate');
+  t('spo2',              'Blood oxygen');
+  t('steps',             'Steps today');
+  t('hrv_rmssd',         'HRV');
+  t('respiration_rate',  'Respiration');
+  t('bp_sys',            'Blood pressure');
+  t('temp_skin',         'Skin temp');
+  t('stress',            'Stress');
+  t('vo2max',            'VO₂ max');
+  t('glucose',           'Glucose');
 
   const connOn = device.last_seen_at && (Date.now() - new Date(device.last_seen_at)) < 10 * 60 * 1000;
   el.innerHTML = `

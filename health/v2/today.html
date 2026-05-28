@@ -211,8 +211,11 @@ function buildSummary(c) {
 }
 
 function callNative(method, args = {}) {
-  if (window.webkit?.messageHandlers?.neeve) {
-    window.webkit.messageHandlers.neeve.postMessage(JSON.stringify({ method, args }));
+  // Flutter webview_flutter exposes JS channels as window.<channelName> with
+  // a postMessage(stringPayload) method. (window.webkit.messageHandlers.* is
+  // the raw WKWebView API — Flutter's wrapper does NOT register channels there.)
+  if (window.neeve?.postMessage) {
+    window.neeve.postMessage(JSON.stringify({ method, args }));
   } else {
     alert('That action only works in the Neeve app.');
   }

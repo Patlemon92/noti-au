@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#FAF6F0" />
+<title>Record · Neeve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+<style>
+.range { display: inline-flex; gap: 6px; margin-bottom: 16px; }
+.range .pill { cursor: pointer; user-select: none; padding: 6px 12px; }
+.range .pill.on { background: var(--terra); color: white; }
+.day-card {
+  background: white; border: 1px solid var(--hair); border-radius: 16px;
+  padding: 16px; margin-bottom: 12px;
+}
+.day-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+.day-head .date { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; }
+.day-head .month { font-size: 12px; color: var(--ink-mute); margin-left: 6px; }
+.day-head .slot { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-mute); }
+.kv-mini { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
+.kv-mini .k { color: var(--ink-soft); }
+.kv-mini .v { color: var(--ink); font-weight: 500; }
+.kv-mini .v em { font-style: normal; color: var(--terra); }
+.note-line { font-size: 14px; color: var(--ink-soft); font-style: italic; padding-top: 8px; margin-top: 8px; border-top: 1px solid var(--hair); }
+.pattern {
+  background: var(--cream); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+  font-size: 14px; color: var(--ink);
+}
+.pattern .tier { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="label">Record</p>
+  <h1 class="title">Everything you've logged</h1>
+
+  <div class="range" id="range">
+    <span class="pill" data-d="7"  onclick="setRange(7)">7d</span>
+    <span class="pill on" data-d="30" onclick="setRange(30)">30d</span>
+    <span class="pill" data-d="90" onclick="setRange(90)">90d</span>
+  </div>
+
+  <section class="section" id="patterns-section" style="display:none">
+    <div class="section-label">What the system is noticing</div>
+    <div id="patterns"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-label">Daily entries</div>
+    <div id="entries"><div class="empty">Loading…</div></div>
+  </section>
+</main>
+
+<div id="nav-mount"></div>
+<script src="/health/v2/lib.js"></script>
+<script>
+document.getElementById('nav-mount').innerHTML = renderNav('more');
+
+let days = 30;
+async function setRange(d) {
+  days = d;
+  document.querySelectorAll('#range .pill').forEach(p => p.classList.toggle('on', Number(p.dataset.d) === d));
+  await load();
+}
+
+async function load() {
+  document.getElementById('entries').innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const [patterns, checkins, notes] = await Promise.all([
+      api(`/me/patterns?days=${days}`).catch(() => ({ patterns: [] })),
+      api(`/me/checkins?days=${days}`).catch(() => ({ checkins: [] })),
+      api(`/me/notes?days=${days}`).catch(() => ({ notes: [] })),
+    ]);
+    renderPatterns(patterns.patterns || []);
+    renderEntries(checkins.checkins || [], notes.notes || []);
+  } catch (e) {
+    document.getElementById('entries').innerHTML = `<div class="empty">Couldn't load: ${e.message}</div>`;
+  }
+}
+
+function renderPatterns(list) {
+  const sec = document.getElementById('patterns-section');
+  if (!list.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  document.getElementById('patterns').innerHTML = list.map(p => `
+    <div class="pattern">
+      <div class="tier">${p.confidence || 'preliminary'} · n=${p.n || '?'}</div>
+      <div>${escapeHtml(p.text || p.description || '')}</div>
+    </div>
+  `).join('');
+}
+
+function renderEntries(checkins, notes) {
+  // Build day-keyed map combining check-ins and notes
+  const byDay = {};
+  for (const c of checkins) {
+    const day = (c.completed_at || c.started_at || c.created_at || '').slice(0,10);
+    if (!day) continue;
+    (byDay[day] = byDay[day] || { checkins: [], notes: [] }).checkins.push(c);
+  }
+  for (const n of notes) {
+    const day = (n.created_at || '').slice(0,10);
+    if (!day) continue;
+    (byDay[day] = byDay[day] || { checkins: [], notes: [] }).notes.push(n);
+  }
+  const sortedDays = Object.keys(byDay).sort().reverse();
+  const el = document.getElementById('entries');
+  if (!sortedDays.length) {
+    el.innerHTML = '<div class="empty">Nothing logged in this range yet.</div>';
+    return;
+  }
+  el.innerHTML = sortedDays.map(day => {
+    const d = new Date(day + 'T12:00:00');
+    const data = byDay[day];
+    return `
+      <div class="day-card">
+        <div class="day-head">
+          <div>
+            <span class="date">${d.toLocaleDateString('en-AU', { weekday:'long', day:'numeric' })}</span>
+            <span class="month">${d.toLocaleDateString('en-AU', { month:'long' })}</span>
+          </div>
+          <span class="slot">${data.checkins.length} entr${data.checkins.length === 1 ? 'y' : 'ies'}</span>
+        </div>
+        ${data.checkins.map(c => renderCheckin(c)).join('')}
+        ${data.notes.length ? data.notes.map(n =>
+          `<div class="note-line">${escapeHtml(n.body || n.text || '')}</div>`).join('') : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderCheckin(c) {
+  const slotLabel = c.slot ? `${c.slot.charAt(0).toUpperCase()}${c.slot.slice(1)}` : '';
+  const a = c.answers || {};
+  const rows = [];
+  const k = (label, val) => {
+    if (val == null || val === '') return;
+    rows.push(`<div class="kv-mini"><span class="k">${label}</span><span class="v"><em>${val}</em></span></div>`);
+  };
+  k('Sleep',   a.sleep != null ? a.sleep + 'h' : null);
+  k('Mood',    a.mood);
+  k('Anxiety', a.anxiety);
+  k('Fatigue', a.fatigue);
+  k('Fog',     a.fog);
+  k('Pain',    a.pain);
+  const note = c.note || a.note || a.note_universal;
+  return `
+    <div style="margin-bottom:8px">
+      ${slotLabel ? `<div class="day-head" style="margin-bottom:6px"><span class="slot">${slotLabel}</span></div>` : ''}
+      ${rows.join('')}
+      ${note ? `<div class="note-line">${escapeHtml(note)}</div>` : ''}
+    </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+load();
+</script>
+</body>
+</html>

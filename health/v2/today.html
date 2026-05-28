@@ -132,6 +132,26 @@ async function load() {
   renderRingCard(devices[0], samples);
   renderWeek(checkins);
   renderSleepPreview(samples);
+  renderCheckinPrompt(checkins);
+}
+
+// Hide the prompt card if today's slot is already done. Slot picked
+// from local hour matches the worker's start-checkin slot logic.
+function renderCheckinPrompt(checkins) {
+  const card = document.querySelector('.prompt');
+  if (!card) return;
+  const slot = new Date().getHours() < 14 ? 'morning' : 'evening';
+  const today = new Date().toDateString();
+  const doneToday = (checkins || []).some(c =>
+    c.slot === slot &&
+    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today
+  );
+  if (doneToday) {
+    card.innerHTML = `
+      <div class="lbl">Today's check-in <span class="est">done</span></div>
+      <div class="title2">${slot === 'morning' ? 'Morning' : 'Evening'} check-in already logged.</div>
+      <div class="sub">Come back later for the next one. You can see today's answers in More → Records.</div>`;
+  }
 }
 
 load();

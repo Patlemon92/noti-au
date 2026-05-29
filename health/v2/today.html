@@ -218,12 +218,15 @@ function renderRingCard(device, samples) {
     if (m === 'bp_sys' && latest.bp_dia) {
       valHtml = `<span>${Math.round(s.value)}/${Math.round(latest.bp_dia.value)}</span><span class="unit">mmHg</span>`;
     }
+    const detailUrl = `/health/v2/metric.html?metric=${encodeURIComponent(m)}&days=7`;
     tiles.push(`
-      <div class="metric-tile">
-        <div class="lbl">${label}</div>
-        <div class="val">${valHtml}</div>
-        <div class="ago">${formatAgo(s.ts)}</div>
-      </div>`);
+      <a class="metric-tile-link" href="${detailUrl}" style="text-decoration:none;color:inherit;display:block">
+        <div class="metric-tile">
+          <div class="lbl">${label}</div>
+          <div class="val">${valHtml}</div>
+          <div class="ago">${formatAgo(s.ts)}</div>
+        </div>
+      </a>`);
   };
   t('hr',                'Heart rate');
   t('spo2',              'Blood oxygen');

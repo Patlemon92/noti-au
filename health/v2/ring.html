@@ -82,21 +82,8 @@
     </button>
   </div>
 
-  <!-- Last night sleep (hides until data available) -->
-  <section class="section" id="sleep-section" style="display:none">
-    <div class="section-head">
-      <div class="section-label">Last night</div>
-      <a class="section-link" href="/health/v2/sleep.html">See detail →</a>
-    </div>
-    <a class="metric-card-link" href="/health/v2/sleep.html">
-      <div class="card">
-        <div id="sleep-hypno"></div>
-        <div id="sleep-totals" style="display:flex; justify-content:space-around; margin-top:8px; padding-top:12px; border-top:1px solid var(--hair)"></div>
-      </div>
-    </a>
-  </section>
-
-  <!-- Trends — metric cards. Each is a tappable card linking to metric.html. -->
+  <!-- Trends — metric cards. Each is a tappable card linking to detail. -->
+  <!-- Sleep is treated as one of the metric cards (rendered inline below). -->
   <section class="section">
     <div class="section-head">
       <h2 class="title-sm">Trends</h2>
@@ -142,12 +129,13 @@ let cachedSamples = [];
 let cachedSleep = { stages: [], sessions: [] };
 let cachedDevice = null;
 
-// Every metric the trends section can chart. Sleep is rendered above so
-// it's not in here. 'bp' is virtual — fetch the two real metrics.
+// Every metric the trends section can chart. 'bp' is virtual — fetch
+// the two real metrics. Sleep is its own card (using sleep_session
+// rows) which we also pull in the same single request.
 const TREND_METRICS = [
   'hr', 'hrv_rmssd', 'hrv_index', 'spo2', 'respiration_rate',
   'steps', 'bp_sys', 'bp_dia', 'temp_skin', 'stress', 'pressure_index',
-  'load_index', 'body_index', 'vo2max',
+  'load_index', 'body_index', 'vo2max', 'sleep_session',
 ];
 
 function setRange(days) {
@@ -162,24 +150,16 @@ let firstLoad = true;
 
 async function load() {
   try {
-    // Pull sleep separately with the metric filter — otherwise live HR
-    // crowds sleep_stage out of the latest-N window.
-    const sleepSince  = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
     const trendsSince = new Date(Date.now() - currentRange * 86400 * 1000).toISOString();
-    const sleepQ  = `/ring/samples?metric=sleep_stage,sleep_session&limit=2000&since=${encodeURIComponent(sleepSince)}`;
     const trendsQ = `/ring/samples?metric=${TREND_METRICS.join(',')}&limit=5000&since=${encodeURIComponent(trendsSince)}`;
-    const [{ devices }, { samples }, sleepRes] = await Promise.all([
+    const [{ devices }, { samples }] = await Promise.all([
       api('/ring/status'),
       api(trendsQ),
-      api(sleepQ).catch(() => ({ samples: [] })),
     ]);
     cachedDevice = devices[0];
-    cachedSamples = samples;
-    const sleepSamples = sleepRes.samples || [];
-    cachedSleep.stages   = sleepSamples.filter(s => s.metric === 'sleep_stage');
-    cachedSleep.sessions = sleepSamples.filter(s => s.metric === 'sleep_session');
+    cachedSamples = (samples || []).filter(s => s.metric !== 'sleep_session');
+    cachedSleep.sessions = (samples || []).filter(s => s.metric === 'sleep_session');
     renderHeadPill();
-    renderSleep();
     if (firstLoad) {
       document.getElementById(`range-${currentRange}`)?.classList.add('pill-rose');
       firstLoad = false;
@@ -221,19 +201,47 @@ function renderHeadPill() {
   text.textContent = connOn ? 'Connected' : 'Last seen ' + formatAgo(d.last_seen_at);
 }
 
-function renderSleep() {
-  const stages   = cachedSleep.stages;
-  const sessions = cachedSleep.sessions;
-  if (!stages.length && !sessions.length) return;
-  document.getElementById('sleep-section').style.display = 'block';
-  const totals = renderHypnogram(
-    document.getElementById('sleep-hypno'), stages, sessions);
-  if (!totals) return;
-  const m = mins => `${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;
-  document.getElementById('sleep-totals').innerHTML = `
-    <div style="text-align:center"><div class="caption">Deep</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.deep)}</div></div>
-    <div style="text-align:center"><div class="caption">Light</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.light)}</div></div>
-    <div style="text-align:center"><div class="caption">REM</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.rem)}</div></div>
+// Sleep is now a card inside the trends list — see renderSleepCard
+// called from renderCharts. This stub is kept so a previous load()
+// reference doesn't break.
+function renderSleep() { /* no-op — handled in renderCharts */ }
+
+function fmtHm(seconds) {
+  if (!seconds || seconds <= 0) return '—';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.round((seconds % 3600) / 60);
+  return `${h}h ${m}m`;
+}
+
+function renderSleepCard(sessions) {
+  if (!sessions.length) return '';
+  // Sort newest-first for 'latest', oldest-first for the sparkline.
+  const sorted = sessions.slice().sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const latest = sorted[0];
+  const values = sorted.map(s => Number(s.value)).filter(v => isFinite(v) && v > 0);
+  if (!values.length) return '';
+  const minS = Math.min(...values);
+  const maxS = Math.max(...values);
+  const avgS = values.reduce((a, b) => a + b, 0) / values.length;
+  const detailUrl = `/health/v2/sleep.html`;
+  return `
+    <a class="metric-card-link" href="${detailUrl}">
+      <div class="card">
+        <div class="section-head" style="margin-bottom:8px">
+          <h3 class="title-sm" style="font-size:18px">Sleep</h3>
+          <span class="chev">›</span>
+        </div>
+        <div class="metric-row" style="border-bottom:none;padding:4px 0">
+          <span class="caption">Last night</span>
+          <span><span class="metric-value" style="font-size:20px">${fmtHm(latest.value)}</span></span>
+        </div>
+        <div class="metric-row" style="border-bottom:none;padding:4px 0">
+          <span class="caption">Range</span>
+          <span class="caption">${fmtHm(minS)} – ${fmtHm(maxS)} (avg ${fmtHm(avgS)})</span>
+        </div>
+        <div class="sparkline" id="spark-sleep"></div>
+      </div>
+    </a>
   `;
 }
 
@@ -242,19 +250,28 @@ function renderCharts() {
   const recent = cachedSamples.filter(s => new Date(s.ts).getTime() >= cutoff);
   const grouped = groupByMetric(recent);
 
-  // Chart order. 'bp' is a virtual key — combines bp_sys + bp_dia into
-  // one card. Skips sleep_stage / sleep_session (own card above) and
-  // ecg_summary (one-off, not a time series).
+  // Sleep sits at the top of the trends list (matches the other cards).
+  // Filtered to the visible window so 7d / 30d toggle works.
+  const sleepInWindow = cachedSleep.sessions.filter(s =>
+    new Date(s.ts).getTime() >= cutoff);
+
+  // Chart order. 'sleep' is virtual — renderSleepCard pulls from
+  // cachedSleep.sessions (separate metric filter). 'bp' is virtual —
+  // combines bp_sys + bp_dia. Skips sleep_stage and ecg_summary.
   const metrics = [
+    'sleep',
     'hr', 'hrv_rmssd', 'hrv_index', 'spo2', 'respiration_rate',
     'steps', 'bp', 'temp_skin', 'stress', 'pressure_index',
     'load_index', 'body_index', 'vo2max',
   ];
   const html = metrics
-    .filter(m => m === 'bp'
-      ? (grouped.bp_sys && grouped.bp_sys.length > 0) || (grouped.bp_dia && grouped.bp_dia.length > 0)
-      : grouped[m] && grouped[m].length > 0)
+    .filter(m => {
+      if (m === 'sleep') return sleepInWindow.length > 0;
+      if (m === 'bp')    return (grouped.bp_sys?.length > 0) || (grouped.bp_dia?.length > 0);
+      return grouped[m]?.length > 0;
+    })
     .map(m => {
+      if (m === 'sleep') return renderSleepCard(sleepInWindow);
       if (m === 'bp') return renderBpCard(grouped.bp_sys || [], grouped.bp_dia || []);
       const samples = grouped[m];
       const latest = samples[samples.length - 1];
@@ -287,6 +304,17 @@ function renderCharts() {
   document.getElementById('charts').innerHTML = html || '<div class="empty">No readings in this range yet.</div>';
 
   metrics.forEach(m => {
+    if (m === 'sleep') {
+      if (sleepInWindow.length) {
+        const el = document.getElementById('spark-sleep');
+        // Sparkline expects {ts, value}; sleep_session.value is seconds —
+        // convert to hours so the y-scale is human.
+        if (el) renderSparkline(el,
+          sleepInWindow.map(s => ({ ts: s.ts, value: Number(s.value) / 3600 })),
+          { color: 'var(--plum)' });
+      }
+      return;
+    }
     if (m === 'bp') {
       if (grouped.bp_sys && grouped.bp_sys.length) {
         const el = document.getElementById('spark-bp-sys');

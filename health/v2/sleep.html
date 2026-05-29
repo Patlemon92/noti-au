@@ -25,13 +25,44 @@
   color: var(--ink); margin: 8px 0;
 }
 .dur-card .range { font-size: 13px; color: var(--ink-soft); }
+
+/* Alys card — mirrors metric.html. */
+.alys-card { background: var(--bone-deep); }
+.alys-card .alys-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.alys-card .alys-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rose); display: inline-block; }
+.alys-card .alys-name { font-family: 'Fraunces', serif; font-weight: 500; font-size: 16px; color: var(--ink); }
+.alys-card .alys-meta { font-size: 11px; color: var(--ink-mute); margin-left: auto; }
+.alys-card .alys-body { font-size: 15px; line-height: 1.55; color: var(--ink); white-space: pre-wrap; }
+.alys-card .alys-tiny { font-size: 11px; color: var(--ink-mute); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--hair); }
+
+/* Nightly history list */
+.night-row {
+  display: grid; grid-template-columns: 56px 1fr auto; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--hair); align-items: center;
+}
+.night-row:last-child { border-bottom: none; }
+.night-row .when { color: var(--ink-mute); font-size: 12px; line-height: 1.2; }
+.night-row .when .d { font-family: 'Fraunces', serif; font-size: 22px; color: var(--ink); display: block; font-weight: 500; line-height: 1; }
+.night-bar {
+  display: flex; height: 14px; border-radius: 5px; overflow: hidden;
+  background: var(--bone-deep);
+}
+.night-bar > div { height: 100%; }
+.night-bar .b-deep  { background: var(--plum); }
+.night-bar .b-light { background: var(--rose-deep); }
+.night-bar .b-rem   { background: var(--terra); }
+.night-row .total {
+  font-family: 'Fraunces', serif; font-weight: 500; color: var(--ink);
+  font-size: 15px; text-align: right; min-width: 60px;
+}
 </style>
 </head>
 <body>
 <main class="page">
   <p class="label">Sleep</p>
-  <h1 class="title">Last night</h1>
+  <h1 class="title">Sleep</h1>
 
+  <!-- Last night card -->
   <div class="card" id="hypnogram-card">
     <div class="empty">Loading…</div>
   </div>
@@ -54,6 +85,40 @@
     </div>
   </div>
 
+  <!-- Alys read across the visible window -->
+  <section class="section">
+    <div class="card alys-card" id="alys-card">
+      <div class="alys-head">
+        <span class="alys-dot"></span>
+        <span class="alys-name">Alys</span>
+        <span class="alys-meta" id="alys-meta"></span>
+      </div>
+      <div class="alys-body" id="alys-body">Reading the patterns…</div>
+      <div class="alys-tiny">
+        Alys describes what the data shows. She doesn't diagnose. If
+        something here surprises or concerns you, it's worth raising
+        with your GP.
+      </div>
+    </div>
+  </section>
+
+  <!-- Nightly history -->
+  <section class="section">
+    <div class="section-head">
+      <h2 class="title-sm">Recent nights</h2>
+      <div>
+        <button class="pill" id="hist-7"  onclick="setHist(7)">7</button>
+        <button class="pill" id="hist-14" onclick="setHist(14)">14</button>
+        <button class="pill" id="hist-30" onclick="setHist(30)">30</button>
+      </div>
+    </div>
+    <div class="card">
+      <div id="hist-list">
+        <div class="empty">Loading…</div>
+      </div>
+    </div>
+  </section>
+
   <p class="caption" style="margin-top:24px">
     The system describes; it doesn't judge. No score here — the breakdown is the data.
   </p>
@@ -62,13 +127,20 @@
 <div id="nav-mount"></div>
 <script src="/health/v2/lib.js"></script>
 <script>
-document.getElementById('nav-mount').innerHTML = renderNav('today');
+document.getElementById('nav-mount').innerHTML = renderNav('ring');
 
-async function load() {
+let histDays = 7;
+function setHist(d) {
+  histDays = d;
+  document.querySelectorAll('[id^=hist-]').forEach(b => b.classList.remove('pill-rose'));
+  const btn = document.getElementById(`hist-${d}`);
+  if (btn) btn.classList.add('pill-rose');
+  loadHistory();
+}
+setHist(7);
+
+async function loadLastNight() {
   try {
-    // Pull sleep_stage + sleep_session over the last ~36h via the metric
-    // filter — otherwise live HR/SpO2/HRV rows crowd sleep out of any
-    // un-filtered limit window.
     const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
     const q = `/ring/samples?metric=sleep_stage,sleep_session&limit=2000&since=${encodeURIComponent(since)}`;
     const { samples } = await api(q);
@@ -82,8 +154,78 @@ async function load() {
       `<div class="empty">Couldn't load: ${e.message}</div>`;
   }
 }
-load();
-onResume(load);
+
+async function loadHistory() {
+  try {
+    const since = new Date(Date.now() - histDays * 86400 * 1000).toISOString();
+    const q = `/ring/samples?metric=sleep_session&limit=200&since=${encodeURIComponent(since)}`;
+    const { samples } = await api(q);
+    renderHistory((samples || []).slice().sort((a, b) => new Date(b.ts) - new Date(a.ts)));
+  } catch (e) {
+    document.getElementById('hist-list').innerHTML =
+      `<div class="empty">Couldn't load: ${e.message}</div>`;
+  }
+}
+
+function renderHistory(sessions) {
+  const el = document.getElementById('hist-list');
+  if (!sessions.length) {
+    el.innerHTML = '<div class="empty">No completed sleep sessions in this window yet.</div>';
+    return;
+  }
+  const rows = sessions.map(s => {
+    const total = Number(s.value);
+    const deep  = Number(s.meta?.deep_s  || 0);
+    const light = Number(s.meta?.light_s || 0);
+    const rem   = Number(s.meta?.rem_s   || 0);
+    const sum = Math.max(1, deep + light + rem);
+    const dPct = (deep  / sum) * 100;
+    const lPct = (light / sum) * 100;
+    const rPct = (rem   / sum) * 100;
+    const start = new Date(s.ts);
+    const d = start.getDate();
+    const dow = start.toLocaleDateString('en-AU', { weekday: 'short' });
+    const h = Math.floor(total / 3600);
+    const m = Math.round((total % 3600) / 60);
+    return `
+      <div class="night-row">
+        <div class="when">
+          <span class="d">${d}</span>${dow}
+        </div>
+        <div>
+          <div class="night-bar">
+            <div class="b-deep"  style="width:${dPct.toFixed(1)}%"></div>
+            <div class="b-light" style="width:${lPct.toFixed(1)}%"></div>
+            <div class="b-rem"   style="width:${rPct.toFixed(1)}%"></div>
+          </div>
+          <div class="caption" style="margin-top:4px">
+            ${Math.round(deep/60)}m deep · ${Math.round(light/60)}m light · ${Math.round(rem/60)}m REM
+          </div>
+        </div>
+        <div class="total">${h}h ${m}m</div>
+      </div>`;
+  }).join('');
+  el.innerHTML = rows;
+}
+
+async function loadAnalysis() {
+  const body = document.getElementById('alys-body');
+  const meta = document.getElementById('alys-meta');
+  body.textContent = 'Reading the patterns…';
+  meta.textContent = '';
+  try {
+    const r = await api(`/me/metric-analysis?metric=sleep_session&days=${histDays}`);
+    body.textContent = r.summary || 'Not enough data yet.';
+    if (r.cached && r.generated_at) {
+      meta.textContent = `updated ${formatAgo(r.generated_at)}`;
+    } else if (r.generated_at) {
+      meta.textContent = 'just now';
+    }
+  } catch (e) {
+    body.textContent = `Couldn't load Alys's read: ${e.message}`;
+    meta.textContent = '';
+  }
+}
 
 function hm(m) {
   const h = Math.floor(m / 60);
@@ -106,6 +248,11 @@ function renderTotals(t) {
   const [rh, rm] = hm(t.rem);   set('rem-h', rh);  set('rem-m', rm);
   set('awake-m', Math.round(t.awake));
 }
+
+loadLastNight();
+loadHistory();
+loadAnalysis();
+onResume(() => { loadLastNight(); loadHistory(); loadAnalysis(); });
 </script>
 </body>
 </html>

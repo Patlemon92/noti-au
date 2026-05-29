@@ -487,12 +487,13 @@ function callNative(method, args = {}) {
       ptrText.textContent = 'Refreshing…';
       setHeight(48);
       if (window.neeve?.postMessage) {
-        // Native shell — _doSyncNow reloads the WebView on success,
-        // which clears this banner naturally.
-        callNative('syncNow');
-        // Safety: if reload doesn't happen within 12s, drop the
-        // banner anyway so the user isn't stuck.
-        setTimeout(() => { setHeight(0); triggered = false; }, 12000);
+        // Native shell — freshRefresh triggers a new measurement,
+        // waits for the PPG cycle, then syncs and reloads. About
+        // 16-20s end-to-end before the banner clears.
+        callNative('freshRefresh');
+        // Safety: if reload doesn't happen within 30s (slow BLE),
+        // drop the banner anyway so the user isn't stuck.
+        setTimeout(() => { setHeight(0); triggered = false; }, 30000);
       } else {
         // Browser fallback: just re-run page load.
         Promise.resolve(load()).finally(() => {

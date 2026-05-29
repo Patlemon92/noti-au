@@ -139,6 +139,30 @@
     step = 0;
   }
 
+  // No session/checkin param in the URL — check if today's slot is
+  // already done so we can route to the edit view instead of starting
+  // fresh. Returns true if it navigated/loaded; false if the caller
+  // should fall back to startNewSession.
+  async function routeByState() {
+    try {
+      const r = await api('/me/checkins?days=1');
+      const checkins = r.checkins || [];
+      const hour = new Date().getHours();
+      const slot = hour < 14 ? 'morning' : 'evening';
+      const today = new Date().toDateString();
+      const done = checkins.find(c =>
+        c.slot === slot &&
+        new Date(c.completed_at).toDateString() === today
+      );
+      if (done && done.checkin_id) {
+        // Redirect to edit mode for today's completed check-in.
+        location.replace('checkin.html?checkin=' + encodeURIComponent(done.checkin_id));
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   async function startNewSession() {
     // Pick slot from local time. Morning before 14:00, evening after.
     const hour = new Date().getHours();
@@ -187,12 +211,17 @@
     const q = questions[step];
     if (!q) return editMode ? finishEdit() : complete();
 
-    // Pre-populate the in-flight values from saved answers so the user
-    // sees their existing choice when editing (and on session resume).
+    // Pre-populate the in-flight values from saved answers (resume +
+    // edit), or from a ring suggestion when present and no saved
+    // answer exists yet. Ring is optional — when the suggestion is
+    // missing we fall through to defaults.
     const saved = answers[q.key];
     if (saved !== undefined && saved !== null) {
       if (q.type === 'scale')   scaleValue   = Number(saved) || 5;
       if (q.type === 'numeric') numericValue = Number(saved);
+    } else if (q.ring_suggestion && q.ring_suggestion.value != null) {
+      if (q.type === 'scale')   scaleValue   = Math.max(0, Math.min(10, Math.round(Number(q.ring_suggestion.value))));
+      if (q.type === 'numeric') numericValue = Number(q.ring_suggestion.value);
     } else {
       scaleValue   = 5;
       numericValue = null;
@@ -204,6 +233,15 @@
     let html = '<div class="q-area">';
     html += `<div class="slot-label">${slotName} · ${step + 1} of ${questions.length}</div>`;
     html += `<h1 class="qtext">${escapeHtml(q.question)}</h1>`;
+
+    // Soft hint that the ring already has a reading here. User can
+    // accept what's pre-filled or change it.
+    if (q.ring_suggestion && q.ring_suggestion.value != null
+        && (answers[q.key] === undefined || answers[q.key] === null)) {
+      const v = q.ring_suggestion.value;
+      const u = q.key === 'sleep' ? 'h' : '';
+      html += `<p class="caption" style="margin-top:-4px;margin-bottom:14px">From your ring: <strong>${v}${u}</strong> — looks right, or change it.</p>`;
+    }
 
     if (q.type === 'scale') html += renderScale(q);
     else if (q.type === 'choice') html += renderChoice(q);
@@ -477,11 +515,19 @@
     if (editMode) {
       await loadCheckinForEdit();
       render();
-    } else {
-      if (!sessionId) sessionId = await startNewSession();
-      if (!sessionId) return; // start failed — message already rendered
+    } else if (sessionId) {
+      // Explicit session id — load + resume.
       await loadSession();
       render();
+    } else {
+      // No params: figure out which path makes sense for the current slot.
+      const routed = await routeByState();
+      if (!routed) {
+        if (!sessionId) sessionId = await startNewSession();
+        if (!sessionId) return; // start failed — message already rendered
+        await loadSession();
+        render();
+      }
     }
   } catch (e) {
     if (e && e.message === 'empty') return; // empty-questions branch already rendered

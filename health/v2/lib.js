@@ -56,6 +56,13 @@ async function api(path, opts = {}) {
 
 // ── helpers ────────────────────────────────────────────────
 
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
 function formatAgo(iso) {
   if (!iso) return '—';
   const dt = new Date(iso);

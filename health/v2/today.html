@@ -142,23 +142,56 @@ async function load() {
   renderCheckinPrompt(checkins);
 }
 
-// Hide the prompt card if today's slot is already done. Slot picked
-// from local hour matches the worker's start-checkin slot logic.
+// Render the prompt card based on today's check-in state for the
+// current slot:
+//   - completed → summary of what was logged + Edit affordance
+//   - otherwise → leave the default "Start check-in" CTA in place
 function renderCheckinPrompt(checkins) {
   const card = document.querySelector('.prompt');
   if (!card) return;
   const slot = new Date().getHours() < 14 ? 'morning' : 'evening';
   const today = new Date().toDateString();
-  const doneToday = (checkins || []).some(c =>
+  const doneCheckin = (checkins || []).find(c =>
     c.slot === slot &&
     new Date(c.completed_at || c.completedAt || c.day).toDateString() === today
   );
-  if (doneToday) {
-    card.innerHTML = `
-      <div class="lbl">Today's check-in <span class="est">done</span></div>
-      <div class="title2">${slot === 'morning' ? 'Morning' : 'Evening'} check-in already logged.</div>
-      <div class="sub">Come back later for the next one. You can see today's answers in More → Records.</div>`;
-  }
+  if (!doneCheckin) return;
+
+  const slotLabel = slot === 'morning' ? 'Morning' : 'Evening';
+  const checkinId = doneCheckin.checkin_id || doneCheckin.id;
+  const answers   = doneCheckin.answers || {};
+  const summary   = summariseAnswers(answers);
+  card.innerHTML = `
+    <div class="lbl">${slotLabel} check-in <span class="est">logged</span></div>
+    <div class="title2">${summary.headline}</div>
+    ${summary.lines.length ? `<div class="sub">${summary.lines.join(' · ')}</div>` : ''}
+    <div class="actions">
+      <a class="btn btn-ghost" href="/health/v2/checkin.html?checkin=${encodeURIComponent(checkinId)}">Edit answers</a>
+    </div>`;
+}
+
+// Pluck the most-recognisable scaled keys for the summary line so the
+// user sees what they logged at a glance. Falls back to a generic
+// 'Logged at HH:mm' if no familiar keys are present.
+function summariseAnswers(a) {
+  const pairs = [];
+  const score = (k, label) => {
+    const v = a[k];
+    if (v == null || v === '') return;
+    pairs.push(`${label} ${v}`);
+  };
+  score('sleep',    'sleep');
+  score('fatigue',  'fatigue');
+  score('fog',      'fog');
+  score('mood',     'mood');
+  score('anxiety',  'anxiety');
+  score('energy',   'energy');
+  score('pain',     'pain');
+  score('headache', 'headache');
+  const headline = pairs.length
+    ? 'Logged: ' + pairs.slice(0, 3).join(', ')
+    : 'Logged a moment ago.';
+  return { headline, lines: pairs.slice(3, 7) };
 }
 
 load();

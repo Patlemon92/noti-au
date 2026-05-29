@@ -107,7 +107,10 @@
 <script>
 (async function () {
   // ── State
-  let sessionId = new URLSearchParams(location.search).get('session');
+  const params      = new URLSearchParams(location.search);
+  let   sessionId   = params.get('session');
+  const checkinId   = params.get('checkin');         // edit-mode marker
+  const editMode    = !!checkinId;
   let session = null;
   let questions = [];
   let answers = {};
@@ -116,6 +119,25 @@
   let numericValue = null;
 
   document.getElementById('nav-mount').innerHTML = renderNav('checkin');
+
+  async function loadCheckinForEdit() {
+    // Fetch a completed check-in with its answers + the question metadata
+    // (rebuilt from the user's active templates so we can render the right
+    // control for each saved answer).
+    const res = await fetch(API_BASE + '/me/checkin/' + encodeURIComponent(checkinId), {
+      headers: { 'Authorization': 'Bearer ' + getToken() },
+    });
+    if (!res.ok) throw new Error('couldnt_load_checkin');
+    const data = await res.json();
+    if (!data.checkin) throw new Error('not_found');
+    answers   = data.checkin.answers || {};
+    questions = (data.checkin.questions || []).slice();
+    if (!questions.length) {
+      showEmpty('Nothing to edit', 'No questions matched on this check-in.');
+      throw new Error('empty');
+    }
+    step = 0;
+  }
 
   async function startNewSession() {
     // Pick slot from local time. Morning before 14:00, evening after.
@@ -163,9 +185,22 @@
   function render() {
     renderProgress();
     const q = questions[step];
-    if (!q) return complete();
+    if (!q) return editMode ? finishEdit() : complete();
 
-    const slotName = session.slot === 'morning' ? 'Morning' : 'Evening';
+    // Pre-populate the in-flight values from saved answers so the user
+    // sees their existing choice when editing (and on session resume).
+    const saved = answers[q.key];
+    if (saved !== undefined && saved !== null) {
+      if (q.type === 'scale')   scaleValue   = Number(saved) || 5;
+      if (q.type === 'numeric') numericValue = Number(saved);
+    } else {
+      scaleValue   = 5;
+      numericValue = null;
+    }
+
+    const slotName = (session && session.slot)
+      ? (session.slot === 'morning' ? 'Morning' : 'Evening')
+      : (editMode ? 'Edit' : 'Check-in');
     let html = '<div class="q-area">';
     html += `<div class="slot-label">${slotName} · ${step + 1} of ${questions.length}</div>`;
     html += `<h1 class="qtext">${escapeHtml(q.question)}</h1>`;
@@ -352,6 +387,21 @@
     const toSend = skipped ? null : value;
     answers[q.key] = toSend;
     step++;
+    if (editMode) {
+      // Edit mode — save against the existing check-in via PATCH.
+      // No /complete at the end; we just bounce back to today.
+      fetch(API_BASE + '/me/checkin/' + encodeURIComponent(checkinId) + '/answer', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + getToken(),
+        },
+        body: JSON.stringify({ key: q.key, value: toSend }),
+      }).catch(() => {});
+      if (step >= questions.length) return finishEdit();
+      render();
+      return;
+    }
     fetch(API_BASE + '/session/' + sessionId + '/answer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -359,6 +409,21 @@
     }).catch(() => {});
     if (step >= questions.length) return complete();
     render();
+  }
+
+  function finishEdit() {
+    document.getElementById('topbar').innerHTML = `<div class="progress">${questions.map(() => '<div class="seg done"></div>').join('')}</div>`;
+    document.getElementById('main').innerHTML = `
+      <div class="done-card">
+        <div class="check-circle">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--bone)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h2 class="done-title">Updated</h2>
+        <p class="done-sub">Your answers have been saved.</p>
+        <button class="btn-primary" onclick="window.location.href='today.html'">Back to today</button>
+      </div>`;
   }
 
   async function complete() {
@@ -409,10 +474,15 @@
   // ── Boot (placed last so all const declarations above are initialised
   // before render() runs after the first await).
   try {
-    if (!sessionId) sessionId = await startNewSession();
-    if (!sessionId) return; // start failed — message already rendered
-    await loadSession();
-    render();
+    if (editMode) {
+      await loadCheckinForEdit();
+      render();
+    } else {
+      if (!sessionId) sessionId = await startNewSession();
+      if (!sessionId) return; // start failed — message already rendered
+      await loadSession();
+      render();
+    }
   } catch (e) {
     if (e && e.message === 'empty') return; // empty-questions branch already rendered
     console.error('checkin boot:', e);

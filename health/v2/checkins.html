@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#FAF6F0" />
+<title>Check-ins · Neeve</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+
+<style>
+.cta {
+  display: block; padding: 18px 20px; background: var(--cream);
+  border: 1px solid var(--hair); border-radius: 18px;
+  text-decoration: none; color: inherit; margin-bottom: 22px;
+}
+.cta .lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--terra); font-weight: 500; margin-bottom: 6px; }
+.cta .ttl { font-family: 'Fraunces', serif; font-weight: 500; font-size: 20px; color: var(--ink); line-height: 1.25; }
+.cta .sub { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+.cta:active { transform: scale(0.995); }
+.row {
+  display: grid; grid-template-columns: 56px 1fr auto; gap: 12px;
+  padding: 14px 0; border-bottom: 1px solid var(--hair); align-items: center;
+  text-decoration: none; color: inherit;
+}
+.row:last-child { border-bottom: none; }
+.row .when { color: var(--ink-mute); font-size: 12px; line-height: 1.2; }
+.row .when .d { font-family: 'Fraunces', serif; font-size: 22px; color: var(--ink); display: block; font-weight: 500; line-height: 1; }
+.row .body { min-width: 0; }
+.row .slot {
+  font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-mute); margin-bottom: 2px;
+}
+.row .summary {
+  font-size: 14px; color: var(--ink); line-height: 1.35;
+}
+.row .chev {
+  font-family: 'Inter Tight', sans-serif; color: var(--ink-mute);
+  font-size: 22px; line-height: 1;
+}
+.range-row { display: flex; gap: 8px; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<main class="page">
+  <p class="label">Check-ins</p>
+  <h1 class="title">Your record</h1>
+
+  <div id="cta-mount"></div>
+
+  <div class="range-row">
+    <button class="pill pill-rose" data-days="14" onclick="setRange(14)">14d</button>
+    <button class="pill" data-days="30" onclick="setRange(30)">30d</button>
+    <button class="pill" data-days="90" onclick="setRange(90)">90d</button>
+  </div>
+
+  <section class="card">
+    <div id="list"><div class="empty">Loading…</div></div>
+  </section>
+</main>
+
+<div id="nav-mount"></div>
+
+<script src="/health/v2/lib.js"></script>
+<script>
+document.getElementById('nav-mount').innerHTML = renderNav('checkin');
+
+let _checkins = [];
+let _days = 14;
+
+function setRange(d) {
+  _days = d;
+  document.querySelectorAll('.range-row .pill').forEach(b => b.classList.remove('pill-rose'));
+  const btn = document.querySelector(`.range-row [data-days="${d}"]`);
+  if (btn) btn.classList.add('pill-rose');
+  load();
+}
+
+async function load() {
+  try {
+    const r = await api(`/me/checkins?days=${_days}`);
+    _checkins = (r.checkins || []).slice().sort((a, b) =>
+      new Date(b.completed_at) - new Date(a.completed_at));
+    renderCta();
+    renderList();
+  } catch (e) {
+    document.getElementById('list').innerHTML =
+      `<div class="empty">Couldn't load: ${escapeHtml(e.message)}</div>`;
+  }
+}
+load();
+onResume(load);
+
+function renderCta() {
+  const host = document.getElementById('cta-mount');
+  const slot = new Date().getHours() < 14 ? 'morning' : 'evening';
+  const today = new Date().toDateString();
+  const doneToday = _checkins.filter(c =>
+    new Date(c.completed_at).toDateString() === today);
+  const morningDone = doneToday.find(c => c.slot === 'morning');
+  const eveningDone = doneToday.find(c => c.slot === 'evening');
+  const slotDone    = slot === 'morning' ? morningDone : eveningDone;
+  if (slotDone) {
+    // Tile invites the user to view it, not redo it.
+    const checkinId = slotDone.checkin_id || slotDone.id;
+    host.innerHTML = `
+      <a class="cta" href="/health/v2/checkin.html?checkin=${encodeURIComponent(checkinId)}">
+        <div class="lbl">${slot === 'morning' ? 'Morning' : 'Evening'} check-in · today</div>
+        <div class="ttl">${escapeHtml(summariseAnswers(slotDone.answers).headline)}</div>
+        <div class="sub">Tap to view or edit your answers.</div>
+      </a>`;
+  } else {
+    host.innerHTML = `
+      <a class="cta" href="/health/v2/checkin.html">
+        <div class="lbl">${slot === 'morning' ? 'Morning' : 'Evening'} check-in · today</div>
+        <div class="ttl">${slot === 'morning' ? 'A few quick things to start your day.' : 'A few quick things before the day ends.'}</div>
+        <div class="sub">~2 min · tap to start.</div>
+      </a>`;
+  }
+}
+
+function renderList() {
+  const host = document.getElementById('list');
+  if (!_checkins.length) {
+    host.innerHTML = '<div class="empty">No check-ins in this window yet.</div>';
+    return;
+  }
+  host.innerHTML = _checkins.map(c => {
+    const dt = new Date(c.completed_at);
+    const d  = dt.getDate();
+    const dow = dt.toLocaleDateString('en-AU', { weekday: 'short' });
+    const slot = c.slot === 'morning' ? 'morning' : 'evening';
+    const summary = summariseAnswers(c.answers || {});
+    const checkinId = c.checkin_id || c.id;
+    return `
+      <a class="row" href="/health/v2/checkin.html?checkin=${encodeURIComponent(checkinId)}">
+        <div class="when"><span class="d">${d}</span>${dow}</div>
+        <div class="body">
+          <div class="slot">${slot}</div>
+          <div class="summary">${escapeHtml(summary.headline)}</div>
+        </div>
+        <span class="chev">›</span>
+      </a>`;
+  }).join('');
+}
+
+// Pluck familiar scaled answers for the inline summary. Mirrors today.html.
+function summariseAnswers(a) {
+  const pairs = [];
+  const score = (k, label) => {
+    const v = a[k];
+    if (v == null || v === '') return;
+    pairs.push(`${label} ${v}`);
+  };
+  score('sleep',    'sleep');
+  score('fatigue',  'fatigue');
+  score('fog',      'fog');
+  score('mood',     'mood');
+  score('anxiety',  'anxiety');
+  score('energy',   'energy');
+  score('pain',     'pain');
+  score('headache', 'headache');
+  const headline = pairs.length
+    ? pairs.slice(0, 4).join(', ')
+    : 'Logged, no scaled answers.';
+  return { headline };
+}
+</script>
+</body>
+</html>

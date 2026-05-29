@@ -63,8 +63,10 @@
   <p class="greeting-time" id="greeting-time">Today</p>
   <h1 class="greeting" id="greeting">Hey.</h1>
 
-  <!-- Check-in prompt (prototype-style) -->
-  <div class="prompt">
+  <!-- Check-in prompt (prototype-style). renderCheckinPrompt rewrites
+       the contents to show either the slot CTA, a summary of what's
+       already logged, or nothing depending on state. -->
+  <div class="prompt" id="prompt-card">
     <div class="lbl">Today's check-in <span class="est">~2 min</span></div>
     <div class="title2">A few quick things, whenever you're ready.</div>
     <div class="sub">Helps the system see how today is going.</div>
@@ -154,31 +156,56 @@ async function load() {
   renderCheckinPrompt(checkins);
 }
 
-// Render the prompt card based on today's check-in state for the
-// current slot:
-//   - completed → summary of what was logged + Edit affordance
-//   - otherwise → leave the default "Start check-in" CTA in place
+// Render the prompt card based on today's check-in state.
+// Three possible states for the current slot:
+//   - already done   → summary of what was logged + Edit affordance
+//   - not done yet   → Slot-specific CTA ("Time for your evening check-in")
+//   - both done      → hide the card entirely (no nag)
 function renderCheckinPrompt(checkins) {
-  const card = document.querySelector('.prompt');
+  const card = document.getElementById('prompt-card');
   if (!card) return;
   const slot = new Date().getHours() < 14 ? 'morning' : 'evening';
   const today = new Date().toDateString();
-  const doneCheckin = (checkins || []).find(c =>
-    c.slot === slot &&
-    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today
-  );
-  if (!doneCheckin) return;
+  const todayCheckins = (checkins || []).filter(c =>
+    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
+  const morningDone = todayCheckins.find(c => c.slot === 'morning');
+  const eveningDone = todayCheckins.find(c => c.slot === 'evening');
+  const doneThisSlot = slot === 'morning' ? morningDone : eveningDone;
 
-  const slotLabel = slot === 'morning' ? 'Morning' : 'Evening';
-  const checkinId = doneCheckin.checkin_id || doneCheckin.id;
-  const answers   = doneCheckin.answers || {};
-  const summary   = summariseAnswers(answers);
+  // Both done — quiet the card.
+  if (morningDone && eveningDone) {
+    card.style.display = 'none';
+    return;
+  }
+
+  if (doneThisSlot) {
+    // The slot we'd prompt for is already done. Show a summary of it.
+    const slotLabel = slot === 'morning' ? 'Morning' : 'Evening';
+    const checkinId = doneThisSlot.checkin_id || doneThisSlot.id;
+    const answers   = doneThisSlot.answers || {};
+    const summary   = summariseAnswers(answers);
+    card.innerHTML = `
+      <div class="lbl">${slotLabel} check-in <span class="est">logged</span></div>
+      <div class="title2">${summary.headline}</div>
+      ${summary.lines.length ? `<div class="sub">${summary.lines.join(' · ')}</div>` : ''}
+      <div class="actions">
+        <a class="btn btn-ghost" href="/health/v2/checkin.html?checkin=${encodeURIComponent(checkinId)}">Edit answers</a>
+      </div>`;
+    return;
+  }
+
+  // Slot-specific CTA — make it obvious which one is being asked for.
+  const slotLabel = slot === 'morning' ? 'morning' : 'evening';
+  const title    = slot === 'morning'
+    ? 'A few quick things to start your day.'
+    : 'A few quick things before the day ends.';
   card.innerHTML = `
-    <div class="lbl">${slotLabel} check-in <span class="est">logged</span></div>
-    <div class="title2">${summary.headline}</div>
-    ${summary.lines.length ? `<div class="sub">${summary.lines.join(' · ')}</div>` : ''}
+    <div class="lbl">Your ${slotLabel} check-in <span class="est">~2 min</span></div>
+    <div class="title2">${title}</div>
+    <div class="sub">Helps the system see how today's going.</div>
     <div class="actions">
-      <a class="btn btn-ghost" href="/health/v2/checkin.html?checkin=${encodeURIComponent(checkinId)}">Edit answers</a>
+      <a class="btn btn-primary" href="/health/v2/checkin.html">Start check-in</a>
+      <button class="btn btn-ghost" onclick="document.querySelector('.prompt').style.display='none'">Not today</button>
     </div>`;
 }
 

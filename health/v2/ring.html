@@ -295,8 +295,8 @@ function renderBpCard(sysS, diaS) {
     ? `${Math.round(sysLatest)}/${Math.round(diaLatest)}`
     : (sysLatest != null ? `${Math.round(sysLatest)}/—` : `—/${Math.round(diaLatest)}`);
   const avgStr = sysAvg != null && diaAvg != null ? `${sysAvg}/${diaAvg}` : '—';
-  // 'Blood pressure' card opens the sys metric page; user can flip to dia from there.
-  const detailUrl = `/health/v2/metric.html?metric=bp_sys&days=${currentRange}`;
+  // 'Blood pressure' card opens the combined sys+dia detail page.
+  const detailUrl = `/health/v2/metric.html?metric=bp&days=${currentRange}`;
   return `
     <a class="metric-card-link" href="${detailUrl}">
       <div class="card">

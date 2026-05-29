@@ -18,7 +18,7 @@
 }
 .detail-back:hover { color: var(--ink); }
 .stats-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
   margin-top: 14px;
 }
 .stat-tile {
@@ -111,6 +111,7 @@ const LABELS = {
   steps:                { title: 'Steps',          unit: '',        cat: 'Activity' },
   bp_sys:               { title: 'BP systolic',    unit: 'mmHg',    cat: 'Vital' },
   bp_dia:               { title: 'BP diastolic',   unit: 'mmHg',    cat: 'Vital' },
+  bp:                   { title: 'Blood pressure', unit: 'mmHg',    cat: 'Vital' },
   stress:               { title: 'Stress',         unit: '',        cat: 'Recovery' },
   vo2max:               { title: 'VO₂ max',        unit: 'ml/kg/min', cat: 'Fitness' },
   load_index:           { title: 'Cardiac load',   unit: '',        cat: 'Recovery' },
@@ -147,10 +148,19 @@ async function load() {
   document.getElementById('chart').innerHTML = '<div class="empty" style="padding:32px 0">Loading…</div>';
   try {
     const since = new Date(Date.now() - days * 86400 * 1000).toISOString();
-    const q = `/ring/samples?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&limit=2000`;
-    const { samples } = await api(q);
-    renderChart(samples || []);
-    renderStats(samples || []);
+    if (metric === 'bp') {
+      const q = `/ring/samples?metric=bp_sys,bp_dia&since=${encodeURIComponent(since)}&limit=2000`;
+      const { samples } = await api(q);
+      const sys = (samples || []).filter(s => s.metric === 'bp_sys');
+      const dia = (samples || []).filter(s => s.metric === 'bp_dia');
+      renderBpChart(sys, dia);
+      renderBpStats(sys, dia);
+    } else {
+      const q = `/ring/samples?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&limit=2000`;
+      const { samples } = await api(q);
+      renderChart(samples || []);
+      renderStats(samples || []);
+    }
   } catch (e) {
     document.getElementById('chart').innerHTML =
       `<div class="empty">Couldn't load: ${e.message}</div>`;
@@ -188,6 +198,92 @@ function renderStats(samples) {
   document.getElementById('s-mean').innerHTML   = `${fmt(mean)}<span style="font-size:13px;color:var(--ink-mute)"> ${u}</span>`;
   document.getElementById('s-min').innerHTML    = `${fmt(min)}<span style="font-size:13px;color:var(--ink-mute)"> ${u}</span>`;
   document.getElementById('s-max').innerHTML    = `${fmt(max)}<span style="font-size:13px;color:var(--ink-mute)"> ${u}</span>`;
+}
+
+function renderBpStats(sys, dia) {
+  if (!sys.length && !dia.length) {
+    ['s-latest','s-mean','s-min','s-max'].forEach(id =>
+      document.getElementById(id).textContent = '—');
+    return;
+  }
+  const sysLast = sys.length ? sys[sys.length - 1].value : null;
+  const diaLast = dia.length ? dia[dia.length - 1].value : null;
+  const sysAvg  = sys.length ? sys.reduce((a, s) => a + s.value, 0) / sys.length : null;
+  const diaAvg  = dia.length ? dia.reduce((a, s) => a + s.value, 0) / dia.length : null;
+  const sysLow  = sys.length ? Math.min(...sys.map(s => s.value)) : null;
+  const diaLow  = dia.length ? Math.min(...dia.map(s => s.value)) : null;
+  const sysHigh = sys.length ? Math.max(...sys.map(s => s.value)) : null;
+  const diaHigh = dia.length ? Math.max(...dia.map(s => s.value)) : null;
+  const pair = (a, b) => `${a != null ? Math.round(a) : '—'}/${b != null ? Math.round(b) : '—'}`;
+  const u = '<span style="font-size:13px;color:var(--ink-mute)"> mmHg</span>';
+  document.getElementById('s-latest').innerHTML = pair(sysLast, diaLast) + u;
+  document.getElementById('s-mean').innerHTML   = pair(sysAvg, diaAvg)   + u;
+  document.getElementById('s-min').innerHTML    = pair(sysLow, diaLow)   + u;
+  document.getElementById('s-max').innerHTML    = pair(sysHigh, diaHigh) + u;
+}
+
+function renderBpChart(sysSamples, diaSamples) {
+  const host = document.getElementById('chart');
+  if (!sysSamples.length && !diaSamples.length) {
+    host.innerHTML = '<div class="empty" style="padding:32px 0">No readings in this window yet.</div>';
+    return;
+  }
+  const W = host.clientWidth || 340;
+  const H = 220;
+  const pad = { l: 36, r: 12, t: 14, b: 38 };
+  const innerW = W - pad.l - pad.r;
+  const innerH = H - pad.t - pad.b;
+
+  const toPts = arr => arr
+    .map(s => ({ t: new Date(s.ts).getTime(), v: Number(s.value) }))
+    .filter(p => isFinite(p.t) && isFinite(p.v))
+    .sort((a, b) => a.t - b.t);
+  const sysPts = toPts(sysSamples);
+  const diaPts = toPts(diaSamples);
+  const allPts = sysPts.concat(diaPts);
+  if (!allPts.length) {
+    host.innerHTML = '<div class="empty" style="padding:32px 0">No valid readings.</div>';
+    return;
+  }
+  const tMin = Math.min(...allPts.map(p => p.t));
+  const tMax = Math.max(...allPts.map(p => p.t));
+  let vMin = Math.min(...allPts.map(p => p.v));
+  let vMax = Math.max(...allPts.map(p => p.v));
+  if (vMin === vMax) { vMin -= 1; vMax += 1; }
+  const span = vMax - vMin; vMin -= span * 0.08; vMax += span * 0.08;
+
+  const x = t => pad.l + ((t - tMin) / Math.max(1, tMax - tMin)) * innerW;
+  const y = v => pad.t + innerH - ((v - vMin) / (vMax - vMin)) * innerH;
+  const pathFor = pts => pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
+
+  const yMid = (vMin + vMax) / 2;
+  const grid = [vMin, yMid, vMax].map(v => `
+    <line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="var(--hair)" stroke-width="0.5"/>
+    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${Math.round(v)}</text>
+  `).join('');
+
+  const fmtT = ms => {
+    const dt = new Date(ms);
+    if (days <= 1) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
+    return dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  };
+  const tMid = (tMin + tMax) / 2;
+
+  host.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+      ${grid}
+      ${sysPts.length ? `<path d="${pathFor(sysPts)}" stroke="var(--terra)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+      ${diaPts.length ? `<path d="${pathFor(diaPts)}" stroke="var(--rose)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+      <text x="${pad.l}" y="${H - 22}" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMin)}</text>
+      <text x="${W / 2}" y="${H - 22}" text-anchor="middle" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMid)}</text>
+      <text x="${W - pad.r}" y="${H - 22}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMax)}</text>
+      <g font-family="Inter Tight, sans-serif" font-size="11" fill="var(--ink-mute)">
+        <rect x="${pad.l}"     y="${H - 14}" width="10" height="4" rx="1" fill="var(--terra)"/>
+        <text x="${pad.l + 14}" y="${H - 10}">sys</text>
+        <rect x="${pad.l + 50}" y="${H - 14}" width="10" height="4" rx="1" fill="var(--rose)"/>
+        <text x="${pad.l + 64}" y="${H - 10}">dia</text>
+      </g>
+    </svg>`;
 }
 
 function renderChart(samples) {

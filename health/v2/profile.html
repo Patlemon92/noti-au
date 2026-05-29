@@ -84,6 +84,23 @@
   </section>
 
   <section class="section">
+    <div class="section-label">Where you are</div>
+    <div class="card">
+      <p class="caption" style="margin-bottom:10px">
+        Your suburb or postcode. Used to attach today's weather, air
+        quality and pollen to each check-in so we can see how the
+        environment affects you.
+      </p>
+      <input id="loc-input" type="text" placeholder="e.g. Bondi or 2026"
+        style="width:100%;box-sizing:border-box;background:white;border:1px solid var(--hair);border-radius:10px;padding:10px 12px;font-family:'Inter Tight',sans-serif;font-size:16px;color:var(--ink)">
+      <div id="loc-status" class="caption" style="margin-top:8px;min-height:18px"></div>
+      <div style="text-align:right;margin-top:6px">
+        <button class="btn btn-primary" onclick="saveLocation()">Save</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
     <div class="section-label">What to track</div>
     <div class="card">
       <p class="caption" style="margin-bottom:10px">
@@ -404,6 +421,47 @@ function callNative(method, args = {}) {
 // Flutter screen via the bridge). Hide it in plain-browser sessions.
 if (window.neeve?.postMessage) {
   document.getElementById('debug-section').style.display = 'block';
+}
+
+// ── Location (postcode/suburb) ──────────────────────────
+async function loadLocation() {
+  try {
+    const u = await api('/me');
+    document.getElementById('loc-input').value = u.postcode || '';
+    const status = document.getElementById('loc-status');
+    if (u.postcode && u.latitude == null) {
+      status.textContent = 'Couldn\'t pin that on the map — try a more specific name or postcode.';
+      status.style.color = 'var(--rose-deep)';
+    } else if (u.postcode) {
+      status.textContent = 'Pinned. Each check-in will pick up local weather + air quality.';
+      status.style.color = 'var(--ink-mute)';
+    } else {
+      status.textContent = 'Defaulting to Sydney until set.';
+      status.style.color = 'var(--ink-mute)';
+    }
+  } catch (e) {}
+}
+loadLocation();
+
+async function saveLocation() {
+  const status = document.getElementById('loc-status');
+  status.textContent = 'Saving…';
+  status.style.color = 'var(--ink-mute)';
+  const postcode = document.getElementById('loc-input').value.trim();
+  try {
+    const r = await api('/me/location', { method: 'POST', body: JSON.stringify({ postcode }) });
+    if (!postcode) {
+      status.textContent = 'Cleared.';
+    } else if (r.geocoded) {
+      status.textContent = `Saved (${r.lat.toFixed(2)}, ${r.lon.toFixed(2)}). Weather + air quality will start showing on the next check-in.`;
+    } else {
+      status.textContent = 'Saved, but we couldn\'t pin that on the map. Try a more specific name or postcode.';
+    }
+    status.style.color = r.geocoded || !postcode ? 'var(--sage-deep)' : 'var(--rose-deep)';
+  } catch (e) {
+    status.textContent = `Couldn't save: ${e.message}`;
+    status.style.color = 'var(--rose-deep)';
+  }
 }
 
 // ── Templates: what to track ────────────────────────────

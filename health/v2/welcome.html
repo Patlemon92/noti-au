@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#FAF6F0" />
+<title>Welcome · Neeve</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+
+<style>
+.wel-page {
+  max-width: 560px; margin: 0 auto;
+  padding: 32px 24px max(36px, env(safe-area-inset-bottom)) 24px;
+  min-height: 100vh; box-sizing: border-box;
+  display: flex; flex-direction: column;
+}
+.wel-progress {
+  display: flex; gap: 6px; margin-bottom: 28px;
+}
+.wel-progress .seg {
+  flex: 1; height: 3px; border-radius: 2px; background: var(--hair);
+}
+.wel-progress .seg.on { background: var(--terra); }
+.wel-step { flex: 1; }
+.wel-step h1 {
+  font-family: 'Fraunces', serif; font-weight: 500;
+  font-size: 28px; line-height: 1.2; color: var(--ink); margin: 0 0 12px;
+}
+.wel-step .lede {
+  font-size: 15px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 24px;
+}
+.wel-step .small {
+  font-size: 13px; color: var(--ink-mute); margin-top: 14px;
+}
+.wel-step label.field { display: block; margin: 12px 0; }
+.wel-step label.field .lbl {
+  font-size: 12px; letter-spacing: 0.04em; color: var(--ink-mute);
+  text-transform: uppercase; margin-bottom: 4px; display: block;
+}
+.wel-step input[type="text"],
+.wel-step input[type="time"],
+.wel-step textarea {
+  width: 100%; box-sizing: border-box;
+  background: white; border: 1px solid var(--hair); border-radius: 12px;
+  padding: 12px 14px; font-family: 'Inter Tight', sans-serif;
+  font-size: 16px; color: var(--ink);
+}
+.wel-step textarea { min-height: 140px; resize: vertical; }
+
+/* Reuse the template card style from profile */
+.wel-tpl {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 0; border-bottom: 1px solid var(--hair);
+}
+.wel-tpl:last-child { border-bottom: none; }
+.wel-tpl .meta { flex: 1; min-width: 0; }
+.wel-tpl .name {
+  font-family: 'Fraunces', serif; font-weight: 500; font-size: 16px;
+  color: var(--ink);
+}
+.wel-tpl .desc { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+.wel-tpl .slot {
+  font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--ink-mute); margin-left: 6px;
+}
+.wel-sw {
+  flex-shrink: 0; width: 44px; height: 26px; border-radius: 13px;
+  background: var(--hair); position: relative; cursor: pointer;
+  transition: background 0.18s ease;
+}
+.wel-sw::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%; background: white;
+  transition: transform 0.18s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.wel-sw.on { background: var(--terra); }
+.wel-sw.on::after { transform: translateX(18px); }
+
+.wel-actions {
+  display: flex; gap: 12px; align-items: center; margin-top: 32px;
+  padding-top: 16px;
+}
+.wel-actions .btn { flex: 1; padding: 14px 20px; }
+.wel-actions .skip {
+  background: none; border: none; padding: 12px 8px;
+  color: var(--ink-mute); font-family: 'Inter Tight', sans-serif;
+  font-size: 14px; cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<main class="wel-page">
+  <div class="wel-progress" id="prog"></div>
+  <div class="wel-step" id="step"></div>
+  <div class="wel-actions" id="actions"></div>
+</main>
+
+<script src="/health/v2/lib.js"></script>
+<script>
+const STEPS = ['hello', 'track', 'when', 'where', 'about', 'done'];
+let stepIdx = 0;
+let state = {
+  name: '',
+  templates: [],          // [{ key, name, slot, description, enabled }]
+  morningTime: '08:00',
+  eveningTime: '19:00',
+  postcode: '',
+  bio: '',
+};
+
+(async function boot() {
+  // Pull what we already know about the user so we can pre-fill.
+  try {
+    const u = await api('/me');
+    state.name        = u.name || '';
+    state.morningTime = u.morningTime || '08:00';
+    state.eveningTime = u.eveningTime || '19:00';
+    state.postcode    = u.postcode || '';
+    state.bio         = u.bio || '';
+    // If they're already onboarded, skip the flow.
+    if (u.onboarded) { location.replace('/health/v2/today.html'); return; }
+  } catch (e) {
+    // No auth yet — bounce to login.
+    if (e.message === 'unauthorised') return;
+  }
+
+  try {
+    const r = await api('/me/available-templates');
+    state.templates = (r.templates || []).map(t => ({ ...t }));
+    // Default 'on' for a few common ones if nothing is enabled yet.
+    const anyOn = state.templates.some(t => t.enabled);
+    if (!anyOn) {
+      ['mood', 'fatigue', 'fog', 'pain'].forEach(k => {
+        const t = state.templates.find(x => x.key === k);
+        if (t) t.enabled = true;
+      });
+    }
+  } catch (e) {}
+
+  render();
+})();
+
+function render() {
+  document.getElementById('prog').innerHTML = STEPS.map((_, i) =>
+    `<div class="seg ${i <= stepIdx ? 'on' : ''}"></div>`
+  ).join('');
+  const step = STEPS[stepIdx];
+  const host = document.getElementById('step');
+  const acts = document.getElementById('actions');
+
+  if (step === 'hello') {
+    host.innerHTML = `
+      <h1>Hi${state.name ? ' ' + escapeHtml(firstName(state.name)) : ''}.</h1>
+      <p class="lede">Neeve is a quiet way to track what your body and mind are doing — a couple of times a day, a few short questions, in your own words. The more you log, the more patterns Alys will notice.</p>
+      <p class="small">This setup takes about two minutes. You can change anything later from your profile.</p>`;
+    acts.innerHTML = `<button class="btn btn-primary" onclick="next()">Get started</button>`;
+    return;
+  }
+
+  if (step === 'track') {
+    host.innerHTML = `
+      <h1>What do you want to keep an eye on?</h1>
+      <p class="lede">Each one adds a few short questions to your check-in. Turn on what matters to you. You can change these later.</p>
+      <div id="tpl-list">${renderTemplateList()}</div>`;
+    acts.innerHTML = `
+      <button class="btn btn-ghost" onclick="back()">Back</button>
+      <button class="btn btn-primary" onclick="saveAndNext('track')">Continue</button>`;
+    return;
+  }
+
+  if (step === 'when') {
+    host.innerHTML = `
+      <h1>When works for check-ins?</h1>
+      <p class="lede">A gentle nudge in the morning and again in the evening. Pick times that fit your day.</p>
+      <label class="field"><span class="lbl">Morning</span>
+        <input type="time" id="morn" value="${state.morningTime}"></label>
+      <label class="field"><span class="lbl">Evening</span>
+        <input type="time" id="eve" value="${state.eveningTime}"></label>
+      <p class="small">If you miss one, no big deal. You can always start a check-in from the home tab.</p>`;
+    acts.innerHTML = `
+      <button class="btn btn-ghost" onclick="back()">Back</button>
+      <button class="btn btn-primary" onclick="saveAndNext('when')">Continue</button>`;
+    return;
+  }
+
+  if (step === 'where') {
+    host.innerHTML = `
+      <h1>Where are you most days?</h1>
+      <p class="lede">Your suburb or postcode. We'll add today's weather, air quality and pollen to each check-in. They affect how you feel.</p>
+      <label class="field"><span class="lbl">Suburb or postcode</span>
+        <input type="text" id="pc" value="${escapeHtml(state.postcode || '')}" placeholder="e.g. Bondi or 2026"></label>
+      <p class="small">We only ever look up weather and air quality. Nothing more.</p>`;
+    acts.innerHTML = `
+      <button class="btn btn-ghost" onclick="back()">Back</button>
+      <button class="skip" onclick="next()">Skip</button>
+      <button class="btn btn-primary" onclick="saveAndNext('where')">Continue</button>`;
+    return;
+  }
+
+  if (step === 'about') {
+    host.innerHTML = `
+      <h1>What should Alys know about you?</h1>
+      <p class="lede">Anything you want her to remember as you start. What you're living with, what tends to make things harder, what helps. Write what feels useful — it's just for her, and you can update it any time.</p>
+      <label class="field"><span class="lbl">In your words</span>
+        <textarea id="bio" placeholder="e.g. POTS-spectrum diagnosis since 2019. Mornings are usually the hardest. Hydration and a slow start help.">${escapeHtml(state.bio || '')}</textarea></label>`;
+    acts.innerHTML = `
+      <button class="btn btn-ghost" onclick="back()">Back</button>
+      <button class="skip" onclick="next()">Skip</button>
+      <button class="btn btn-primary" onclick="saveAndNext('about')">Continue</button>`;
+    return;
+  }
+
+  if (step === 'done') {
+    const firstCheckin = state.templates.filter(t => t.enabled).length;
+    host.innerHTML = `
+      <h1>You're set${state.name ? ', ' + escapeHtml(firstName(state.name)) : ''}.</h1>
+      <p class="lede">${firstCheckin} thing${firstCheckin === 1 ? '' : 's'} to track. Check-ins at ${state.morningTime} and ${state.eveningTime}. We'll see you for the first one when it lands.</p>
+      <p class="small">If anything feels off as you use this, head to your profile. Everything you've just set is editable from there.</p>`;
+    acts.innerHTML = `<button class="btn btn-primary" onclick="finish()">Open Neeve</button>`;
+    return;
+  }
+}
+
+function renderTemplateList() {
+  return state.templates.map((t, i) => `
+    <div class="wel-tpl">
+      <div class="meta">
+        <div class="name">${escapeHtml(t.name)}<span class="slot">${escapeHtml(t.slot)}</span></div>
+        <div class="desc">${escapeHtml(t.description || '')}</div>
+      </div>
+      <div class="wel-sw ${t.enabled ? 'on' : ''}" onclick="toggleTpl(${i})" role="switch" aria-checked="${t.enabled}"></div>
+    </div>
+  `).join('');
+}
+
+function toggleTpl(i) {
+  state.templates[i].enabled = !state.templates[i].enabled;
+  document.getElementById('tpl-list').innerHTML = renderTemplateList();
+}
+
+function back() {
+  if (stepIdx > 0) { stepIdx--; render(); }
+}
+function next() {
+  if (stepIdx < STEPS.length - 1) { stepIdx++; render(); }
+}
+
+async function saveAndNext(step) {
+  try {
+    if (step === 'track') {
+      const enabled = state.templates.filter(t => t.enabled).map(t => t.key);
+      await api('/me/templates', { method: 'POST', body: JSON.stringify({ enabled }) });
+    } else if (step === 'when') {
+      state.morningTime = document.getElementById('morn').value || state.morningTime;
+      state.eveningTime = document.getElementById('eve').value || state.eveningTime;
+      await api('/me/schedule', { method: 'POST',
+        body: JSON.stringify({ morningTime: state.morningTime, eveningTime: state.eveningTime }) });
+    } else if (step === 'where') {
+      state.postcode = document.getElementById('pc').value.trim();
+      if (state.postcode) {
+        await api('/me/location', { method: 'POST', body: JSON.stringify({ postcode: state.postcode }) });
+      }
+    } else if (step === 'about') {
+      state.bio = document.getElementById('bio').value.trim();
+      if (state.bio) {
+        await api('/me/bio', { method: 'POST', body: JSON.stringify({ bio: state.bio }) });
+      }
+    }
+    next();
+  } catch (e) {
+    alert("Couldn't save: " + (e.message || 'try again'));
+  }
+}
+
+async function finish() {
+  try {
+    await api('/me/onboarded', { method: 'POST', body: '{}' });
+  } catch (e) {}
+  location.replace('/health/v2/today.html');
+}
+
+function firstName(s) { return String(s).split(/\s+/)[0]; }
+</script>
+</body>
+</html>

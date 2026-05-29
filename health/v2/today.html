@@ -109,6 +109,18 @@ document.getElementById('nav-mount').innerHTML = renderNav('today');
 document.getElementById('greeting-time').textContent =
   new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 
+// Route fresh users to the welcome flow before showing the home
+// screen. Runs once on load — once onboarded=true, /me returns it
+// and we never bounce again.
+(async function gateUnonboarded() {
+  try {
+    const u = await api('/me');
+    if (u && u.id && !u.onboarded) {
+      location.replace('/health/v2/welcome.html');
+    }
+  } catch (_) { /* unauth bounces to login elsewhere */ }
+})();
+
 async function load() {
   const name = localStorage.getItem('neeve_name') || '';
   document.getElementById('greeting').innerHTML =

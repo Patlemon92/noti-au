@@ -162,9 +162,21 @@ function renderCheckinPrompt(checkins) {
 }
 
 load();
-// Auto-refresh every 20s so new ring samples appear without manual reload.
-setInterval(load, 20000);
-// And refresh immediately when the user returns to this tab/app.
+// Refresh every 90s while the page is visible — ring data updates on
+// 2-min cycles anyway, so polling faster just burns battery without
+// surfacing new readings. Pause when hidden; resume on visibility.
+let _refreshTimer = null;
+function _startRefresh() {
+  if (_refreshTimer) return;
+  _refreshTimer = setInterval(load, 90000);
+}
+function _stopRefresh() {
+  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) _stopRefresh(); else { load(); _startRefresh(); }
+});
+if (!document.hidden) _startRefresh();
 onResume(load);
 
 function renderSleepPreview(samples) {

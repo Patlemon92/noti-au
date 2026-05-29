@@ -43,7 +43,13 @@
 .range-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .range-row .pill { cursor: pointer; }
 .range-row .pill-active { background: var(--rose); color: white; }
-.chart-card svg { display: block; width: 100%; }
+.chart-card svg { display: block; width: 100%; touch-action: pan-y; }
+.scrub-readout {
+  display: flex; justify-content: space-between; align-items: center;
+  min-height: 22px; margin-bottom: 6px; font-size: 13px;
+}
+.scrub-readout .when { color: var(--ink-mute); }
+.scrub-readout .what { font-family: 'Fraunces', serif; font-weight: 500; color: var(--ink); font-size: 16px; }
 </style>
 </head>
 <body>
@@ -61,6 +67,10 @@
 
   <!-- Big chart -->
   <section class="card chart-card">
+    <div class="scrub-readout" id="scrub">
+      <span class="when" id="scrub-when">Touch the chart to scrub</span>
+      <span class="what" id="scrub-what"></span>
+    </div>
     <div id="chart"></div>
     <div class="stats-grid" id="stats">
       <div class="stat-tile"><div class="stat-label">Latest</div><div class="stat-value" id="s-latest">—</div></div>
@@ -338,13 +348,67 @@ function renderChart(samples) {
   const tMid = (tMin + tMax) / 2;
 
   host.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+    <svg id="metric-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
       ${grid}
       <path d="${path}" stroke="var(--terra)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <line   id="scrub-line"   x1="0" y1="${pad.t}" x2="0" y2="${pad.t + innerH}" stroke="var(--ink-mute)" stroke-width="0.8" opacity="0"/>
+      <circle id="scrub-marker" r="3.5" fill="var(--terra)" stroke="var(--bone)" stroke-width="1.2" opacity="0"/>
       <text x="${pad.l}" y="${H - 6}" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMin)}</text>
       <text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMid)}</text>
       <text x="${W - pad.r}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMax)}</text>
+      <rect id="scrub-hit" x="${pad.l}" y="${pad.t}" width="${innerW}" height="${innerH}" fill="transparent"/>
     </svg>`;
+  attachScrub({ pts, xFor: x, yFor: y, W, pad, innerW, fmtT, color: 'var(--terra)' });
+}
+
+function attachScrub({ pts, xFor, yFor, W, pad, innerW, fmtT, color }) {
+  const svg    = document.getElementById('metric-svg');
+  const hit    = document.getElementById('scrub-hit');
+  const line   = document.getElementById('scrub-line');
+  const marker = document.getElementById('scrub-marker');
+  const wEl    = document.getElementById('scrub-when');
+  const vEl    = document.getElementById('scrub-what');
+  if (!svg || !hit || !pts || !pts.length) return;
+  if (color) marker.setAttribute('fill', color);
+
+  const tFirst = pts[0].t, tLast = pts[pts.length - 1].t;
+
+  function vbX(ev) {
+    const r = svg.getBoundingClientRect();
+    return ((ev.clientX - r.left) / r.width) * W;
+  }
+  function nearest(vbx) {
+    const t = (vbx - pad.l) / Math.max(1, innerW) * (tLast - tFirst) + tFirst;
+    let best = pts[0], bestD = Math.abs(pts[0].t - t);
+    for (const p of pts) {
+      const d = Math.abs(p.t - t);
+      if (d < bestD) { bestD = d; best = p; }
+    }
+    return best;
+  }
+  function show(ev) {
+    ev.preventDefault();
+    const p  = nearest(vbX(ev));
+    const px = xFor(p.t), py = yFor(p.v);
+    line.setAttribute('x1', px); line.setAttribute('x2', px); line.setAttribute('opacity', '0.45');
+    marker.setAttribute('cx', px); marker.setAttribute('cy', py); marker.setAttribute('opacity', '1');
+    const dt = new Date(p.t);
+    const date = dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    const time = dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
+    wEl.textContent = `${date} · ${time}`;
+    vEl.innerHTML   = `${fmt(p.v)}<span style="font-size:12px;color:var(--ink-mute)"> ${unitTxt()}</span>`;
+  }
+  function clear() {
+    line.setAttribute('opacity', '0');
+    marker.setAttribute('opacity', '0');
+    wEl.textContent = 'Touch the chart to scrub';
+    vEl.textContent = '';
+  }
+  hit.addEventListener('pointerdown',   e => { hit.setPointerCapture(e.pointerId); show(e); });
+  hit.addEventListener('pointermove',   e => { if (e.buttons) show(e); });
+  hit.addEventListener('pointerup',     clear);
+  hit.addEventListener('pointercancel', clear);
+  hit.addEventListener('pointerleave',  clear);
 }
 
 async function loadAnalysis() {

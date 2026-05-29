@@ -23,6 +23,48 @@
 .row-link .chev { color: var(--ink-mute); font-size: 18px; }
 .row-link .sub { font-size: 12px; color: var(--ink-mute); margin-top: 2px; }
 .row-danger { color: var(--rose-deep); }
+.tpl-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 0; border-bottom: 1px solid var(--hair);
+}
+.tpl-row:last-child { border-bottom: none; }
+.tpl-row .tpl-meta { flex: 1; min-width: 0; }
+.tpl-row .tpl-name {
+  font-family: 'Fraunces', serif; font-weight: 500; font-size: 16px;
+  color: var(--ink);
+}
+.tpl-row .tpl-slot {
+  font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--ink-mute); margin-left: 6px;
+}
+.tpl-row .tpl-desc {
+  font-size: 13px; color: var(--ink-soft); margin-top: 2px;
+}
+.tpl-row .tpl-preview {
+  font-size: 12px; color: var(--ink-mute); margin-top: 6px;
+  display: none; padding: 8px 10px; background: var(--bone-deep);
+  border-radius: 8px;
+}
+.tpl-row.open .tpl-preview { display: block; }
+.tpl-row .tpl-preview ul { margin: 0; padding-left: 18px; }
+.tpl-row .tpl-preview-toggle {
+  background: none; border: none; padding: 2px 0; margin-top: 4px;
+  color: var(--terra); font-size: 12px; cursor: pointer;
+  font-family: 'Inter Tight', sans-serif;
+}
+.tpl-switch {
+  flex-shrink: 0; width: 44px; height: 26px; border-radius: 13px;
+  background: var(--hair); position: relative; cursor: pointer;
+  transition: background 0.18s ease;
+}
+.tpl-switch::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%; background: white;
+  transition: transform 0.18s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.tpl-switch.on { background: var(--terra); }
+.tpl-switch.on::after { transform: translateX(18px); }
+
 .time-input {
   background: white; border: 1px solid var(--hair); border-radius: 10px;
   padding: 8px 12px; font-family: 'Inter Tight', sans-serif;
@@ -39,6 +81,24 @@
 
   <section class="card" id="who">
     <div class="empty">Loading…</div>
+  </section>
+
+  <section class="section">
+    <div class="section-label">What to track</div>
+    <div class="card">
+      <p class="caption" style="margin-bottom:10px">
+        Each one of these adds a few short questions to your check-in.
+        Switch on what matters to you; switch off anything that's not
+        useful. Changes apply on your next check-in.
+      </p>
+      <div id="tpl-list">
+        <div class="empty">Loading…</div>
+      </div>
+      <div id="tpl-status" class="caption" style="margin-top:10px;min-height:18px"></div>
+      <div style="text-align:right;margin-top:8px">
+        <button class="btn btn-primary" onclick="saveTemplates()">Save</button>
+      </div>
+    </div>
   </section>
 
   <section class="section">
@@ -344,6 +404,68 @@ function callNative(method, args = {}) {
 // Flutter screen via the bridge). Hide it in plain-browser sessions.
 if (window.neeve?.postMessage) {
   document.getElementById('debug-section').style.display = 'block';
+}
+
+// ── Templates: what to track ────────────────────────────
+let _templates = [];
+async function loadTemplates() {
+  try {
+    const r = await api('/me/available-templates');
+    _templates = r.templates || [];
+    renderTemplates();
+  } catch (e) {
+    document.getElementById('tpl-list').innerHTML =
+      `<div class="empty">Couldn't load: ${e.message}</div>`;
+  }
+}
+loadTemplates();
+
+function renderTemplates() {
+  const host = document.getElementById('tpl-list');
+  if (!_templates.length) {
+    host.innerHTML = '<div class="empty">No templates available.</div>';
+    return;
+  }
+  const slotLabel = s => s === 'morning' ? 'morning' : s === 'evening' ? 'evening' : s;
+  host.innerHTML = _templates.map((t, i) => `
+    <div class="tpl-row" id="tpl-row-${i}">
+      <div class="tpl-meta">
+        <div class="tpl-name">${escapeHtml(t.name)}<span class="tpl-slot">${slotLabel(t.slot)}</span></div>
+        <div class="tpl-desc">${escapeHtml(t.description || '')}</div>
+        ${t.questions && t.questions.length ? `
+          <button class="tpl-preview-toggle" onclick="toggleTplPreview(${i})">See questions (${t.questions.length}) ›</button>
+          <div class="tpl-preview"><ul>${t.questions.map(q => `<li>${escapeHtml(q.text)}</li>`).join('')}</ul></div>
+        ` : ''}
+      </div>
+      <div class="tpl-switch ${t.enabled ? 'on' : ''}" id="tpl-sw-${i}" onclick="toggleTpl(${i})" role="switch" aria-checked="${t.enabled}"></div>
+    </div>
+  `).join('');
+}
+
+function toggleTpl(i) {
+  _templates[i].enabled = !_templates[i].enabled;
+  const sw = document.getElementById('tpl-sw-' + i);
+  sw.classList.toggle('on', _templates[i].enabled);
+  sw.setAttribute('aria-checked', _templates[i].enabled);
+}
+
+function toggleTplPreview(i) {
+  document.getElementById('tpl-row-' + i).classList.toggle('open');
+}
+
+async function saveTemplates() {
+  const status = document.getElementById('tpl-status');
+  status.textContent = 'Saving…';
+  status.style.color = 'var(--ink-mute)';
+  const enabled = _templates.filter(t => t.enabled).map(t => t.key);
+  try {
+    await api('/me/templates', { method: 'POST', body: JSON.stringify({ enabled }) });
+    status.textContent = `Saved. Your next check-in will reflect ${enabled.length} active templates.`;
+    status.style.color = 'var(--sage-deep)';
+  } catch (e) {
+    status.textContent = `Couldn't save: ${e.message}`;
+    status.style.color = 'var(--rose-deep)';
+  }
 }
 
 // ── Ring profile ────────────────────────────────────────

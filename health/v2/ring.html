@@ -18,12 +18,12 @@
 }
 .head-pill {
   display: inline-flex; align-items: center; gap: 6px;
-  background: var(--shell-soft); color: var(--ink-mute);
+  background: var(--bone-deep); color: var(--ink-mute);
   border: none; border-radius: 999px; padding: 6px 12px;
   font-family: 'Inter Tight', sans-serif; font-size: 13px; cursor: pointer;
 }
 .head-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-mute); display: inline-block; }
-.head-pill .dot-on { background: var(--moss, #6F8E5D); }
+.head-pill .dot-on { background: var(--sage-deep); }
 
 /* Metric cards become tappable. */
 .metric-card-link { display: block; text-decoration: none; color: inherit; }
@@ -42,7 +42,7 @@
 .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
-  background: var(--shell); border-radius: 20px 20px 0 0;
+  background: var(--bone); border-radius: 20px 20px 0 0;
   padding: 20px 20px max(24px, env(safe-area-inset-bottom)) 20px;
   transform: translateY(100%);
   transition: transform 0.25s ease;
@@ -111,7 +111,8 @@
   <div class="sheet-caption" id="sheet-state">—</div>
   <div id="sheet-kv"></div>
   <div class="action-row">
-    <button class="btn btn-primary" onclick="callNative('measureHeartRate'); closeSheet()">Measure heart rate</button>
+    <button class="btn btn-primary" onclick="callNative('reconnectRing'); closeSheet()">Reconnect ring</button>
+    <button class="btn btn-ghost"   onclick="callNative('measureHeartRate'); closeSheet()">Measure heart rate</button>
     <button class="btn btn-ghost"   onclick="callNative('syncNow');   closeSheet()">Sync historical data</button>
     <button class="btn btn-ghost"   onclick="callNative('scanForRing'); closeSheet()">Pair another ring</button>
     <a class="btn btn-ghost" href="/health/v2/profile" onclick="closeSheet()" style="text-align:center">Ring profile (More tab)</a>

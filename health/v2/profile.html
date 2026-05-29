@@ -25,8 +25,10 @@
 .row-danger { color: var(--rose-deep); }
 .time-input {
   background: white; border: 1px solid var(--hair); border-radius: 10px;
-  padding: 8px 12px; font-family: 'Inter Tight', sans-serif; font-size: 15px;
-  color: var(--ink); width: 110px;
+  padding: 8px 12px; font-family: 'Inter Tight', sans-serif;
+  /* 16px to suppress iOS auto-zoom on focus. */
+  font-size: 16px;
+  color: var(--ink); width: 110px; box-sizing: border-box;
 }
 </style>
 </head>
@@ -118,13 +120,16 @@
         .rp-grid input, .rp-grid select {
           box-sizing: border-box;
           width: 100%;
+          max-width: 100%;
           background: white;
           border: 1px solid var(--hair);
           border-radius: 10px;
           padding: 8px 10px;
           margin-top: 4px;
           font-family: 'Inter Tight', sans-serif;
-          font-size: 15px;
+          /* iOS Safari/WKWebView auto-zooms on inputs <16px on focus,
+             which forces horizontal scroll. Keep at exactly 16px. */
+          font-size: 16px;
           color: var(--ink);
         }
       </style>

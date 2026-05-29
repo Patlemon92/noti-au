@@ -45,11 +45,17 @@
   background: var(--bone); border-radius: 20px 20px 0 0;
   padding: 20px 20px max(24px, env(safe-area-inset-bottom)) 20px;
   transform: translateY(100%);
-  transition: transform 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
   max-height: 85vh; overflow-y: auto;
+  /* No shadow while closed — the sheet sits just below the viewport with
+     bottom:0 + translateY(100%), so a shadow on it always would bleed
+     upward as a permanent dark bar at the bottom of the screen. */
+  box-shadow: none;
+}
+.sheet.open {
+  transform: translateY(0);
   box-shadow: 0 -10px 30px rgba(43, 34, 28, 0.18);
 }
-.sheet.open { transform: translateY(0); }
 .sheet-grip {
   width: 36px; height: 4px; background: var(--hair); border-radius: 2px;
   margin: 0 auto 12px;

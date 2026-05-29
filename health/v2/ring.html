@@ -142,12 +142,20 @@ let cachedSamples = [];
 let cachedSleep = { stages: [], sessions: [] };
 let cachedDevice = null;
 
+// Every metric the trends section can chart. Sleep is rendered above so
+// it's not in here. 'bp' is virtual — fetch the two real metrics.
+const TREND_METRICS = [
+  'hr', 'hrv_rmssd', 'hrv_index', 'spo2', 'respiration_rate',
+  'steps', 'bp_sys', 'bp_dia', 'temp_skin', 'stress', 'pressure_index',
+  'load_index', 'body_index', 'vo2max',
+];
+
 function setRange(days) {
   currentRange = days;
   document.querySelectorAll('[id^=range-]').forEach(b => b.classList.remove('pill-rose'));
   const btn = document.getElementById(`range-${days}`);
   if (btn) btn.classList.add('pill-rose');
-  renderCharts();
+  load();
 }
 
 let firstLoad = true;
@@ -156,11 +164,13 @@ async function load() {
   try {
     // Pull sleep separately with the metric filter — otherwise live HR
     // crowds sleep_stage out of the latest-N window.
-    const sleepSince = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
-    const sleepQ = `/ring/samples?metric=sleep_stage,sleep_session&limit=1000&since=${encodeURIComponent(sleepSince)}`;
+    const sleepSince  = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+    const trendsSince = new Date(Date.now() - currentRange * 86400 * 1000).toISOString();
+    const sleepQ  = `/ring/samples?metric=sleep_stage,sleep_session&limit=2000&since=${encodeURIComponent(sleepSince)}`;
+    const trendsQ = `/ring/samples?metric=${TREND_METRICS.join(',')}&limit=5000&since=${encodeURIComponent(trendsSince)}`;
     const [{ devices }, { samples }, sleepRes] = await Promise.all([
       api('/ring/status'),
-      api('/ring/samples?limit=500'),
+      api(trendsQ),
       api(sleepQ).catch(() => ({ samples: [] })),
     ]);
     cachedDevice = devices[0];
@@ -170,8 +180,11 @@ async function load() {
     cachedSleep.sessions = sleepSamples.filter(s => s.metric === 'sleep_session');
     renderHeadPill();
     renderSleep();
-    if (firstLoad) { setRange(7); firstLoad = false; }
-    else renderCharts();
+    if (firstLoad) {
+      document.getElementById(`range-${currentRange}`)?.classList.add('pill-rose');
+      firstLoad = false;
+    }
+    renderCharts();
   } catch (e) {
     if (firstLoad) {
       document.getElementById('charts').innerHTML =

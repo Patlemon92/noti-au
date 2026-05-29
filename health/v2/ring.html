@@ -10,19 +10,87 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/health/v2/styles.css">
+
+<style>
+.page-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+}
+.head-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--shell-soft); color: var(--ink-mute);
+  border: none; border-radius: 999px; padding: 6px 12px;
+  font-family: 'Inter Tight', sans-serif; font-size: 13px; cursor: pointer;
+}
+.head-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-mute); display: inline-block; }
+.head-pill .dot-on { background: var(--moss, #6F8E5D); }
+
+/* Metric cards become tappable. */
+.metric-card-link { display: block; text-decoration: none; color: inherit; }
+.metric-card-link:active .card { transform: scale(0.995); }
+.metric-card-link .chev {
+  font-family: 'Inter Tight', sans-serif; color: var(--ink-mute);
+  font-size: 22px; line-height: 1;
+}
+
+/* Modal sheet for ring details/actions. */
+.sheet-backdrop {
+  position: fixed; inset: 0; background: rgba(43, 34, 28, 0.45);
+  z-index: 1000; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
+  background: var(--shell); border-radius: 20px 20px 0 0;
+  padding: 20px 20px max(24px, env(safe-area-inset-bottom)) 20px;
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+  max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 -10px 30px rgba(43, 34, 28, 0.18);
+}
+.sheet.open { transform: translateY(0); }
+.sheet-grip {
+  width: 36px; height: 4px; background: var(--hair); border-radius: 2px;
+  margin: 0 auto 12px;
+}
+.sheet h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px; color: var(--ink); margin: 0 0 4px; }
+.sheet .sheet-caption { font-size: 13px; color: var(--ink-mute); margin-bottom: 16px; }
+.sheet .kv { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+.sheet .kv .k { color: var(--ink-mute); }
+.sheet .kv .v { color: var(--ink); }
+.sheet .action-row { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+</style>
 </head>
 <body>
 
 <main class="page">
-  <p class="label">Ring</p>
-  <h1 class="title">Your data</h1>
+  <div class="page-head">
+    <div>
+      <p class="label">Ring</p>
+      <h1 class="title">Your data</h1>
+    </div>
+    <button class="head-pill" id="ring-pill" onclick="openSheet()" aria-label="Ring details">
+      <span class="dot" id="ring-dot"></span>
+      <span id="ring-pill-text">Details</span>
+    </button>
+  </div>
 
-  <!-- Device status -->
-  <section class="card" id="device">
-    <div class="empty">Loading…</div>
+  <!-- Last night sleep (hides until data available) -->
+  <section class="section" id="sleep-section" style="display:none">
+    <div class="section-head">
+      <div class="section-label">Last night</div>
+      <a class="section-link" href="/health/v2/sleep.html">See detail →</a>
+    </div>
+    <a class="metric-card-link" href="/health/v2/sleep.html">
+      <div class="card">
+        <div id="sleep-hypno"></div>
+        <div id="sleep-totals" style="display:flex; justify-content:space-around; margin-top:8px; padding-top:12px; border-top:1px solid var(--hair)"></div>
+      </div>
+    </a>
   </section>
 
-  <!-- Time window toggle -->
+  <!-- Trends — metric cards. Each is a tappable card linking to metric.html. -->
   <section class="section">
     <div class="section-head">
       <h2 class="title-sm">Trends</h2>
@@ -33,23 +101,23 @@
     </div>
     <div id="charts"></div>
   </section>
-
-  <!-- Actions — these all call into the native iOS app via the JS bridge -->
-  <section class="section" id="actions">
-    <h2 class="title-sm">Actions</h2>
-    <div class="card">
-      <div style="display:flex; flex-direction:column; gap:10px">
-        <button class="btn btn-primary" onclick="callNative('measureHeartRate')">Measure heart rate</button>
-        <button class="btn btn-ghost"   onclick="callNative('syncNow')">Sync historical data</button>
-        <button class="btn btn-ghost"   onclick="callNative('scanForRing')">Pair another ring</button>
-      </div>
-      <p class="caption" style="margin-top:14px">
-        Measurements only work with the ring on your finger. Sync pulls
-        anything the ring has stored since the last connection.
-      </p>
-    </div>
-  </section>
 </main>
+
+<!-- Bottom-sheet modal: device info + actions -->
+<div class="sheet-backdrop" id="sheet-bd" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-grip"></div>
+  <h2 id="sheet-name">Ring</h2>
+  <div class="sheet-caption" id="sheet-state">—</div>
+  <div id="sheet-kv"></div>
+  <div class="action-row">
+    <button class="btn btn-primary" onclick="callNative('measureHeartRate'); closeSheet()">Measure heart rate</button>
+    <button class="btn btn-ghost"   onclick="callNative('syncNow');   closeSheet()">Sync historical data</button>
+    <button class="btn btn-ghost"   onclick="callNative('scanForRing'); closeSheet()">Pair another ring</button>
+    <a class="btn btn-ghost" href="/health/v2/profile" onclick="closeSheet()" style="text-align:center">Ring profile (More tab)</a>
+    <button class="btn btn-ghost" id="sheet-debug" onclick="callNative('openDebug'); closeSheet()" style="display:none">Debug</button>
+  </div>
+</div>
 
 <div id="nav-mount"></div>
 
@@ -57,8 +125,14 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('ring');
 
+// Debug button only shows inside the native shell.
+if (window.neeve?.postMessage) {
+  document.getElementById('sheet-debug').style.display = 'block';
+}
+
 let currentRange = 7;
 let cachedSamples = [];
+let cachedSleep = { stages: [], sessions: [] };
 let cachedDevice = null;
 
 function setRange(days) {
@@ -73,28 +147,35 @@ let firstLoad = true;
 
 async function load() {
   try {
-    const [{ devices }, { samples }] = await Promise.all([
+    // Pull sleep separately with the metric filter — otherwise live HR
+    // crowds sleep_stage out of the latest-N window.
+    const sleepSince = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+    const sleepQ = `/ring/samples?metric=sleep_stage,sleep_session&limit=1000&since=${encodeURIComponent(sleepSince)}`;
+    const [{ devices }, { samples }, sleepRes] = await Promise.all([
       api('/ring/status'),
       api('/ring/samples?limit=500'),
+      api(sleepQ).catch(() => ({ samples: [] })),
     ]);
     cachedDevice = devices[0];
     cachedSamples = samples;
-    renderDevice();
+    const sleepSamples = sleepRes.samples || [];
+    cachedSleep.stages   = sleepSamples.filter(s => s.metric === 'sleep_stage');
+    cachedSleep.sessions = sleepSamples.filter(s => s.metric === 'sleep_session');
+    renderHeadPill();
+    renderSleep();
     if (firstLoad) { setRange(7); firstLoad = false; }
     else renderCharts();
   } catch (e) {
     if (firstLoad) {
-      document.getElementById('device').innerHTML =
+      document.getElementById('charts').innerHTML =
         `<div class="empty">Couldn't load: ${e.message}</div>`;
     }
-    // On refresh failure, leave the existing data on screen.
   }
 }
 
 load();
-// Refresh every 90s while visible — ring's own monitoring scheduler
-// is on a 2-min cadence so faster polling can't surface new readings.
-// Pause when hidden, resume on visibility.
+// Refresh every 90s while visible — ring's monitoring scheduler is on a
+// 2-min cadence so faster polling can't surface new readings.
 let _refreshTimer = null;
 function _startRefresh() {
   if (_refreshTimer) return;
@@ -109,37 +190,30 @@ document.addEventListener('visibilitychange', () => {
 if (!document.hidden) _startRefresh();
 onResume(load);
 
-function renderDevice() {
-  if (!cachedDevice) {
-    document.getElementById('device').innerHTML =
-      '<div class="empty">No ring paired yet.</div>';
-    return;
-  }
+function renderHeadPill() {
+  const pill   = document.getElementById('ring-pill');
+  const dot    = document.getElementById('ring-dot');
+  const text   = document.getElementById('ring-pill-text');
   const d = cachedDevice;
-  document.getElementById('device').innerHTML = `
-    <div class="metric-row">
-      <span class="metric-label">${d.name || 'Ring'}</span>
-      <span class="pill ${d.last_seen_at ? 'pill-sage' : ''}">
-        ${d.last_seen_at ? 'Connected' : 'Offline'}
-      </span>
-    </div>
-    <div class="metric-row">
-      <span class="metric-label">Model</span>
-      <span class="caption">${d.model || '—'}</span>
-    </div>
-    <div class="metric-row">
-      <span class="metric-label">Firmware</span>
-      <span class="caption">${d.firmware || '—'}</span>
-    </div>
-    <div class="metric-row">
-      <span class="metric-label">Last sync</span>
-      <span class="caption">${formatAgo(d.latest_sample_at || d.last_seen_at)}</span>
-    </div>
-    ${d.last_battery_pct != null ? `
-      <div class="metric-row">
-        <span class="metric-label">Battery</span>
-        <span class="caption">${d.last_battery_pct}%</span>
-      </div>` : ''}
+  if (!d) { dot.className = 'dot'; text.textContent = 'Pair'; pill.onclick = openSheet; return; }
+  const connOn = d.last_seen_at && (Date.now() - new Date(d.last_seen_at)) < 10 * 60 * 1000;
+  dot.className = 'dot ' + (connOn ? 'dot-on' : '');
+  text.textContent = connOn ? 'Connected' : 'Last seen ' + formatAgo(d.last_seen_at);
+}
+
+function renderSleep() {
+  const stages   = cachedSleep.stages;
+  const sessions = cachedSleep.sessions;
+  if (!stages.length && !sessions.length) return;
+  document.getElementById('sleep-section').style.display = 'block';
+  const totals = renderHypnogram(
+    document.getElementById('sleep-hypno'), stages, sessions);
+  if (!totals) return;
+  const m = mins => `${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;
+  document.getElementById('sleep-totals').innerHTML = `
+    <div style="text-align:center"><div class="caption">Deep</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.deep)}</div></div>
+    <div style="text-align:center"><div class="caption">Light</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.light)}</div></div>
+    <div style="text-align:center"><div class="caption">REM</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.rem)}</div></div>
   `;
 }
 
@@ -149,11 +223,12 @@ function renderCharts() {
   const grouped = groupByMetric(recent);
 
   // Chart order. 'bp' is a virtual key — combines bp_sys + bp_dia into
-  // one card. Skips sleep_stage (hypnogram on Today) + ecg_summary
-  // (one-off, not a time series).
+  // one card. Skips sleep_stage / sleep_session (own card above) and
+  // ecg_summary (one-off, not a time series).
   const metrics = [
-    'hr', 'hrv_rmssd', 'spo2', 'respiration_rate',
-    'steps', 'bp', 'temp_skin', 'stress', 'vo2max',
+    'hr', 'hrv_rmssd', 'hrv_index', 'spo2', 'respiration_rate',
+    'steps', 'bp', 'temp_skin', 'stress', 'pressure_index',
+    'load_index', 'body_index', 'vo2max',
   ];
   const html = metrics
     .filter(m => m === 'bp'
@@ -166,30 +241,31 @@ function renderCharts() {
       const avg = (samples.reduce((a, s) => a + s.value, 0) / samples.length);
       const min = Math.min(...samples.map(s => s.value));
       const max = Math.max(...samples.map(s => s.value));
+      const detailUrl = `/health/v2/metric.html?metric=${encodeURIComponent(m)}&days=${currentRange}`;
       return `
-        <div class="card">
-          <div class="section-head" style="margin-bottom:8px">
-            <h3 class="title-sm" style="font-size:18px">${metricLabel(m)}</h3>
-            <span class="caption">${samples.length} reading${samples.length === 1 ? '' : 's'}</span>
+        <a class="metric-card-link" href="${detailUrl}">
+          <div class="card">
+            <div class="section-head" style="margin-bottom:8px">
+              <h3 class="title-sm" style="font-size:18px">${metricLabel(m)}</h3>
+              <span class="chev">›</span>
+            </div>
+            <div class="metric-row" style="border-bottom:none;padding:4px 0">
+              <span class="caption">Latest</span>
+              <span><span class="metric-value" style="font-size:20px">${formatValue(m, latest.value)}</span>
+                    <span class="metric-unit">${metricUnit(m, latest.unit)}</span></span>
+            </div>
+            <div class="metric-row" style="border-bottom:none;padding:4px 0">
+              <span class="caption">Range</span>
+              <span class="caption">${formatValue(m, min)} – ${formatValue(m, max)} (avg ${formatValue(m, avg)})</span>
+            </div>
+            <div class="sparkline" id="spark-${m}"></div>
           </div>
-          <div class="metric-row" style="border-bottom:none;padding:4px 0">
-            <span class="caption">Latest</span>
-            <span><span class="metric-value" style="font-size:20px">${formatValue(m, latest.value)}</span>
-                  <span class="metric-unit">${metricUnit(m, latest.unit)}</span></span>
-          </div>
-          <div class="metric-row" style="border-bottom:none;padding:4px 0">
-            <span class="caption">Range</span>
-            <span class="caption">${formatValue(m, min)} – ${formatValue(m, max)} (avg ${formatValue(m, avg)})</span>
-          </div>
-          <div class="sparkline" id="spark-${m}"></div>
-        </div>
+        </a>
       `;
     }).join('');
 
   document.getElementById('charts').innerHTML = html || '<div class="empty">No readings in this range yet.</div>';
 
-  // Render sparklines with full samples (so the time axis works).
-  // 'bp' renders two stacked lines (sys on top, dia below); the rest one.
   metrics.forEach(m => {
     if (m === 'bp') {
       if (grouped.bp_sys && grouped.bp_sys.length) {
@@ -214,42 +290,74 @@ function renderBpCard(sysS, diaS) {
   const diaLatest = diaS.length ? diaS[diaS.length - 1].value : null;
   const sysAvg = sysS.length ? Math.round(sysS.reduce((a, s) => a + s.value, 0) / sysS.length) : null;
   const diaAvg = diaS.length ? Math.round(diaS.reduce((a, s) => a + s.value, 0) / diaS.length) : null;
-  const count = Math.max(sysS.length, diaS.length);
   const latestStr = sysLatest != null && diaLatest != null
     ? `${Math.round(sysLatest)}/${Math.round(diaLatest)}`
     : (sysLatest != null ? `${Math.round(sysLatest)}/—` : `—/${Math.round(diaLatest)}`);
   const avgStr = sysAvg != null && diaAvg != null ? `${sysAvg}/${diaAvg}` : '—';
+  // 'Blood pressure' card opens the sys metric page; user can flip to dia from there.
+  const detailUrl = `/health/v2/metric.html?metric=bp_sys&days=${currentRange}`;
   return `
-    <div class="card">
-      <div class="section-head" style="margin-bottom:8px">
-        <h3 class="title-sm" style="font-size:18px">Blood pressure</h3>
-        <span class="caption">${count} reading${count === 1 ? '' : 's'}</span>
+    <a class="metric-card-link" href="${detailUrl}">
+      <div class="card">
+        <div class="section-head" style="margin-bottom:8px">
+          <h3 class="title-sm" style="font-size:18px">Blood pressure</h3>
+          <span class="chev">›</span>
+        </div>
+        <div class="metric-row" style="border-bottom:none;padding:4px 0">
+          <span class="caption">Latest</span>
+          <span><span class="metric-value" style="font-size:20px">${latestStr}</span>
+                <span class="metric-unit">mmHg</span></span>
+        </div>
+        <div class="metric-row" style="border-bottom:none;padding:4px 0">
+          <span class="caption">Average</span>
+          <span class="caption">${avgStr} mmHg</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <span class="caption" style="width:30px">sys</span>
+          <div class="sparkline" id="spark-bp-sys" style="flex:1"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <span class="caption" style="width:30px">dia</span>
+          <div class="sparkline" id="spark-bp-dia" style="flex:1"></div>
+        </div>
       </div>
-      <div class="metric-row" style="border-bottom:none;padding:4px 0">
-        <span class="caption">Latest</span>
-        <span><span class="metric-value" style="font-size:20px">${latestStr}</span>
-              <span class="metric-unit">mmHg</span></span>
-      </div>
-      <div class="metric-row" style="border-bottom:none;padding:4px 0">
-        <span class="caption">Average</span>
-        <span class="caption">${avgStr} mmHg</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
-        <span class="caption" style="width:30px">sys</span>
-        <div class="sparkline" id="spark-bp-sys" style="flex:1"></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-        <span class="caption" style="width:30px">dia</span>
-        <div class="sparkline" id="spark-bp-dia" style="flex:1"></div>
-      </div>
-    </div>
+    </a>
   `;
 }
 
-// JS bridge — Flutter webview_flutter exposes channels as
-// window.<channelName>.postMessage(string). (window.webkit.messageHandlers
-// is the raw WKWebView API — Flutter's wrapper does NOT register channels
-// there, so that check would silently swallow calls.)
+// ── Bottom sheet ──────────────────────────────────────────
+function openSheet() {
+  document.getElementById('sheet-bd').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+  populateSheet();
+}
+function closeSheet() {
+  document.getElementById('sheet-bd').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+}
+function populateSheet() {
+  const d = cachedDevice;
+  if (!d) {
+    document.getElementById('sheet-name').textContent = 'No ring paired';
+    document.getElementById('sheet-state').textContent = 'Tap "Pair another ring" to set one up.';
+    document.getElementById('sheet-kv').innerHTML = '';
+    return;
+  }
+  const connOn = d.last_seen_at && (Date.now() - new Date(d.last_seen_at)) < 10 * 60 * 1000;
+  document.getElementById('sheet-name').textContent = d.name || 'Ring';
+  document.getElementById('sheet-state').textContent =
+    connOn ? 'Connected' : `Last seen ${formatAgo(d.last_seen_at)}`;
+  const rows = [
+    ['Model',    d.model    || '—'],
+    ['Firmware', d.firmware || '—'],
+    ['Battery',  d.last_battery_pct != null ? `${d.last_battery_pct}%` : '—'],
+    ['Last sync', formatAgo(d.latest_sample_at || d.last_seen_at)],
+  ];
+  document.getElementById('sheet-kv').innerHTML = rows.map(([k, v]) =>
+    `<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`
+  ).join('');
+}
+
 function callNative(method, args = {}) {
   if (window.neeve?.postMessage) {
     window.neeve.postMessage(JSON.stringify({ method, args }));

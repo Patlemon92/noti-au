@@ -161,7 +161,7 @@ let cachedDevice = null;
 const TREND_METRICS = [
   'hr', 'hrv_rmssd', 'hrv_index', 'spo2', 'respiration_rate',
   'steps', 'bp_sys', 'bp_dia', 'temp_skin', 'stress', 'pressure_index',
-  'load_index', 'body_index', 'vo2max', 'sleep_session',
+  'load_index', 'body_index', 'vo2max', 'sleep_session', 'sleep_stage',
 ];
 
 function setRange(days) {
@@ -183,8 +183,9 @@ async function load() {
       api(trendsQ),
     ]);
     cachedDevice = devices[0];
-    cachedSamples = (samples || []).filter(s => s.metric !== 'sleep_session');
+    cachedSamples = (samples || []).filter(s => s.metric !== 'sleep_session' && s.metric !== 'sleep_stage');
     cachedSleep.sessions = (samples || []).filter(s => s.metric === 'sleep_session');
+    cachedSleep.stages   = (samples || []).filter(s => s.metric === 'sleep_stage');
     renderHeadPill();
     if (firstLoad) {
       document.getElementById(`range-${currentRange}`)?.classList.add('pill-rose');
@@ -241,7 +242,6 @@ function fmtHm(seconds) {
 
 function renderSleepCard(sessions) {
   if (!sessions.length) return '';
-  // Sort newest-first for 'latest', oldest-first for the sparkline.
   const sorted = sessions.slice().sort((a, b) => new Date(b.ts) - new Date(a.ts));
   const latest = sorted[0];
   const values = sorted.map(s => Number(s.value)).filter(v => isFinite(v) && v > 0);
@@ -250,6 +250,63 @@ function renderSleepCard(sessions) {
   const maxS = Math.max(...values);
   const avgS = values.reduce((a, b) => a + b, 0) / values.length;
   const detailUrl = `/health/v2/sleep.html`;
+
+  // Last night's stage breakdown — from cachedSleep.stages within the
+  // last 24h. Each sample has a `value` 0=awake, 1=light, 2=deep,
+  // 3=REM (per lib.js convention) and a duration. We aggregate.
+  const last24h = Date.now() - 24 * 3600 * 1000;
+  const recentStages = (cachedSleep.stages || []).filter(s =>
+    new Date(s.ts).getTime() > last24h);
+  let stagesHtml = '';
+  let hypnoHtml = '';
+  if (recentStages.length) {
+    // Aggregate stage durations (minutes). Each sample's "value"
+    // encodes the stage; we infer duration from delta between
+    // adjacent timestamps.
+    const sorted = recentStages.slice().sort((a, b) =>
+      new Date(a.ts) - new Date(b.ts));
+    const totals = { 0: 0, 1: 0, 2: 0, 3: 0 };
+    for (let i = 0; i < sorted.length; i++) {
+      const cur = sorted[i];
+      const next = sorted[i + 1];
+      const dur = next
+        ? Math.max(0, (new Date(next.ts) - new Date(cur.ts)) / 60000)
+        : 0;
+      const stage = Math.round(Number(cur.value));
+      if (totals[stage] != null) totals[stage] += dur;
+    }
+    const fmt = m => `${Math.floor(m / 60)}h ${Math.round(m % 60)}m`;
+    stagesHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--hair)">
+        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">Deep</div><div style="font-family:'Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[2])}</div></div>
+        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">Light</div><div style="font-family:'Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[1])}</div></div>
+        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">REM</div><div style="font-family:'Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[3])}</div></div>
+        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">Awake</div><div style="font-family:'Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[0])}</div></div>
+      </div>`;
+    // Build a horizontal mini-hypnogram (each stage as a colored bar)
+    const t0 = new Date(sorted[0].ts).getTime();
+    const t1 = new Date(sorted[sorted.length - 1].ts).getTime();
+    const dt = Math.max(1, t1 - t0);
+    const stageColor = {
+      0: '#cb8270',  // awake (clay)
+      1: '#c8a23f',  // light (gold)
+      2: '#8f6c86',  // deep (plum)
+      3: '#94a87a',  // REM (sage)
+    };
+    const segments = [];
+    for (let i = 0; i < sorted.length - 1; i++) {
+      const stage = Math.round(Number(sorted[i].value));
+      const x = ((new Date(sorted[i].ts).getTime() - t0) / dt) * 100;
+      const w = ((new Date(sorted[i + 1].ts).getTime() - new Date(sorted[i].ts).getTime()) / dt) * 100;
+      const color = stageColor[stage] || 'rgba(43,32,24,.2)';
+      segments.push(`<div style="position:absolute;left:${x.toFixed(2)}%;width:${w.toFixed(2)}%;top:0;bottom:0;background:${color}"></div>`);
+    }
+    hypnoHtml = `
+      <div style="position:relative;height:24px;border-radius:8px;overflow:hidden;margin-top:12px;background:var(--bone-deep)">
+        ${segments.join('')}
+      </div>`;
+  }
+
   return `
     <a class="metric-card-link" href="${detailUrl}">
       <div class="card">
@@ -261,7 +318,9 @@ function renderSleepCard(sessions) {
           <span class="caption">Last night</span>
           <span><span class="metric-value" style="font-size:20px">${fmtHm(latest.value)}</span></span>
         </div>
-        <div class="metric-row" style="border-bottom:none;padding:4px 0">
+        ${hypnoHtml}
+        ${stagesHtml}
+        <div class="metric-row" style="border-bottom:none;padding:10px 0 4px;margin-top:14px;border-top:1px solid var(--hair)">
           <span class="caption">Range</span>
           <span class="caption">${fmtHm(minS)} – ${fmtHm(maxS)} (avg ${fmtHm(avgS)})</span>
         </div>

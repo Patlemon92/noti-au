@@ -10,8 +10,9 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/health/v2/styles.css">
+<script src="/health/v2/ambient.js" defer></script>
 <style>
 .greeting-time { color: var(--ink-mute); font-family: 'Inter Tight', sans-serif; font-weight: 500; font-size: 14px; margin-bottom: 4px; }
 .greeting { font-family: 'Fraunces', serif; font-weight: 500; font-size: 36px; line-height: 1.1; letter-spacing: -0.5px; color: var(--ink); margin-bottom: 28px; }
@@ -59,10 +60,27 @@
 </head>
 <body>
 
-<main class="page">
-  <p class="greeting-time" id="greeting-time">Today</p>
-  <h1 class="greeting" id="greeting">Hey.</h1>
+<!-- Ambient hero. ambient.js paints the gradient + glowing orb + halo
+     rings + weather wash; this content layer sits on top. Phase auto-
+     detects from the device clock; weather hits /me/weather server-side
+     (no geolocation prompt). -->
+<header id="ambient-host" style="padding-bottom: 30px;">
+  <div class="amb-content" id="ambient-content" style="padding-top:30px;text-align:center">
+    <div class="amb-pill" id="ambient-pill" style="margin-bottom:18px"><span id="amb-clock">—</span><span style="opacity:.6">·</span><span id="amb-weather">—</span></div>
+    <div class="ta-serif" id="ambient-greeting" style="font-family:'Fraunces',Georgia,serif;font-size:30px;font-weight:500;color:#fff7f0;text-shadow:0 1px 18px rgba(80,40,30,.22)">Hey.</div>
+    <div style="height:150px"></div>
+    <div class="amb-title" id="ambient-eyebrow-host">
+      <div id="ambient-title" style="color:#fff7f0">Today</div>
+      <div class="amb-eyebrow" id="ambient-subtitle" style="margin-top:10px;color:#fff7f0">nothing to prove</div>
+    </div>
+    <div id="ambient-line" style="font-size:17px;line-height:1.55;margin:22px auto 0;max-width:320px;color:#fff7f0;opacity:.96;text-shadow:0 1px 14px rgba(80,40,30,.18)">
+      here's what your body's telling us today. nothing to fix — just yours to know.
+    </div>
+    <a class="amb-cta-dark" href="/health/v2/checkin.html" id="ambient-cta" style="margin-top:30px;display:inline-block;text-decoration:none;text-align:center">How are you today?</a>
+  </div>
+</header>
 
+<main class="page" style="padding-top: 20px;">
   <!-- Check-in prompt (prototype-style). renderCheckinPrompt rewrites
        the contents based on state + time-of-day; hides when outside
        the check-in window AND nothing logged. -->
@@ -124,9 +142,6 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('today');
 
-document.getElementById('greeting-time').textContent =
-  new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
-
 // Route fresh users to the welcome flow before showing the home
 // screen. Runs once on load — once onboarded=true, /me returns it
 // and we never bounce again.
@@ -139,10 +154,37 @@ document.getElementById('greeting-time').textContent =
   } catch (_) { /* unauth bounces to login elsewhere */ }
 })();
 
+// Mount the ambient hero on first paint so it doesn't flash cream.
+// Tries the user's weather first; falls back to 'clear' if not yet
+// available. Phase comes from the device clock.
+(function bootAmbient() {
+  const host = document.getElementById('ambient-host');
+  if (!host || typeof mountAmbient !== 'function') return;
+  const result = mountAmbient({ host });
+  if (result) {
+    document.getElementById('ambient-greeting').textContent = result.greet + '.';
+    const name = localStorage.getItem('neeve_name') || '';
+    if (name) document.getElementById('ambient-greeting').textContent = `${result.greet}, ${name}.`;
+  }
+  const clock = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  document.getElementById('amb-clock').textContent = clock;
+  // Layer in real weather when available.
+  if (typeof fetchUserWeather === 'function') {
+    fetchUserWeather().then(w => {
+      if (!w) return;
+      // Re-mount with the resolved weather so wash + particles appear.
+      const phase = result?.phase;
+      mountAmbient({ host, phase, weather: w.weather });
+      const wtext = (w.temp != null ? `${w.temp}° · ` : '') + w.label;
+      document.getElementById('amb-weather').textContent = wtext;
+    });
+  } else {
+    document.getElementById('amb-weather').textContent = 'clear';
+  }
+})();
+
 async function load() {
   const name = localStorage.getItem('neeve_name') || '';
-  document.getElementById('greeting').innerHTML =
-    name ? `Hey <em>${escapeHtml(name)}</em>.` : 'Hey.';
 
   let devices = [], samples = [], sleepSamples = [], checkins = [];
   try {

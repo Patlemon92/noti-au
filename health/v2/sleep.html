@@ -7,8 +7,9 @@
 <title>Sleep · Neeve</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/health/v2/styles.css">
+<script src="/health/v2/ambient.js" defer></script>
 <style>
 .tot-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
 .tot { padding: 12px 4px; }
@@ -58,12 +59,29 @@
 </style>
 </head>
 <body>
-<main class="page">
-  <p class="label">Sleep</p>
-  <h1 class="title">Sleep</h1>
 
-  <!-- Last night card -->
-  <div class="card" id="hypnogram-card">
+<!-- Warm-dawn ambient hero — the brief: "a sunrise after the night,
+     so even a rough night glows warm rather than going cold." -->
+<header id="ambient-host" style="padding-bottom: 30px;">
+  <div class="amb-content" style="padding-top: 30px; text-align: center;">
+    <div class="amb-pill" id="sleep-pill" style="margin-top:18px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff7f0" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <span class="amb-eyebrow" style="color:#fff7f0">Last night</span>
+    </div>
+    <div style="height: 220px;"></div>
+    <div class="amb-eyebrow" style="color:#fff7f0">Sleep</div>
+    <div id="sleep-hero-total" style="font-family:'Fraunces',Georgia,serif;font-size:58px;font-weight:500;letter-spacing:-1.5px;line-height:1.02;margin-top:4px;color:#fff7f0;text-shadow:0 2px 22px rgba(90,45,30,.32)">—</div>
+    <div id="sleep-hero-range" style="font-size:14.5px;color:#fff7f0;opacity:.92;margin-top:4px"></div>
+    <button class="amb-cta" style="margin-top:20px" onclick="document.getElementById('hypnogram-card').scrollIntoView({behavior:'smooth'})">
+      see the night
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff7f0" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="page" style="padding-top: 0;">
+  <!-- Hypnogram drill-down (sober register) -->
+  <div class="card" id="hypnogram-card" style="margin-top: 14px;">
     <div class="empty">Loading…</div>
   </div>
 
@@ -155,11 +173,34 @@ async function loadLastNight() {
     const totals = renderHypnogram(
       document.getElementById('hypnogram-card'), stages, sessions);
     if (totals && totals.total > 0) renderTotals(totals);
+    // Populate the ambient hero total + window (e.g. '11:16 pm → 6:53 am')
+    if (sessions.length) {
+      const s = sessions.slice().sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
+      const totalS = Number(s.value) || 0;
+      const h = Math.floor(totalS / 3600);
+      const m = Math.round((totalS % 3600) / 60);
+      const hero = document.getElementById('sleep-hero-total');
+      const range = document.getElementById('sleep-hero-range');
+      if (hero) hero.innerHTML = `${h}<span style="font-size:34px">h</span> ${String(m).padStart(2,'0')}<span style="font-size:34px">m</span>`;
+      if (range && s.meta?.end_ts) {
+        const fmt = ts => new Date(ts).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+        range.textContent = `${fmt(s.ts)} → ${fmt(s.meta.end_ts)}`;
+      }
+    }
   } catch (e) {
     document.getElementById('hypnogram-card').innerHTML =
       `<div class="empty">Couldn't load: ${e.message}</div>`;
   }
 }
+
+// Mount the warm-dawn ambient hero. Phase is fixed to 'sleep_dawn' so
+// even a rough night glows warm.
+(function bootSleepAmbient() {
+  const host = document.getElementById('ambient-host');
+  if (host && typeof mountAmbient === 'function') {
+    mountAmbient({ host, phase: 'sleep_dawn', weather: 'clear', coreSize: 60 });
+  }
+})();
 
 async function loadHistory() {
   try {

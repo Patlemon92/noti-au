@@ -104,6 +104,26 @@ function metricLabel(metric) {
 
 function metricUnit(metric, unit) {
   if (metric === 'sleep_stage') return ''; // stage value is labelled in pill
+  // Map source-of-truth unit strings to what people actually read.
+  // Source strings come from the ring SDK or our ingest layer — they're
+  // sometimes raw field names ('spO2_pct', 'spO2') that should never
+  // appear in the UI verbatim.
+  const FRIENDLY = {
+    'spO2_pct': '%', 'spO2': '%', '%':  '%',
+    'degC':    '°C',
+    'bpm':     'bpm',
+    'ms':      'ms',
+    'rpm':     'br/min',
+    'mmHg':    'mmHg',
+    'score':   '',          // ring 'score' units shouldn't render — they're not a unit
+    'state':   '',
+    'stage':   '',
+    'count':   '',
+  };
+  if (unit && FRIENDLY[unit] !== undefined) return FRIENDLY[unit];
+  // Per-metric fallbacks for cases where unit is missing entirely.
+  if (metric === 'spo2')     return '%';
+  if (metric === 'temp_skin')return '°C';
   return unit || '';
 }
 

@@ -218,6 +218,29 @@ async function load() {
   renderWeek(checkins);
   renderSleepPreview(sleepSamples);
   renderCheckinPrompt(checkins, user);
+  updateHeroCta(checkins, user);
+}
+
+// When today's current slot is already logged, the 'How are you today?'
+// button in the hero is redundant — the summary card below already
+// shows what was logged with an Edit affordance. Hide the CTA AND the
+// lede when there's nothing to do, so the hero stays calm.
+function updateHeroCta(checkins, user) {
+  const cta  = document.getElementById('ambient-cta');
+  const lede = document.getElementById('ambient-line');
+  if (!cta) return;
+  const slot = new Date().getHours() < 14 ? 'morning' : 'evening';
+  const today = new Date().toDateString();
+  const doneThisSlot = (checkins || []).some(c =>
+    c.slot === slot &&
+    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
+  if (doneThisSlot) {
+    cta.style.display = 'none';
+    if (lede) lede.style.display = 'none';
+  } else {
+    cta.style.display = '';
+    if (lede) lede.style.display = '';
+  }
 }
 
 // Render the prompt card based on today's check-in state AND the

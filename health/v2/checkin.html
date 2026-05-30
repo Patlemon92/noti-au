@@ -76,6 +76,31 @@
   .alys-label { font-family: 'Inter Tight', sans-serif; font-size: 10px; color: var(--terra); font-weight: 500; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; }
   .alys-text { font-size: 14px; color: var(--ink); line-height: 1.55; margin: 0; }
 
+  /* View-only state (?checkin=<id>) — read-only review of a logged
+     check-in. No buttons, no edits. */
+  .view-area { animation: fadein .22s ease; padding-bottom: 80px; }
+  .view-summary {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 26px; line-height: 1.25; color: var(--ink);
+    letter-spacing: -.3px; margin: 4px 0 24px;
+  }
+  .view-list {
+    background: white; border: 1px solid var(--hair);
+    border-radius: 18px; overflow: hidden;
+  }
+  .view-row { padding: 16px 18px; border-bottom: 1px solid var(--hair); }
+  .view-row:last-child { border-bottom: 0; }
+  .view-q { font-size: 13px; color: var(--ink-soft); margin-bottom: 6px; line-height: 1.4; }
+  .view-a { font-size: 16px; color: var(--ink); }
+  .view-a strong { font-weight: 600; }
+  .view-soft { color: var(--ink-mute); font-weight: 400; }
+  .view-empty-val { color: var(--ink-mute); }
+  .view-empty { color: var(--ink-soft); font-size: 14px; padding: 14px 0; }
+  .view-back {
+    display: inline-block; margin-top: 18px;
+    color: var(--terra); text-decoration: none; font-size: 14px;
+  }
+
   .empty-state { text-align: center; padding: 60px 20px; color: var(--ink); }
   .empty-state h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 24px; margin-bottom: 10px; }
   .empty-state p { font-size: 14px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 18px; }
@@ -109,8 +134,11 @@
   // ── State
   const params      = new URLSearchParams(location.search);
   let   sessionId   = params.get('session');
-  const checkinId   = params.get('checkin');         // edit-mode marker
-  const editMode    = !!checkinId;
+  const checkinId   = params.get('checkin');         // view-mode marker
+  const viewMode    = !!checkinId;
+  // editMode is permanently false now (view-only flow replaced it); kept
+  // as a const so the legacy session-render code paths still parse.
+  const editMode    = false;
   let session = null;
   let questions = [];
   let answers = {};
@@ -120,29 +148,84 @@
 
   document.getElementById('nav-mount').innerHTML = renderNav('checkin');
 
-  async function loadCheckinForEdit() {
+  async function loadCheckinForView() {
     // Fetch a completed check-in with its answers + the question metadata
-    // (rebuilt from the user's active templates so we can render the right
-    // control for each saved answer).
+    // so we can render a read-only review of what was logged. No edit
+    // affordance — the user can only see, not change.
     const res = await fetch(API_BASE + '/me/checkin/' + encodeURIComponent(checkinId), {
       headers: { 'Authorization': 'Bearer ' + getToken() },
     });
     if (!res.ok) throw new Error('couldnt_load_checkin');
     const data = await res.json();
     if (!data.checkin) throw new Error('not_found');
-    answers   = data.checkin.answers || {};
-    questions = (data.checkin.questions || []).slice();
+    return data.checkin;
+  }
+
+  // Render the read-only view. Static list of question + answer rows
+  // with a deterministic sentence summary at the top. No buttons, no
+  // edit, no skip — the back link in the header lets the user return.
+  function renderViewMode(checkin) {
+    const answers   = checkin.answers || {};
+    const questions = (checkin.questions || []).slice();
+    const slot      = checkin.slot || 'morning';
+    const slotLabel = slot === 'morning' ? 'Morning' : 'Evening';
+    const when      = checkin.completed_at
+      ? new Date(checkin.completed_at).toLocaleString('en-AU', {
+          weekday: 'short', day: 'numeric', month: 'short',
+          hour: 'numeric', minute: '2-digit',
+        })
+      : '';
+    const summary   = summariseAnswers(answers);
+
+    document.getElementById('progress').style.display = 'none';
+    const main = document.getElementById('main');
+    let html = '<div class="view-area">';
+    html += `<div class="slot-label">${slotLabel} check-in${when ? ' · ' + escapeHtml(when) : ''}</div>`;
+    html += `<h1 class="view-summary">${escapeHtml(summary)}</h1>`;
+
     if (!questions.length) {
-      showEmpty('Nothing to edit', 'No questions matched on this check-in.');
-      throw new Error('empty');
+      html += '<p class="view-empty">No question detail saved on this check-in.</p>';
+    } else {
+      html += '<div class="view-list">';
+      for (const q of questions) {
+        const v = answers[q.key];
+        const display = formatAnswerForView(q, v);
+        html += `
+          <div class="view-row">
+            <div class="view-q">${escapeHtml(q.question || q.key)}</div>
+            <div class="view-a">${display}</div>
+          </div>`;
+      }
+      html += '</div>';
     }
-    step = 0;
+
+    html += '<a class="view-back" href="/health/v2/checkins.html">← Back to check-ins</a>';
+    html += '</div>';
+    main.innerHTML = html;
+  }
+
+  // Render a saved answer for the read-only view. Scales show the
+  // number plus the soft word; choices show the chosen label;
+  // numerics show the value; text shows the raw string.
+  function formatAnswerForView(q, v) {
+    if (v == null || v === '') return '<span class="view-empty-val">—</span>';
+    if (q.type === 'scale') {
+      const n = Number(v);
+      const word = !isNaN(n) ? scaleWords[Math.max(0, Math.min(10, Math.round(n)))] : '';
+      return `<strong>${escapeHtml(String(v))}</strong>${word ? ' <span class="view-soft">· ' + escapeHtml(word) + '</span>' : ''}`;
+    }
+    if (q.type === 'choice' && Array.isArray(q.options)) {
+      const opt = q.options.find(o => (o.value ?? o) === v) || {};
+      const label = opt.label || String(v);
+      return `<strong>${escapeHtml(label)}</strong>`;
+    }
+    return `<strong>${escapeHtml(String(v))}</strong>`;
   }
 
   // No session/checkin param in the URL — check if today's slot is
-  // already done so we can route to the edit view instead of starting
-  // fresh. Returns true if it navigated/loaded; false if the caller
-  // should fall back to startNewSession.
+  // already done so we can bounce the user back to the Check-in tab
+  // (read-only list) instead of letting them start a duplicate.
+  // Returns true if it navigated; false to fall through to a new session.
   async function routeByState() {
     try {
       const r = await api('/me/checkins?days=1');
@@ -154,9 +237,8 @@
         c.slot === slot &&
         new Date(c.completed_at).toDateString() === today
       );
-      if (done && done.checkin_id) {
-        // Redirect to edit mode for today's completed check-in.
-        location.replace('checkin.html?checkin=' + encodeURIComponent(done.checkin_id));
+      if (done) {
+        location.replace('/health/v2/checkins.html');
         return true;
       }
     } catch (_) {}
@@ -512,9 +594,9 @@
   // ── Boot (placed last so all const declarations above are initialised
   // before render() runs after the first await).
   try {
-    if (editMode) {
-      await loadCheckinForEdit();
-      render();
+    if (viewMode) {
+      const checkin = await loadCheckinForView();
+      renderViewMode(checkin);
     } else if (sessionId) {
       // Explicit session id — load + resume.
       await loadSession();

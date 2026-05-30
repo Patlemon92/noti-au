@@ -18,15 +18,6 @@
 .greeting { font-family: 'Fraunces', serif; font-weight: 500; font-size: 36px; line-height: 1.1; letter-spacing: -0.5px; color: var(--ink); margin-bottom: 28px; }
 .greeting em { font-style: italic; color: var(--terra); }
 
-/* Check-in prompt card (prototype style) */
-.prompt { background: var(--cream); border: 1px solid var(--hair); border-radius: 22px; padding: 24px; margin-bottom: 24px; }
-.prompt .lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--terra); font-weight: 500; margin-bottom: 8px; }
-.prompt .title2 { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 500; color: var(--ink); margin-bottom: 6px; line-height: 1.25; }
-.prompt .sub { font-size: 14px; color: var(--ink-soft); margin-bottom: 18px; }
-.prompt .actions { display: flex; gap: 10px; }
-.prompt .actions .btn { padding: 12px 22px; }
-.prompt .est { float: right; font-size: 12px; color: var(--ink-mute); margin-top: 2px; }
-
 /* Ring status + tiles */
 .ring-card { background: white; border: 1px solid var(--hair); border-radius: 20px; padding: 20px; margin-bottom: 24px; }
 .ring-status { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
@@ -69,53 +60,64 @@
   <div class="amb-content" id="ambient-content" style="padding-top:30px;text-align:center">
     <div class="amb-pill" id="ambient-pill" style="margin-bottom:18px"><span id="amb-clock">—</span><span style="opacity:.6">·</span><span id="amb-weather">—</span></div>
     <div class="ambient-text serif" id="ambient-greeting" style="font-family:'Fraunces',Georgia,serif;font-size:30px;font-weight:500;text-shadow:0 1px 18px rgba(80,40,30,.22)">Hey.</div>
-    <div style="height:150px"></div>
-    <div id="ambient-eyebrow-host">
-      <div class="ambient-text serif" id="ambient-title" style="font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:56px;letter-spacing:-1px;line-height:1;text-shadow:0 2px 22px rgba(80,40,30,.28)">Today</div>
-      <div class="ambient-text amb-eyebrow" id="ambient-subtitle" style="margin-top:10px">nothing to prove</div>
-    </div>
-    <div class="ambient-text" id="ambient-line" style="font-size:17px;line-height:1.55;margin:22px auto 0;max-width:320px;opacity:.96;text-shadow:0 1px 14px rgba(80,40,30,.18)">
-      here's what your body's telling us today. nothing to fix — just yours to know.
-    </div>
-    <a class="amb-cta-dark" href="/health/v2/checkin.html" id="ambient-cta" style="margin-top:30px;display:inline-block">How are you today?</a>
+    <div style="height:160px"></div>
+    <div class="ambient-text serif" id="ambient-title" style="font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:56px;letter-spacing:-1px;line-height:1;text-shadow:0 2px 22px rgba(80,40,30,.28)">Today</div>
+    <div style="height:34px"></div>
+    <!-- Hero CTA: pending check-in → "Start check-in"; otherwise → "Log
+         something" which opens the quick-log bottom sheet. updateHeroCta
+         rewrites text/handler at runtime. -->
+    <button class="amb-cta-dark" id="ambient-cta" type="button" style="display:inline-block">Start check-in</button>
   </div>
 </header>
 
 <main class="page" style="padding-top: 20px;">
-  <!-- Check-in prompt (prototype-style). renderCheckinPrompt rewrites
-       the contents based on state + time-of-day; hides when outside
-       the check-in window AND nothing logged. -->
-  <div class="prompt" id="prompt-card" style="display:none"></div>
-
-  <!-- Compact 'log anything' button. Tap → bottom sheet with a free
-       textarea and optional kind chips. Drops one row in `notes` with
-       optional mood, kind, body. Alys replies in the matching mode. -->
-  <button class="ql-cta" id="ql-open-btn" onclick="openLogSheet()">
-    <span class="ql-plus" aria-hidden="true">+</span>
-    Log something
-    <span class="ql-hint">a thought, symptom, appointment, anything</span>
-  </button>
+  <!-- Today round-up: morning + evening check-in states, today's notes
+       count. Replaces the older standalone "logged" prompt card +
+       redundant "Log something" button. -->
+  <section class="section">
+    <div class="section-label">Today</div>
+    <div id="roundup-grid" class="roundup-grid">
+      <a class="roundup-tile" data-tile="morning" href="/health/v2/checkin.html">
+        <div class="rt-head">Morning</div>
+        <div class="rt-body">—</div>
+        <div class="rt-foot"></div>
+      </a>
+      <a class="roundup-tile" data-tile="evening" href="/health/v2/checkin.html">
+        <div class="rt-head">Evening</div>
+        <div class="rt-body">—</div>
+        <div class="rt-foot"></div>
+      </a>
+      <a class="roundup-tile rt-wide" data-tile="notes" href="javascript:openLogSheet()">
+        <div class="rt-head">Notes today</div>
+        <div class="rt-body">none yet</div>
+        <div class="rt-foot">tap to capture one</div>
+      </a>
+    </div>
+  </section>
 
   <style>
-    .ql-cta {
-      display: flex; align-items: center; gap: 12px;
-      width: 100%; padding: 14px 18px; margin-bottom: 22px;
-      background: rgba(255,253,249,.82); backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,.7); border-radius: 18px;
-      box-shadow: 0 18px 40px -34px rgba(70,45,25,.5);
-      font-family: inherit; font-size: 15px; color: var(--ink);
-      cursor: pointer; text-align: left;
+    .roundup-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      margin-bottom: 24px;
     }
-    .ql-cta .ql-plus {
-      width: 28px; height: 28px; flex-shrink: 0;
-      border-radius: 50%; background: var(--ink); color: #fff7f0;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 18px; line-height: 1;
+    .roundup-tile {
+      display: block; text-decoration: none; color: inherit;
+      background: white; border: 1px solid var(--hair);
+      border-radius: 18px; padding: 16px; min-height: 100px;
+      transition: transform .12s ease;
     }
-    .ql-cta .ql-hint {
-      flex: 1; text-align: right;
-      font-size: 12px; color: var(--taupe);
+    .roundup-tile:active { transform: scale(.98); }
+    .roundup-tile.rt-wide { grid-column: 1 / -1; }
+    .rt-head {
+      font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--terra); font-weight: 600; margin-bottom: 6px;
+    }
+    .rt-body {
+      font-family: 'Fraunces', serif; font-weight: 500;
+      font-size: 18px; color: var(--ink); line-height: 1.3;
+    }
+    .rt-foot {
+      font-size: 12px; color: var(--ink-mute); margin-top: 6px;
     }
     .ql-backdrop {
       position: fixed; inset: 0; background: rgba(43,32,24,.45);
@@ -197,18 +199,6 @@
     <div class="empty">Loading ring…</div>
   </div>
 
-  <!-- Last night sleep (only renders if there's data) -->
-  <section class="section" id="sleep-section" style="display:none">
-    <div class="section-head">
-      <div class="section-label">Last night</div>
-      <a class="section-link" href="/health/v2/sleep.html">See detail →</a>
-    </div>
-    <div class="card">
-      <div id="sleep-hypno"></div>
-      <div id="sleep-totals" style="display:flex; justify-content:space-around; margin-top:8px; padding-top:12px; border-top:1px solid var(--hair)"></div>
-    </div>
-  </section>
-
   <!-- This week -->
   <section class="section">
     <div class="section-label">Your week so far</div>
@@ -268,79 +258,49 @@ document.getElementById('nav-mount').innerHTML = renderNav('today');
 async function load() {
   const name = localStorage.getItem('neeve_name') || '';
 
-  let devices = [], samples = [], sleepSamples = [], checkins = [];
+  let devices = [], samples = [], checkins = [], notes = [];
   try {
-    // Sleep is pulled SEPARATELY with a metric filter — otherwise live HR /
-    // SpO2 / HRV uploads quickly crowd sleep_stage out of the latest-300 window.
-    // since=36h covers last night even after a late-evening reload.
-    const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
-    const sleepQ = `/ring/samples?metric=sleep_stage,sleep_session&limit=1000&since=${encodeURIComponent(since)}`;
-    const [ringStatus, ringSamples, sleepRes] = await Promise.all([
+    const [ringStatus, ringSamples] = await Promise.all([
       api('/ring/status').catch(() => ({ devices: [] })),
       api('/ring/samples?limit=300').catch(() => ({ samples: [] })),
-      api(sleepQ).catch(() => ({ samples: [] })),
     ]);
-    devices      = ringStatus.devices || [];
-    samples      = ringSamples.samples || [];
-    sleepSamples = sleepRes.samples || [];
+    devices = ringStatus.devices || [];
+    samples = ringSamples.samples || [];
   } catch (e) { console.error(e); }
 
   let user = null;
   try {
-    const [c, u] = await Promise.all([
+    const [c, u, n] = await Promise.all([
       api('/me/checkins?days=7').catch(() => ({ checkins: [] })),
       api('/me').catch(() => null),
+      api('/me/notes?days=1').catch(() => ({ notes: [] })),
     ]);
     checkins = c.checkins || [];
+    notes    = n.notes || [];
     user = u;
   } catch (e) {}
 
   renderRingCard(devices[0], samples);
   renderWeek(checkins);
-  renderSleepPreview(sleepSamples);
-  renderCheckinPrompt(checkins, user);
+  renderRoundup(checkins, notes, user);
   updateHeroCta(checkins, user);
 }
 
-// When today's current slot is already logged, the 'How are you today?'
-// button in the hero is redundant — the summary card below already
-// shows what was logged with an Edit affordance. Hide the CTA AND the
-// lede when there's nothing to do, so the hero stays calm.
+// Hero CTA is one of two things at any time:
+//   - "Start check-in"  → links to the active slot's check-in flow
+//   - "Log something"   → opens the bottom sheet for a free-form note
+// We never use the word "logged" in the hero. If the user is mid-window
+// on a pending check-in, that's the call to action; otherwise it's the
+// always-available note capture.
 function updateHeroCta(checkins, user) {
-  const cta  = document.getElementById('ambient-cta');
-  const lede = document.getElementById('ambient-line');
+  const cta = document.getElementById('ambient-cta');
   if (!cta) return;
-  const slot = new Date().getHours() < 14 ? 'morning' : 'evening';
-  const today = new Date().toDateString();
-  const doneThisSlot = (checkins || []).some(c =>
-    c.slot === slot &&
-    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
-  if (doneThisSlot) {
-    cta.style.display = 'none';
-    if (lede) lede.style.display = 'none';
-  } else {
-    cta.style.display = '';
-    if (lede) lede.style.display = '';
-  }
-}
 
-// Render the prompt card based on today's check-in state AND the
-// user's scheduled times. Card states:
-//   - just-completed slot → summary + Edit (shown for 4h after the slot time)
-//   - inside window of pending slot → CTA
-//   - outside window      → hide (don't pester — quick-log is always there)
-function renderCheckinPrompt(checkins, user) {
-  const card = document.getElementById('prompt-card');
-  if (!card) return;
-  card.style.display = 'none';
-
-  const now    = new Date();
-  const today  = now.toDateString();
+  const now   = new Date();
+  const today = now.toDateString();
   const morningMins = parseTime(user?.morningTime || '08:00');
   const eveningMins = parseTime(user?.eveningTime || '19:00');
   const nowMins     = now.getHours() * 60 + now.getMinutes();
-
-  // A slot is in-window if we're within [scheduled-60min, scheduled+240min].
   const inWindow = (mins) => nowMins >= mins - 60 && nowMins <= mins + 240;
 
   const todayCheckins = (checkins || []).filter(c =>
@@ -348,51 +308,91 @@ function renderCheckinPrompt(checkins, user) {
   const morningDone = todayCheckins.find(c => c.slot === 'morning');
   const eveningDone = todayCheckins.find(c => c.slot === 'evening');
 
-  // Pick which slot to focus on: pending one whose window we're in,
-  // or just-completed one (summary card) if we're still inside its
-  // window. Otherwise hide.
-  let focus = null;     // { slot, done }
-  if (inWindow(morningMins)) {
-    focus = { slot: 'morning', done: morningDone };
-  } else if (inWindow(eveningMins)) {
-    focus = { slot: 'evening', done: eveningDone };
-  } else if (nowMins < morningMins && morningDone == null) {
-    // Pre-morning, nothing logged — quiet
-  } else {
-    // Outside any window — pick the most recently completed slot if
-    // it just finished (so the user can still tap into the summary).
-    if (eveningDone && nowMins >= eveningMins) focus = { slot: 'evening', done: eveningDone };
-    else if (morningDone && nowMins >= morningMins) focus = { slot: 'morning', done: morningDone };
-  }
-  if (!focus) return;
+  let pendingSlot = null;
+  if (inWindow(morningMins) && !morningDone) pendingSlot = 'morning';
+  else if (inWindow(eveningMins) && !eveningDone) pendingSlot = 'evening';
 
-  card.style.display = '';
-  const slotLabel = focus.slot === 'morning' ? 'Morning' : 'Evening';
-  if (focus.done) {
-    const checkinId = focus.done.checkin_id || focus.done.id;
-    const answers   = focus.done.answers || {};
-    const summary   = summariseAnswers(answers);
-    card.innerHTML = `
-      <div class="lbl">${slotLabel} check-in <span class="est">logged</span></div>
-      <div class="title2">${summary.headline}</div>
-      ${summary.lines.length ? `<div class="sub">${summary.lines.join(' · ')}</div>` : ''}
-      <div class="actions">
-        <a class="btn btn-ghost" href="/health/v2/checkin.html?checkin=${encodeURIComponent(checkinId)}">Edit answers</a>
-      </div>`;
+  if (pendingSlot) {
+    cta.textContent = pendingSlot === 'morning'
+      ? 'Start morning check-in'
+      : 'Start evening check-in';
+    cta.onclick = () => { location.href = '/health/v2/checkin.html'; };
+  } else {
+    cta.textContent = 'Log something';
+    cta.onclick = openLogSheet;
+  }
+}
+
+// Render the Today round-up: morning + evening status + notes today.
+// Tiles read as bare facts ("Slept 8h. Mood 7, fatigue 3, fog 2.") with
+// no "logged" verbs. Pending slots show "not yet · ~2 min"; out-of-
+// window pending slots show a quieter "later today".
+function renderRoundup(checkins, notes, user) {
+  const now   = new Date();
+  const today = now.toDateString();
+  const morningMins = parseTime(user?.morningTime || '08:00');
+  const eveningMins = parseTime(user?.eveningTime || '19:00');
+  const nowMins     = now.getHours() * 60 + now.getMinutes();
+
+  const todayCheckins = (checkins || []).filter(c =>
+    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
+  const morningDone = todayCheckins.find(c => c.slot === 'morning');
+  const eveningDone = todayCheckins.find(c => c.slot === 'evening');
+
+  paintTile('morning', morningDone, morningMins, nowMins, user?.morningTime || '08:00');
+  paintTile('evening', eveningDone, eveningMins, nowMins, user?.eveningTime || '19:00');
+  paintNotesTile(notes || []);
+}
+
+function paintTile(slot, done, slotMins, nowMins, slotTimeStr) {
+  const tile = document.querySelector(`.roundup-tile[data-tile="${slot}"]`);
+  if (!tile) return;
+  const body = tile.querySelector('.rt-body');
+  const foot = tile.querySelector('.rt-foot');
+  if (done) {
+    const checkinId = done.checkin_id || done.id;
+    const sentence  = summariseAnswers(done.answers || {});
+    body.textContent = sentence;
+    foot.textContent = 'tap to view';
+    tile.setAttribute('href', `/health/v2/checkin.html?checkin=${encodeURIComponent(checkinId)}`);
     return;
   }
+  const inWindow = nowMins >= slotMins - 60 && nowMins <= slotMins + 240;
+  if (inWindow) {
+    body.textContent = 'Ready when you are';
+    foot.textContent = '~2 min · tap to start';
+    tile.setAttribute('href', '/health/v2/checkin.html');
+  } else if (nowMins < slotMins) {
+    body.textContent = `Later — ${slotTimeStr}`;
+    foot.textContent = '';
+    tile.setAttribute('href', '/health/v2/checkin.html');
+  } else {
+    body.textContent = 'Not captured';
+    foot.textContent = 'tap to add';
+    tile.setAttribute('href', '/health/v2/checkin.html');
+  }
+}
 
-  const title = focus.slot === 'morning'
-    ? 'A few quick things to start your day.'
-    : 'A few quick things before the day ends.';
-  card.innerHTML = `
-    <div class="lbl">Your ${slotLabel.toLowerCase()} check-in <span class="est">~2 min</span></div>
-    <div class="title2">${title}</div>
-    <div class="sub">Helps the system see how today's going.</div>
-    <div class="actions">
-      <a class="btn btn-primary" href="/health/v2/checkin.html">Start check-in</a>
-      <button class="btn btn-ghost" onclick="document.querySelector('.prompt').style.display='none'">Not today</button>
-    </div>`;
+function paintNotesTile(notes) {
+  const tile = document.querySelector('.roundup-tile[data-tile="notes"]');
+  if (!tile) return;
+  const body = tile.querySelector('.rt-body');
+  const foot = tile.querySelector('.rt-foot');
+  const today = new Date().toDateString();
+  const todayNotes = notes.filter(n =>
+    new Date(n.created_at || n.createdAt || n.ts).toDateString() === today);
+  if (!todayNotes.length) {
+    body.textContent = 'Nothing captured yet';
+    foot.textContent = 'tap to add a thought, symptom, anything';
+    return;
+  }
+  const latest = todayNotes[0];
+  const preview = (latest.body || latest.text || latest.kind || '').toString().trim();
+  const truncated = preview.length > 80 ? preview.slice(0, 77) + '…' : preview;
+  body.textContent = todayNotes.length === 1
+    ? `1 note · "${truncated}"`
+    : `${todayNotes.length} notes · latest "${truncated}"`;
+  foot.textContent = 'tap to add another';
 }
 
 function parseTime(s) {
@@ -468,30 +468,6 @@ async function submitQuickLog() {
   }
 }
 
-// Pluck the most-recognisable scaled keys for the summary line so the
-// user sees what they logged at a glance. Falls back to a generic
-// 'Logged at HH:mm' if no familiar keys are present.
-function summariseAnswers(a) {
-  const pairs = [];
-  const score = (k, label) => {
-    const v = a[k];
-    if (v == null || v === '') return;
-    pairs.push(`${label} ${v}`);
-  };
-  score('sleep',    'sleep');
-  score('fatigue',  'fatigue');
-  score('fog',      'fog');
-  score('mood',     'mood');
-  score('anxiety',  'anxiety');
-  score('energy',   'energy');
-  score('pain',     'pain');
-  score('headache', 'headache');
-  const headline = pairs.length
-    ? 'Logged: ' + pairs.slice(0, 3).join(', ')
-    : 'Logged a moment ago.';
-  return { headline, lines: pairs.slice(3, 7) };
-}
-
 load();
 // Refresh every 90s while the page is visible — ring data updates on
 // 2-min cycles anyway, so polling faster just burns battery without
@@ -509,22 +485,6 @@ document.addEventListener('visibilitychange', () => {
 });
 if (!document.hidden) _startRefresh();
 onResume(load);
-
-function renderSleepPreview(samples) {
-  const stages   = (samples || []).filter(s => s.metric === 'sleep_stage');
-  const sessions = (samples || []).filter(s => s.metric === 'sleep_session');
-  if (!stages.length && !sessions.length) return;
-  document.getElementById('sleep-section').style.display = 'block';
-  const totals = renderHypnogram(
-    document.getElementById('sleep-hypno'), stages, sessions);
-  if (!totals) return;
-  const m = mins => `${Math.floor(mins/60)}h ${Math.round(mins%60)}m`;
-  document.getElementById('sleep-totals').innerHTML = `
-    <div style="text-align:center"><div class="caption">Deep</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.deep)}</div></div>
-    <div style="text-align:center"><div class="caption">Light</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.light)}</div></div>
-    <div style="text-align:center"><div class="caption">REM</div><div style="font-family:'Fraunces',serif; font-weight:500">${m(totals.rem)}</div></div>
-  `;
-}
 
 function escapeHtml(s) {
   return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

@@ -87,7 +87,11 @@ function wmoToWeather(c) {
 function ensureAmbientStyles() {
   if (document.getElementById('ambient-styles')) return;
   const css = `
-  .amb-host { position: relative; }
+  /* Host clips the orb + halo rings so the warm box-shadow can't bleed
+     down into the content cards below the hero. min-height makes sure
+     the halos always have room even when the hero content shrinks
+     (e.g. after a check-in is logged and the CTA + lede hide). */
+  .amb-host { position: relative; overflow: hidden; min-height: 580px; }
   /* Gradient is a fixed full-viewport background so the warm
      atmosphere extends behind every section of the page, not just
      the hero band. The orb and halo rings stay positioned relative

@@ -241,7 +241,7 @@ else if (tab === 'prepare')  renderPrepare();
 // ── CHECK-INS ──────────────────────────────────────
 async function renderCheckins() {
   const root = document.getElementById('content');
-  root.innerHTML = \`
+  root.innerHTML = `
     <div id="start-checkin-row"></div>
     <div class="range-row">
       <div class="range-pills" id="range-pills">
@@ -252,20 +252,20 @@ async function renderCheckins() {
       </div>
       <div class="range-count" id="range-count">—</div>
     </div>
-    <div id="checkin-list"></div>\`;
+    <div id="checkin-list"></div>`;
   wireRangePills(renderCheckins);
 
   try {
-    const r = await api(\`/me/checkins?days=\${range}\`);
+    const r = await api(`/me/checkins?days=${range}`);
     const checkins = (r.checkins || []).sort((a, b) =>
       new Date(b.completed_at) - new Date(a.completed_at));
     document.getElementById('range-count').textContent =
-      \`\${checkins.length} logged\`;
+      `${checkins.length} logged`;
     paintStartCheckinCard(checkins);
     renderCheckinList(checkins);
   } catch (e) {
     document.getElementById('checkin-list').innerHTML =
-      '<div class="empty">Couldn\\'t load your check-ins right now.</div>';
+      '<div class="empty">Couldn\'t load your check-ins right now.</div>';
   }
 }
 
@@ -288,22 +288,22 @@ function paintStartCheckinCard(checkins) {
     return;
   }
   const slotLabel = slot === 'morning' ? 'Morning' : 'Evening';
-  host.innerHTML = \`
+  host.innerHTML = `
     <a class="envelope-row" href="checkin.html"
        style="display:block;background:linear-gradient(180deg,#fffdf9 0%,#fff5e8 100%);border:1px solid rgba(220,110,75,.18);margin-bottom:18px;padding:18px 20px;border-radius:18px;text-decoration:none;color:inherit;box-shadow:0 14px 28px -20px rgba(220,110,75,.35)">
       <div class="envelope-head" style="color:var(--clay-2,#bf5a3c);font-size:11px;letter-spacing:.14em">
-        <span>\${slotLabel} check-in</span>
+        <span>${slotLabel} check-in</span>
         <span class="time">· today</span>
       </div>
       <div class="envelope-summary" style="font-family:'Fraunces',serif;font-weight:500;font-size:18px;color:var(--ink-2,#2b2018);letter-spacing:-.1px;line-height:1.35">
-        \${slot === 'morning'
+        ${slot === 'morning'
           ? 'A few quick things to start your day.'
           : 'A few quick things before the day ends.'}
       </div>
       <div style="font-size:13px;color:var(--taupe-2,#9a8369);margin-top:6px;font-style:italic">
         ~2 min · tap to start →
       </div>
-    </a>\`;
+    </a>`;
 }
 
 function renderCheckinList(checkins) {
@@ -326,29 +326,29 @@ function renderCheckinList(checkins) {
     const { date, items } = byDay[k];
     const dayLabel = date.toLocaleDateString('en-AU',
       { weekday: 'short', day: 'numeric', month: 'short' });
-    html += \`
+    html += `
       <div class="day-group">
         <div class="day-head">
-          <span class="day-num">\${date.getDate()}</span>
-          <span>\${dayLabel.toUpperCase()}</span>
+          <span class="day-num">${date.getDate()}</span>
+          <span>${dayLabel.toUpperCase()}</span>
           <span class="day-rule"></span>
-        </div>\`;
+        </div>`;
     for (const c of items) {
       const slot = c.slot === 'morning' ? 'morning' : 'evening';
       const time = new Date(c.completed_at).toLocaleTimeString('en-AU',
         { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
       const summary = summariseAnswers(c.answers || {});
       const id = c.checkin_id || c.id;
-      html += \`
-        <a class="envelope-row" href="checkin.html?checkin=\${encodeURIComponent(id)}">
+      html += `
+        <a class="envelope-row" href="checkin.html?checkin=${encodeURIComponent(id)}">
           <div class="envelope-head">
-            <span>\${slot}</span>
-            <span class="time">· \${escapeHtml(time)}</span>
+            <span>${slot}</span>
+            <span class="time">· ${escapeHtml(time)}</span>
           </div>
-          <div class="envelope-summary">\${escapeHtml(summary)}</div>
-        </a>\`;
+          <div class="envelope-summary">${escapeHtml(summary)}</div>
+        </a>`;
     }
-    html += \`</div>\`;
+    html += `</div>`;
   }
   root.innerHTML = html;
 }
@@ -359,7 +359,7 @@ let _notesKind = 'all';
 
 async function renderNotes() {
   const root = document.getElementById('content');
-  root.innerHTML = \`
+  root.innerHTML = `
     <div class="range-row">
       <div class="range-pills" id="range-pills">
         <button data-d="14">14d</button>
@@ -377,7 +377,7 @@ async function renderNotes() {
       <button class="note-kind"      data-k="event">Events</button>
       <button class="note-kind"      data-k="thought">Thoughts</button>
     </div>
-    <div id="note-list"></div>\`;
+    <div id="note-list"></div>`;
   wireRangePills(renderNotes);
   document.querySelectorAll('#note-kinds .note-kind').forEach(b => {
     b.addEventListener('click', () => {
@@ -389,15 +389,15 @@ async function renderNotes() {
   });
 
   try {
-    const r = await api(\`/me/notes?days=\${range}\`);
+    const r = await api(`/me/notes?days=${range}`);
     _notesAll = (r.notes || []).sort((a, b) =>
       new Date(b.created_at || b.ts) - new Date(a.created_at || a.ts));
     document.getElementById('range-count').textContent =
-      \`\${_notesAll.length} notes\`;
+      `${_notesAll.length} notes`;
     paintNotes();
   } catch (e) {
     document.getElementById('note-list').innerHTML =
-      '<div class="empty">Couldn\\'t load your notes right now.</div>';
+      '<div class="empty">Couldn\'t load your notes right now.</div>';
   }
 }
 
@@ -417,35 +417,35 @@ function paintNotes() {
       { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
     const kind = (n.kind || 'note').toString();
     const body = (n.body || n.text || '').toString().trim() || '—';
-    return \`
+    return `
       <div class="note-row">
         <div class="note-meta">
-          <span>\${escapeHtml(kind)}</span>
-          <span class="when">· \${escapeHtml(when.toLowerCase())}</span>
+          <span>${escapeHtml(kind)}</span>
+          <span class="when">· ${escapeHtml(when.toLowerCase())}</span>
         </div>
-        <div class="note-body">\${escapeHtml(body)}</div>
-      </div>\`;
+        <div class="note-body">${escapeHtml(body)}</div>
+      </div>`;
   }).join('');
 }
 
 // ── PATTERNS (stub) ────────────────────────────────
 function renderPatterns() {
-  document.getElementById('content').innerHTML = \`
+  document.getElementById('content').innerHTML = `
     <div class="stub">
       <div class="icon">∿</div>
       <h2>Patterns are coming</h2>
       <p>This is where your sleep, HRV, standing-HR jumps, recovery and symptom correlations will live — each one a card you can flag for the doctor.</p>
-    </div>\`;
+    </div>`;
 }
 
 // ── PREPARE (stub) ─────────────────────────────────
 function renderPrepare() {
-  document.getElementById('content').innerHTML = \`
+  document.getElementById('content').innerHTML = `
     <div class="stub">
       <div class="icon">✎</div>
       <h2>Prepare a doctor visit</h2>
       <p>Pick a window, say what you'd like to bring up, get a structured PDF for your appointment. Coming next — same record, doctor-ready.</p>
-    </div>\`;
+    </div>`;
 }
 
 function wireRangePills(reload) {

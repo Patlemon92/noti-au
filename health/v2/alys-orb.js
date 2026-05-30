@@ -63,10 +63,12 @@ function renderAlysOrb(opts = {}) {
     <div class="alys-orb" style="--orb-size:${size}px" data-hr="resting" aria-label="Alys">
       <svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <!-- Outer halo — barely-there warm wash. -->
+          <!-- Outer halo — barely-there warm wash. Lowered opacity so
+               it doesn't read as a shadow ring against the flat cream
+               page backdrop. -->
           <radialGradient id="orb-${sfx}-halo" cx="50%" cy="50%" r="50%">
-            <stop offset="48%" stop-color="rgba(248,205,185,0)"/>
-            <stop offset="72%" stop-color="rgba(248,205,185,.30)"/>
+            <stop offset="55%" stop-color="rgba(248,205,185,0)"/>
+            <stop offset="78%" stop-color="rgba(248,205,185,.14)"/>
             <stop offset="100%" stop-color="rgba(248,205,185,0)"/>
           </radialGradient>
 

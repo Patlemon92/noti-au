@@ -10,34 +10,31 @@
 // with the dark "sky cap" radial dropped from day/dawn/dusk per
 // Patrick's feedback — daytime stays warm cream/peach throughout.
 
-// Phase palettes — toned WAY down so the home hero reads as a calm
-// pale cream backdrop with the Alys orb as the focal point. Each phase
-// adds a very subtle warm-to-cream tint shift, not a saturated radial
-// burst. Night gets a slightly cooler tint; everything else stays in
-// the cream/peach family.
+// Phase palettes — flat cream backdrops so the orb is the only thing
+// the eye reads. The phase-aware radial gradient is gone; it was the
+// reason the orb's soft halo read as a vertical shadow band (radial
+// bright at the top, fading to cream at the bottom, so the halo
+// showed asymmetrically). Just barely-different cream tints per
+// time-of-day so it still subtly shifts.
 const PHASES = {
   dawn: {
     label: 'Dawn', greet: 'Good morning',
-    grad: `radial-gradient(120% 90% at 50% 14%, #fbe6d5 0%, transparent 70%),
-           linear-gradient(180deg, #fbf3e9 0%, #f8f1e7 100%)`,
+    grad: `linear-gradient(180deg, #fbf3e9 0%, #f8f1e7 100%)`,
     textOn: '#5a3f2e',
   },
   day: {
     label: 'Day', greet: 'Good afternoon',
-    grad: `radial-gradient(120% 90% at 50% 12%, #faeede 0%, transparent 70%),
-           linear-gradient(180deg, #fbf5ec 0%, #f8f1e7 100%)`,
+    grad: `linear-gradient(180deg, #fbf5ec 0%, #f8f1e7 100%)`,
     textOn: '#5a3f2e',
   },
   dusk: {
     label: 'Dusk', greet: 'Good evening',
-    grad: `radial-gradient(120% 90% at 50% 14%, #f7e0d0 0%, transparent 70%),
-           linear-gradient(180deg, #faeede 0%, #f8f1e7 100%)`,
+    grad: `linear-gradient(180deg, #faeede 0%, #f8f1e7 100%)`,
     textOn: '#5a3f2e',
   },
   night: {
     label: 'Night', greet: 'Good night',
-    grad: `radial-gradient(120% 90% at 50% 14%, #ece5dc 0%, transparent 70%),
-           linear-gradient(180deg, #f3ecde 0%, #f8f1e7 100%)`,
+    grad: `linear-gradient(180deg, #f3ecde 0%, #f8f1e7 100%)`,
     textOn: '#5a3f2e',
   },
   // Sleep page keeps its warmer, slightly more saturated wash.

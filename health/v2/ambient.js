@@ -103,8 +103,17 @@ function ensureAmbientStyles() {
   }
   .amb-core {
     position: absolute; left: 50%; border-radius: 50%; z-index: 1;
+    transform: translate(-50%, 0);
     animation: amb-glow 6s ease-in-out infinite;
   }
+  /* Text colour on hero content adapts to phase. Warm/dark phases get
+     light cream text; day phase gets a warm brown so it reads on the
+     more transparent gradient. */
+  .ambient-text { color: #fff7f0; transition: color 1s ease; }
+  [data-amb-phase="day"] .ambient-text { color: #5a3f2e; }
+  [data-amb-phase="day"] .amb-pill { background: rgba(255,255,255,.6); color: #5a3f2e; border-color: rgba(91,63,46,.15); }
+  /* Make sure the pill text reads against the chosen background. */
+  .amb-pill { color: #fff7f0; }
   .amb-wash { position: absolute; top: 0; left: 0; right: 0; height: 640px; z-index: 1; animation: amb-fade 1s both; }
   .amb-clouds, .amb-rain { position: absolute; left: 0; right: 0; pointer-events: none; }
   .amb-rain { top: 0; height: 480px; z-index: 1; overflow: hidden; }
@@ -152,7 +161,9 @@ function ensureAmbientStyles() {
     width: 100%; max-width: 340px;
     font-size: 16px; font-weight: 500;
     border-radius: 99px; cursor: pointer; font-family: inherit;
+    text-decoration: none; text-align: center;
   }
+  .amb-cta { text-decoration: none; }
   @keyframes amb-glow { 0%,100%{transform:translate(-50%,0) scale(1)} 50%{transform:translate(-50%,-6px) scale(1.05)} }
   @keyframes amb-halo { 0%,100%{opacity:.45} 50%{opacity:.8} }
   @keyframes amb-fade { from{opacity:0} to{opacity:1} }
@@ -182,6 +193,10 @@ function mountAmbient({ host, phase, weather = 'clear', coreSize = 56 }) {
   const phaseKey = phase || phaseFromHour(new Date().getHours());
   const p = PHASES[phaseKey] || PHASES.day;
   const w = WEATHER[weather] || WEATHER.clear;
+
+  // Tag the host so [data-amb-phase] CSS selectors can adapt text
+  // colours and pill background to the active phase.
+  host.setAttribute('data-amb-phase', phaseKey);
 
   // Strip any prior ambient layers in case this is a re-mount.
   host.querySelectorAll(':scope > .amb-layer').forEach(el => el.remove());

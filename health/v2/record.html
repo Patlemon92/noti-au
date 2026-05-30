@@ -241,7 +241,8 @@ else if (tab === 'prepare')  renderPrepare();
 // ── CHECK-INS ──────────────────────────────────────
 async function renderCheckins() {
   const root = document.getElementById('content');
-  root.innerHTML = `
+  root.innerHTML = \`
+    <div id="start-checkin-row"></div>
     <div class="range-row">
       <div class="range-pills" id="range-pills">
         <button data-d="14">14d</button>
@@ -251,7 +252,7 @@ async function renderCheckins() {
       </div>
       <div class="range-count" id="range-count">—</div>
     </div>
-    <div id="checkin-list"></div>`;
+    <div id="checkin-list"></div>\`;
   wireRangePills(renderCheckins);
 
   try {
@@ -260,11 +261,49 @@ async function renderCheckins() {
       new Date(b.completed_at) - new Date(a.completed_at));
     document.getElementById('range-count').textContent =
       \`\${checkins.length} logged\`;
+    paintStartCheckinCard(checkins);
     renderCheckinList(checkins);
   } catch (e) {
     document.getElementById('checkin-list').innerHTML =
       '<div class="empty">Couldn\\'t load your check-ins right now.</div>';
   }
+}
+
+// Show a "Start morning / evening check-in" card at the top of the
+// list when today's current slot isn't done yet — the only entry
+// point to the check-in flow in the v2 IA (Today no longer carries
+// slot cards). The card is the one place that surfaces "you can do
+// this now"; once done it shrinks back into the daily list below.
+function paintStartCheckinCard(checkins) {
+  const host = document.getElementById('start-checkin-row');
+  if (!host) return;
+  const now = new Date();
+  const today = now.toDateString();
+  const slot = now.getHours() < 14 ? 'morning' : 'evening';
+  const doneToday = (checkins || []).some(c =>
+    c.slot === slot &&
+    new Date(c.completed_at).toDateString() === today);
+  if (doneToday) {
+    host.innerHTML = '';
+    return;
+  }
+  const slotLabel = slot === 'morning' ? 'Morning' : 'Evening';
+  host.innerHTML = \`
+    <a class="envelope-row" href="checkin.html"
+       style="display:block;background:linear-gradient(180deg,#fffdf9 0%,#fff5e8 100%);border:1px solid rgba(220,110,75,.18);margin-bottom:18px;padding:18px 20px;border-radius:18px;text-decoration:none;color:inherit;box-shadow:0 14px 28px -20px rgba(220,110,75,.35)">
+      <div class="envelope-head" style="color:var(--clay-2,#bf5a3c);font-size:11px;letter-spacing:.14em">
+        <span>\${slotLabel} check-in</span>
+        <span class="time">· today</span>
+      </div>
+      <div class="envelope-summary" style="font-family:'Fraunces',serif;font-weight:500;font-size:18px;color:var(--ink-2,#2b2018);letter-spacing:-.1px;line-height:1.35">
+        \${slot === 'morning'
+          ? 'A few quick things to start your day.'
+          : 'A few quick things before the day ends.'}
+      </div>
+      <div style="font-size:13px;color:var(--taupe-2,#9a8369);margin-top:6px;font-style:italic">
+        ~2 min · tap to start →
+      </div>
+    </a>\`;
 }
 
 function renderCheckinList(checkins) {

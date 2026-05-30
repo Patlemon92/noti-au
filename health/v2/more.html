@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#F8F1E7" />
+<link rel="manifest" href="/health/manifest-health.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
+<title>More · Neeve</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+
+<style>
+  body {
+    background: var(--cream);
+    background-image:
+      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.15 0 0 0 0 0.1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(120% 32% at 50% -6%,
+        rgba(248, 200, 175, .42) 0%,
+        rgba(248, 200, 175, .15) 35%,
+        rgba(248, 200, 175, 0) 65%),
+      linear-gradient(180deg, #faf3e7 0%, var(--cream) 32%);
+    background-attachment: fixed, fixed, fixed;
+    background-size: 200px 200px, auto, auto;
+  }
+  .page-more {
+    max-width: 460px; margin: 0 auto;
+    padding: 20px 22px 110px;
+    animation: page-fade .5s ease;
+  }
+  @keyframes page-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Profile header */
+  .who {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 30px;
+  }
+  .who .avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, #fff5e8 0%, #fde0c8 100%);
+    border: 1px solid rgba(220, 110, 75, .25);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500;
+    color: var(--clay, #BF5A3C);
+    box-shadow: 0 14px 28px -22px rgba(140, 80, 50, .35);
+  }
+  .who .name {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 22px; color: var(--ink); letter-spacing: -.3px;
+    line-height: 1.15; margin-bottom: 2px;
+  }
+  .who .email {
+    font-size: 13px; color: var(--taupe);
+  }
+
+  /* Section header */
+  .section-head {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--taupe); font-weight: 600;
+    margin: 28px 0 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-head::before {
+    content: ''; flex-shrink: 0;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--clay, #BF5A3C); opacity: .65;
+  }
+  .section-head::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(43,32,24,.12) 0%, transparent 100%);
+  }
+
+  /* Group card */
+  .group {
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 18px; overflow: hidden;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 14px 28px -22px rgba(140, 80, 50, .25);
+  }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    text-decoration: none; color: inherit;
+    border-bottom: 1px solid rgba(43, 32, 24, .06);
+    cursor: pointer; gap: 12px;
+  }
+  .row:last-child { border-bottom: none; }
+  .row .label {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 15px; color: var(--ink); font-weight: 500;
+  }
+  .row .value {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 14px; color: var(--taupe);
+    text-align: right;
+  }
+  .row .chev { color: var(--ink-mute); margin-left: 6px; }
+  .row.danger .label { color: var(--clay, #BF5A3C); }
+  .row.danger:hover { background: rgba(220, 110, 75, .04); }
+
+  /* Toggle switch */
+  .toggle {
+    width: 44px; height: 26px; border-radius: 99px;
+    background: rgba(43, 32, 24, .15);
+    position: relative; cursor: pointer; flex-shrink: 0;
+    transition: background .2s ease;
+  }
+  .toggle::after {
+    content: ''; position: absolute;
+    top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .15);
+    transition: transform .2s ease;
+  }
+  .toggle.on { background: var(--ink); }
+  .toggle.on::after { transform: translateX(18px); }
+
+  /* Footer */
+  .version {
+    text-align: center; margin-top: 30px;
+    font-size: 12px; color: var(--taupe); font-style: italic;
+  }
+  .empty {
+    text-align: center; padding: 30px;
+    color: var(--ink-soft); font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-more">
+
+  <!-- Profile header -->
+  <div class="who">
+    <div class="avatar" id="who-avatar">·</div>
+    <div>
+      <div class="name" id="who-name">—</div>
+      <div class="email" id="who-email">—</div>
+    </div>
+  </div>
+
+  <!-- YOUR RECORD -->
+  <div class="section-head">Your record</div>
+  <div class="group">
+    <a class="row" href="javascript:editField('name')">
+      <span class="label">Name</span>
+      <span><span class="value" id="f-name">—</span><span class="chev">›</span></span>
+    </a>
+    <a class="row" href="javascript:editField('postcode')">
+      <span class="label">Where you are</span>
+      <span><span class="value" id="f-postcode">—</span><span class="chev">›</span></span>
+    </a>
+    <a class="row" href="javascript:editField('conditions')">
+      <span class="label">Conditions you track</span>
+      <span><span class="value" id="f-conditions">—</span><span class="chev">›</span></span>
+    </a>
+  </div>
+
+  <!-- WHAT YOU TRACK -->
+  <div class="section-head">What you track</div>
+  <div class="group">
+    <a class="row" href="/health/v2/profile.html#templates">
+      <span class="label">Templates</span>
+      <span><span class="value" id="f-templates">—</span><span class="chev">›</span></span>
+    </a>
+    <a class="row" href="javascript:editField('morningTime')">
+      <span class="label">Morning window</span>
+      <span><span class="value" id="f-morning">—</span><span class="chev">›</span></span>
+    </a>
+    <a class="row" href="javascript:editField('eveningTime')">
+      <span class="label">Evening window</span>
+      <span><span class="value" id="f-evening">—</span><span class="chev">›</span></span>
+    </a>
+  </div>
+
+  <!-- YOUR RING -->
+  <div class="section-head">Your Neeve Ring</div>
+  <div class="group">
+    <a class="row" href="/health/v2/ring.html">
+      <span class="label">Pairing &amp; status</span>
+      <span><span class="value" id="f-ring">—</span><span class="chev">›</span></span>
+    </a>
+    <div class="row" style="cursor:default">
+      <span class="label">Auto-collection</span>
+      <span class="value" style="max-width:240px">HR · HRV · temp · SpO2 · sleep</span>
+    </div>
+  </div>
+
+  <!-- ALYS -->
+  <div class="section-head">Alys</div>
+  <div class="group">
+    <div class="row">
+      <span class="label">How much she speaks</span>
+      <span class="value">only when she has something</span>
+    </div>
+  </div>
+
+  <!-- QUIET TIMES -->
+  <div class="section-head">Quiet times</div>
+  <div class="group">
+    <div class="row" onclick="togglePush()">
+      <span class="label">Push notifications</span>
+      <div class="toggle" id="push-toggle"></div>
+    </div>
+    <div class="row" style="cursor:default">
+      <span class="label">Reminders to check in</span>
+      <span class="value">off</span>
+    </div>
+  </div>
+
+  <!-- YOUR DATA, YOURS -->
+  <div class="section-head">Your data, yours</div>
+  <div class="group">
+    <a class="row" href="javascript:showDoctorView()">
+      <span class="label">See what your doctor sees</span>
+      <span class="chev">›</span>
+    </a>
+    <a class="row" href="/health/v2/export.html">
+      <span class="label">Export everything</span>
+      <span class="chev">›</span>
+    </a>
+    <div class="row" style="cursor:default">
+      <span class="label">Research consent</span>
+      <span class="value">off</span>
+    </div>
+    <a class="row danger" href="javascript:confirmDelete()">
+      <span class="label">Delete everything</span>
+      <span class="chev">›</span>
+    </a>
+  </div>
+
+  <!-- ACCOUNT -->
+  <div class="section-head">Account</div>
+  <div class="group">
+    <a class="row danger" href="javascript:signOut()">
+      <span class="label">Sign out</span>
+      <span class="chev">›</span>
+    </a>
+  </div>
+
+  <!-- SUPPORT -->
+  <div class="section-head">Support</div>
+  <div class="group">
+    <a class="row" href="javascript:showAbout()">
+      <span class="label">About Neeve</span>
+      <span class="chev">›</span>
+    </a>
+    <a class="row" href="mailto:hello@noti.com.au">
+      <span class="label">Help</span>
+      <span class="chev">›</span>
+    </a>
+  </div>
+
+  <div class="version">Neeve · v2.0.1</div>
+</div>
+
+<div id="nav-mount"></div>
+
+<script src="lib.js"></script>
+<script>
+document.getElementById('nav-mount').innerHTML = renderNav('more');
+
+let _user = null;
+
+async function load() {
+  try {
+    const u = await api('/me');
+    if (!u || !u.id) throw new Error('no user');
+    _user = u;
+    renderProfile(u);
+  } catch (e) {
+    document.getElementById('who-name').textContent = "Couldn't load profile";
+    console.error(e);
+  }
+}
+load();
+
+function renderProfile(u) {
+  // Avatar — single initial
+  const initial = (u.name || u.email || '·').trim()[0]?.toUpperCase() || '·';
+  document.getElementById('who-avatar').textContent = initial;
+  document.getElementById('who-name').textContent = u.name || 'Your profile';
+  document.getElementById('who-email').textContent = u.email || u.phone || '—';
+
+  // Field values
+  document.getElementById('f-name').textContent = u.name || 'not set';
+  document.getElementById('f-postcode').textContent = u.postcode
+    ? `${u.suburb || 'Sydney'} ${u.postcode}`
+    : 'not set';
+  const conds = (u.conditions || []);
+  document.getElementById('f-conditions').textContent =
+    conds.length ? conds.join(', ') : 'none yet';
+  document.getElementById('f-templates').textContent =
+    (u.templates && u.templates.length) ? `${u.templates.length} active` : '—';
+  document.getElementById('f-morning').textContent = u.morningTime || '8:00 am';
+  document.getElementById('f-evening').textContent = u.eveningTime || '8:00 pm';
+
+  // Ring status
+  api('/ring/status').then(r => {
+    const dev = (r.devices || [])[0];
+    if (!dev) {
+      document.getElementById('f-ring').textContent = 'not paired';
+      return;
+    }
+    const connOn = dev.last_seen_at &&
+      (Date.now() - new Date(dev.last_seen_at)) < 10 * 60 * 1000;
+    document.getElementById('f-ring').textContent =
+      connOn ? 'paired, connected' : 'paired';
+  }).catch(() => {
+    document.getElementById('f-ring').textContent = '—';
+  });
+
+  refreshPushState();
+}
+
+// ── Push notifications ──────────────────────────
+function refreshPushState() {
+  const tog = document.getElementById('push-toggle');
+  if (!('Notification' in window)) {
+    tog.style.opacity = .35;
+    return;
+  }
+  tog.classList.toggle('on', Notification.permission === 'granted');
+}
+async function togglePush() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    alert('To turn off, go to your device Settings → Neeve → Notifications.');
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    alert('Notifications are blocked. Enable them in Settings → Neeve.');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  refreshPushState();
+}
+
+// ── Edit field (TODO: in-place edit; for now route to profile.html) ──
+function editField(field) {
+  // Defer to the legacy profile editor for now; a clean in-place editor
+  // is a follow-on PR. Routes to the appropriate anchor.
+  location.href = '/health/v2/profile.html#' + field;
+}
+
+// ── See what your doctor sees ───────────────────
+function showDoctorView() {
+  const html = `
+<div style="max-width:460px;margin:0 auto;padding:20px 22px 110px;">
+  <a href="/health/v2/more.html" style="color:var(--terra);text-decoration:none;font-size:14px;display:inline-block;margin-bottom:18px">← Back to More</a>
+  <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.6px;color:var(--ink);margin-bottom:18px">What your doctor sees</h1>
+  <p style="font-size:14.5px;line-height:1.6;color:var(--ink-soft);margin-bottom:24px">When you build a doctor-visit document in Record → Prepare, this is what's in it. Nothing else is shared.</p>
+
+  <div style="font-family:'Inter Tight',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin:18px 0 8px">Always included</div>
+  <div style="background:white;border-radius:16px;padding:16px 18px;border:1px solid rgba(43,32,24,.08);font-size:14.5px;line-height:1.8;color:var(--ink);box-shadow:0 14px 28px -22px rgba(140,80,50,.2)">
+    Your check-in answers<br>
+    Notes you've added<br>
+    Neeve Ring trends and patterns<br>
+    Time and date stamps<br>
+    Your postcode region (not address)
+  </div>
+
+  <div style="font-family:'Inter Tight',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin:22px 0 8px">Included for the doctor only</div>
+  <div style="background:white;border-radius:16px;padding:16px 18px;border:1px solid rgba(43,32,24,.08);font-size:14.5px;line-height:1.8;color:var(--ink);box-shadow:0 14px 28px -22px rgba(140,80,50,.2)">
+    How often you logged<br>
+    Sample density from your ring<br>
+    Time-of-day patterns of when you logged
+  </div>
+  <p style="font-style:italic;font-size:13.5px;color:var(--taupe);margin-top:10px;line-height:1.55">Doctors need to know how much data you captured so they can weight what they see. It would feel like surveillance to show this back at you.</p>
+
+  <div style="font-family:'Inter Tight',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin:22px 0 8px">Never included</div>
+  <div style="background:white;border-radius:16px;padding:16px 18px;border:1px solid rgba(43,32,24,.08);font-size:14.5px;line-height:1.8;color:var(--ink);box-shadow:0 14px 28px -22px rgba(140,80,50,.2)">
+    Your email, phone, login<br>
+    Any GPS or precise location<br>
+    Anything Alys has said
+  </div>
+
+  <div style="font-family:'Inter Tight',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin:22px 0 8px">Your control</div>
+  <p style="font-size:14.5px;line-height:1.6;color:var(--ink-soft)">Every doctor doc is built by you. You pick the window, the focus, what to include. The default doc isn't auto-shared with anyone. You own the file once it's made.</p>
+</div>`;
+  document.querySelector('.page-more').outerHTML = html;
+}
+
+// ── About Neeve ─────────────────────────────────
+function showAbout() {
+  const html = `
+<div style="max-width:460px;margin:0 auto;padding:20px 22px 110px;">
+  <a href="/health/v2/more.html" style="color:var(--terra);text-decoration:none;font-size:14px;display:inline-block;margin-bottom:18px">← Back to More</a>
+  <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:36px;letter-spacing:-.7px;color:var(--ink);margin-bottom:14px">About Neeve</h1>
+  <p style="font-family:'Fraunces',serif;font-style:italic;font-size:18px;line-height:1.55;color:var(--clay,#BF5A3C);margin-bottom:24px;letter-spacing:-.2px">Proof, not a tracker.</p>
+  <p style="font-size:15px;line-height:1.7;color:var(--ink);margin-bottom:18px">People with chronic illness don't fail at logging — they fail to be believed. Neeve exists to make them undeniable in a doctor's office.</p>
+  <p style="font-size:15px;line-height:1.7;color:var(--ink);margin-bottom:18px">The ring is a silent witness. It doesn't tell you how you are. It gathers what your body did so the engines can derive the kind of patterns a clinician can read in 15 minutes — POTS standing delta, sleep onset and waking, HRV trends, what your body does on the bad days.</p>
+  <p style="font-size:15px;line-height:1.7;color:var(--ink);margin-bottom:18px">Alys describes, never verdicts. Patterns are observations to bring to a clinician, never conclusions to act on. The patient stays the authority on their own body — because that's exactly what's been taken from them.</p>
+  <p style="font-size:15px;line-height:1.7;color:var(--ink);margin-bottom:18px">Your record. Your evidence. Your tool.</p>
+</div>`;
+  document.querySelector('.page-more').outerHTML = html;
+}
+
+// ── Delete everything ───────────────────────────
+async function confirmDelete() {
+  if (!confirm('This will permanently delete every check-in, every note, every ring sample, and every chat with Alys. Continue?')) return;
+  if (!confirm('Last chance. Truly delete everything?')) return;
+  try {
+    await api('/me/delete-all', { method: 'POST' });
+    alert('Everything deleted. Signing you out.');
+    signOut();
+  } catch (e) {
+    alert("Couldn't complete the deletion: " + e.message);
+  }
+}
+
+// ── Sign out ────────────────────────────────────
+function signOut() {
+  clearToken();
+  location.href = '/health/v2/login.html';
+}
+</script>
+</body>
+</html>

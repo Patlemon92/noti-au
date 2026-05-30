@@ -478,7 +478,7 @@ function renderNav(active) {
       icon: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/>' },
     { id: 'ring',     href: '/health/v2/ring.html',   label: 'Ring',
       icon: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>' },
-    { id: 'more',     href: '/health/v2/profile.html', label: 'More',
+    { id: 'more',     href: '/health/v2/more.html', label: 'More',
       icon: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>' },
   ];
   return `<nav class="nav">${items.map(i => `

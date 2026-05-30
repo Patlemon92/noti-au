@@ -14,164 +14,321 @@
 <link rel="stylesheet" href="/health/v2/styles.css">
 
 <style>
-  /* ── Layout ─────────────────────────────────────────────
-     Today is type-led, dignified, calm. No orb (lives on Alys's tab).
-     No backdrop gradient (the page sits on cream). Sections are
-     announced with quiet eyebrow labels; cards are restrained. */
-  body { background: var(--cream); }
-  .page-today { max-width: 460px; margin: 0 auto; padding: 16px 22px 96px; }
+  /* ── Page atmosphere ──────────────────────────────────
+     Soft warm peach radial at the very top fades into cream so the
+     page has depth without being decorated. The orb lives on Alys's
+     tab; here, the warmth is the atmosphere itself. */
+  body {
+    background: var(--cream);
+    background-image:
+      radial-gradient(120% 60% at 50% -10%,
+        rgba(248, 200, 175, .55) 0%,
+        rgba(248, 200, 175, .25) 28%,
+        rgba(248, 200, 175, 0) 55%),
+      linear-gradient(180deg, #fbf3e7 0%, var(--cream) 60%);
+    background-attachment: fixed;
+  }
+  .page-today { max-width: 460px; margin: 0 auto; padding: 18px 22px 110px; }
 
-  /* Clock + weather pill, top of page */
+  /* Clock + weather pill — frosted, the only floating element at the
+     very top so it feels like a tab on a notebook. */
   .pill {
     display: inline-flex; align-items: center; gap: 8px;
-    padding: 7px 14px; border-radius: 99px;
-    background: rgba(255, 255, 255, .8); color: var(--ink);
-    border: 1px solid rgba(43, 32, 24, .08);
-    font-size: 12.5px; font-weight: 500;
-    margin-bottom: 16px;
+    padding: 8px 16px; border-radius: 99px;
+    background: rgba(255, 255, 255, .82);
+    color: var(--ink);
+    border: 1px solid rgba(255, 255, 255, .9);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.7) inset,
+      0 8px 24px -16px rgba(140, 80, 50, .22);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    font-size: 13px; font-weight: 500; letter-spacing: .01em;
+    margin-bottom: 22px;
   }
-  .pill .dot { opacity: .35; }
+  .pill .dot { opacity: .3; }
 
+  /* Greeting — name in italic warm clay. Editorial, not Notion. */
   .greeting {
-    font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 28px; letter-spacing: -.3px; line-height: 1.18;
-    color: var(--ink); margin-bottom: 22px;
+    font-family: 'Fraunces', serif; font-weight: 400;
+    font-size: 34px; letter-spacing: -.6px; line-height: 1.1;
+    color: var(--ink); margin-bottom: 28px;
+  }
+  .greeting em {
+    font-style: italic; font-weight: 500;
+    color: var(--clay, #BF5A3C);
   }
 
-  /* Log something — soft frosted CTA at top */
+  /* Log something — frosted glass card with subtle inner glow.
+     A soft warm halo behind the ink-coloured + button signals craft. */
   .log-cta {
-    display: flex; align-items: center; gap: 12px;
-    width: 100%; padding: 14px 18px; margin-bottom: 32px;
-    background: rgba(255, 255, 255, .85);
-    border: 1px solid rgba(43, 32, 24, .08); border-radius: 18px;
-    box-shadow: 0 14px 28px -22px rgba(70, 45, 25, .35);
+    position: relative; display: flex; align-items: center; gap: 14px;
+    width: 100%; padding: 16px 20px; margin-bottom: 36px;
+    background: linear-gradient(180deg,
+      rgba(255, 255, 255, .92) 0%,
+      rgba(255, 250, 240, .92) 100%);
+    border: 1px solid rgba(255, 255, 255, .85);
+    border-radius: 22px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.85) inset,
+      0 18px 38px -28px rgba(140, 80, 50, .42),
+      0 4px 12px -8px rgba(140, 80, 50, .18);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     font-family: inherit; font-size: 15px; color: var(--ink);
     cursor: pointer; text-align: left;
+    transition: transform .15s ease, box-shadow .2s ease;
+  }
+  .log-cta:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.6) inset,
+      0 10px 22px -18px rgba(140, 80, 50, .38);
   }
   .log-cta .plus {
-    width: 26px; height: 26px; flex-shrink: 0;
+    position: relative;
+    width: 30px; height: 30px; flex-shrink: 0;
     border-radius: 50%; background: var(--ink); color: #fff7f0;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 16px; line-height: 1; font-weight: 400;
+    font-size: 18px; line-height: 1; font-weight: 300;
+    box-shadow:
+      0 0 0 4px rgba(255, 220, 200, .55),
+      0 0 14px 2px rgba(220, 130, 95, .35);
   }
-  .log-cta .label { flex: 1; }
-  .log-cta .hint { font-size: 12px; color: var(--taupe); }
+  .log-cta .label {
+    flex: 1;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 13px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink); font-weight: 600;
+  }
+  .log-cta .hint {
+    font-size: 12px; color: var(--taupe);
+    font-style: italic;
+  }
 
-  /* Eyebrow section labels */
+  /* Eyebrow section labels — with a tiny ornamental dot before them
+     and a soft hairline rule, so they feel anchored, not floating. */
   .eyebrow {
     font-family: 'Inter Tight', sans-serif;
-    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
     color: var(--taupe); font-weight: 600;
-    margin: 28px 0 12px;
-    display: flex; align-items: baseline; gap: 10px;
+    margin: 32px 0 14px;
+    display: flex; align-items: center; gap: 10px;
   }
-  .eyebrow .meta { color: var(--ink-mute); font-weight: 500; letter-spacing: .05em; }
+  .eyebrow::before {
+    content: ''; flex-shrink: 0;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--clay, #BF5A3C); opacity: .65;
+  }
+  .eyebrow .meta {
+    color: var(--ink-mute); font-weight: 500;
+    letter-spacing: .06em; font-size: 11px;
+  }
+  .eyebrow::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(43,32,24,.12) 0%, transparent 100%);
+  }
   .eyebrow:first-child { margin-top: 0; }
 
-  /* Slot cards */
+  /* Slot cards — crafted depth with a section accent strip at the top.
+     The strip colour is the slot's identity tint. */
   .slot {
+    position: relative; overflow: hidden;
     display: block; text-decoration: none; color: inherit;
-    background: white; border: 1px solid rgba(43, 32, 24, .08);
-    border-radius: 16px; padding: 16px 18px; margin-bottom: 10px;
-    transition: transform .12s ease;
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 18px; padding: 18px 20px; margin-bottom: 12px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 18px 34px -26px rgba(140, 80, 50, .35),
+      0 3px 10px -6px rgba(140, 80, 50, .12);
+    transition: transform .14s ease, box-shadow .2s ease;
   }
-  .slot:active { transform: scale(.99); }
+  .slot:active {
+    transform: scale(.992);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.7) inset,
+      0 10px 20px -18px rgba(140, 80, 50, .3);
+  }
+  /* The accent strip — a 4px tall warm band along the top */
+  .slot::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+      rgba(220, 130, 95, .65) 0%,
+      rgba(220, 130, 95, .25) 60%,
+      transparent 100%);
+  }
+  .slot.is-done::before {
+    background: linear-gradient(90deg,
+      rgba(148, 168, 122, .65) 0%,
+      rgba(148, 168, 122, .25) 60%,
+      transparent 100%);
+  }
+  .slot.is-later::before {
+    background: linear-gradient(90deg,
+      rgba(155, 130, 100, .35) 0%,
+      transparent 100%);
+  }
   .slot-head {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 10px;
     font-family: 'Inter Tight', sans-serif;
-    font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--terra); font-weight: 600; margin-bottom: 8px;
+    font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink); font-weight: 700;
+    margin-bottom: 10px;
   }
-  .slot-state { font-size: 10.5px; color: var(--ink-mute); font-weight: 500; letter-spacing: .05em; }
-  .slot-state.done { color: var(--sage-deep); }
+  .slot-state {
+    font-size: 10.5px; color: var(--taupe);
+    font-weight: 500; letter-spacing: .12em; text-transform: lowercase;
+    font-style: italic;
+  }
+  .slot-state.done { color: var(--sage-deep, #94A87A); font-style: normal; }
+  .slot-state.later { color: var(--taupe); }
   .slot-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--ink-mute);
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(220, 130, 95, .85);
+    box-shadow: 0 0 0 3px rgba(220, 130, 95, .15);
   }
-  .slot-dot.done { background: var(--sage-deep); }
+  .slot-dot.done {
+    background: var(--sage-deep, #94A87A);
+    box-shadow: 0 0 0 3px rgba(148, 168, 122, .22);
+  }
+  .slot-dot.later {
+    background: rgba(155, 130, 100, .55);
+    box-shadow: 0 0 0 3px rgba(155, 130, 100, .14);
+  }
   .slot-body {
     font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 18px; line-height: 1.32; color: var(--ink);
+    font-size: 19px; line-height: 1.32; color: var(--ink);
+    letter-spacing: -.1px;
   }
   .slot-foot {
-    font-size: 12.5px; color: var(--ink-mute);
-    margin-top: 8px;
+    font-size: 12.5px; color: var(--taupe); font-style: italic;
+    margin-top: 10px;
   }
 
-  /* Notes block */
+  /* Notes block — same crafted card treatment as slots */
   .notes-block {
-    background: white; border: 1px solid rgba(43, 32, 24, .08);
-    border-radius: 16px; padding: 16px 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 18px; padding: 18px 20px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 18px 34px -26px rgba(140, 80, 50, .35),
+      0 3px 10px -6px rgba(140, 80, 50, .12);
   }
   .notes-empty {
-    color: var(--ink-soft); font-size: 14.5px; line-height: 1.5;
+    color: var(--ink-soft); font-size: 15px; line-height: 1.55;
+    font-style: italic;
   }
   .notes-latest {
     font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 16px; line-height: 1.4; color: var(--ink);
-    margin-bottom: 6px;
+    font-size: 17px; line-height: 1.4; color: var(--ink);
+    letter-spacing: -.1px; margin-bottom: 6px;
   }
-  .notes-ago { font-size: 12.5px; color: var(--ink-mute); }
-  .notes-more { color: var(--terra); font-size: 13px; margin-top: 8px; }
+  .notes-ago {
+    font-size: 12.5px; color: var(--taupe); font-style: italic;
+  }
+  .notes-more {
+    display: inline-block; margin-top: 12px;
+    color: var(--clay, #BF5A3C); font-size: 13px;
+    font-weight: 500; text-decoration: none;
+  }
 
-  /* RIGHT NOW vitals strip */
+  /* RIGHT NOW vitals strip — same card depth + a breathing dot
+     in the foot to signal the ring is live. */
   .vitals {
-    background: white; border: 1px solid rgba(43, 32, 24, .08);
-    border-radius: 16px; padding: 16px 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 18px; padding: 18px 20px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 18px 34px -26px rgba(140, 80, 50, .35),
+      0 3px 10px -6px rgba(140, 80, 50, .12);
   }
   .vitals-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;
-    margin-bottom: 10px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px;
+    margin-bottom: 14px;
   }
   .vitals-grid .v {
-    display: flex; align-items: baseline; gap: 8px;
+    display: flex; flex-direction: column; gap: 4px;
   }
   .vitals-grid .v .label {
-    font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--ink-mute); font-weight: 600;
-    min-width: 42px;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--taupe); font-weight: 700;
+  }
+  .vitals-grid .v .value-row {
+    display: flex; align-items: baseline; gap: 6px;
   }
   .vitals-grid .v .value {
     font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 22px; line-height: 1; color: var(--ink);
+    font-size: 26px; line-height: 1; color: var(--ink);
+    letter-spacing: -.5px;
   }
   .vitals-grid .v .unit {
-    font-size: 11.5px; color: var(--ink-mute);
+    font-size: 11.5px; color: var(--taupe); font-style: italic;
   }
   .vitals-foot {
     display: flex; justify-content: space-between; align-items: center;
-    margin-top: 6px;
-    font-size: 12px; color: var(--ink-mute);
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid rgba(43, 32, 24, .06);
+    font-size: 12px; color: var(--taupe);
+  }
+  .vitals-name {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-style: italic;
+  }
+  .vitals-pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--clay, #BF5A3C);
+    animation: vitals-pulse 2.8s ease-in-out infinite;
+  }
+  @keyframes vitals-pulse {
+    0%, 100% { opacity: .35; transform: scale(1); }
+    50%      { opacity: 1;   transform: scale(1.18); }
   }
   .vitals-tag {
     border: 1px solid rgba(43, 32, 24, .12);
-    background: var(--cream); color: var(--ink);
-    padding: 6px 12px; border-radius: 99px;
-    font-size: 12.5px; font-weight: 500;
-    cursor: pointer;
+    background: rgba(255, 255, 255, .8);
+    color: var(--ink);
+    padding: 8px 14px; border-radius: 99px;
+    font-size: 13px; font-weight: 500;
+    font-family: inherit; cursor: pointer;
+    box-shadow: 0 6px 14px -10px rgba(140, 80, 50, .35);
+    transition: transform .12s ease;
   }
+  .vitals-tag:active { transform: scale(.97); }
 
-  /* ALYS NOTICED card */
+  /* ALYS NOTICED card — warm gradient with hand-written feel */
   .alys-card {
-    background: linear-gradient(135deg, #fff7ec 0%, #fde9d8 100%);
-    border: 1px solid rgba(220, 110, 75, .14);
-    border-radius: 16px; padding: 16px 18px;
+    position: relative;
+    background: linear-gradient(135deg, #fff5e8 0%, #fde0c8 100%);
+    border: 1px solid rgba(220, 110, 75, .18);
+    border-radius: 18px; padding: 18px 20px;
+    box-shadow:
+      0 18px 34px -26px rgba(220, 110, 75, .35),
+      0 3px 10px -6px rgba(220, 110, 75, .14);
   }
-  .alys-card .who {
-    font-family: 'Inter Tight', sans-serif;
-    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--terra); font-weight: 700; margin-bottom: 8px;
+  .alys-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg,
+      rgba(220, 110, 75, .85) 0%,
+      rgba(220, 110, 75, .25) 60%,
+      transparent 100%);
+    border-radius: 18px 18px 0 0;
   }
   .alys-card .said {
     font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 16.5px; line-height: 1.5; color: var(--ink);
+    font-size: 17px; line-height: 1.5; color: var(--ink);
+    font-style: italic; letter-spacing: -.1px;
   }
   .alys-card .deeper {
-    color: var(--terra); font-size: 13px; margin-top: 10px;
-    text-decoration: none;
+    display: inline-block;
+    color: var(--clay, #BF5A3C); font-size: 13px; font-weight: 500;
+    margin-top: 12px; text-decoration: none;
   }
 
-  /* Hidden when no ring / no notes / etc */
+  /* Hidden helper */
   .hidden { display: none !important; }
 
   /* Quick-log bottom sheet (carries over from previous version) */
@@ -235,7 +392,7 @@
   <button class="log-cta" type="button" onclick="openLogSheet()">
     <span class="plus" aria-hidden="true">+</span>
     <span class="label">Log something</span>
-    <span class="hint">a thought, symptom, anything</span>
+    <span class="hint">a thought, a symptom, anything</span>
   </button>
 
   <!-- TODAY · slot cards -->
@@ -287,7 +444,10 @@
     <div class="vitals">
       <div class="vitals-grid" id="vitals-grid"></div>
       <div class="vitals-foot">
-        <span id="vitals-ring-name">Neeve Ring</span>
+        <span class="vitals-name">
+          <span class="vitals-pulse" aria-hidden="true"></span>
+          <span id="vitals-ring-name">Neeve Ring</span>
+        </span>
         <button class="vitals-tag" id="vitals-tag-btn" type="button" onclick="tagReading()">
           ⊙  Tag a reading
         </button>
@@ -366,12 +526,25 @@ function greetFromHour(h) {
 (function bootGreeting() {
   const name = localStorage.getItem('neeve_name') || '';
   const g = greetFromHour(new Date().getHours());
-  document.getElementById('greeting').textContent = name ? `${g}, ${name}.` : `${g}.`;
+  // Render the name in italic warm-clay accent for editorial feel
+  // ("Good afternoon, *Patrick*.") — when no name, just the greeting.
+  const el = document.getElementById('greeting');
+  if (name) {
+    el.innerHTML = `${escapeHtml(g)}, <em>${escapeHtml(name)}</em>.`;
+  } else {
+    el.textContent = `${g}.`;
+  }
   document.getElementById('pill-clock').textContent = new Date()
     .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   document.getElementById('today-date').textContent =
     new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 })();
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+  }[c]));
+}
 
 // ── Main load ─────────────────────────────────────────
 async function load() {
@@ -454,35 +627,38 @@ function paintSlot(slot, done, slotTimeStr) {
   const foot  = document.getElementById(`${slot}-foot`);
   const card  = document.getElementById(`slot-${slot}`);
 
+  // Reset state classes — card carries identity tint via accent strip
+  card.classList.remove('is-done', 'is-later');
+  dot.classList.remove('done', 'later');
+  state.classList.remove('done', 'later');
+
   if (done) {
     const sentence = summariseAnswers(done.answers || {});
     const id = done.checkin_id || done.id;
+    card.classList.add('is-done');
     dot.classList.add('done');
     state.classList.add('done');
     state.textContent = 'logged';
     body.textContent = sentence;
-    foot.textContent = 'tap to view';
+    foot.textContent = 'tap to view →';
     card.setAttribute('href', `/health/v2/checkin.html?checkin=${encodeURIComponent(id)}`);
     return;
   }
-  // Pending — but DO NOT narrate lateness. Always "available" or "later",
-  // never "you should have done this by now".
+  // Pending — DO NOT narrate lateness. Always "available" or "later".
   const now    = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const slotMin = parseTime(slotTimeStr);
 
-  dot.classList.remove('done');
-  state.classList.remove('done');
-
   if (nowMin < slotMin && slot === 'evening') {
+    card.classList.add('is-later');
+    dot.classList.add('later');
+    state.classList.add('later');
     state.textContent = 'later';
     body.textContent = `Comes around at ${formatSlotTime(slotTimeStr)}.`;
     foot.textContent = '';
   } else {
     state.textContent = 'available';
-    body.textContent = slot === 'morning'
-      ? 'Start when you\'re ready.'
-      : 'Start when you\'re ready.';
+    body.textContent = 'Start when you\'re ready.';
     foot.textContent = 'Takes a few minutes.';
   }
   card.setAttribute('href', '/health/v2/checkin.html');
@@ -542,8 +718,10 @@ function renderVitals(device, samples) {
     tiles.push(`
       <div class="v">
         <span class="label">${lbl}</span>
-        <span class="value">${formatValue(m, s.value)}</span>
-        <span class="unit">${unit}</span>
+        <span class="value-row">
+          <span class="value">${formatValue(m, s.value)}</span>
+          <span class="unit">${unit}</span>
+        </span>
       </div>`);
   };
   tile('hr',          'HR',   'bpm');

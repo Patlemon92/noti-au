@@ -87,29 +87,110 @@
        the check-in window AND nothing logged. -->
   <div class="prompt" id="prompt-card" style="display:none"></div>
 
-  <!-- Quick log — always available, regardless of slot timing.
-       Drops one row in `notes` with mood + optional body; Alys
-       replies if the user typed something. -->
-  <section class="card" id="quicklog-card" style="margin-bottom:22px">
-    <p class="lbl" style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-mute);font-weight:500;margin-bottom:8px">
-      Log a note
-    </p>
-    <div style="font-family:'Fraunces',serif;font-size:18px;color:var(--ink);margin-bottom:10px;line-height:1.35">
-      How are you, right now?
+  <!-- Compact 'log anything' button. Tap → bottom sheet with a free
+       textarea and optional kind chips. Drops one row in `notes` with
+       optional mood, kind, body. Alys replies in the matching mode. -->
+  <button class="ql-cta" id="ql-open-btn" onclick="openLogSheet()">
+    <span class="ql-plus" aria-hidden="true">+</span>
+    Log something
+    <span class="ql-hint">a thought, symptom, appointment, anything</span>
+  </button>
+
+  <style>
+    .ql-cta {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; padding: 14px 18px; margin-bottom: 22px;
+      background: rgba(255,253,249,.82); backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,.7); border-radius: 18px;
+      box-shadow: 0 18px 40px -34px rgba(70,45,25,.5);
+      font-family: inherit; font-size: 15px; color: var(--ink);
+      cursor: pointer; text-align: left;
+    }
+    .ql-cta .ql-plus {
+      width: 28px; height: 28px; flex-shrink: 0;
+      border-radius: 50%; background: var(--ink); color: #fff7f0;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; line-height: 1;
+    }
+    .ql-cta .ql-hint {
+      flex: 1; text-align: right;
+      font-size: 12px; color: var(--taupe);
+    }
+    .ql-backdrop {
+      position: fixed; inset: 0; background: rgba(43,32,24,.45);
+      z-index: 1000; opacity: 0; pointer-events: none;
+      transition: opacity .2s ease;
+    }
+    .ql-backdrop.open { opacity: 1; pointer-events: auto; }
+    .ql-sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
+      background: var(--cream); border-radius: 22px 22px 0 0;
+      padding: 18px 20px max(28px, env(safe-area-inset-bottom)) 20px;
+      transform: translateY(100%); transition: transform .25s ease;
+      max-height: 85vh; overflow-y: auto;
+      box-shadow: none;
+    }
+    .ql-sheet.open { transform: translateY(0); box-shadow: 0 -10px 30px rgba(43,32,24,.18); }
+    .ql-sheet h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px; color: var(--ink); margin: 6px 0 4px; }
+    .ql-sheet .sub { font-size: 13px; color: var(--taupe); margin-bottom: 14px; }
+    .ql-sheet textarea {
+      width: 100%; box-sizing: border-box; background: white;
+      border: 1px solid var(--hair); border-radius: 14px;
+      padding: 14px; font-family: inherit; font-size: 16px;
+      color: var(--ink); resize: vertical; min-height: 110px;
+    }
+    .ql-row {
+      display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0;
+    }
+    .ql-chip {
+      padding: 7px 12px; border-radius: 99px; border: 1px solid var(--hair);
+      background: white; font-family: inherit; font-size: 13px;
+      color: var(--ink-soft); cursor: pointer;
+    }
+    .ql-chip.on { background: var(--ink); color: #fff7f0; border-color: var(--ink); }
+    .ql-actions {
+      display: flex; align-items: center; gap: 10px; margin-top: 14px;
+    }
+    .ql-status { flex: 1; min-height: 18px; font-size: 13px; color: var(--taupe); }
+    .ql-sheet-grip {
+      width: 36px; height: 4px; background: var(--hair);
+      border-radius: 2px; margin: 0 auto 8px;
+    }
+  </style>
+
+  <div class="ql-backdrop" id="ql-backdrop" onclick="closeLogSheet()"></div>
+  <div class="ql-sheet" id="ql-sheet" role="dialog" aria-modal="true">
+    <div class="ql-sheet-grip"></div>
+    <h2>What's on your mind?</h2>
+    <div class="sub">Anything you want noted. Alys reads it; Past you might thank you.</div>
+    <textarea id="ql-body" placeholder="Type whatever — a symptom, an appointment coming up, something that helped, something that didn't, a thought to remember…"></textarea>
+    <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-top:14px;margin-bottom:6px">
+      Tag it (optional)
     </div>
-    <div id="ql-moods" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-      <button class="pill" data-mood="good"   onclick="selectMood('good')">Good</button>
-      <button class="pill" data-mood="ok"     onclick="selectMood('ok')">Ok</button>
-      <button class="pill" data-mood="rough"  onclick="selectMood('rough')">Rough</button>
-      <button class="pill" data-mood="bad"    onclick="selectMood('bad')">Bad</button>
+    <div class="ql-row" id="ql-kinds">
+      <button class="ql-chip" data-kind="symptom"     onclick="selectKind('symptom')">Symptom</button>
+      <button class="ql-chip" data-kind="appointment" onclick="selectKind('appointment')">Appointment</button>
+      <button class="ql-chip" data-kind="medication"  onclick="selectKind('medication')">Medication</button>
+      <button class="ql-chip" data-kind="trigger"     onclick="selectKind('trigger')">Trigger</button>
+      <button class="ql-chip" data-kind="event"       onclick="selectKind('event')">Event</button>
+      <button class="ql-chip" data-kind="thought"     onclick="selectKind('thought')">Thought</button>
     </div>
-    <textarea id="ql-text" rows="2" placeholder="Anything you want to add (optional)"
-      style="width:100%;box-sizing:border-box;background:white;border:1px solid var(--hair);border-radius:12px;padding:10px 12px;font-family:'Inter Tight',sans-serif;font-size:16px;color:var(--ink);resize:vertical;margin-bottom:8px"></textarea>
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px">
-      <span id="ql-status" class="caption" style="flex:1;min-height:18px"></span>
+    <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-top:10px;margin-bottom:6px">
+      How are you, while you're here? (optional)
+    </div>
+    <div class="ql-row" id="ql-moods">
+      <button class="ql-chip" data-mood="good"  onclick="selectMood('good')">Good</button>
+      <button class="ql-chip" data-mood="ok"    onclick="selectMood('ok')">Ok</button>
+      <button class="ql-chip" data-mood="rough" onclick="selectMood('rough')">Rough</button>
+      <button class="ql-chip" data-mood="bad"   onclick="selectMood('bad')">Bad</button>
+    </div>
+    <div class="ql-actions">
+      <span class="ql-status" id="ql-status"></span>
+      <button class="btn btn-ghost" onclick="closeLogSheet()">Cancel</button>
       <button class="btn btn-primary" id="ql-submit" onclick="submitQuickLog()" disabled>Log it</button>
     </div>
-  </section>
+  </div>
 
   <!-- Ring status + live data -->
   <div class="ring-card" id="ring-card">
@@ -321,39 +402,68 @@ function parseTime(s) {
   return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
 }
 
-// ── Quick log ───────────────────────────────────────────
+// ── Quick log (bottom sheet) ────────────────────────────
 let _qlMood = null;
-function selectMood(m) {
-  _qlMood = m;
-  document.querySelectorAll('#ql-moods .pill').forEach(b => {
-    b.classList.toggle('pill-rose', b.dataset.mood === m);
-  });
-  document.getElementById('ql-submit').disabled = false;
+let _qlKind = null;
+
+function openLogSheet() {
+  document.getElementById('ql-backdrop').classList.add('open');
+  document.getElementById('ql-sheet').classList.add('open');
+  setTimeout(() => document.getElementById('ql-body').focus(), 200);
+  refreshQlSubmit();
 }
+function closeLogSheet() {
+  document.getElementById('ql-backdrop').classList.remove('open');
+  document.getElementById('ql-sheet').classList.remove('open');
+}
+
+function selectMood(m) {
+  _qlMood = _qlMood === m ? null : m;
+  document.querySelectorAll('#ql-moods .ql-chip').forEach(b => {
+    b.classList.toggle('on', b.dataset.mood === _qlMood);
+  });
+  refreshQlSubmit();
+}
+function selectKind(k) {
+  _qlKind = _qlKind === k ? null : k;
+  document.querySelectorAll('#ql-kinds .ql-chip').forEach(b => {
+    b.classList.toggle('on', b.dataset.kind === _qlKind);
+  });
+  refreshQlSubmit();
+}
+function refreshQlSubmit() {
+  const text = (document.getElementById('ql-body').value || '').trim();
+  document.getElementById('ql-submit').disabled = !(text || _qlMood);
+}
+// Live-enable submit as the user types.
+document.getElementById('ql-body').addEventListener('input', refreshQlSubmit);
+
 async function submitQuickLog() {
-  if (!_qlMood) return;
   const status = document.getElementById('ql-status');
   const btn    = document.getElementById('ql-submit');
-  const text   = document.getElementById('ql-text').value.trim();
+  const text   = document.getElementById('ql-body').value.trim();
+  if (!text && !_qlMood) return;
   status.textContent = 'Logging…';
-  status.style.color = 'var(--ink-mute)';
+  status.style.color = 'var(--taupe)';
   btn.disabled = true;
   try {
     const r = await api('/me/note', {
       method: 'POST',
-      body: JSON.stringify({ mood: _qlMood, body: text }),
+      body: JSON.stringify({ mood: _qlMood, kind: _qlKind, body: text }),
     });
-    status.textContent = r?.note?.alys_reply
-      ? r.note.alys_reply.slice(0, 80) + (r.note.alys_reply.length > 80 ? '…' : '')
+    const reply = r?.note?.alys_reply;
+    status.textContent = reply
+      ? reply.slice(0, 120) + (reply.length > 120 ? '…' : '')
       : 'Logged.';
     status.style.color = 'var(--ink-soft)';
-    // Reset
-    document.getElementById('ql-text').value = '';
-    _qlMood = null;
-    document.querySelectorAll('#ql-moods .pill').forEach(b => b.classList.remove('pill-rose'));
+    document.getElementById('ql-body').value = '';
+    _qlMood = null; _qlKind = null;
+    document.querySelectorAll('.ql-chip').forEach(b => b.classList.remove('on'));
+    // Auto-close after 1.6s so the user sees Alys's reply briefly.
+    setTimeout(closeLogSheet, 1800);
   } catch (e) {
     status.textContent = `Couldn't log: ${e.message}`;
-    status.style.color = 'var(--rose-deep)';
+    status.style.color = 'var(--clay)';
     btn.disabled = false;
   }
 }

@@ -90,16 +90,28 @@
     flex: 1; height: 1px; background: rgba(44, 32, 23, .12);
   }
 
-  /* Vitals — 3-column grid, each tile has a mini sparkline */
+  /* Vitals — 2-column grid (4 tiles total: HR / SpO2 / HRV / temp).
+     Each tile has a mini sparkline. */
   .vitals-grid {
-    display: flex; gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
   .vital {
-    flex: 1;
     background: var(--warm-card);
     border-radius: 16px;
     padding: 14px 13px 8px;
     border: 1px solid rgba(44, 32, 23, .05);
+    transition: transform .2s ease;
+  }
+  /* When a vital value updates, briefly pulse the tile to show liveness */
+  .vital.updated {
+    animation: vital-pulse .8s ease;
+  }
+  @keyframes vital-pulse {
+    0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(191, 90, 60, .35); }
+    40%  { transform: scale(1.02); box-shadow: 0 0 0 6px rgba(191, 90, 60, .12); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(191, 90, 60, 0); }
   }
   .vital .label {
     font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
@@ -431,6 +443,10 @@ async function load() {
   }
 }
 
+// Remember the last value we displayed per metric so we can pulse
+// the tile when a fresh reading arrives.
+const _lastSeen = {};
+
 function renderVitals(device, samples) {
   if (!device) {
     document.getElementById('vitals-section').classList.add('hidden');
@@ -446,10 +462,15 @@ function renderVitals(device, samples) {
   const latest = latestPerMetric(samples);
   const grid = document.getElementById('vitals-grid');
 
+  // Four vital tiles — HR / HRV / SpO2 / temp. Temp may not have data
+  // yet (the R11 only populates it when measureBodyTemperature fires),
+  // but the tile will fill in as soon as the scheduler-driven samples
+  // start flowing.
   const metricsToShow = [
     { key: 'hr',        label: 'Heart rate', unit: 'bpm' },
-    { key: 'hrv_rmssd', label: 'HRV',        unit: 'ms' },
     { key: 'spo2',      label: 'Blood O₂',   unit: '%' },
+    { key: 'hrv_rmssd', label: 'HRV',        unit: 'ms' },
+    { key: 'temp_skin', label: 'Skin temp',  unit: '°C', decimals: 1 },
   ];
 
   const tiles = metricsToShow.map(m => {
@@ -459,12 +480,16 @@ function renderVitals(device, samples) {
       .filter(s => s.metric === m.key)
       .map(s => Number(s.value))
       .filter(v => !isNaN(v));
-    const value = Math.round(Number(last.value));
+    const raw = Number(last.value);
+    const value = m.decimals != null
+      ? raw.toFixed(m.decimals)
+      : Math.round(raw);
+    const formatNum = v => m.decimals != null ? Number(v).toFixed(m.decimals) : Math.round(v);
     const range = series.length > 1
-      ? `${Math.min(...series)}–${Math.max(...series)} today`
+      ? `${formatNum(Math.min(...series))}–${formatNum(Math.max(...series))} today`
       : '';
     return `
-      <div class="vital">
+      <div class="vital" data-key="${escapeHtml(m.key)}">
         <div class="label">${escapeHtml(m.label)}</div>
         <div class="value">
           <span class="num">${value}</span>
@@ -476,10 +501,29 @@ function renderVitals(device, samples) {
   }).filter(Boolean).join('');
 
   if (!tiles) {
-    grid.innerHTML = `<div style="flex:1;text-align:center;color:var(--taupe-2);font-style:italic;font-size:14px;padding:20px 0">No readings in the window yet.</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--taupe-2);font-style:italic;font-size:14px;padding:20px 0">No readings in the window yet.</div>`;
     return;
   }
   grid.innerHTML = tiles;
+
+  // Pulse any tile whose displayed value changed since the last render
+  // — gives the page a "live" feel as new ring samples arrive.
+  for (const m of metricsToShow) {
+    const last = latest[m.key];
+    if (!last) continue;
+    const v = Number(last.value);
+    const prev = _lastSeen[m.key];
+    if (prev != null && prev !== v) {
+      const el = document.querySelector(`.vital[data-key="${m.key}"]`);
+      if (el) {
+        el.classList.remove('updated');
+        // Force reflow so the animation can re-trigger
+        void el.offsetWidth;
+        el.classList.add('updated');
+      }
+    }
+    _lastSeen[m.key] = v;
+  }
 
   // Update "ago" meta
   const mostRecent = Math.max(
@@ -579,11 +623,14 @@ async function submitQuickLog() {
 }
 
 // ── Refresh while visible ─────────────────────────
+// 10-second interval so the vitals feel near-live. The server caches
+// /me/weather for 15min so the pill doesn't churn; ring samples ingest
+// every BLE wake event so we pick up new readings quickly.
 load();
 let _refreshTimer = null;
 function _startRefresh() {
   if (_refreshTimer) return;
-  _refreshTimer = setInterval(load, 90000);
+  _refreshTimer = setInterval(load, 10000);
 }
 function _stopRefresh() {
   if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }

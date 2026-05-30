@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/health/v2/styles.css">
-<script src="/health/v2/ambient.js" defer></script>
+<script src="/health/v2/ambient.js"></script>
 <style>
 .greeting-time { color: var(--ink-mute); font-family: 'Inter Tight', sans-serif; font-weight: 500; font-size: 14px; margin-bottom: 4px; }
 .greeting { font-family: 'Fraunces', serif; font-weight: 500; font-size: 36px; line-height: 1.1; letter-spacing: -0.5px; color: var(--ink); margin-bottom: 28px; }
@@ -62,21 +62,22 @@
 
 <!-- Ambient hero. ambient.js paints the gradient + glowing orb + halo
      rings + weather wash; this content layer sits on top. Phase auto-
-     detects from the device clock; weather hits /me/weather server-side
-     (no geolocation prompt). -->
+     detects from the device clock; text colour applies via the
+     [data-phase] attribute set by mountAmbient so warm phases get
+     light cream text and the day phase gets brown. -->
 <header id="ambient-host" style="padding-bottom: 30px;">
   <div class="amb-content" id="ambient-content" style="padding-top:30px;text-align:center">
     <div class="amb-pill" id="ambient-pill" style="margin-bottom:18px"><span id="amb-clock">—</span><span style="opacity:.6">·</span><span id="amb-weather">—</span></div>
-    <div class="ta-serif" id="ambient-greeting" style="font-family:'Fraunces',Georgia,serif;font-size:30px;font-weight:500;color:#fff7f0;text-shadow:0 1px 18px rgba(80,40,30,.22)">Hey.</div>
+    <div class="ambient-text serif" id="ambient-greeting" style="font-family:'Fraunces',Georgia,serif;font-size:30px;font-weight:500;text-shadow:0 1px 18px rgba(80,40,30,.22)">Hey.</div>
     <div style="height:150px"></div>
-    <div class="amb-title" id="ambient-eyebrow-host">
-      <div id="ambient-title" style="color:#fff7f0">Today</div>
-      <div class="amb-eyebrow" id="ambient-subtitle" style="margin-top:10px;color:#fff7f0">nothing to prove</div>
+    <div id="ambient-eyebrow-host">
+      <div class="ambient-text serif" id="ambient-title" style="font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:56px;letter-spacing:-1px;line-height:1;text-shadow:0 2px 22px rgba(80,40,30,.28)">Today</div>
+      <div class="ambient-text amb-eyebrow" id="ambient-subtitle" style="margin-top:10px">nothing to prove</div>
     </div>
-    <div id="ambient-line" style="font-size:17px;line-height:1.55;margin:22px auto 0;max-width:320px;color:#fff7f0;opacity:.96;text-shadow:0 1px 14px rgba(80,40,30,.18)">
+    <div class="ambient-text" id="ambient-line" style="font-size:17px;line-height:1.55;margin:22px auto 0;max-width:320px;opacity:.96;text-shadow:0 1px 14px rgba(80,40,30,.18)">
       here's what your body's telling us today. nothing to fix — just yours to know.
     </div>
-    <a class="amb-cta-dark" href="/health/v2/checkin.html" id="ambient-cta" style="margin-top:30px;display:inline-block;text-decoration:none;text-align:center">How are you today?</a>
+    <a class="amb-cta-dark" href="/health/v2/checkin.html" id="ambient-cta" style="margin-top:30px;display:inline-block">How are you today?</a>
   </div>
 </header>
 

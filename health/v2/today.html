@@ -548,25 +548,38 @@ function renderVitals(device, samples) {
   }
 }
 
-// SVG sparkline. Animates only on FIRST paint per metric — re-renders
-// after that update just the path data so the line doesn't re-draw
-// every 2 seconds (which read as jittery).
+// SVG sparkline. preserveAspectRatio="none" stretches the path to
+// fill the full tile width (default preserve-aspect would centre it
+// and leave empty space on the sides). Quadratic-bezier midpoints
+// smooth out the line so noisy HR samples don't look jagged.
+// First paint animates the stroke draw; subsequent renders just
+// update the path data without re-triggering the animation.
 const _drawn = {};
 function sparkPath(series, W, H, pad) {
   const lo = Math.min(...series);
   const hi = Math.max(...series);
   const span = (hi - lo) || 1;
-  let d = '';
-  for (let i = 0; i < series.length; i++) {
-    const x = pad + (i / (series.length - 1)) * (W - 2 * pad);
-    const y = pad + (1 - (series[i] - lo) / span) * (H - 2 * pad);
-    d += (i === 0 ? 'M ' : 'L ') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+  // Map each sample to a point
+  const pts = series.map((v, i) => [
+    pad + (i / (series.length - 1)) * (W - 2 * pad),
+    pad + (1 - (v - lo) / span) * (H - 2 * pad),
+  ]);
+  // Smooth path via quadratic-bezier through midpoints
+  let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) {
+    const [px, py] = pts[i - 1];
+    const [cx, cy] = pts[i];
+    const mx = (px + cx) / 2;
+    const my = (py + cy) / 2;
+    d += ` Q ${px.toFixed(1)} ${py.toFixed(1)} ${mx.toFixed(1)} ${my.toFixed(1)}`;
   }
-  return d.trim();
+  // Final segment ending at the last point
+  d += ` T ${pts[pts.length - 1][0].toFixed(1)} ${pts[pts.length - 1][1].toFixed(1)}`;
+  return d;
 }
 function renderSparkSvg(series, key) {
   if (!series || series.length < 2) {
-    return '<svg class="spark" viewBox="0 0 150 50" aria-hidden="true"></svg>';
+    return '<svg class="spark" viewBox="0 0 150 50" preserveAspectRatio="none" aria-hidden="true"></svg>';
   }
   const W = 150, H = 50, pad = 4;
   const d = sparkPath(series, W, H, pad);
@@ -576,10 +589,11 @@ function renderSparkSvg(series, key) {
     ? 'stroke-dasharray:900;stroke-dashoffset:900;animation:te-draw 1.1s .1s ease-out forwards'
     : '';
   return `
-    <svg class="spark" viewBox="0 0 150 50" aria-hidden="true">
+    <svg class="spark" viewBox="0 0 150 50" preserveAspectRatio="none" aria-hidden="true">
       <path d="${d}" fill="none"
-            stroke="#bf5a3c" stroke-width="1.5"
+            stroke="#bf5a3c" stroke-width="1.6"
             stroke-linecap="round" stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"
             ${animStyle ? `style="${animStyle}"` : ''}/>
     </svg>`;
 }

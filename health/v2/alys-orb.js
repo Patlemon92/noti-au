@@ -1,40 +1,32 @@
-// Alys — the orb that represents her across the app.
+// Alys — the orb that represents her, on the home page only.
 //
-// A single luminous sphere with a marbled multi-colour gradient inside
-// (soft pink / peach / lilac / amber blended on a cream base) and a
-// soft outer glow. Same orb is Alys's identity mark: home hero, chat
-// avatar, brand notification mark.
-//
-// The orb pulses at the user's live heart rate (60 / bpm seconds per
-// beat, clamped 0.45–1.4s); a slow internal "drift" animation keeps
-// her feeling alive even when no HR sample is available.
+// Patrick's reference is George Francis's generative-orb animation
+// (gist 1ccb28bc96c8c777a9442fc9a109cb96): multiple coloured blobs
+// drifting through space with a heavy blur over the whole stage, so
+// they read as a single soft luminous cloud. We use a plain 2D canvas
+// + requestAnimationFrame + a CSS blur filter on the canvas; no PIXI
+// dependency. The blobs drift via a small sine-summed noise function,
+// the canvas is blurred ~30px, and the wrapping div pulses at the
+// user's live heart rate.
 //
 // Public API:
-//   renderAlysOrb({size, palette}) → HTML string
-//   setAlysOrbHR(host, bpm)        → re-time the pulse from a heart-rate
-//   wireAlysOrbHR(host)            → poll /ring/samples and set HR
+//   renderAlysOrb({size, palette}) → HTML string. Caller inserts it
+//     into the DOM, then calls startAlysOrbAnimation(mount) once it's
+//     attached so the canvas animation can begin.
+//   startAlysOrbAnimation(host)
+//   setAlysOrbHR(host, bpm)
+//   wireAlysOrbHR(host)
 
+// Warm Neeve palette, complementary hues. Each colour is a soft
+// translucent fill so the blobs blend richly when they overlap.
 const ALYS_ORB_PALETTES = {
-  // Default — warm, dreamy, soft. Matches the Neeve design brief.
-  warm: {
-    base:  ['#fff5ec', '#ffdfcf', '#f9b7a7'],   // cream → peach
-    blobs: [
-      { cx: 25, cy: 55, r: 42, color: 'rgba(255, 180, 200, .72)' }, // pink
-      { cx: 75, cy: 58, r: 42, color: 'rgba(255, 210, 140, .62)' }, // amber
-      { cx: 58, cy: 80, r: 32, color: 'rgba(200, 170, 220, .55)' }, // lilac
-    ],
-    glow:  'rgba(255, 200, 180, .55)',
-  },
-  // Cool variant for the Sleep page — same shape, dawn-violet palette.
-  dawn: {
-    base:  ['#fff5ec', '#ffe1cf', '#e9a78f'],
-    blobs: [
-      { cx: 28, cy: 50, r: 42, color: 'rgba(255, 195, 195, .72)' },
-      { cx: 72, cy: 58, r: 42, color: 'rgba(228, 168, 190, .65)' },
-      { cx: 55, cy: 82, r: 34, color: 'rgba(180, 140, 200, .55)' },
-    ],
-    glow:  'rgba(245, 190, 175, .55)',
-  },
+  warm: [
+    'rgba(255, 170, 195, .85)',  // soft pink
+    'rgba(255, 210, 145, .85)',  // amber
+    'rgba(220, 175, 220, .80)',  // lilac
+    'rgba(255, 195, 175, .85)',  // peach
+    'rgba(240, 165, 145, .80)',  // salmon
+  ],
 };
 
 function ensureAlysOrbStyles() {
@@ -43,25 +35,25 @@ function ensureAlysOrbStyles() {
     .alys-orb {
       display: inline-block;
       position: relative;
-      width: var(--orb-size, 200px);
-      height: var(--orb-size, 200px);
+      width: var(--orb-size, 260px);
+      height: var(--orb-size, 260px);
       animation: alys-orb-pulse var(--hr-period, 1.2s) ease-in-out infinite;
       will-change: transform;
     }
-    .alys-orb svg { display: block; width: 100%; height: 100%; }
-    .alys-orb-blobs {
-      transform-origin: 50% 50%;
-      animation: alys-orb-drift 18s ease-in-out infinite;
+    .alys-orb-canvas {
+      width: 100%; height: 100%;
+      display: block;
+      /* Heavy blur dissolves the individual blobs into a single soft
+         luminous cloud. saturate gives the colours back some richness
+         that blur drains away. */
+      filter: blur(28px) saturate(1.25);
+      -webkit-filter: blur(28px) saturate(1.25);
     }
     @keyframes alys-orb-pulse {
       0%, 100% { transform: scale(1); }
       30%      { transform: scale(1.035); }
       55%      { transform: scale(0.99); }
       80%      { transform: scale(1.012); }
-    }
-    @keyframes alys-orb-drift {
-      0%, 100% { transform: rotate(0deg); }
-      50%      { transform: rotate(14deg); }
     }
   `;
   const s = document.createElement('style');
@@ -72,91 +64,121 @@ function ensureAlysOrbStyles() {
 
 function renderAlysOrb(opts = {}) {
   ensureAlysOrbStyles();
-  const size    = opts.size    || 220;
-  const palette = ALYS_ORB_PALETTES[opts.palette] || ALYS_ORB_PALETTES.warm;
-  // Unique id suffix so multiple orbs on the same page don't collide.
-  const sfx = opts.id || 'a' + Math.floor(Math.random() * 1e6).toString(36);
-
-  const blobsSvg = palette.blobs.map((b, i) => `
-    <radialGradient id="orb-${sfx}-b${i}" cx="${b.cx}%" cy="${b.cy}%" r="${b.r}%">
-      <stop offset="0%"   stop-color="${b.color}"/>
-      <stop offset="100%" stop-color="${b.color.replace(/,\s*\.?\d+\)/, ', 0)')}"/>
-    </radialGradient>`).join('');
-
-  const blobsCircles = palette.blobs.map((_, i) =>
-    `<circle cx="120" cy="120" r="100" fill="url(#orb-${sfx}-b${i})"/>`).join('');
+  const size = opts.size || 260;
+  const dpr  = Math.min(2, window.devicePixelRatio || 1);
+  const px   = Math.round(size * dpr);
 
   return `
-    <div class="alys-orb" style="--orb-size:${size}px" data-hr="resting" aria-label="Alys">
-      <svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="orb-${sfx}-base" cx="40%" cy="38%" r="68%">
-            <stop offset="0%"   stop-color="${palette.base[0]}"/>
-            <stop offset="55%"  stop-color="${palette.base[1]}"/>
-            <stop offset="100%" stop-color="${palette.base[2]}"/>
-          </radialGradient>
-          ${blobsSvg}
-          <radialGradient id="orb-${sfx}-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%"   stop-color="${palette.glow}"/>
-            <stop offset="58%"  stop-color="${palette.glow.replace(/,\s*\.?\d+\)/, ', .22)')}"/>
-            <stop offset="100%" stop-color="${palette.glow.replace(/,\s*\.?\d+\)/, ', 0)')}"/>
-          </radialGradient>
-          <radialGradient id="orb-${sfx}-sheen" cx="32%" cy="26%" r="26%">
-            <stop offset="0%"   stop-color="rgba(255,255,255,.95)"/>
-            <stop offset="70%"  stop-color="rgba(255,255,255,.18)"/>
-            <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-          </radialGradient>
-          <radialGradient id="orb-${sfx}-shadow" cx="58%" cy="72%" r="48%">
-            <stop offset="0%"   stop-color="rgba(180,90,75,0)"/>
-            <stop offset="70%"  stop-color="rgba(180,90,75,0)"/>
-            <stop offset="100%" stop-color="rgba(180,90,75,.18)"/>
-          </radialGradient>
-          <filter id="orb-${sfx}-soft" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1.6"/>
-          </filter>
-        </defs>
-
-        <!-- Outer halo: large soft circle behind the sphere -->
-        <circle cx="120" cy="120" r="118" fill="url(#orb-${sfx}-glow)"/>
-
-        <!-- Sphere base + colour blobs (slow drift) -->
-        <g class="alys-orb-blobs" filter="url(#orb-${sfx}-soft)">
-          <circle cx="120" cy="120" r="100" fill="url(#orb-${sfx}-base)"/>
-          ${blobsCircles}
-        </g>
-
-        <!-- Bottom-right inner shadow gives the orb depth -->
-        <circle cx="120" cy="120" r="100" fill="url(#orb-${sfx}-shadow)"/>
-
-        <!-- Top-left specular highlight (not blurred, not drifting) -->
-        <circle cx="120" cy="120" r="100" fill="url(#orb-${sfx}-sheen)"/>
-      </svg>
+    <div class="alys-orb" style="--orb-size:${size}px" data-hr="resting"
+         data-palette="${opts.palette || 'warm'}" aria-label="Alys">
+      <canvas class="alys-orb-canvas" width="${px}" height="${px}"
+              style="width:${size}px;height:${size}px"></canvas>
     </div>`;
 }
 
-// Re-time the orb pulse from a heart-rate value. Pass null/missing to
-// fall back to the resting cadence.
+// Spawn the canvas animation. Idempotent — calling twice on the same
+// host is a no-op (a __started flag is set on the canvas).
+function startAlysOrbAnimation(hostOrSelector) {
+  const host = typeof hostOrSelector === 'string'
+    ? document.querySelector(hostOrSelector)
+    : hostOrSelector;
+  if (!host) return;
+  const orb = host.classList && host.classList.contains('alys-orb')
+    ? host
+    : host.querySelector('.alys-orb');
+  if (!orb) return;
+  const canvas = orb.querySelector('canvas.alys-orb-canvas');
+  if (!canvas || canvas.__started) return;
+  canvas.__started = true;
+
+  const palette = ALYS_ORB_PALETTES[orb.dataset.palette] || ALYS_ORB_PALETTES.warm;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Five blobs distributed loosely around the centre. Each has its own
+  // noise offsets so they drift independently and never sync up.
+  const blobs = [];
+  const N = 5;
+  for (let i = 0; i < N; i++) {
+    const angle = (i / N) * Math.PI * 2 + Math.random() * 0.4;
+    const dist  = w * (0.10 + Math.random() * 0.10);
+    blobs.push({
+      cx:      w * 0.5 + Math.cos(angle) * dist,
+      cy:      h * 0.5 + Math.sin(angle) * dist,
+      r:       w * (0.22 + Math.random() * 0.08),
+      color:   palette[i % palette.length],
+      offsetX: Math.random() * 1000,
+      offsetY: Math.random() * 1000,
+      offsetS: Math.random() * 1000,
+    });
+  }
+
+  // Smooth sine-summed pseudo-noise (no SimplexNoise dep). Output ≈ −1..+1.
+  function n(t) {
+    return (
+      Math.sin(t * 0.7) * 0.5 +
+      Math.sin(t * 1.31 + 0.5) * 0.3 +
+      Math.sin(t * 2.13 + 1.0) * 0.2
+    );
+  }
+
+  let raf = 0, running = true;
+  function frame() {
+    if (!running) return;
+    ctx.clearRect(0, 0, w, h);
+
+    for (const b of blobs) {
+      b.offsetX += 0.0028;
+      b.offsetY += 0.0028;
+      b.offsetS += 0.0035;
+      const nx = n(b.offsetX);
+      const ny = n(b.offsetY);
+      const ns = n(b.offsetS);
+      const x  = b.cx + nx * w * 0.16;
+      const y  = b.cy + ny * h * 0.16;
+      const r  = b.r  * (0.7 + (ns + 1) * 0.18);
+
+      ctx.fillStyle = b.color;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    raf = requestAnimationFrame(frame);
+  }
+  raf = requestAnimationFrame(frame);
+
+  // Pause when the tab is hidden to save battery; resume on return.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      running = false;
+      cancelAnimationFrame(raf);
+    } else if (!running) {
+      running = true;
+      raf = requestAnimationFrame(frame);
+    }
+  });
+}
+
+// Re-time the orb pulse from a heart-rate value. null/missing → resting.
 function setAlysOrbHR(host, bpm) {
   if (!host) return;
   const orb = host.classList && host.classList.contains('alys-orb')
     ? host
     : host.querySelector('.alys-orb');
   if (!orb) return;
-  const n = Number(bpm);
-  if (!isFinite(n) || n < 30 || n > 220) {
+  const v = Number(bpm);
+  if (!isFinite(v) || v < 30 || v > 220) {
     orb.dataset.hr = 'resting';
     orb.style.removeProperty('--hr-period');
     return;
   }
-  // Clamp the pulse band so a sprint reading doesn't strobe and a low
-  // HR doesn't look frozen.
-  const period = Math.min(1.4, Math.max(0.45, 60 / n));
-  orb.dataset.hr = String(Math.round(n));
+  // Clamp so a sprint reading doesn't strobe and a low HR doesn't freeze.
+  const period = Math.min(1.4, Math.max(0.45, 60 / v));
+  orb.dataset.hr = String(Math.round(v));
   orb.style.setProperty('--hr-period', period.toFixed(2) + 's');
 }
 
-// Optional helper — poll /ring/samples?metric=hr&limit=1 every 30s and
-// set HR. Used by pages that don't already have ring samples in hand.
 function wireAlysOrbHR(host) {
   let stopped = false;
   async function tick() {

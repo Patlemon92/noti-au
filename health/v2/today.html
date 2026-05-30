@@ -32,6 +32,31 @@
   .page-today {
     max-width: 460px; margin: 0 auto;
     padding: 18px 22px 110px;
+    position: relative;
+  }
+
+  /* Sync indicator — top-right corner. Quietly idle; gently spins
+     while a /ring/samples fetch is in flight so the user can see the
+     app is keeping itself current. */
+  .sync-indicator {
+    position: absolute; top: 22px; right: 22px;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--clay-2);
+    opacity: .55;
+    transition: opacity .25s ease;
+  }
+  .sync-indicator.active { opacity: 1; }
+  .sync-indicator svg {
+    width: 18px; height: 18px;
+    transition: transform .3s ease;
+  }
+  .sync-indicator.spinning svg {
+    animation: sync-spin 1s linear infinite;
+  }
+  @keyframes sync-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
   }
   .te-card { animation: te-up .55s both; }
   @keyframes te-up {
@@ -361,6 +386,16 @@
 <body>
 
 <div class="page-today te">
+  <!-- Sync wheel — top-right; spins while a /ring/samples fetch is in flight -->
+  <div class="sync-indicator" id="sync-indicator" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+      <polyline points="21 3 21 8 16 8"/>
+      <polyline points="3 21 3 16 8 16"/>
+    </svg>
+  </div>
+
   <!-- Clock + weather pill -->
   <div class="pill te-card">
     <span id="pill-clock">—</span>
@@ -921,24 +956,52 @@ async function submitQuickLog() {
 let _fastTimer = null, _slowTimer = null;
 let _lastRingDevice = null;
 
+// Sync indicator helpers — show/hide a small spinner in the top-right
+// any time we have a /ring/samples request in flight, so the user can
+// see at a glance that the app is keeping itself current.
+let _syncInFlight = 0;
+function syncStart() {
+  _syncInFlight++;
+  const el = document.getElementById('sync-indicator');
+  if (el) { el.classList.add('active', 'spinning'); }
+}
+function syncEnd() {
+  _syncInFlight = Math.max(0, _syncInFlight - 1);
+  if (_syncInFlight === 0) {
+    const el = document.getElementById('sync-indicator');
+    if (el) {
+      el.classList.remove('spinning');
+      // Linger briefly in the "active" state so a very fast fetch is
+      // still visible, then fade back to idle.
+      setTimeout(() => {
+        if (_syncInFlight === 0) el.classList.remove('active');
+      }, 400);
+    }
+  }
+}
+
 async function fastRefreshVitals() {
+  syncStart();
   try {
-    // 500 samples is enough to render proper 6h sparklines for all 4
-    // vitals (HR ~ 1/3min = 120 samples in 6h × 4 metrics ≈ 480).
     const r = await api('/ring/samples?limit=500').catch(() => null);
     if (!r || !r.samples) return;
     if (_lastRingDevice) renderVitals(_lastRingDevice, r.samples);
-  } catch (_) {}
+  } catch (_) {
+  } finally {
+    syncEnd();
+  }
 }
 
 async function fullRefresh() {
-  await load();
-  // Cache the device so the fast tick can render vitals without
-  // re-hitting /ring/status every 2s.
+  syncStart();
   try {
+    await load();
     const r = await api('/ring/status').catch(() => ({ devices: [] }));
     _lastRingDevice = (r.devices || [])[0] || null;
-  } catch (_) {}
+  } catch (_) {
+  } finally {
+    syncEnd();
+  }
 }
 
 fullRefresh();

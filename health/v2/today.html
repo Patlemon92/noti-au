@@ -262,10 +262,13 @@ document.getElementById('nav-mount').innerHTML = renderNav('today');
   const clock = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   document.getElementById('amb-clock').textContent = clock;
 
-  // Drop the Alys orb in. Idempotent — only renders if container is empty.
+  // Drop the Alys orb in + spin up the canvas animation. Idempotent.
   const orbMount = document.getElementById('alys-orb-mount');
   if (orbMount && typeof renderAlysOrb === 'function' && !orbMount.innerHTML.trim()) {
-    orbMount.innerHTML = renderAlysOrb({ size: 180 });
+    orbMount.innerHTML = renderAlysOrb({ size: 260 });
+    if (typeof startAlysOrbAnimation === 'function') {
+      startAlysOrbAnimation(orbMount);
+    }
   }
 
   // Layer in real weather when available.

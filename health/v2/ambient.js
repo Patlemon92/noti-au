@@ -14,7 +14,7 @@ const PHASES = {
     grad: `radial-gradient(110% 70% at 50% -8%, #c8a6d0 0%, transparent 52%),
            radial-gradient(120% 78% at 50% 34%, #f0a59c 0%, transparent 60%),
            radial-gradient(130% 60% at 50% 60%, #f6c59b 0%, transparent 62%),
-           linear-gradient(180deg, transparent 58%, #f8f1e7 92%)`,
+           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
     nodeTop: 210, nodeColor: '#fff1da', textOn: '#fff7f0', moon: false,
   },
   day: {
@@ -22,7 +22,7 @@ const PHASES = {
     grad: `radial-gradient(110% 70% at 50% -12%, #bcd7ea 0%, transparent 50%),
            radial-gradient(120% 80% at 50% 32%, #f3c79f 0%, transparent 58%),
            radial-gradient(130% 62% at 50% 62%, #f6dcbb 0%, transparent 60%),
-           linear-gradient(180deg, transparent 56%, #f8f1e7 90%)`,
+           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
     nodeTop: 150, nodeColor: '#ffffff', textOn: '#5a3f2e', moon: false,
   },
   dusk: {
@@ -30,7 +30,7 @@ const PHASES = {
     grad: `radial-gradient(110% 70% at 50% -8%, #6f5380 0%, transparent 52%),
            radial-gradient(120% 80% at 50% 36%, #de7150 0%, transparent 60%),
            radial-gradient(130% 60% at 50% 60%, #efa45c 0%, transparent 62%),
-           linear-gradient(180deg, transparent 58%, #f8f1e7 92%)`,
+           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
     nodeTop: 230, nodeColor: '#ffd9a0', textOn: '#fff7f0', moon: false,
   },
   night: {
@@ -38,7 +38,7 @@ const PHASES = {
     grad: `radial-gradient(110% 70% at 50% -10%, #322a47 0%, transparent 55%),
            radial-gradient(120% 80% at 50% 34%, #574367 0%, transparent 60%),
            radial-gradient(130% 62% at 50% 60%, #3a2f4d 0%, transparent 62%),
-           linear-gradient(180deg, transparent 60%, #f8f1e7 94%)`,
+           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
     nodeTop: 168, nodeColor: '#eef0ff', textOn: '#f3eef7', moon: true,
   },
   // Fixed warm-dawn variant for the Sleep page — "a sunrise after the
@@ -48,7 +48,7 @@ const PHASES = {
     grad: `radial-gradient(110% 68% at 50% -8%, #f4cda7 0%, transparent 52%),
            radial-gradient(120% 76% at 50% 32%, #d98a6e 0%, transparent 60%),
            radial-gradient(132% 66% at 50% 62%, #875b76 0%, transparent 64%),
-           linear-gradient(180deg, transparent 60%, #f8f1e7 92%)`,
+           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
     nodeTop: 196, nodeColor: '#ffe7c8', textOn: '#fff7f0', moon: false,
   },
 };
@@ -87,8 +87,18 @@ function wmoToWeather(c) {
 function ensureAmbientStyles() {
   if (document.getElementById('ambient-styles')) return;
   const css = `
-  .amb-host { position: relative; overflow: hidden; }
-  .amb-grad { position: absolute; top: 0; left: 0; right: 0; height: 640px; z-index: 0; transition: background 1.2s ease; }
+  .amb-host { position: relative; }
+  /* Gradient is a fixed full-viewport background so the warm
+     atmosphere extends behind every section of the page, not just
+     the hero band. The orb and halo rings stay positioned relative
+     to the host so they only appear in the hero area at the top. */
+  .amb-grad-fixed {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    transition: background 1.2s ease;
+  }
+  /* Once mountAmbient runs, page body becomes transparent so the
+     fixed gradient layer shows through. Tag set on <html>. */
+  html[data-amb-on="1"] body { background: transparent !important; }
   .amb-halo-outer {
     position: absolute; left: 50%; transform: translateX(-50%);
     width: 280px; height: 280px; border-radius: 50%;
@@ -195,17 +205,29 @@ function mountAmbient({ host, phase, weather = 'clear', coreSize = 56 }) {
   const w = WEATHER[weather] || WEATHER.clear;
 
   // Tag the host so [data-amb-phase] CSS selectors can adapt text
-  // colours and pill background to the active phase.
+  // colours and pill background to the active phase. Tag the html
+  // element too so the body background can become transparent and
+  // reveal the fixed gradient layer.
   host.setAttribute('data-amb-phase', phaseKey);
+  document.documentElement.setAttribute('data-amb-on', '1');
 
   // Strip any prior ambient layers in case this is a re-mount.
   host.querySelectorAll(':scope > .amb-layer').forEach(el => el.remove());
 
-  const layers = [];
-  const grad = document.createElement('div');
-  grad.className = 'amb-grad amb-layer';
+  // Gradient is painted onto a SINGLETON fixed layer that lives at the
+  // top of the document — full-viewport, behind everything, persists
+  // across page sections instead of being clipped to the hero band.
+  let grad = document.getElementById('amb-grad-fixed');
+  if (!grad) {
+    grad = document.createElement('div');
+    grad.id = 'amb-grad-fixed';
+    grad.className = 'amb-grad-fixed';
+    grad.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(grad);
+  }
   grad.style.background = p.grad;
-  layers.push(grad);
+
+  const layers = [];
 
   // Halo rings.
   const outer = document.createElement('div');

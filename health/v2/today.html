@@ -15,20 +15,20 @@
 
 <style>
   /* ── Page atmosphere ──────────────────────────────────
-     Soft warm peach radial at the very top fades into cream so the
-     page has depth without being decorated. The orb lives on Alys's
-     tab; here, the warmth is the atmosphere itself. */
+     Soft warm wash at the top, fading earlier so most of the page
+     sits on neutral cream. No orb (lives on Alys's tab); the warmth
+     is just atmosphere. */
   body {
     background: var(--cream);
     background-image:
-      radial-gradient(120% 60% at 50% -10%,
-        rgba(248, 200, 175, .55) 0%,
-        rgba(248, 200, 175, .25) 28%,
-        rgba(248, 200, 175, 0) 55%),
-      linear-gradient(180deg, #fbf3e7 0%, var(--cream) 60%);
+      radial-gradient(120% 32% at 50% -6%,
+        rgba(248, 200, 175, .42) 0%,
+        rgba(248, 200, 175, .15) 35%,
+        rgba(248, 200, 175, 0) 65%),
+      linear-gradient(180deg, #faf3e7 0%, var(--cream) 32%);
     background-attachment: fixed;
   }
-  .page-today { max-width: 460px; margin: 0 auto; padding: 18px 22px 110px; }
+  .page-today { max-width: 460px; margin: 0 auto; padding: 20px 22px 110px; }
 
   /* Clock + weather pill — frosted, the only floating element at the
      very top so it feels like a tab on a notebook. */
@@ -58,49 +58,37 @@
     color: var(--clay, #BF5A3C);
   }
 
-  /* Log something — frosted glass card with subtle inner glow.
-     A soft warm halo behind the ink-coloured + button signals craft. */
+  /* Log something — a single-line frosted button. Sentence-case label
+     so it doesn't wrap or feel institutional. */
   .log-cta {
-    position: relative; display: flex; align-items: center; gap: 14px;
-    width: 100%; padding: 16px 20px; margin-bottom: 36px;
-    background: linear-gradient(180deg,
-      rgba(255, 255, 255, .92) 0%,
-      rgba(255, 250, 240, .92) 100%);
+    position: relative; display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 14px 18px; margin-bottom: 32px;
+    background: rgba(255, 255, 255, .92);
     border: 1px solid rgba(255, 255, 255, .85);
-    border-radius: 22px;
+    border-radius: 18px;
     box-shadow:
       0 1px 0 rgba(255,255,255,.85) inset,
-      0 18px 38px -28px rgba(140, 80, 50, .42),
-      0 4px 12px -8px rgba(140, 80, 50, .18);
+      0 14px 30px -22px rgba(140, 80, 50, .32);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     font-family: inherit; font-size: 15px; color: var(--ink);
     cursor: pointer; text-align: left;
-    transition: transform .15s ease, box-shadow .2s ease;
+    transition: transform .12s ease;
   }
-  .log-cta:active {
-    transform: translateY(1px);
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.6) inset,
-      0 10px 22px -18px rgba(140, 80, 50, .38);
-  }
+  .log-cta:active { transform: translateY(1px); }
   .log-cta .plus {
-    position: relative;
-    width: 30px; height: 30px; flex-shrink: 0;
+    width: 26px; height: 26px; flex-shrink: 0;
     border-radius: 50%; background: var(--ink); color: #fff7f0;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 18px; line-height: 1; font-weight: 300;
-    box-shadow:
-      0 0 0 4px rgba(255, 220, 200, .55),
-      0 0 14px 2px rgba(220, 130, 95, .35);
+    font-size: 16px; line-height: 1; font-weight: 300;
   }
   .log-cta .label {
-    flex: 1;
-    font-family: 'Inter Tight', sans-serif;
-    font-size: 13px; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--ink); font-weight: 600;
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 16px; color: var(--ink); letter-spacing: -.1px;
+    white-space: nowrap;
   }
   .log-cta .hint {
-    font-size: 12px; color: var(--taupe);
+    flex: 1; text-align: right;
+    font-size: 12.5px; color: var(--taupe);
     font-style: italic;
   }
 
@@ -176,11 +164,11 @@
     margin-bottom: 10px;
   }
   .slot-state {
+    font-family: 'Inter Tight', sans-serif;
     font-size: 10.5px; color: var(--taupe);
-    font-weight: 500; letter-spacing: .12em; text-transform: lowercase;
-    font-style: italic;
+    font-weight: 500; letter-spacing: .1em; text-transform: lowercase;
   }
-  .slot-state.done { color: var(--sage-deep, #94A87A); font-style: normal; }
+  .slot-state.done  { color: var(--sage-deep, #94A87A); }
   .slot-state.later { color: var(--taupe); }
   .slot-dot {
     width: 8px; height: 8px; border-radius: 50%;
@@ -205,36 +193,35 @@
     margin-top: 10px;
   }
 
-  /* Notes block — same crafted card treatment as slots */
+  /* Notes — inline empty state, only becomes a card when there's content */
+  .notes-empty-inline {
+    font-family: 'Fraunces', serif; font-style: italic;
+    color: var(--taupe); font-size: 15px; line-height: 1.55;
+    padding: 4px 4px 8px;
+  }
   .notes-block {
     background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
     border: 1px solid rgba(255, 255, 255, .9);
     border-radius: 18px; padding: 18px 20px;
     box-shadow:
       0 1px 0 rgba(255,255,255,.9) inset,
-      0 18px 34px -26px rgba(140, 80, 50, .35),
-      0 3px 10px -6px rgba(140, 80, 50, .12);
-  }
-  .notes-empty {
-    color: var(--ink-soft); font-size: 15px; line-height: 1.55;
-    font-style: italic;
+      0 18px 34px -26px rgba(140, 80, 50, .32),
+      0 3px 10px -6px rgba(140, 80, 50, .1);
   }
   .notes-latest {
     font-family: 'Fraunces', serif; font-weight: 500;
     font-size: 17px; line-height: 1.4; color: var(--ink);
     letter-spacing: -.1px; margin-bottom: 6px;
   }
-  .notes-ago {
-    font-size: 12.5px; color: var(--taupe); font-style: italic;
-  }
+  .notes-ago { font-size: 12.5px; color: var(--taupe); }
   .notes-more {
     display: inline-block; margin-top: 12px;
     color: var(--clay, #BF5A3C); font-size: 13px;
     font-weight: 500; text-decoration: none;
   }
 
-  /* RIGHT NOW vitals strip — same card depth + a breathing dot
-     in the foot to signal the ring is live. */
+  /* RIGHT NOW vitals strip — same card depth, no breathing pulse
+     (was too cute), just clean type. */
   .vitals {
     background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
     border: 1px solid rgba(255, 255, 255, .9);
@@ -275,16 +262,10 @@
   }
   .vitals-name {
     display: inline-flex; align-items: center; gap: 8px;
-    font-style: italic;
   }
-  .vitals-pulse {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--clay, #BF5A3C);
-    animation: vitals-pulse 2.8s ease-in-out infinite;
-  }
-  @keyframes vitals-pulse {
-    0%, 100% { opacity: .35; transform: scale(1); }
-    50%      { opacity: 1;   transform: scale(1.18); }
+  .vitals-name .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sage-deep, #94A87A); opacity: .85;
   }
   .vitals-tag {
     border: 1px solid rgba(43, 32, 24, .12);
@@ -424,16 +405,13 @@
   <div class="eyebrow">
     Notes today <span class="meta" id="notes-count">· 0</span>
   </div>
-  <div class="notes-block">
-    <div id="notes-empty" class="notes-empty">
-      Nothing yet. Add a thought, a symptom, an appointment —
-      anything you want noted.
-    </div>
-    <div id="notes-content" class="hidden">
-      <div class="notes-latest" id="notes-latest">—</div>
-      <div class="notes-ago" id="notes-ago">—</div>
-      <a class="notes-more" id="notes-more" href="/health/v2/record.html?tab=notes">View all notes →</a>
-    </div>
+  <div id="notes-empty" class="notes-empty-inline">
+    Nothing yet. A thought, a symptom, an appointment — anything you want noted.
+  </div>
+  <div id="notes-content" class="notes-block hidden">
+    <div class="notes-latest" id="notes-latest">—</div>
+    <div class="notes-ago" id="notes-ago">—</div>
+    <a class="notes-more" id="notes-more" href="/health/v2/record.html?tab=notes">View all notes →</a>
   </div>
 
   <!-- RIGHT NOW · vitals strip (ring-conditional) -->
@@ -445,7 +423,7 @@
       <div class="vitals-grid" id="vitals-grid"></div>
       <div class="vitals-foot">
         <span class="vitals-name">
-          <span class="vitals-pulse" aria-hidden="true"></span>
+          <span class="dot" aria-hidden="true"></span>
           <span id="vitals-ring-name">Neeve Ring</span>
         </span>
         <button class="vitals-tag" id="vitals-tag-btn" type="button" onclick="tagReading()">

@@ -15,20 +15,53 @@
 
 <style>
   /* ── Page atmosphere ──────────────────────────────────
-     Soft warm wash at the top, fading earlier so most of the page
-     sits on neutral cream. No orb (lives on Alys's tab); the warmth
-     is just atmosphere. */
+     Soft warm wash at the top + a paper grain over the whole page
+     so it feels like a notebook, not a screen. The grain is an SVG
+     fractal noise base64-inlined so there's no network round-trip. */
   body {
     background: var(--cream);
     background-image:
+      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.15 0 0 0 0 0.1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
       radial-gradient(120% 32% at 50% -6%,
         rgba(248, 200, 175, .42) 0%,
         rgba(248, 200, 175, .15) 35%,
         rgba(248, 200, 175, 0) 65%),
       linear-gradient(180deg, #faf3e7 0%, var(--cream) 32%);
-    background-attachment: fixed;
+    background-attachment: fixed, fixed, fixed;
+    background-size: 200px 200px, auto, auto;
   }
-  .page-today { max-width: 460px; margin: 0 auto; padding: 20px 22px 110px; }
+  .page-today {
+    max-width: 460px; margin: 0 auto; padding: 20px 22px 110px;
+    animation: page-fade .5s ease;
+  }
+  /* Sections fade up sequentially when the page loads — premium polish */
+  @keyframes page-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .page-today > * { animation: section-rise .6s ease both; }
+  .page-today > *:nth-child(1) { animation-delay: .04s; }
+  .page-today > *:nth-child(2) { animation-delay: .10s; }
+  .page-today > *:nth-child(3) { animation-delay: .16s; }
+  .page-today > *:nth-child(4) { animation-delay: .22s; }
+  .page-today > *:nth-child(5) { animation-delay: .28s; }
+  .page-today > *:nth-child(6) { animation-delay: .34s; }
+  .page-today > *:nth-child(7) { animation-delay: .40s; }
+  .page-today > *:nth-child(8) { animation-delay: .46s; }
+  @keyframes section-rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Daily Alys whisper — between greeting and Log button. ONE
+     italic line that quietly nods at how things are. */
+  .whisper {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 15.5px; line-height: 1.45;
+    color: var(--clay, #BF5A3C); letter-spacing: -.1px;
+    margin: -16px 0 28px;
+    opacity: .82;
+  }
 
   /* Clock + weather pill — frosted, the only floating element at the
      very top so it feels like a tab on a notebook. */
@@ -136,25 +169,34 @@
       0 1px 0 rgba(255,255,255,.7) inset,
       0 10px 20px -18px rgba(140, 80, 50, .3);
   }
-  /* The accent strip — a 4px tall warm band along the top */
+  /* Accent strips — distinctive per slot. Morning gets a sunrise band
+     (peach/gold/pink). Evening gets a dusk band (clay/plum). When
+     logged, both shift to sage. */
   .slot::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0;
-    height: 3px;
+    height: 4px;
+  }
+  #slot-morning::before {
     background: linear-gradient(90deg,
-      rgba(220, 130, 95, .65) 0%,
-      rgba(220, 130, 95, .25) 60%,
+      #f5b78c 0%,
+      #f0c89a 30%,
+      #ecd6a7 60%,
+      transparent 100%);
+  }
+  #slot-evening::before {
+    background: linear-gradient(90deg,
+      #c97f6a 0%,
+      #b8709a 50%,
       transparent 100%);
   }
   .slot.is-done::before {
     background: linear-gradient(90deg,
-      rgba(148, 168, 122, .65) 0%,
-      rgba(148, 168, 122, .25) 60%,
-      transparent 100%);
+      #94A87A 0%,
+      rgba(148, 168, 122, .45) 60%,
+      transparent 100%) !important;
   }
   .slot.is-later::before {
-    background: linear-gradient(90deg,
-      rgba(155, 130, 100, .35) 0%,
-      transparent 100%);
+    opacity: .35;
   }
   .slot-head {
     display: flex; align-items: center; gap: 10px;
@@ -230,6 +272,20 @@
       0 1px 0 rgba(255,255,255,.9) inset,
       0 18px 34px -26px rgba(140, 80, 50, .35),
       0 3px 10px -6px rgba(140, 80, 50, .12);
+  }
+  /* Signature HR sparkline — a graceful curve with a soft warm
+     watercolor fill underneath. The single most distinctive visual
+     element on Today; says "your heart over the last few hours". */
+  .hr-spark {
+    position: relative; height: 64px; margin: -4px -4px 14px;
+    border-radius: 12px; overflow: hidden;
+  }
+  .hr-spark svg { display: block; width: 100%; height: 100%; }
+  .hr-spark .empty {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 13px; color: var(--taupe);
   }
   .vitals-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px;
@@ -366,8 +422,9 @@
     <span id="pill-weather">—</span>
   </div>
 
-  <!-- Greeting — quiet, no decoration -->
+  <!-- Greeting + Alys's quiet daily whisper -->
   <div class="greeting" id="greeting">Hey.</div>
+  <div class="whisper" id="alys-whisper"></div>
 
   <!-- Log something — always-available capture entry -->
   <button class="log-cta" type="button" onclick="openLogSheet()">
@@ -420,15 +477,17 @@
       Right now <span class="meta" id="vitals-ago">·</span>
     </div>
     <div class="vitals">
+      <!-- 6-hour HR sparkline — signature visual element -->
+      <div class="hr-spark" id="hr-spark"></div>
       <div class="vitals-grid" id="vitals-grid"></div>
       <div class="vitals-foot">
         <span class="vitals-name">
           <span class="dot" aria-hidden="true"></span>
           <span id="vitals-ring-name">Neeve Ring</span>
         </span>
-        <button class="vitals-tag" id="vitals-tag-btn" type="button" onclick="tagReading()">
-          ⊙  Tag a reading
-        </button>
+        <!-- Tag a reading button parked until the native bridge for
+             on-demand measurements lands (task #61). Showing a stub
+             that opens the log sheet was misleading. -->
       </div>
     </div>
   </div>
@@ -567,6 +626,8 @@ async function load() {
   renderSlots(checkins, user);
   renderNotes(notes);
   renderVitals(devices[0], samples);
+  renderHrSpark(samples);
+  renderWhisper(checkins, samples);
   // Alys observation deferred until that surface exists; hide for now.
   document.getElementById('alys-section').classList.add('hidden');
 
@@ -574,6 +635,99 @@ async function load() {
   if (!devices.length && !checkins.length) {
     document.getElementById('ring-nudge').classList.remove('hidden');
   }
+}
+
+// ── Daily Alys whisper ────────────────────────────────
+// One quiet italic line under the greeting. Picks from a small
+// deterministic bank based on current state — never AI-generated
+// for Today's first impression (anti-mismatch on a bad morning).
+function renderWhisper(checkins, samples) {
+  const el = document.getElementById('alys-whisper');
+  if (!el) return;
+  const today = new Date().toDateString();
+  const todayCheckins = (checkins || []).filter(c =>
+    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
+  const hour = new Date().getHours();
+  const latest = latestPerMetric(samples);
+
+  let line = '';
+  if (!todayCheckins.length && hour < 11) {
+    line = 'A quiet start. Whenever you\'re ready.';
+  } else if (!todayCheckins.length && hour >= 11 && hour < 17) {
+    line = 'The day\'s here when you are.';
+  } else if (todayCheckins.length === 1 && hour < 17) {
+    line = 'Morning\'s logged. The body keeps a record either way.';
+  } else if (todayCheckins.length >= 2) {
+    line = 'A full day on the record.';
+  } else if (hour >= 17 && hour < 21) {
+    line = 'Soft hours, if you want them.';
+  } else if (hour >= 21 || hour < 5) {
+    line = 'It\'s late. Rest, when you can.';
+  } else if (latest.hrv_rmssd && latest.hrv_rmssd.value < 30) {
+    line = 'Steady on. The numbers can wait.';
+  } else {
+    line = 'Here, when you need.';
+  }
+  el.textContent = line;
+}
+
+// ── Signature HR sparkline ────────────────────────────
+// 6-hour rolling HR curve. Gracefully fades out if no data.
+function renderHrSpark(samples) {
+  const el = document.getElementById('hr-spark');
+  if (!el) return;
+  const sixHrAgo = Date.now() - 6 * 3600 * 1000;
+  const hrs = (samples || [])
+    .filter(s => s.metric === 'hr' && new Date(s.ts).getTime() > sixHrAgo)
+    .map(s => ({ t: new Date(s.ts).getTime(), v: Number(s.value) }))
+    .filter(p => !isNaN(p.v))
+    .sort((a, b) => a.t - b.t);
+
+  if (hrs.length < 4) {
+    el.innerHTML = '<div class="empty">Building your picture — sparkline appears with more readings.</div>';
+    return;
+  }
+
+  // Normalize to viewBox
+  const W = 600, H = 64;
+  const t0 = hrs[0].t, t1 = hrs[hrs.length - 1].t;
+  const dt = Math.max(1, t1 - t0);
+  const minV = Math.min(...hrs.map(p => p.v)) - 3;
+  const maxV = Math.max(...hrs.map(p => p.v)) + 3;
+  const dv = Math.max(1, maxV - minV);
+
+  const points = hrs.map(p => {
+    const x = ((p.t - t0) / dt) * W;
+    const y = H - ((p.v - minV) / dv) * (H - 12) - 6;
+    return [x, y];
+  });
+
+  // Smooth path through points using cardinal interpolation
+  let d = `M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
+  for (let i = 1; i < points.length; i++) {
+    const [x0, y0] = points[i - 1];
+    const [x1, y1] = points[i];
+    const cx = (x0 + x1) / 2;
+    d += ` Q ${cx.toFixed(1)} ${y0.toFixed(1)} ${cx.toFixed(1)} ${((y0 + y1) / 2).toFixed(1)} T ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+  }
+  // Close the area to baseline for fill
+  const dFill = d + ` L ${W} ${H} L 0 ${H} Z`;
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="hr-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(220, 130, 95, .35)"/>
+          <stop offset="100%" stop-color="rgba(220, 130, 95, 0)"/>
+        </linearGradient>
+        <linearGradient id="hr-line" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%"   stop-color="#cb8270"/>
+          <stop offset="100%" stop-color="#bf5a3c"/>
+        </linearGradient>
+      </defs>
+      <path d="${dFill}" fill="url(#hr-fill)"/>
+      <path d="${d}" fill="none" stroke="url(#hr-line)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>`;
 }
 
 function wmoLabel(c) {
@@ -726,17 +880,9 @@ function renderVitals(device, samples) {
     device.name || 'Neeve Ring';
 }
 
-// "Tag a reading" — on-demand capture-with-note. Stub for now; wires
-// into the live measurement service once #59 + #61 land.
-async function tagReading() {
-  // For now, open the log sheet pre-filled with a "tag" hint. When the
-  // live measurement service exists, this triggers a one-shot HR+temp
-  // and writes the value+context as a note.
-  openLogSheet();
-  document.getElementById('ql-body').placeholder =
-    'What were you doing when you opened this? (Standing? Mid-flare?) — I\'ll capture a fresh reading next.';
-  document.getElementById('ql-body').focus();
-}
+// "Tag a reading" — removed for now (was a stub that just opened the
+// log sheet; misleading). Comes back when task #61 lands the native
+// bridge for on-demand HR / temp measurements.
 
 // ── Quick-log sheet ───────────────────────────────────
 let _qlKind = null;

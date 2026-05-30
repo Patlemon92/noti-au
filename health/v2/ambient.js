@@ -10,38 +10,37 @@
 // with the dark "sky cap" radial dropped from day/dawn/dusk per
 // Patrick's feedback — daytime stays warm cream/peach throughout.
 
+// Phase palettes — toned WAY down so the home hero reads as a calm
+// pale cream backdrop with the Alys orb as the focal point. Each phase
+// adds a very subtle warm-to-cream tint shift, not a saturated radial
+// burst. Night gets a slightly cooler tint; everything else stays in
+// the cream/peach family.
 const PHASES = {
   dawn: {
     label: 'Dawn', greet: 'Good morning',
-    grad: `radial-gradient(120% 78% at 50% 34%, #f0a59c 0%, transparent 60%),
-           radial-gradient(130% 60% at 50% 60%, #f6c59b 0%, transparent 62%),
-           linear-gradient(180deg, transparent 58%, #f8f1e7 92%)`,
-    textOn: '#fff7f0',
+    grad: `radial-gradient(120% 90% at 50% 14%, #fbe6d5 0%, transparent 70%),
+           linear-gradient(180deg, #fbf3e9 0%, #f8f1e7 100%)`,
+    textOn: '#5a3f2e',
   },
   day: {
     label: 'Day', greet: 'Good afternoon',
-    grad: `radial-gradient(120% 80% at 50% 32%, #f3c79f 0%, transparent 58%),
-           radial-gradient(130% 62% at 50% 62%, #f6dcbb 0%, transparent 60%),
-           linear-gradient(180deg, transparent 56%, #f8f1e7 90%)`,
+    grad: `radial-gradient(120% 90% at 50% 12%, #faeede 0%, transparent 70%),
+           linear-gradient(180deg, #fbf5ec 0%, #f8f1e7 100%)`,
     textOn: '#5a3f2e',
   },
   dusk: {
     label: 'Dusk', greet: 'Good evening',
-    grad: `radial-gradient(120% 80% at 50% 36%, #de7150 0%, transparent 60%),
-           radial-gradient(130% 60% at 50% 60%, #efa45c 0%, transparent 62%),
-           linear-gradient(180deg, transparent 58%, #f8f1e7 92%)`,
-    textOn: '#fff7f0',
+    grad: `radial-gradient(120% 90% at 50% 14%, #f7e0d0 0%, transparent 70%),
+           linear-gradient(180deg, #faeede 0%, #f8f1e7 100%)`,
+    textOn: '#5a3f2e',
   },
   night: {
     label: 'Night', greet: 'Good night',
-    grad: `radial-gradient(110% 70% at 50% -10%, #322a47 0%, transparent 55%),
-           radial-gradient(120% 80% at 50% 34%, #574367 0%, transparent 60%),
-           radial-gradient(130% 62% at 50% 60%, #3a2f4d 0%, transparent 62%),
-           linear-gradient(180deg, transparent 60%, #f8f1e7 94%)`,
-    textOn: '#f3eef7',
+    grad: `radial-gradient(120% 90% at 50% 14%, #ece5dc 0%, transparent 70%),
+           linear-gradient(180deg, #f3ecde 0%, #f8f1e7 100%)`,
+    textOn: '#5a3f2e',
   },
-  // Sleep page — fixed warm-dawn palette so even a rough night glows
-  // warm rather than going cold.
+  // Sleep page keeps its warmer, slightly more saturated wash.
   sleep_dawn: {
     label: 'Sleep', greet: '',
     grad: `radial-gradient(110% 68% at 50% -8%, #f4cda7 0%, transparent 52%),
@@ -94,25 +93,21 @@ function ensureAmbientStyles() {
     transition: background 1.2s ease;
   }
 
-  /* Hero text adapts to phase. Daytime → warm brown so it reads on the
-     soft peach; everything else → cream. */
-  .ambient-text { color: var(--ambient-text-on, #fff7f0); transition: color 1s ease; }
-  [data-amb-phase="day"]  .ambient-text { color: #5a3f2e; }
-  [data-amb-phase="dawn"] .ambient-text,
-  [data-amb-phase="dusk"] .ambient-text,
+  /* Hero text — most phases now use a soft cream backdrop so the
+     warm-brown ink reads cleanly. Only sleep_dawn (deep warm wash)
+     uses cream text. */
+  .ambient-text { color: #5a3f2e; transition: color 1s ease; }
   [data-amb-phase="sleep_dawn"] .ambient-text { color: #fff7f0; }
-  [data-amb-phase="night"] .ambient-text { color: #f3eef7; }
-  [data-amb-phase="day"]  .amb-pill {
-    background: rgba(255,255,255,.6); color: #5a3f2e;
-    border-color: rgba(91,63,46,.15);
-  }
-  .amb-pill { color: #fff7f0; }
   .amb-pill {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 7px 14px; border-radius: 99px;
-    background: rgba(255,255,255,.22);
+    background: rgba(255,255,255,.6); color: #5a3f2e;
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,.3); font-size: 12.5px;
+    border: 1px solid rgba(91,63,46,.15); font-size: 12.5px;
+  }
+  [data-amb-phase="sleep_dawn"] .amb-pill {
+    background: rgba(255,255,255,.22); color: #fff7f0;
+    border-color: rgba(255,255,255,.3);
   }
 
   .amb-content {

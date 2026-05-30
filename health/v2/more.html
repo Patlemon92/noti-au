@@ -183,12 +183,17 @@
     </a>
   </div>
 
-  <!-- YOUR RING -->
-  <div class="section-head">Your Neeve Ring</div>
-  <div class="group">
-    <a class="row" href="/health/v2/ring.html">
+  <!-- YOUR RINGS -->
+  <div class="section-head">Your Neeve Rings</div>
+  <div class="group" id="rings-group">
+    <!-- Rings injected by paintRings(); fallback row before paint -->
+    <a class="row" href="/health/v2/ring.html" id="rings-placeholder">
       <span class="label">Pairing &amp; status</span>
       <span><span class="value" id="f-ring">—</span><span class="chev">›</span></span>
+    </a>
+    <a class="row" href="javascript:openPairRing()" id="rings-add">
+      <span class="label" style="color:var(--clay-2,#bf5a3c);font-weight:500">Pair another ring</span>
+      <span class="chev" style="color:var(--clay-2,#bf5a3c)">+</span>
     </a>
     <div class="row" style="cursor:default">
       <span class="label">Auto-collection</span>
@@ -198,6 +203,27 @@
       <span class="label">Calibrate blood pressure</span>
       <span><span class="value" id="f-bp-cal">not calibrated</span><span class="chev">›</span></span>
     </a>
+  </div>
+
+  <!-- Pair-ring colour picker sheet -->
+  <div id="pair-ring-backdrop"
+       style="position:fixed;inset:0;background:rgba(43,32,24,.45);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s ease"
+       onclick="closePairRing()"></div>
+  <div id="pair-ring-sheet"
+       role="dialog" aria-modal="true"
+       style="position:fixed;left:0;right:0;bottom:0;z-index:1001;background:#f6efe4;border-radius:22px 22px 0 0;padding:18px 22px max(28px,env(safe-area-inset-bottom)) 22px;transform:translateY(100%);transition:transform .25s ease;max-width:460px;margin:0 auto">
+    <div style="width:36px;height:4px;background:rgba(43,32,24,.15);border-radius:2px;margin:0 auto 14px"></div>
+    <h2 style="font-family:'Fraunces',serif;font-weight:500;font-size:24px;color:var(--ink-2,#2b2018);margin:0 0 6px">Pair another ring</h2>
+    <p style="font-size:13.5px;color:var(--taupe-2,#9a8369);line-height:1.55;margin-bottom:16px">
+      Which colour is this one? You'll be able to swap between rings any time — the app routes data automatically.
+    </p>
+    <div id="pair-color-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+      <button class="pair-color-btn" data-color="black"     onclick="choosePairColor('black')"     style="background:#2b2018;color:#f6efe4;border:none;border-radius:14px;padding:18px 14px;font-family:'Fraunces',serif;font-size:17px;cursor:pointer">Black</button>
+      <button class="pair-color-btn" data-color="gold"      onclick="choosePairColor('gold')"      style="background:#c9a559;color:#2b2018;border:none;border-radius:14px;padding:18px 14px;font-family:'Fraunces',serif;font-size:17px;cursor:pointer">Gold</button>
+      <button class="pair-color-btn" data-color="silver"    onclick="choosePairColor('silver')"    style="background:#c0c4c8;color:#2b2018;border:none;border-radius:14px;padding:18px 14px;font-family:'Fraunces',serif;font-size:17px;cursor:pointer">Silver</button>
+      <button class="pair-color-btn" data-color="rose_gold" onclick="choosePairColor('rose_gold')" style="background:#d8a39a;color:#2b2018;border:none;border-radius:14px;padding:18px 14px;font-family:'Fraunces',serif;font-size:17px;cursor:pointer">Rose gold</button>
+    </div>
+    <button onclick="closePairRing()" style="width:100%;background:transparent;border:none;color:var(--taupe-2);padding:12px;font-size:14px;cursor:pointer">Cancel</button>
   </div>
 
   <!-- BP calibration sheet (modal overlay) -->
@@ -415,20 +441,9 @@ function renderProfile(u) {
   document.getElementById('f-morning').textContent = u.morningTime || '8:00 am';
   document.getElementById('f-evening').textContent = u.eveningTime || '8:00 pm';
 
-  // Ring status
-  api('/ring/status').then(r => {
-    const dev = (r.devices || [])[0];
-    if (!dev) {
-      document.getElementById('f-ring').textContent = 'not paired';
-      return;
-    }
-    const connOn = dev.last_seen_at &&
-      (Date.now() - new Date(dev.last_seen_at)) < 10 * 60 * 1000;
-    document.getElementById('f-ring').textContent =
-      connOn ? 'paired, connected' : 'paired';
-  }).catch(() => {
-    document.getElementById('f-ring').textContent = '—';
-  });
+  // Rings list (multi-ring aware)
+  api('/ring/status').then(r => paintRings(r.devices || []))
+    .catch(() => paintRings([]));
 
   refreshPushState();
 }
@@ -566,6 +581,119 @@ async function confirmDelete() {
 function signOut() {
   clearToken();
   location.href = '/health/v2/login.html';
+}
+
+// ── Multi-ring: paint the rings list ────────────
+function ringSwatch(color) {
+  const map = {
+    black:     '#2b2018',
+    gold:      '#c9a559',
+    silver:    '#c0c4c8',
+    rose_gold: '#d8a39a'
+  };
+  const c = map[color] || '#2b2018';
+  return `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${c};border:1px solid rgba(43,32,24,.18);margin-right:10px;vertical-align:-3px"></span>`;
+}
+function ringColorLabel(color) {
+  return { black: 'Black', gold: 'Gold', silver: 'Silver', rose_gold: 'Rose gold' }[color] || 'Black';
+}
+function paintRings(devices) {
+  const group = document.getElementById('rings-group');
+  if (!group) return;
+  const addBtn = document.getElementById('rings-add');
+  const calRow = group.querySelectorAll('.row')[group.querySelectorAll('.row').length - 1];
+  const fixedTail = group.querySelectorAll('.row');
+  // Strip everything that isn't the "Pair another" or the fixed footer rows.
+  Array.from(group.children).forEach(ch => {
+    if (ch.id === 'rings-add') return;
+    if (ch.querySelector && ch.querySelector('#f-bp-cal')) return; // BP row
+    if (ch.textContent && ch.textContent.includes('Auto-collection')) return;
+    group.removeChild(ch);
+  });
+  if (!devices.length) {
+    const empty = document.createElement('a');
+    empty.className = 'row';
+    empty.href = 'javascript:openPairRing()';
+    empty.innerHTML =
+      '<span class="label">No rings paired</span>' +
+      '<span><span class="value">Tap to pair</span><span class="chev">›</span></span>';
+    group.insertBefore(empty, addBtn);
+    return;
+  }
+  // Most-recently-seen ring is first per server sort. Mark it as "active"
+  // (currently in use); older ones get a "switch" affordance.
+  devices.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.style.cursor = 'default';
+    const conn = d.last_seen_at &&
+      (Date.now() - new Date(d.last_seen_at)) < 10 * 60 * 1000;
+    const status = i === 0
+      ? (conn ? 'connected' : 'active')
+      : 'paired';
+    const battery = (typeof d.last_battery_pct === 'number') ? `${d.last_battery_pct}%` : '—';
+    row.innerHTML =
+      '<span class="label">' + ringSwatch(d.color) + ringColorLabel(d.color) + '</span>' +
+      '<span class="value">' + status + ' · ' + battery + '</span>';
+    // Tap row to switch (only for non-active rings). Long-press / chev = manage.
+    if (i !== 0) {
+      row.style.cursor = 'pointer';
+      row.onclick = () => switchRing(d.id);
+      row.querySelector('.value').insertAdjacentHTML('afterend',
+        '<span class="chev">⇄</span>');
+    } else {
+      row.querySelector('.value').insertAdjacentHTML('afterend',
+        '<a href="javascript:manageRing(\'' + d.id + '\',\'' + (d.color||'black') + '\')" class="chev" style="text-decoration:none;color:var(--taupe-2)">›</a>');
+    }
+    group.insertBefore(row, addBtn);
+  });
+}
+
+function switchRing(deviceId) {
+  if (!(window.neeve && window.neeve.postMessage)) return;
+  window.neeve.postMessage(JSON.stringify({ method: 'switchRing', deviceId }));
+}
+
+function manageRing(deviceId, color) {
+  const pick = prompt(
+    'Manage ring\\n\\n1. Black\\n2. Gold\\n3. Silver\\n4. Rose gold\\n5. Unpair this ring\\n\\nEnter a number:',
+    '1'
+  );
+  if (!pick) return;
+  const mapByNum = { '1':'black', '2':'gold', '3':'silver', '4':'rose_gold' };
+  if (pick === '5') {
+    if (!confirm('Unpair this ring? Historical data is kept.')) return;
+    window.neeve && window.neeve.postMessage(JSON.stringify({ method: 'unpairRing', deviceId }));
+    return;
+  }
+  const newColor = mapByNum[pick];
+  if (newColor && newColor !== color) {
+    window.neeve && window.neeve.postMessage(JSON.stringify({
+      method: 'updateRingColor', deviceId, color: newColor
+    }));
+  }
+}
+
+// ── Pair-another ring flow ──────────────────────
+function openPairRing() {
+  document.getElementById('pair-ring-backdrop').style.opacity = '1';
+  document.getElementById('pair-ring-backdrop').style.pointerEvents = 'auto';
+  document.getElementById('pair-ring-sheet').style.transform = 'translateY(0)';
+}
+function closePairRing() {
+  document.getElementById('pair-ring-backdrop').style.opacity = '0';
+  document.getElementById('pair-ring-backdrop').style.pointerEvents = 'none';
+  document.getElementById('pair-ring-sheet').style.transform = 'translateY(100%)';
+}
+function choosePairColor(color) {
+  // Stash colour for the native pair flow to pick up.
+  localStorage.setItem('neeve_pending_pair_color', color);
+  closePairRing();
+  // Kick the native pair flow. The native side reads the colour out of the
+  // bridge call so the new ring is registered with the right swatch.
+  if (window.neeve && window.neeve.postMessage) {
+    window.neeve.postMessage(JSON.stringify({ method: 'scanForRing', color }));
+  }
 }
 </script>
 </body>

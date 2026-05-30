@@ -64,17 +64,33 @@
   <h1 class="greeting" id="greeting">Hey.</h1>
 
   <!-- Check-in prompt (prototype-style). renderCheckinPrompt rewrites
-       the contents to show either the slot CTA, a summary of what's
-       already logged, or nothing depending on state. -->
-  <div class="prompt" id="prompt-card">
-    <div class="lbl">Today's check-in <span class="est">~2 min</span></div>
-    <div class="title2">A few quick things, whenever you're ready.</div>
-    <div class="sub">Helps the system see how today is going.</div>
-    <div class="actions">
-      <a class="btn btn-primary" href="/health/v2/checkin.html">Start check-in</a>
-      <button class="btn btn-ghost" onclick="document.querySelector('.prompt').style.display='none'">Not today</button>
+       the contents based on state + time-of-day; hides when outside
+       the check-in window AND nothing logged. -->
+  <div class="prompt" id="prompt-card" style="display:none"></div>
+
+  <!-- Quick log — always available, regardless of slot timing.
+       Drops one row in `notes` with mood + optional body; Alys
+       replies if the user typed something. -->
+  <section class="card" id="quicklog-card" style="margin-bottom:22px">
+    <p class="lbl" style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-mute);font-weight:500;margin-bottom:8px">
+      Log a note
+    </p>
+    <div style="font-family:'Fraunces',serif;font-size:18px;color:var(--ink);margin-bottom:10px;line-height:1.35">
+      How are you, right now?
     </div>
-  </div>
+    <div id="ql-moods" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="pill" data-mood="good"   onclick="selectMood('good')">Good</button>
+      <button class="pill" data-mood="ok"     onclick="selectMood('ok')">Ok</button>
+      <button class="pill" data-mood="rough"  onclick="selectMood('rough')">Rough</button>
+      <button class="pill" data-mood="bad"    onclick="selectMood('bad')">Bad</button>
+    </div>
+    <textarea id="ql-text" rows="2" placeholder="Anything you want to add (optional)"
+      style="width:100%;box-sizing:border-box;background:white;border:1px solid var(--hair);border-radius:12px;padding:10px 12px;font-family:'Inter Tight',sans-serif;font-size:16px;color:var(--ink);resize:vertical;margin-bottom:8px"></textarea>
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px">
+      <span id="ql-status" class="caption" style="flex:1;min-height:18px"></span>
+      <button class="btn btn-primary" id="ql-submit" onclick="submitQuickLog()" disabled>Log it</button>
+    </div>
+  </section>
 
   <!-- Ring status + live data -->
   <div class="ring-card" id="ring-card">
@@ -145,44 +161,69 @@ async function load() {
     sleepSamples = sleepRes.samples || [];
   } catch (e) { console.error(e); }
 
+  let user = null;
   try {
-    const r = await api('/me/checkins?days=7');
-    checkins = r.checkins || [];
+    const [c, u] = await Promise.all([
+      api('/me/checkins?days=7').catch(() => ({ checkins: [] })),
+      api('/me').catch(() => null),
+    ]);
+    checkins = c.checkins || [];
+    user = u;
   } catch (e) {}
 
   renderRingCard(devices[0], samples);
   renderWeek(checkins);
   renderSleepPreview(sleepSamples);
-  renderCheckinPrompt(checkins);
+  renderCheckinPrompt(checkins, user);
 }
 
-// Render the prompt card based on today's check-in state.
-// Three possible states for the current slot:
-//   - already done   → summary of what was logged + Edit affordance
-//   - not done yet   → Slot-specific CTA ("Time for your evening check-in")
-//   - both done      → hide the card entirely (no nag)
-function renderCheckinPrompt(checkins) {
+// Render the prompt card based on today's check-in state AND the
+// user's scheduled times. Card states:
+//   - just-completed slot → summary + Edit (shown for 4h after the slot time)
+//   - inside window of pending slot → CTA
+//   - outside window      → hide (don't pester — quick-log is always there)
+function renderCheckinPrompt(checkins, user) {
   const card = document.getElementById('prompt-card');
   if (!card) return;
-  const slot = new Date().getHours() < 14 ? 'morning' : 'evening';
-  const today = new Date().toDateString();
+  card.style.display = 'none';
+
+  const now    = new Date();
+  const today  = now.toDateString();
+  const morningMins = parseTime(user?.morningTime || '08:00');
+  const eveningMins = parseTime(user?.eveningTime || '19:00');
+  const nowMins     = now.getHours() * 60 + now.getMinutes();
+
+  // A slot is in-window if we're within [scheduled-60min, scheduled+240min].
+  const inWindow = (mins) => nowMins >= mins - 60 && nowMins <= mins + 240;
+
   const todayCheckins = (checkins || []).filter(c =>
     new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
   const morningDone = todayCheckins.find(c => c.slot === 'morning');
   const eveningDone = todayCheckins.find(c => c.slot === 'evening');
-  const doneThisSlot = slot === 'morning' ? morningDone : eveningDone;
 
-  // Both done — quiet the card.
-  if (morningDone && eveningDone) {
-    card.style.display = 'none';
-    return;
+  // Pick which slot to focus on: pending one whose window we're in,
+  // or just-completed one (summary card) if we're still inside its
+  // window. Otherwise hide.
+  let focus = null;     // { slot, done }
+  if (inWindow(morningMins)) {
+    focus = { slot: 'morning', done: morningDone };
+  } else if (inWindow(eveningMins)) {
+    focus = { slot: 'evening', done: eveningDone };
+  } else if (nowMins < morningMins && morningDone == null) {
+    // Pre-morning, nothing logged — quiet
+  } else {
+    // Outside any window — pick the most recently completed slot if
+    // it just finished (so the user can still tap into the summary).
+    if (eveningDone && nowMins >= eveningMins) focus = { slot: 'evening', done: eveningDone };
+    else if (morningDone && nowMins >= morningMins) focus = { slot: 'morning', done: morningDone };
   }
+  if (!focus) return;
 
-  if (doneThisSlot) {
-    // The slot we'd prompt for is already done. Show a summary of it.
-    const slotLabel = slot === 'morning' ? 'Morning' : 'Evening';
-    const checkinId = doneThisSlot.checkin_id || doneThisSlot.id;
-    const answers   = doneThisSlot.answers || {};
+  card.style.display = '';
+  const slotLabel = focus.slot === 'morning' ? 'Morning' : 'Evening';
+  if (focus.done) {
+    const checkinId = focus.done.checkin_id || focus.done.id;
+    const answers   = focus.done.answers || {};
     const summary   = summariseAnswers(answers);
     card.innerHTML = `
       <div class="lbl">${slotLabel} check-in <span class="est">logged</span></div>
@@ -194,19 +235,61 @@ function renderCheckinPrompt(checkins) {
     return;
   }
 
-  // Slot-specific CTA — make it obvious which one is being asked for.
-  const slotLabel = slot === 'morning' ? 'morning' : 'evening';
-  const title    = slot === 'morning'
+  const title = focus.slot === 'morning'
     ? 'A few quick things to start your day.'
     : 'A few quick things before the day ends.';
   card.innerHTML = `
-    <div class="lbl">Your ${slotLabel} check-in <span class="est">~2 min</span></div>
+    <div class="lbl">Your ${slotLabel.toLowerCase()} check-in <span class="est">~2 min</span></div>
     <div class="title2">${title}</div>
     <div class="sub">Helps the system see how today's going.</div>
     <div class="actions">
       <a class="btn btn-primary" href="/health/v2/checkin.html">Start check-in</a>
       <button class="btn btn-ghost" onclick="document.querySelector('.prompt').style.display='none'">Not today</button>
     </div>`;
+}
+
+function parseTime(s) {
+  if (!s || typeof s !== 'string') return 8 * 60;
+  const m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return 8 * 60;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+}
+
+// ── Quick log ───────────────────────────────────────────
+let _qlMood = null;
+function selectMood(m) {
+  _qlMood = m;
+  document.querySelectorAll('#ql-moods .pill').forEach(b => {
+    b.classList.toggle('pill-rose', b.dataset.mood === m);
+  });
+  document.getElementById('ql-submit').disabled = false;
+}
+async function submitQuickLog() {
+  if (!_qlMood) return;
+  const status = document.getElementById('ql-status');
+  const btn    = document.getElementById('ql-submit');
+  const text   = document.getElementById('ql-text').value.trim();
+  status.textContent = 'Logging…';
+  status.style.color = 'var(--ink-mute)';
+  btn.disabled = true;
+  try {
+    const r = await api('/me/note', {
+      method: 'POST',
+      body: JSON.stringify({ mood: _qlMood, body: text }),
+    });
+    status.textContent = r?.note?.alys_reply
+      ? r.note.alys_reply.slice(0, 80) + (r.note.alys_reply.length > 80 ? '…' : '')
+      : 'Logged.';
+    status.style.color = 'var(--ink-soft)';
+    // Reset
+    document.getElementById('ql-text').value = '';
+    _qlMood = null;
+    document.querySelectorAll('#ql-moods .pill').forEach(b => b.classList.remove('pill-rose'));
+  } catch (e) {
+    status.textContent = `Couldn't log: ${e.message}`;
+    status.style.color = 'var(--rose-deep)';
+    btn.disabled = false;
+  }
 }
 
 // Pluck the most-recognisable scaled keys for the summary line so the

@@ -579,20 +579,18 @@ function renderCharts() {
       return `
         <a class="metric-card-link" href="${detailUrl}">
           <div class="card">
-            <div class="section-head" style="margin-bottom:8px">
-              <h3 class="title-sm" style="font-size:18px">${metricLabel(m)}</h3>
+            <div class="section-head" style="margin-bottom:6px;display:flex;align-items:flex-start;justify-content:space-between">
+              <h3 class="title-sm">${metricLabel(m)}</h3>
               <span class="chev">›</span>
             </div>
-            <div class="metric-row" style="border-bottom:none;padding:4px 0">
-              <span class="caption">Latest</span>
-              <span><span class="metric-value" style="font-size:20px">${formatValue(m, latest.value)}</span>
-                    <span class="metric-unit">${metricUnit(m, latest.unit)}</span></span>
+            <div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 4px">
+              <span class="metric-value" style="font-family:'Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.7px;color:var(--ink-2,#2b2018);line-height:1">${formatValue(m, latest.value)}</span>
+              <span class="metric-unit" style="font-size:13px;color:var(--taupe-2,#9a8369)">${metricUnit(m, latest.unit)}</span>
             </div>
-            <div class="metric-row" style="border-bottom:none;padding:4px 0">
-              <span class="caption">Range</span>
-              <span class="caption">${formatValue(m, min)} – ${formatValue(m, max)} (avg ${formatValue(m, avg)})</span>
+            <div style="font-size:12.5px;color:var(--taupe-2,#9a8369);font-style:italic">
+              ${formatValue(m, min)}–${formatValue(m, max)} · avg ${formatValue(m, avg)}
             </div>
-            <div class="sparkline" id="spark-${m}"></div>
+            <div class="sparkline" id="spark-${m}" style="margin-top:10px"></div>
           </div>
         </a>
       `;

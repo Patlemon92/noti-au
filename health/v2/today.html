@@ -146,12 +146,101 @@
     margin-top: 2px;
   }
 
-  /* "All your data on Ring →" link */
-  .all-data {
-    text-align: right; margin-top: 8px;
-    font-size: 13.5px; color: var(--clay-2);
-    text-decoration: none; display: block;
+  /* Vitals action row: Tag a reading button + "All your data on Ring →" link */
+  .vitals-actions {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 12px;
   }
+  .tag-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 99px;
+    background: var(--warm-card);
+    border: 1px solid rgba(44, 32, 23, .12);
+    color: var(--ink-2);
+    font-family: inherit; font-size: 13.5px; font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 8px 22px -16px rgba(70, 45, 25, .35);
+    transition: transform .12s ease;
+  }
+  .tag-btn:active { transform: scale(.97); }
+  .tag-btn .tag-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--clay-2);
+  }
+  .all-data {
+    font-size: 13.5px; color: var(--clay-2);
+    text-decoration: none;
+  }
+
+  /* Tag-a-reading bottom sheet */
+  .tag-sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
+    background: #f6efe4;
+    border-radius: 22px 22px 0 0;
+    padding: 18px 22px max(28px, env(safe-area-inset-bottom)) 22px;
+    transform: translateY(100%); transition: transform .25s ease;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .tag-sheet.open { transform: translateY(0); box-shadow: 0 -10px 30px rgba(43, 32, 24, .18); }
+  .tag-grip {
+    width: 36px; height: 4px; background: rgba(43, 32, 24, .15);
+    border-radius: 2px; margin: 0 auto 12px;
+  }
+  .tag-sheet h2 {
+    font-family: 'Fraunces', serif; font-weight: 500; font-size: 24px;
+    color: var(--ink-2); margin: 4px 0 6px;
+  }
+  .tag-sheet .sub {
+    font-size: 13.5px; color: var(--taupe-2); margin-bottom: 16px; line-height: 1.5;
+  }
+  .tag-status {
+    background: var(--warm-card);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 12px;
+    border: 1px solid rgba(44, 32, 23, .05);
+  }
+  .tag-status .pulse {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--clay-2);
+    animation: tag-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes tag-pulse {
+    0%, 100% { opacity: .4; transform: scale(1); }
+    50%      { opacity: 1;  transform: scale(1.35); }
+  }
+  .tag-status.done .pulse { background: var(--clay-2); animation: none; opacity: 1; }
+  .tag-status .text {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 15px; color: var(--ink-2);
+  }
+  .tag-readings {
+    background: var(--warm-card);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
+    border: 1px solid rgba(44, 32, 23, .05);
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px;
+  }
+  .tag-readings .r .label {
+    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--taupe-2); font-weight: 600;
+  }
+  .tag-readings .r .value {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 22px; color: var(--ink-2); line-height: 1.1;
+  }
+  .tag-readings .r .value .unit {
+    font-size: 12px; color: var(--taupe-2);
+    margin-left: 4px; font-family: 'Hanken Grotesk', sans-serif;
+  }
+  .tag-sheet textarea {
+    width: 100%; box-sizing: border-box; background: white;
+    border: 1px solid rgba(43, 32, 24, .12); border-radius: 14px;
+    padding: 14px; font-family: inherit; font-size: 16px;
+    color: var(--ink-2); resize: vertical; min-height: 80px;
+  }
+  .tag-actions {
+    display: flex; gap: 10px; align-items: center; margin-top: 14px;
+  }
+  .tag-actions .spacer { flex: 1; }
 
   /* Log button */
   .log-cta {
@@ -298,7 +387,13 @@
     <div class="vitals-grid te-card" id="vitals-grid" style="animation-delay:.08s">
       <!-- vital tiles painted by JS -->
     </div>
-    <a class="all-data te-card" href="/health/v2/ring.html" style="animation-delay:.1s">all your data on Ring →</a>
+    <div class="te-card vitals-actions" style="animation-delay:.1s">
+    <button class="tag-btn" type="button" onclick="openTagSheet()">
+      <span class="tag-dot" aria-hidden="true"></span>
+      Tag a reading
+    </button>
+    <a class="all-data" href="/health/v2/ring.html">all your data on Ring →</a>
+  </div>
   </div>
 
   <!-- NOTE -->
@@ -337,6 +432,31 @@
     Pairing a Neeve Ring adds context to your record — sleep, HR, HRV.
     Optional. Your record works without one.<br>
     <a href="/health/v2/ring.html">Open ring setup →</a>
+  </div>
+</div>
+
+<!-- Tag a reading bottom sheet -->
+<div class="ql-backdrop" id="tag-backdrop" onclick="closeTagSheet()"></div>
+<div class="tag-sheet" id="tag-sheet" role="dialog" aria-modal="true">
+  <div class="tag-grip"></div>
+  <h2>Tag a reading</h2>
+  <div class="sub">Captures a fresh HR + skin-temp from your Neeve Ring with whatever context you want noted — "just stood up", "right before migraine", etc.</div>
+
+  <div class="tag-status" id="tag-status">
+    <span class="pulse" aria-hidden="true"></span>
+    <span class="text" id="tag-status-text">Tap "Capture" to take a fresh reading.</span>
+  </div>
+
+  <div class="tag-readings" id="tag-readings" style="display:none">
+    <!-- Filled by JS after capture -->
+  </div>
+
+  <textarea id="tag-body" placeholder="What was happening? (optional)"></textarea>
+
+  <div class="tag-actions">
+    <span class="spacer"></span>
+    <button class="btn" type="button" onclick="closeTagSheet()">Close</button>
+    <button class="btn btn-primary" id="tag-capture" type="button" onclick="captureReading()">Capture</button>
   </div>
 </div>
 
@@ -606,6 +726,140 @@ function renderNoteMeta(notes) {
   meta.textContent = todayNotes.length
     ? `· ${todayNotes.length} today`
     : '· nothing today';
+}
+
+// ── Tag a reading ─────────────────────────────────
+function openTagSheet() {
+  document.getElementById('tag-backdrop').classList.add('open');
+  document.getElementById('tag-sheet').classList.add('open');
+  // Reset state
+  const status = document.getElementById('tag-status');
+  status.classList.remove('done');
+  document.getElementById('tag-status-text').textContent =
+    'Tap "Capture" to take a fresh reading.';
+  document.getElementById('tag-readings').style.display = 'none';
+  document.getElementById('tag-body').value = '';
+  document.getElementById('tag-capture').textContent = 'Capture';
+  document.getElementById('tag-capture').disabled = false;
+}
+function closeTagSheet() {
+  document.getElementById('tag-backdrop').classList.remove('open');
+  document.getElementById('tag-sheet').classList.remove('open');
+}
+
+function callNative(method) {
+  if (window.neeve && window.neeve.postMessage) {
+    window.neeve.postMessage(JSON.stringify({ method }));
+    return true;
+  }
+  return false;
+}
+
+async function captureReading() {
+  const btn = document.getElementById('tag-capture');
+  const statusEl = document.getElementById('tag-status');
+  const statusText = document.getElementById('tag-status-text');
+
+  // Native bridge: fire HR + temp measurements on the ring
+  if (!callNative('tagReading')) {
+    statusText.textContent = 'Tag a reading works only in the Neeve app.';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Reading…';
+  statusText.textContent = 'Asking your Neeve Ring for a fresh reading… (~20s)';
+
+  // Mark the start so we can detect "new" samples after this moment.
+  const startedAt = Date.now();
+
+  // Wait for the measurement cycle to complete on the ring (PPG ~10s
+  // + temp ~5s + ingest). Then poll for the freshest values.
+  await new Promise(r => setTimeout(r, 18000));
+
+  try {
+    const r = await api('/ring/samples?limit=80');
+    const latest = {};
+    for (const s of (r.samples || [])) {
+      const ts = new Date(s.ts).getTime();
+      if (ts < startedAt - 60000) continue; // only post-tap samples
+      if (!latest[s.metric] || new Date(latest[s.metric].ts) < new Date(s.ts)) {
+        latest[s.metric] = s;
+      }
+    }
+    renderTagReadings(latest);
+    statusEl.classList.add('done');
+    statusText.textContent = 'Reading captured.';
+    btn.textContent = 'Save with note';
+    btn.disabled = false;
+    btn.onclick = saveTaggedReading.bind(null, latest);
+  } catch (e) {
+    statusText.textContent = "Couldn't capture: " + (e.message || 'try again');
+    btn.disabled = false;
+    btn.textContent = 'Try again';
+    btn.onclick = captureReading;
+  }
+}
+
+function renderTagReadings(latest) {
+  const wrap = document.getElementById('tag-readings');
+  const rows = [];
+  const tile = (key, label, unit, decimals) => {
+    const s = latest[key];
+    if (!s) return;
+    const raw = Number(s.value);
+    const v = decimals != null ? raw.toFixed(decimals) : Math.round(raw);
+    rows.push(`
+      <div class="r">
+        <div class="label">${label}</div>
+        <div class="value">${v}<span class="unit">${unit}</span></div>
+      </div>`);
+  };
+  tile('hr',         'Heart rate', 'bpm');
+  tile('spo2',       'Blood O₂',   '%');
+  tile('hrv_rmssd',  'HRV',        'ms');
+  tile('temp_skin',  'Skin temp',  '°C', 1);
+
+  if (!rows.length) {
+    wrap.innerHTML = '<div style="grid-column:1/-1;color:var(--taupe-2);font-style:italic;font-size:14px">No fresh samples landed in time. Try again.</div>';
+  } else {
+    wrap.innerHTML = rows.join('');
+  }
+  wrap.style.display = 'grid';
+}
+
+async function saveTaggedReading(latest) {
+  const btn = document.getElementById('tag-capture');
+  const statusText = document.getElementById('tag-status-text');
+  const note = document.getElementById('tag-body').value.trim();
+
+  btn.disabled = true;
+  statusText.textContent = 'Saving…';
+
+  const tagMeta = {
+    measured_at: new Date().toISOString(),
+    readings: Object.fromEntries(
+      Object.entries(latest).map(([k, s]) => [k, Number(s.value)])
+    ),
+  };
+
+  try {
+    await api('/me/note', {
+      method: 'POST',
+      body: JSON.stringify({
+        kind: 'event',
+        body: note || 'Tagged a reading.',
+        meta: tagMeta,
+      }),
+    });
+    statusText.textContent = 'Saved to your record.';
+    setTimeout(closeTagSheet, 1200);
+    // Refresh Today vitals so the new HR/temp show up immediately.
+    fastRefreshVitals();
+  } catch (e) {
+    statusText.textContent = "Couldn't save: " + (e.message || 'try again');
+    btn.disabled = false;
+    btn.textContent = 'Try again';
+  }
 }
 
 // ── Quick-log sheet ───────────────────────────────

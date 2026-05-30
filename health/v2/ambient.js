@@ -9,47 +9,57 @@
 // references if those evolve.
 
 const PHASES = {
+  // Layer order matters: the FIRST background layer paints on top. The
+  // linear cream is layered first, transparent above 18% of viewport
+  // and solid cream below 32% — that way the radials only show in the
+  // top band and anything past the hero sits on flat cream rather than
+  // a warm wash that reads as a shadow strip.
   dawn: {
     label: 'Dawn', greet: 'Good morning',
-    grad: `radial-gradient(110% 70% at 50% -8%, #c8a6d0 0%, transparent 52%),
-           radial-gradient(120% 78% at 50% 34%, #f0a59c 0%, transparent 60%),
-           radial-gradient(130% 60% at 50% 60%, #f6c59b 0%, transparent 62%),
-           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
-    nodeTop: 210, nodeColor: '#fff1da', textOn: '#fff7f0', moon: false,
+    grad: `linear-gradient(180deg, transparent 0%, transparent 18%, #f8f1e7 32%),
+           radial-gradient(110% 28% at 50% -4%, #c8a6d0 0%, transparent 70%),
+           radial-gradient(120% 26% at 50% 10%, #f0a59c 0%, transparent 72%),
+           radial-gradient(130% 24% at 50% 20%, #f6c59b 0%, transparent 74%),
+           #f8f1e7`,
+    nodeTop: 200, nodeColor: '#fff1da', textOn: '#fff7f0', moon: false,
   },
   day: {
     label: 'Day', greet: 'Good afternoon',
-    grad: `radial-gradient(110% 70% at 50% -12%, #bcd7ea 0%, transparent 50%),
-           radial-gradient(120% 80% at 50% 32%, #f3c79f 0%, transparent 58%),
-           radial-gradient(130% 62% at 50% 62%, #f6dcbb 0%, transparent 60%),
-           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
+    grad: `linear-gradient(180deg, transparent 0%, transparent 18%, #f8f1e7 32%),
+           radial-gradient(110% 28% at 50% -6%, #bcd7ea 0%, transparent 70%),
+           radial-gradient(120% 26% at 50% 10%, #f3c79f 0%, transparent 72%),
+           radial-gradient(130% 24% at 50% 20%, #f6dcbb 0%, transparent 74%),
+           #f8f1e7`,
     nodeTop: 150, nodeColor: '#ffffff', textOn: '#5a3f2e', moon: false,
   },
   dusk: {
     label: 'Dusk', greet: 'Good evening',
-    grad: `radial-gradient(110% 70% at 50% -8%, #6f5380 0%, transparent 52%),
-           radial-gradient(120% 80% at 50% 36%, #de7150 0%, transparent 60%),
-           radial-gradient(130% 60% at 50% 60%, #efa45c 0%, transparent 62%),
-           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
-    nodeTop: 230, nodeColor: '#ffd9a0', textOn: '#fff7f0', moon: false,
+    grad: `linear-gradient(180deg, transparent 0%, transparent 18%, #f8f1e7 32%),
+           radial-gradient(110% 28% at 50% -4%, #6f5380 0%, transparent 70%),
+           radial-gradient(120% 26% at 50% 12%, #de7150 0%, transparent 72%),
+           radial-gradient(130% 24% at 50% 20%, #efa45c 0%, transparent 74%),
+           #f8f1e7`,
+    nodeTop: 220, nodeColor: '#ffd9a0', textOn: '#fff7f0', moon: false,
   },
   night: {
     label: 'Night', greet: 'Good night',
-    grad: `radial-gradient(110% 70% at 50% -10%, #322a47 0%, transparent 55%),
-           radial-gradient(120% 80% at 50% 34%, #574367 0%, transparent 60%),
-           radial-gradient(130% 62% at 50% 60%, #3a2f4d 0%, transparent 62%),
-           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
+    grad: `linear-gradient(180deg, transparent 0%, transparent 18%, #f8f1e7 32%),
+           radial-gradient(110% 28% at 50% -4%, #322a47 0%, transparent 70%),
+           radial-gradient(120% 26% at 50% 10%, #574367 0%, transparent 72%),
+           radial-gradient(130% 24% at 50% 20%, #3a2f4d 0%, transparent 74%),
+           #f8f1e7`,
     nodeTop: 168, nodeColor: '#eef0ff', textOn: '#f3eef7', moon: true,
   },
   // Fixed warm-dawn variant for the Sleep page — "a sunrise after the
   // night, so even a rough night glows warm rather than going cold".
   sleep_dawn: {
     label: 'Sleep', greet: '',
-    grad: `radial-gradient(110% 68% at 50% -8%, #f4cda7 0%, transparent 52%),
-           radial-gradient(120% 76% at 50% 32%, #d98a6e 0%, transparent 60%),
-           radial-gradient(132% 66% at 50% 62%, #875b76 0%, transparent 64%),
-           linear-gradient(180deg, transparent 60%, #f8f1e7 100%)`,
-    nodeTop: 196, nodeColor: '#ffe7c8', textOn: '#fff7f0', moon: false,
+    grad: `linear-gradient(180deg, transparent 0%, transparent 18%, #f8f1e7 32%),
+           radial-gradient(110% 28% at 50% -4%, #f4cda7 0%, transparent 70%),
+           radial-gradient(120% 26% at 50% 10%, #d98a6e 0%, transparent 72%),
+           radial-gradient(132% 26% at 50% 20%, #875b76 0%, transparent 74%),
+           #f8f1e7`,
+    nodeTop: 190, nodeColor: '#ffe7c8', textOn: '#fff7f0', moon: false,
   },
 };
 
@@ -88,10 +98,10 @@ function ensureAmbientStyles() {
   if (document.getElementById('ambient-styles')) return;
   const css = `
   /* Host clips the orb + halo rings so the warm box-shadow can't bleed
-     down into the content cards below the hero. min-height makes sure
-     the halos always have room even when the hero content shrinks
-     (e.g. after a check-in is logged and the CTA + lede hide). */
-  .amb-host { position: relative; overflow: hidden; min-height: 580px; }
+     into the content cards below the hero. No min-height — the hero
+     sizes itself to its content; the gradient fades to cream early
+     enough that nothing past the hero sits on a warm wash. */
+  .amb-host { position: relative; overflow: hidden; }
   /* Gradient is a fixed full-viewport background so the warm
      atmosphere extends behind every section of the page, not just
      the hero band. The orb and halo rings stay positioned relative

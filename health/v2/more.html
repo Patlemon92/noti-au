@@ -326,25 +326,58 @@ function renderProfile(u) {
 // ── Push notifications ──────────────────────────
 function refreshPushState() {
   const tog = document.getElementById('push-toggle');
-  if (!('Notification' in window)) {
-    tog.style.opacity = .35;
-    return;
-  }
-  tog.classList.toggle('on', Notification.permission === 'granted');
+  // Reflect our stored opt-in state. Permission state in iOS is just
+  // "is it possible at all"; opt-in is whether the user has asked us
+  // to schedule reminders.
+  tog.classList.toggle('on', notifEnabled());
 }
+// Notification toggle now drives the native bridge to schedule local
+// check-in reminders (no APNs, no Apple Developer account needed).
+// State is persisted in localStorage and the toggle visually
+// reflects whether the user has opted in.
+function notifEnabled() {
+  return localStorage.getItem('neeve_notif_enabled') === '1';
+}
+
 async function togglePush() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    alert('To turn off, go to your device Settings → Neeve → Notifications.');
+  const tog = document.getElementById('push-toggle');
+  if (notifEnabled()) {
+    // Disabling — cancel any scheduled reminders, update state.
+    if (window.neeve && window.neeve.postMessage) {
+      window.neeve.postMessage(JSON.stringify({ method: 'disableNotifications' }));
+    }
+    localStorage.setItem('neeve_notif_enabled', '0');
+    tog.classList.remove('on');
     return;
   }
-  if (Notification.permission === 'denied') {
-    alert('Notifications are blocked. Enable them in Settings → Neeve.');
+  // Enabling — call native to request iOS permission and schedule.
+  if (!(window.neeve && window.neeve.postMessage)) {
+    alert('Notifications work only in the Neeve app.');
     return;
   }
-  const perm = await Notification.requestPermission();
-  refreshPushState();
+  const morning = (_user && _user.morningTime) || '08:00';
+  const evening = (_user && _user.eveningTime) || '19:00';
+  window.neeve.postMessage(JSON.stringify({
+    method: 'enableNotifications',
+    morningTime: morning,
+    eveningTime: evening,
+  }));
+  // Optimistically mark enabled; the native side dispatches a
+  // neeve:notif-status event on completion. If iOS denied, the
+  // event will reset us below.
+  localStorage.setItem('neeve_notif_enabled', '1');
+  tog.classList.add('on');
 }
+
+document.addEventListener('neeve:notif-status', (e) => {
+  const granted = !!(e.detail && e.detail.granted);
+  const tog = document.getElementById('push-toggle');
+  if (!granted) {
+    localStorage.setItem('neeve_notif_enabled', '0');
+    tog.classList.remove('on');
+    alert('Notifications are blocked. Enable them in iOS Settings → Neeve → Notifications.');
+  }
+});
 
 // ── Edit field (TODO: in-place edit; for now route to profile.html) ──
 function editField(field) {

@@ -15,17 +15,17 @@
 <script src="/health/v2/alys-orb.js"></script>
 
 <style>
+  /* Soft peach-to-cream gradient matching Today + Record. */
+  :root {
+    --ink-2: #2b2018;
+    --clay-2: #bf5a3c;
+    --taupe-2: #9a8369;
+    --warm-card: #fffdf9;
+  }
   body {
-    background: var(--cream);
-    background-image:
-      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.15 0 0 0 0 0.1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-      radial-gradient(120% 32% at 50% -6%,
-        rgba(248, 200, 175, .42) 0%,
-        rgba(248, 200, 175, .15) 35%,
-        rgba(248, 200, 175, 0) 65%),
-      linear-gradient(180deg, #faf3e7 0%, var(--cream) 32%);
-    background-attachment: fixed, fixed, fixed;
-    background-size: 200px 200px, auto, auto;
+    background: linear-gradient(180deg, #f6e6d6 0%, #f6efe4 30%, #f6efe4 100%);
+    background-attachment: fixed;
+    color: var(--ink-2);
   }
   .page-alys {
     max-width: 460px; margin: 0 auto;

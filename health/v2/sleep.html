@@ -81,9 +81,15 @@
     </div>
     <div class="tot-grid" style="margin-top:0">
       <div class="tot"><div class="lbl"><span class="dot dot-awake"></span>Awake</div>
-                       <div class="val"><span id="awake-m">—</span><span class="unit">m</span></div></div>
+                       <div class="val" id="awake-val"><span id="awake-m">—</span><span class="unit">m</span></div></div>
     </div>
   </div>
+  <style>
+    /* Per design brief: a zero-awake night should still render '0m'
+       in taupe, never hidden, so the category stays legible and the
+       layout doesn't shift between good and bad nights. */
+    #awake-val.zero, #awake-val.zero .unit { color: var(--ink-mute); }
+  </style>
 
   <!-- Alys read across the visible window -->
   <section class="section">
@@ -246,7 +252,9 @@ function renderTotals(t) {
   const [dh, dm] = hm(t.deep);  set('deep-h', dh); set('deep-m', dm);
   const [lh, lm] = hm(t.light); set('light-h', lh); set('light-m', lm);
   const [rh, rm] = hm(t.rem);   set('rem-h', rh);  set('rem-m', rm);
-  set('awake-m', Math.round(t.awake));
+  const awakeMin = Math.round(t.awake);
+  set('awake-m', awakeMin);
+  document.getElementById('awake-val').classList.toggle('zero', awakeMin === 0);
 }
 
 loadLastNight();

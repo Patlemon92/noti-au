@@ -1,28 +1,45 @@
-/* Neeve v2 design system — extracted from prototype/neeve-prototype.html */
+/* Neeve v2 design system — aligned to the Neeve Design Brief (May 2026).
+   Palette anchored on Ink #2B2018 / Cream #F8F1E7. The five named
+   sleep-stage colours are normative for charts and the four-stage
+   mix bar. Legacy variables are kept as aliases so older pages don't
+   break while the refactor lands progressively. */
 :root {
-  --bone:        #FAF6F0;
+  /* Brief-canonical palette */
+  --ink:         #2B2018;   /* primary text */
+  --taupe:       #9A8369;   /* secondary text / muted */
+  --cream:       #F8F1E7;   /* primary surface */
+  --cream-soft:  #FFFDF9;   /* frosted card base */
+  --plum:        #8F6C86;   /* deep sleep */
+  --salmon:      #CB8270;   /* light sleep */
+  --clay:        #BF5A3C;   /* REM, Alys dot */
+  --gold:        #C8A23F;   /* awake */
+  --ink-text-on-warm: #fff7f0; /* text laid over hero gradient */
+  --ink-text-on-day:  #5A3F2E; /* text in day-phase content */
+
+  /* Aliases mapped to the canonical names so old code keeps working
+     while pages are progressively migrated. */
+  --bone:        var(--cream);
   --bone-deep:   #F2EBE0;
-  --cream:       #F7EFE2;
-  --ink:         #2B221C;
   --ink-soft:    #5C4F45;
-  --ink-mute:    #998578;
+  --ink-mute:    var(--taupe);
   --hair:        #E5DCCE;
-  --rose:        #E0998B;
-  --rose-deep:   #C77A6C;
-  --terra:       #B85738;
+  --rose:        var(--salmon);
+  --rose-deep:   var(--clay);
+  --terra:       var(--clay);
   --sage:        #A9B89A;
   --sage-deep:   #7E927A;
   --butter:      #EBC982;
-  --butter-deep: #C99B3F;
-  --plum:        #97718C;
+  --butter-deep: var(--gold);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  background: var(--bone);
+  background: var(--cream);
   color: var(--ink);
-  font-family: 'Inter Tight', system-ui, sans-serif;
+  /* Hanken Grotesk is the brief's body face. Inter Tight stays as a
+     fallback for any inline overrides that haven't migrated yet. */
+  font-family: 'Hanken Grotesk', 'Inter Tight', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   font-size: 16px;
   line-height: 1.45;

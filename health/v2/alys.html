@@ -29,7 +29,7 @@
   }
   .page-alys {
     max-width: 460px; margin: 0 auto;
-    padding: 28px 22px 200px;
+    padding: 0 22px 200px;
     animation: page-fade .55s ease;
   }
   @keyframes page-fade {
@@ -37,44 +37,52 @@
     to   { opacity: 1; transform: none; }
   }
 
-  /* Orb hero — sticky at the top so she stays visible while the
-     user scrolls through chat history. The orb shrinks smoothly
-     once the page scrolls past its natural position. */
-  .orb-stage {
+  /* Frozen header — orb + observations + "Talk to me" label all
+     pinned at the top so the chat below scrolls independently
+     underneath them. Patrick: "it should freeze from the talk to
+     me and the whole header be a bit smaller." */
+  .alys-header {
     position: sticky; top: 0;
     z-index: 5;
-    display: flex; flex-direction: column; align-items: center;
-    margin-bottom: 22px; padding: 16px 0 14px;
+    margin: 0 -22px;
+    padding: 14px 22px 6px;
     background: linear-gradient(180deg,
       rgba(246, 230, 214, .98) 0%,
-      rgba(246, 239, 228, .92) 80%,
+      rgba(246, 239, 228, .94) 80%,
       rgba(246, 239, 228, 0) 100%);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     transition: padding .3s ease;
   }
+
+  /* Orb hero — smaller default, even smaller when stuck */
+  .orb-stage {
+    display: flex; flex-direction: column; align-items: center;
+    margin-bottom: 10px;
+  }
   .orb-stage .alys-orb { transition: transform .3s ease; }
-  /* When the page is scrolled, the orb shrinks via JS toggling
-     [data-stuck=true] on the orb-stage. The here/quiet lines fade. */
-  .orb-stage[data-stuck="true"] {
-    padding: 10px 0 8px;
+  .alys-header[data-stuck="true"] {
+    padding: 6px 22px 4px;
   }
-  .orb-stage[data-stuck="true"] .alys-orb {
-    transform: scale(.55);
+  .alys-header[data-stuck="true"] .alys-orb {
+    transform: scale(.42);
+    margin: -28px 0;
   }
-  .orb-stage[data-stuck="true"] .here,
-  .orb-stage[data-stuck="true"] .quiet {
+  .alys-header[data-stuck="true"] .here,
+  .alys-header[data-stuck="true"] .quiet,
+  .alys-header[data-stuck="true"] .eyebrow:not(.eyebrow-talk),
+  .alys-header[data-stuck="true"] #obs-list {
     display: none;
   }
   .orb-stage .here {
     font-family: 'Fraunces', serif; font-style: italic;
-    font-size: 19px; color: var(--ink);
-    margin-top: 22px; letter-spacing: -.2px;
+    font-size: 16px; color: var(--ink);
+    margin-top: 10px; letter-spacing: -.2px;
     transition: opacity .25s ease;
   }
   .orb-stage .quiet {
     font-family: 'Fraunces', serif; font-style: italic;
-    font-size: 14px; color: var(--taupe);
-    margin-top: 8px; line-height: 1.5; max-width: 320px; text-align: center;
+    font-size: 13px; color: var(--taupe);
+    margin-top: 6px; line-height: 1.5; max-width: 320px; text-align: center;
     transition: opacity .25s ease;
   }
 
@@ -83,9 +91,10 @@
     font-family: 'Inter Tight', sans-serif;
     font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
     color: var(--taupe); font-weight: 600;
-    margin: 32px 0 14px;
+    margin: 16px 0 10px;
     display: flex; align-items: center; gap: 10px;
   }
+  .eyebrow.eyebrow-talk { margin-top: 4px; margin-bottom: 8px; }
   .eyebrow::before {
     content: ''; flex-shrink: 0;
     width: 5px; height: 5px; border-radius: 50%;
@@ -187,16 +196,19 @@
 <body>
 
 <div class="page-alys">
-  <div class="orb-stage">
-    <div id="alys-orb-mount"></div>
-    <div class="here" id="alys-here">I'm here.</div>
-    <div class="quiet" id="alys-quiet"></div>
+  <div class="alys-header" id="alys-header">
+    <div class="orb-stage">
+      <div id="alys-orb-mount"></div>
+      <div class="here" id="alys-here">I'm here.</div>
+      <div class="quiet" id="alys-quiet"></div>
+    </div>
+
+    <div class="eyebrow" id="obs-eyebrow" style="display:none">What I'm holding</div>
+    <div id="obs-list"></div>
+
+    <div class="eyebrow eyebrow-talk">Talk to me</div>
   </div>
 
-  <div class="eyebrow" id="obs-eyebrow" style="display:none">What I'm holding</div>
-  <div id="obs-list"></div>
-
-  <div class="eyebrow">Talk to me</div>
   <div class="chat" id="chat"></div>
 </div>
 
@@ -214,25 +226,26 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('alys');
 
-// Mount the orb
+// Mount the orb — smaller default (130px) so the frozen header
+// doesn't dominate the viewport. Shrinks further when scroll-stuck.
 (function bootOrb() {
   const mount = document.getElementById('alys-orb-mount');
   if (mount && typeof renderAlysOrb === 'function') {
-    mount.innerHTML = renderAlysOrb({ size: 200 });
+    mount.innerHTML = renderAlysOrb({ size: 130 });
   }
 })();
 
-// Sticky-orb shrink: when the page scrolls past ~80px the orb-stage
-// collapses to a compact pinned header so the orb stays visible while
-// the user reads chat history without taking up half the viewport.
-(function bootStickyOrb() {
-  const stage = document.querySelector('.orb-stage');
+// Sticky-header shrink: when the page scrolls past ~60px the
+// frozen header collapses to a compact pinned bar (small orb +
+// "Talk to me" eyebrow) so chat reading isn't blocked.
+(function bootStickyHeader() {
+  const stage = document.getElementById('alys-header');
   if (!stage) return;
   let raf = null;
   function update() {
     raf = null;
     const y = window.scrollY || document.documentElement.scrollTop || 0;
-    stage.setAttribute('data-stuck', y > 80 ? 'true' : 'false');
+    stage.setAttribute('data-stuck', y > 60 ? 'true' : 'false');
   }
   window.addEventListener('scroll', () => {
     if (raf == null) raf = requestAnimationFrame(update);

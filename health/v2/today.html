@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#FAF6F0" />
+<meta name="theme-color" content="#F8F1E7" />
 <link rel="manifest" href="/health/manifest-health.json" />
 <link rel="apple-touch-icon" href="/health/icon-192.png" />
 <title>Today · Neeve</title>
@@ -12,221 +12,333 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/health/v2/styles.css">
-<script src="/health/v2/ambient.js"></script>
-<script src="/health/v2/alys-orb.js"></script>
+
 <style>
-.greeting-time { color: var(--ink-mute); font-family: 'Inter Tight', sans-serif; font-weight: 500; font-size: 14px; margin-bottom: 4px; }
-.greeting { font-family: 'Fraunces', serif; font-weight: 500; font-size: 36px; line-height: 1.1; letter-spacing: -0.5px; color: var(--ink); margin-bottom: 28px; }
-.greeting em { font-style: italic; color: var(--terra); }
+  /* ── Layout ─────────────────────────────────────────────
+     Today is type-led, dignified, calm. No orb (lives on Alys's tab).
+     No backdrop gradient (the page sits on cream). Sections are
+     announced with quiet eyebrow labels; cards are restrained. */
+  body { background: var(--cream); }
+  .page-today { max-width: 460px; margin: 0 auto; padding: 16px 22px 96px; }
 
-/* Ring status + tiles */
-.ring-card { background: white; border: 1px solid var(--hair); border-radius: 20px; padding: 20px; margin-bottom: 24px; }
-.ring-status { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.ring-status .name { font-family: 'Fraunces', serif; font-size: 18px; color: var(--ink); font-weight: 500; }
-.ring-status .conn { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); }
-.ring-status .dot { width: 8px; height: 8px; border-radius: 50%; }
-.ring-status .dot-on  { background: var(--sage-deep); }
-.ring-status .dot-off { background: var(--ink-mute); }
+  /* Clock + weather pill, top of page */
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border-radius: 99px;
+    background: rgba(255, 255, 255, .8); color: var(--ink);
+    border: 1px solid rgba(43, 32, 24, .08);
+    font-size: 12.5px; font-weight: 500;
+    margin-bottom: 16px;
+  }
+  .pill .dot { opacity: .35; }
 
-.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.metric-tile { background: var(--cream); border-radius: 12px; padding: 14px; }
-.metric-tile .lbl { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-mute); font-weight: 500; margin-bottom: 4px; }
-.metric-tile .val { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; color: var(--ink); line-height: 1; }
-.metric-tile .unit { font-family: 'Inter Tight', sans-serif; font-size: 12px; color: var(--ink-mute); margin-left: 4px; }
-.metric-tile .ago { font-size: 11px; color: var(--ink-mute); margin-top: 4px; }
+  .greeting {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 28px; letter-spacing: -.3px; line-height: 1.18;
+    color: var(--ink); margin-bottom: 22px;
+  }
 
-.ring-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-.ring-actions .btn { font-size: 13px; padding: 8px 14px; flex: 1 1 auto; min-width: 0; }
+  /* Log something — soft frosted CTA at top */
+  .log-cta {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 14px 18px; margin-bottom: 32px;
+    background: rgba(255, 255, 255, .85);
+    border: 1px solid rgba(43, 32, 24, .08); border-radius: 18px;
+    box-shadow: 0 14px 28px -22px rgba(70, 45, 25, .35);
+    font-family: inherit; font-size: 15px; color: var(--ink);
+    cursor: pointer; text-align: left;
+  }
+  .log-cta .plus {
+    width: 26px; height: 26px; flex-shrink: 0;
+    border-radius: 50%; background: var(--ink); color: #fff7f0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 16px; line-height: 1; font-weight: 400;
+  }
+  .log-cta .label { flex: 1; }
+  .log-cta .hint { font-size: 12px; color: var(--taupe); }
 
-/* This week — recent days (prototype style) */
-.section-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-mute); font-weight: 500; margin-bottom: 10px; }
-.recent-day { background: white; border: 1px solid var(--hair); border-radius: 16px; padding: 16px; margin-bottom: 10px; display: flex; gap: 14px; }
-.recent-day .when-col { flex-shrink: 0; text-align: center; }
-.recent-day .date { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 500; color: var(--ink); line-height: 1; }
-.recent-day .month { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-mute); margin-top: 2px; }
-.recent-day .content { flex: 1; min-width: 0; }
-.recent-day .summary { font-size: 14px; color: var(--ink); line-height: 1.5; }
-.recent-day .summary em { font-style: normal; font-weight: 600; color: var(--terra); }
-.recent-day .note { font-size: 13px; color: var(--ink-soft); margin-top: 6px; font-style: italic; }
+  /* Eyebrow section labels */
+  .eyebrow {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--taupe); font-weight: 600;
+    margin: 28px 0 12px;
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .eyebrow .meta { color: var(--ink-mute); font-weight: 500; letter-spacing: .05em; }
+  .eyebrow:first-child { margin-top: 0; }
+
+  /* Slot cards */
+  .slot {
+    display: block; text-decoration: none; color: inherit;
+    background: white; border: 1px solid rgba(43, 32, 24, .08);
+    border-radius: 16px; padding: 16px 18px; margin-bottom: 10px;
+    transition: transform .12s ease;
+  }
+  .slot:active { transform: scale(.99); }
+  .slot-head {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--terra); font-weight: 600; margin-bottom: 8px;
+  }
+  .slot-state { font-size: 10.5px; color: var(--ink-mute); font-weight: 500; letter-spacing: .05em; }
+  .slot-state.done { color: var(--sage-deep); }
+  .slot-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ink-mute);
+  }
+  .slot-dot.done { background: var(--sage-deep); }
+  .slot-body {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 18px; line-height: 1.32; color: var(--ink);
+  }
+  .slot-foot {
+    font-size: 12.5px; color: var(--ink-mute);
+    margin-top: 8px;
+  }
+
+  /* Notes block */
+  .notes-block {
+    background: white; border: 1px solid rgba(43, 32, 24, .08);
+    border-radius: 16px; padding: 16px 18px;
+  }
+  .notes-empty {
+    color: var(--ink-soft); font-size: 14.5px; line-height: 1.5;
+  }
+  .notes-latest {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 16px; line-height: 1.4; color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .notes-ago { font-size: 12.5px; color: var(--ink-mute); }
+  .notes-more { color: var(--terra); font-size: 13px; margin-top: 8px; }
+
+  /* RIGHT NOW vitals strip */
+  .vitals {
+    background: white; border: 1px solid rgba(43, 32, 24, .08);
+    border-radius: 16px; padding: 16px 18px;
+  }
+  .vitals-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;
+    margin-bottom: 10px;
+  }
+  .vitals-grid .v {
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .vitals-grid .v .label {
+    font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-mute); font-weight: 600;
+    min-width: 42px;
+  }
+  .vitals-grid .v .value {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 22px; line-height: 1; color: var(--ink);
+  }
+  .vitals-grid .v .unit {
+    font-size: 11.5px; color: var(--ink-mute);
+  }
+  .vitals-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 6px;
+    font-size: 12px; color: var(--ink-mute);
+  }
+  .vitals-tag {
+    border: 1px solid rgba(43, 32, 24, .12);
+    background: var(--cream); color: var(--ink);
+    padding: 6px 12px; border-radius: 99px;
+    font-size: 12.5px; font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* ALYS NOTICED card */
+  .alys-card {
+    background: linear-gradient(135deg, #fff7ec 0%, #fde9d8 100%);
+    border: 1px solid rgba(220, 110, 75, .14);
+    border-radius: 16px; padding: 16px 18px;
+  }
+  .alys-card .who {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--terra); font-weight: 700; margin-bottom: 8px;
+  }
+  .alys-card .said {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 16.5px; line-height: 1.5; color: var(--ink);
+  }
+  .alys-card .deeper {
+    color: var(--terra); font-size: 13px; margin-top: 10px;
+    text-decoration: none;
+  }
+
+  /* Hidden when no ring / no notes / etc */
+  .hidden { display: none !important; }
+
+  /* Quick-log bottom sheet (carries over from previous version) */
+  .ql-backdrop {
+    position: fixed; inset: 0; background: rgba(43, 32, 24, .45);
+    z-index: 1000; opacity: 0; pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .ql-backdrop.open { opacity: 1; pointer-events: auto; }
+  .ql-sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
+    background: var(--cream); border-radius: 22px 22px 0 0;
+    padding: 18px 20px max(28px, env(safe-area-inset-bottom)) 20px;
+    transform: translateY(100%); transition: transform .25s ease;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .ql-sheet.open { transform: translateY(0); box-shadow: 0 -10px 30px rgba(43, 32, 24, .18); }
+  .ql-sheet-grip {
+    width: 36px; height: 4px; background: rgba(43, 32, 24, .15);
+    border-radius: 2px; margin: 0 auto 10px;
+  }
+  .ql-sheet h2 {
+    font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px;
+    color: var(--ink); margin: 6px 0 4px;
+  }
+  .ql-sheet .sub { font-size: 13px; color: var(--taupe); margin-bottom: 14px; }
+  .ql-sheet textarea {
+    width: 100%; box-sizing: border-box; background: white;
+    border: 1px solid rgba(43, 32, 24, .12); border-radius: 14px;
+    padding: 14px; font-family: inherit; font-size: 16px;
+    color: var(--ink); resize: vertical; min-height: 110px;
+  }
+  .ql-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+  .ql-chip {
+    padding: 7px 12px; border-radius: 99px;
+    border: 1px solid rgba(43, 32, 24, .12);
+    background: white; font-family: inherit; font-size: 13px;
+    color: var(--ink-soft); cursor: pointer;
+  }
+  .ql-chip.on { background: var(--ink); color: #fff7f0; border-color: var(--ink); }
+  .ql-actions {
+    display: flex; align-items: center; gap: 10px; margin-top: 14px;
+  }
+  .ql-status { flex: 1; min-height: 18px; font-size: 13px; color: var(--taupe); }
 </style>
 </head>
 <body>
 
-<!-- Ambient hero. ambient.js paints the gradient + glowing orb + halo
-     rings + weather wash; this content layer sits on top. Phase auto-
-     detects from the device clock; text colour applies via the
-     [data-phase] attribute set by mountAmbient so warm phases get
-     light cream text and the day phase gets brown. -->
-<!-- Home hero: pale cream backdrop with Alys's orb as the centerpiece.
-     The orb is the home page's identity; pulses at the user's live HR.
-     CTA flips between "Start <slot> check-in" (pending) and "Log
-     something" (always available). -->
-<header id="ambient-host" class="home-hero">
-  <div class="amb-content home-hero-content">
-    <div class="amb-pill" id="ambient-pill">
-      <span id="amb-clock">—</span>
-      <span style="opacity:.6">·</span>
-      <span id="amb-weather">—</span>
-    </div>
-    <div class="ambient-text home-greeting serif" id="ambient-greeting">Hey.</div>
-    <div class="home-orb-wrap" id="alys-orb-mount"></div>
-    <button class="amb-cta-dark home-cta" id="ambient-cta" type="button">Log something</button>
+<div class="page-today">
+  <!-- Clock + weather pill -->
+  <div class="pill">
+    <span id="pill-clock">—</span>
+    <span class="dot">·</span>
+    <span id="pill-weather">—</span>
   </div>
-</header>
 
-<style>
-  .home-hero { padding: 26px 0 40px; }
-  .home-hero-content { text-align: center; }
-  #ambient-pill { margin-bottom: 22px; }
-  .home-greeting {
-    font-family: 'Fraunces', Georgia, serif;
-    font-size: 24px; font-weight: 500;
-    margin-bottom: 32px;
-  }
-  .home-orb-wrap {
-    display: flex; justify-content: center; align-items: center;
-    margin: 4px 0 36px;
-  }
-  .home-cta { margin-top: 4px; }
-</style>
+  <!-- Greeting — quiet, no decoration -->
+  <div class="greeting" id="greeting">Hey.</div>
 
-<main class="page" style="padding-top: 20px;">
-  <!-- Today round-up: morning + evening check-in states, today's notes
-       count. Replaces the older standalone "logged" prompt card +
-       redundant "Log something" button. -->
-  <section class="section">
-    <div class="section-label">Today</div>
-    <div id="roundup-grid" class="roundup-grid">
-      <a class="roundup-tile" data-tile="morning" href="/health/v2/checkin.html">
-        <div class="rt-head">Morning</div>
-        <div class="rt-body">—</div>
-        <div class="rt-foot"></div>
-      </a>
-      <a class="roundup-tile" data-tile="evening" href="/health/v2/checkin.html">
-        <div class="rt-head">Evening</div>
-        <div class="rt-body">—</div>
-        <div class="rt-foot"></div>
-      </a>
-      <a class="roundup-tile rt-wide" data-tile="notes" href="javascript:openLogSheet()">
-        <div class="rt-head">Notes today</div>
-        <div class="rt-body">none yet</div>
-        <div class="rt-foot">tap to capture one</div>
-      </a>
-    </div>
-  </section>
+  <!-- Log something — always-available capture entry -->
+  <button class="log-cta" type="button" onclick="openLogSheet()">
+    <span class="plus" aria-hidden="true">+</span>
+    <span class="label">Log something</span>
+    <span class="hint">a thought, symptom, anything</span>
+  </button>
 
-  <style>
-    .roundup-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-      margin-bottom: 24px;
-    }
-    .roundup-tile {
-      display: block; text-decoration: none; color: inherit;
-      background: white; border: 1px solid var(--hair);
-      border-radius: 18px; padding: 16px; min-height: 100px;
-      transition: transform .12s ease;
-    }
-    .roundup-tile:active { transform: scale(.98); }
-    .roundup-tile.rt-wide { grid-column: 1 / -1; }
-    .rt-head {
-      font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
-      color: var(--terra); font-weight: 600; margin-bottom: 6px;
-    }
-    .rt-body {
-      font-family: 'Fraunces', serif; font-weight: 500;
-      font-size: 18px; color: var(--ink); line-height: 1.3;
-    }
-    .rt-foot {
-      font-size: 12px; color: var(--ink-mute); margin-top: 6px;
-    }
-    .ql-backdrop {
-      position: fixed; inset: 0; background: rgba(43,32,24,.45);
-      z-index: 1000; opacity: 0; pointer-events: none;
-      transition: opacity .2s ease;
-    }
-    .ql-backdrop.open { opacity: 1; pointer-events: auto; }
-    .ql-sheet {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
-      background: var(--cream); border-radius: 22px 22px 0 0;
-      padding: 18px 20px max(28px, env(safe-area-inset-bottom)) 20px;
-      transform: translateY(100%); transition: transform .25s ease;
-      max-height: 85vh; overflow-y: auto;
-      box-shadow: none;
-    }
-    .ql-sheet.open { transform: translateY(0); box-shadow: 0 -10px 30px rgba(43,32,24,.18); }
-    .ql-sheet h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px; color: var(--ink); margin: 6px 0 4px; }
-    .ql-sheet .sub { font-size: 13px; color: var(--taupe); margin-bottom: 14px; }
-    .ql-sheet textarea {
-      width: 100%; box-sizing: border-box; background: white;
-      border: 1px solid var(--hair); border-radius: 14px;
-      padding: 14px; font-family: inherit; font-size: 16px;
-      color: var(--ink); resize: vertical; min-height: 110px;
-    }
-    .ql-row {
-      display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0;
-    }
-    .ql-chip {
-      padding: 7px 12px; border-radius: 99px; border: 1px solid var(--hair);
-      background: white; font-family: inherit; font-size: 13px;
-      color: var(--ink-soft); cursor: pointer;
-    }
-    .ql-chip.on { background: var(--ink); color: #fff7f0; border-color: var(--ink); }
-    .ql-actions {
-      display: flex; align-items: center; gap: 10px; margin-top: 14px;
-    }
-    .ql-status { flex: 1; min-height: 18px; font-size: 13px; color: var(--taupe); }
-    .ql-sheet-grip {
-      width: 36px; height: 4px; background: var(--hair);
-      border-radius: 2px; margin: 0 auto 8px;
-    }
-  </style>
+  <!-- TODAY · slot cards -->
+  <div class="eyebrow">
+    Today <span class="meta" id="today-date">—</span>
+  </div>
 
-  <div class="ql-backdrop" id="ql-backdrop" onclick="closeLogSheet()"></div>
-  <div class="ql-sheet" id="ql-sheet" role="dialog" aria-modal="true">
-    <div class="ql-sheet-grip"></div>
-    <h2>What's on your mind?</h2>
-    <div class="sub">Anything you want noted. Alys reads it; Past you might thank you.</div>
-    <textarea id="ql-body" placeholder="Type whatever — a symptom, an appointment coming up, something that helped, something that didn't, a thought to remember…"></textarea>
-    <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-top:14px;margin-bottom:6px">
-      Tag it (optional)
+  <a class="slot" id="slot-morning" href="/health/v2/checkin.html">
+    <div class="slot-head">
+      <span class="slot-dot" id="morning-dot"></span>
+      <span>MORNING</span>
+      <span class="slot-state" id="morning-state">available</span>
     </div>
-    <div class="ql-row" id="ql-kinds">
-      <button class="ql-chip" data-kind="symptom"     onclick="selectKind('symptom')">Symptom</button>
-      <button class="ql-chip" data-kind="appointment" onclick="selectKind('appointment')">Appointment</button>
-      <button class="ql-chip" data-kind="medication"  onclick="selectKind('medication')">Medication</button>
-      <button class="ql-chip" data-kind="trigger"     onclick="selectKind('trigger')">Trigger</button>
-      <button class="ql-chip" data-kind="event"       onclick="selectKind('event')">Event</button>
-      <button class="ql-chip" data-kind="thought"     onclick="selectKind('thought')">Thought</button>
+    <div class="slot-body" id="morning-body">Start when you're ready.</div>
+    <div class="slot-foot" id="morning-foot">Takes a few minutes.</div>
+  </a>
+
+  <a class="slot" id="slot-evening" href="/health/v2/checkin.html">
+    <div class="slot-head">
+      <span class="slot-dot" id="evening-dot"></span>
+      <span>EVENING</span>
+      <span class="slot-state" id="evening-state">later</span>
     </div>
-    <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-top:10px;margin-bottom:6px">
-      How are you, while you're here? (optional)
+    <div class="slot-body" id="evening-body">Comes around at 8 pm.</div>
+    <div class="slot-foot" id="evening-foot"></div>
+  </a>
+
+  <!-- NOTES TODAY -->
+  <div class="eyebrow">
+    Notes today <span class="meta" id="notes-count">· 0</span>
+  </div>
+  <div class="notes-block">
+    <div id="notes-empty" class="notes-empty">
+      Nothing yet. Add a thought, a symptom, an appointment —
+      anything you want noted.
     </div>
-    <div class="ql-row" id="ql-moods">
-      <button class="ql-chip" data-mood="good"  onclick="selectMood('good')">Good</button>
-      <button class="ql-chip" data-mood="ok"    onclick="selectMood('ok')">Ok</button>
-      <button class="ql-chip" data-mood="rough" onclick="selectMood('rough')">Rough</button>
-      <button class="ql-chip" data-mood="bad"   onclick="selectMood('bad')">Bad</button>
-    </div>
-    <div class="ql-actions">
-      <span class="ql-status" id="ql-status"></span>
-      <button class="btn btn-ghost" onclick="closeLogSheet()">Cancel</button>
-      <button class="btn btn-primary" id="ql-submit" onclick="submitQuickLog()" disabled>Log it</button>
+    <div id="notes-content" class="hidden">
+      <div class="notes-latest" id="notes-latest">—</div>
+      <div class="notes-ago" id="notes-ago">—</div>
+      <a class="notes-more" id="notes-more" href="/health/v2/record.html?tab=notes">View all notes →</a>
     </div>
   </div>
 
-  <!-- Ring status + live data -->
-  <div class="ring-card" id="ring-card">
-    <div class="empty">Loading ring…</div>
+  <!-- RIGHT NOW · vitals strip (ring-conditional) -->
+  <div id="vitals-section" class="hidden">
+    <div class="eyebrow">
+      Right now <span class="meta" id="vitals-ago">·</span>
+    </div>
+    <div class="vitals">
+      <div class="vitals-grid" id="vitals-grid"></div>
+      <div class="vitals-foot">
+        <span id="vitals-ring-name">Neeve Ring</span>
+        <button class="vitals-tag" id="vitals-tag-btn" type="button" onclick="tagReading()">
+          ⊙  Tag a reading
+        </button>
+      </div>
+    </div>
   </div>
 
-  <!-- This week -->
-  <section class="section">
-    <div class="section-label">Your week so far</div>
-    <div id="week">
-      <div class="empty">Loading…</div>
+  <!-- ALYS NOTICED card (alys-conditional) -->
+  <div id="alys-section" class="hidden">
+    <div class="eyebrow">Alys noticed</div>
+    <div class="alys-card">
+      <div class="said" id="alys-said">—</div>
+      <a class="deeper" id="alys-deeper" href="/health/v2/alys.html">read more →</a>
     </div>
-  </section>
-</main>
+  </div>
+
+  <!-- Onboarding nudge if no ring paired (only shown if ring missing) -->
+  <div id="ring-nudge" class="hidden" style="margin-top:28px; color:var(--ink-soft); font-size:14px; line-height:1.55;">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-bottom:6px">
+      ⌗ Neeve Ring not paired
+    </div>
+    Pairing a Neeve Ring adds context to your record — sleep, HR, HRV.
+    Optional. Your record works without one.<br>
+    <a href="/health/v2/ring.html" style="color:var(--terra);text-decoration:none;font-size:13px;display:inline-block;margin-top:8px">Open ring setup →</a>
+  </div>
+</div>
+
+<!-- Quick-log bottom sheet -->
+<div class="ql-backdrop" id="ql-backdrop" onclick="closeLogSheet()"></div>
+<div class="ql-sheet" id="ql-sheet" role="dialog" aria-modal="true">
+  <div class="ql-sheet-grip"></div>
+  <h2>What's on your mind?</h2>
+  <div class="sub">Anything you want noted. Alys reads it; past you might thank you.</div>
+  <textarea id="ql-body" placeholder="A symptom, an appointment, something that helped, a thought to remember…"></textarea>
+  <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-top:14px;margin-bottom:6px">
+    Tag it (optional)
+  </div>
+  <div class="ql-row" id="ql-kinds">
+    <button class="ql-chip" data-kind="symptom"     onclick="selectKind('symptom')">Symptom</button>
+    <button class="ql-chip" data-kind="appointment" onclick="selectKind('appointment')">Appointment</button>
+    <button class="ql-chip" data-kind="medication"  onclick="selectKind('medication')">Medication</button>
+    <button class="ql-chip" data-kind="trigger"     onclick="selectKind('trigger')">Trigger</button>
+    <button class="ql-chip" data-kind="event"       onclick="selectKind('event')">Event</button>
+    <button class="ql-chip" data-kind="thought"     onclick="selectKind('thought')">Thought</button>
+  </div>
+  <div class="ql-actions">
+    <span class="ql-status" id="ql-status"></span>
+    <button class="btn btn-ghost" onclick="closeLogSheet()">Cancel</button>
+    <button class="btn btn-primary" id="ql-submit" onclick="submitQuickLog()" disabled>Log it</button>
+  </div>
+</div>
 
 <div id="nav-mount"></div>
 
@@ -234,9 +346,7 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('today');
 
-// Route fresh users to the welcome flow before showing the home
-// screen. Runs once on load — once onboarded=true, /me returns it
-// and we never bounce again.
+// Welcome-flow gate: brand-new users land on /welcome before Today.
 (async function gateUnonboarded() {
   try {
     const u = await api('/me');
@@ -246,49 +356,28 @@ document.getElementById('nav-mount').innerHTML = renderNav('today');
   } catch (_) { /* unauth bounces to login elsewhere */ }
 })();
 
-// Mount the ambient hero + Alys orb on first paint so nothing flashes
-// cream. Phase comes from the device clock; weather is layered in
-// async. The orb is rendered separately (alys-orb.js) and pulses at
-// the user's live HR (wired by load() once ring samples arrive).
-(function bootAmbient() {
-  const host = document.getElementById('ambient-host');
-  if (!host || typeof mountAmbient !== 'function') return;
-  const result = mountAmbient({ host });
-  if (result) {
-    document.getElementById('ambient-greeting').textContent = result.greet + '.';
-    const name = localStorage.getItem('neeve_name') || '';
-    if (name) document.getElementById('ambient-greeting').textContent = `${result.greet}, ${name}.`;
-  }
-  const clock = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  document.getElementById('amb-clock').textContent = clock;
-
-  // Drop the Alys orb in + spin up the canvas animation. Idempotent.
-  const orbMount = document.getElementById('alys-orb-mount');
-  if (orbMount && typeof renderAlysOrb === 'function' && !orbMount.innerHTML.trim()) {
-    orbMount.innerHTML = renderAlysOrb({ size: 260 });
-    if (typeof startAlysOrbAnimation === 'function') {
-      startAlysOrbAnimation(orbMount);
-    }
-  }
-
-  // Layer in real weather when available.
-  if (typeof fetchUserWeather === 'function') {
-    fetchUserWeather().then(w => {
-      if (!w) return;
-      const phase = result?.phase;
-      mountAmbient({ host, phase, weather: w.weather });
-      const wtext = (w.temp != null ? `${w.temp}° · ` : '') + w.label;
-      document.getElementById('amb-weather').textContent = wtext;
-    });
-  } else {
-    document.getElementById('amb-weather').textContent = 'clear';
-  }
+// ── Greeting + pill ────────────────────────────────────
+function greetFromHour(h) {
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  if (h < 21) return 'Good evening';
+  return 'Good night';
+}
+(function bootGreeting() {
+  const name = localStorage.getItem('neeve_name') || '';
+  const g = greetFromHour(new Date().getHours());
+  document.getElementById('greeting').textContent = name ? `${g}, ${name}.` : `${g}.`;
+  document.getElementById('pill-clock').textContent = new Date()
+    .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  document.getElementById('today-date').textContent =
+    new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 })();
 
+// ── Main load ─────────────────────────────────────────
 async function load() {
-  const name = localStorage.getItem('neeve_name') || '';
-
   let devices = [], samples = [], checkins = [], notes = [];
+  let user = null;
+
   try {
     const [ringStatus, ringSamples] = await Promise.all([
       api('/ring/status').catch(() => ({ devices: [] })),
@@ -298,7 +387,6 @@ async function load() {
     samples = ringSamples.samples || [];
   } catch (e) { console.error(e); }
 
-  let user = null;
   try {
     const [c, u, n] = await Promise.all([
       api('/me/checkins?days=7').catch(() => ({ checkins: [] })),
@@ -310,126 +398,94 @@ async function load() {
     user = u;
   } catch (e) {}
 
-  renderRingCard(devices[0], samples);
-  renderWeek(checkins);
-  renderRoundup(checkins, notes, user);
-  updateHeroCta(checkins, user);
+  // Weather pill (best-effort)
+  try {
+    const w = await api('/me/weather').catch(() => null);
+    if (w && w.weather_code != null) {
+      const label = wmoLabel(Number(w.weather_code));
+      const temp  = w.temperature != null ? `${Math.round(w.temperature)}°` : '';
+      document.getElementById('pill-weather').textContent =
+        [temp, label].filter(Boolean).join(' ');
+    } else {
+      document.getElementById('pill-weather').textContent = 'clear';
+    }
+  } catch (_) {
+    document.getElementById('pill-weather').textContent = 'clear';
+  }
 
-  // Breath the orb at the latest respiration rate if we have one;
-  // otherwise it sits on the 5s resting cadence.
-  const latest = latestPerMetric(samples);
-  if (latest.respiration_rate && typeof setAlysOrbBreath === 'function') {
-    setAlysOrbBreath(document.getElementById('alys-orb-mount'), latest.respiration_rate.value);
+  renderSlots(checkins, user);
+  renderNotes(notes);
+  renderVitals(devices[0], samples);
+  // Alys observation deferred until that surface exists; hide for now.
+  document.getElementById('alys-section').classList.add('hidden');
+
+  // Ring-nudge for fresh users with no ring + no check-ins yet
+  if (!devices.length && !checkins.length) {
+    document.getElementById('ring-nudge').classList.remove('hidden');
   }
 }
 
-// Hero CTA is one of two things at any time:
-//   - "Start check-in"  → links to the active slot's check-in flow
-//   - "Log something"   → opens the bottom sheet for a free-form note
-// We never use the word "logged" in the hero. If the user is mid-window
-// on a pending check-in, that's the call to action; otherwise it's the
-// always-available note capture.
-function updateHeroCta(checkins, user) {
-  const cta = document.getElementById('ambient-cta');
-  if (!cta) return;
+function wmoLabel(c) {
+  if (c == null) return 'clear';
+  if (c === 0)                 return 'clear';
+  if (c === 45 || c === 48)    return 'fog';
+  if (c >= 51 && c < 71)       return 'rain';
+  if (c >= 71 && c < 80)       return 'snow';
+  if (c >= 80)                 return 'showers';
+  return 'clouds';
+}
 
-  const now   = new Date();
-  const today = now.toDateString();
-  const morningMins = parseTime(user?.morningTime || '08:00');
-  const eveningMins = parseTime(user?.eveningTime || '19:00');
-  const nowMins     = now.getHours() * 60 + now.getMinutes();
-  const inWindow = (mins) => nowMins >= mins - 60 && nowMins <= mins + 240;
-
+// ── Slots: morning + evening ──────────────────────────
+function renderSlots(checkins, user) {
+  const today = new Date().toDateString();
   const todayCheckins = (checkins || []).filter(c =>
     new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
   const morningDone = todayCheckins.find(c => c.slot === 'morning');
   const eveningDone = todayCheckins.find(c => c.slot === 'evening');
 
-  let pendingSlot = null;
-  if (inWindow(morningMins) && !morningDone) pendingSlot = 'morning';
-  else if (inWindow(eveningMins) && !eveningDone) pendingSlot = 'evening';
-
-  if (pendingSlot) {
-    cta.textContent = pendingSlot === 'morning'
-      ? 'Start morning check-in'
-      : 'Start evening check-in';
-    cta.onclick = () => { location.href = '/health/v2/checkin.html'; };
-  } else {
-    cta.textContent = 'Log something';
-    cta.onclick = openLogSheet;
-  }
+  paintSlot('morning', morningDone, user?.morningTime || '08:00');
+  paintSlot('evening', eveningDone, user?.eveningTime || '19:00');
 }
 
-// Render the Today round-up: morning + evening status + notes today.
-// Tiles read as bare facts ("Slept 8h. Mood 7, fatigue 3, fog 2.") with
-// no "logged" verbs. Pending slots show "not yet · ~2 min"; out-of-
-// window pending slots show a quieter "later today".
-function renderRoundup(checkins, notes, user) {
-  const now   = new Date();
-  const today = now.toDateString();
-  const morningMins = parseTime(user?.morningTime || '08:00');
-  const eveningMins = parseTime(user?.eveningTime || '19:00');
-  const nowMins     = now.getHours() * 60 + now.getMinutes();
+function paintSlot(slot, done, slotTimeStr) {
+  const dot   = document.getElementById(`${slot}-dot`);
+  const state = document.getElementById(`${slot}-state`);
+  const body  = document.getElementById(`${slot}-body`);
+  const foot  = document.getElementById(`${slot}-foot`);
+  const card  = document.getElementById(`slot-${slot}`);
 
-  const todayCheckins = (checkins || []).filter(c =>
-    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
-  const morningDone = todayCheckins.find(c => c.slot === 'morning');
-  const eveningDone = todayCheckins.find(c => c.slot === 'evening');
-
-  paintTile('morning', morningDone, morningMins, nowMins, user?.morningTime || '08:00');
-  paintTile('evening', eveningDone, eveningMins, nowMins, user?.eveningTime || '19:00');
-  paintNotesTile(notes || []);
-}
-
-function paintTile(slot, done, slotMins, nowMins, slotTimeStr) {
-  const tile = document.querySelector(`.roundup-tile[data-tile="${slot}"]`);
-  if (!tile) return;
-  const body = tile.querySelector('.rt-body');
-  const foot = tile.querySelector('.rt-foot');
   if (done) {
-    const checkinId = done.checkin_id || done.id;
-    const sentence  = summariseAnswers(done.answers || {});
+    const sentence = summariseAnswers(done.answers || {});
+    const id = done.checkin_id || done.id;
+    dot.classList.add('done');
+    state.classList.add('done');
+    state.textContent = 'logged';
     body.textContent = sentence;
     foot.textContent = 'tap to view';
-    tile.setAttribute('href', `/health/v2/checkin.html?checkin=${encodeURIComponent(checkinId)}`);
+    card.setAttribute('href', `/health/v2/checkin.html?checkin=${encodeURIComponent(id)}`);
     return;
   }
-  const inWindow = nowMins >= slotMins - 60 && nowMins <= slotMins + 240;
-  if (inWindow) {
-    body.textContent = 'Ready when you are';
-    foot.textContent = '~2 min · tap to start';
-    tile.setAttribute('href', '/health/v2/checkin.html');
-  } else if (nowMins < slotMins) {
-    body.textContent = `Later — ${formatSlotTime(slotTimeStr)}`;
-    foot.textContent = '';
-    tile.setAttribute('href', '/health/v2/checkin.html');
-  } else {
-    body.textContent = 'Not captured';
-    foot.textContent = 'tap to add';
-    tile.setAttribute('href', '/health/v2/checkin.html');
-  }
-}
+  // Pending — but DO NOT narrate lateness. Always "available" or "later",
+  // never "you should have done this by now".
+  const now    = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const slotMin = parseTime(slotTimeStr);
 
-function paintNotesTile(notes) {
-  const tile = document.querySelector('.roundup-tile[data-tile="notes"]');
-  if (!tile) return;
-  const body = tile.querySelector('.rt-body');
-  const foot = tile.querySelector('.rt-foot');
-  const today = new Date().toDateString();
-  const todayNotes = notes.filter(n =>
-    new Date(n.created_at || n.createdAt || n.ts).toDateString() === today);
-  if (!todayNotes.length) {
-    body.textContent = 'Nothing captured yet';
-    foot.textContent = 'tap to add a thought, symptom, anything';
-    return;
+  dot.classList.remove('done');
+  state.classList.remove('done');
+
+  if (nowMin < slotMin && slot === 'evening') {
+    state.textContent = 'later';
+    body.textContent = `Comes around at ${formatSlotTime(slotTimeStr)}.`;
+    foot.textContent = '';
+  } else {
+    state.textContent = 'available';
+    body.textContent = slot === 'morning'
+      ? 'Start when you\'re ready.'
+      : 'Start when you\'re ready.';
+    foot.textContent = 'Takes a few minutes.';
   }
-  const latest = todayNotes[0];
-  const preview = (latest.body || latest.text || latest.kind || '').toString().trim();
-  const truncated = preview.length > 80 ? preview.slice(0, 77) + '…' : preview;
-  body.textContent = todayNotes.length === 1
-    ? `1 note · "${truncated}"`
-    : `${todayNotes.length} notes · latest "${truncated}"`;
-  foot.textContent = 'tap to add another';
+  card.setAttribute('href', '/health/v2/checkin.html');
 }
 
 function parseTime(s) {
@@ -438,10 +494,8 @@ function parseTime(s) {
   if (!m) return 8 * 60;
   return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
 }
-
-// "20:00" / "20:00:00" → "8pm", "08:30" → "8:30am". AU casing.
 function formatSlotTime(s) {
-  if (!s || typeof s !== 'string') return '';
+  if (!s) return '';
   const m = s.match(/^(\d{1,2}):(\d{2})/);
   if (!m) return s;
   let h = parseInt(m[1], 10);
@@ -451,10 +505,85 @@ function formatSlotTime(s) {
   return min === 0 ? `${h}${suffix}` : `${h}:${String(min).padStart(2,'0')}${suffix}`;
 }
 
-// ── Quick log (bottom sheet) ────────────────────────────
-let _qlMood = null;
-let _qlKind = null;
+// ── Notes ─────────────────────────────────────────────
+function renderNotes(notes) {
+  const today = new Date().toDateString();
+  const todayNotes = (notes || []).filter(n =>
+    new Date(n.created_at || n.createdAt || n.ts).toDateString() === today);
+  document.getElementById('notes-count').textContent = `· ${todayNotes.length}`;
+  if (!todayNotes.length) {
+    document.getElementById('notes-empty').classList.remove('hidden');
+    document.getElementById('notes-content').classList.add('hidden');
+    return;
+  }
+  document.getElementById('notes-empty').classList.add('hidden');
+  document.getElementById('notes-content').classList.remove('hidden');
+  const latest = todayNotes[0];
+  const body = (latest.body || latest.text || latest.kind || '').toString().trim();
+  document.getElementById('notes-latest').textContent =
+    body.length > 110 ? `"${body.slice(0, 107)}…"` : `"${body}"`;
+  document.getElementById('notes-ago').textContent =
+    formatAgo(latest.created_at || latest.createdAt || latest.ts);
+}
 
+// ── Vitals: RIGHT NOW (ring-conditional) ──────────────
+function renderVitals(device, samples) {
+  const section = document.getElementById('vitals-section');
+  const tagBtn  = document.getElementById('vitals-tag-btn');
+  if (!device) {
+    section.classList.add('hidden');
+    return;
+  }
+  const latest = latestPerMetric(samples);
+  const tiles = [];
+  const tile = (m, lbl, unit) => {
+    const s = latest[m];
+    if (!s) return;
+    tiles.push(`
+      <div class="v">
+        <span class="label">${lbl}</span>
+        <span class="value">${formatValue(m, s.value)}</span>
+        <span class="unit">${unit}</span>
+      </div>`);
+  };
+  tile('hr',          'HR',   'bpm');
+  tile('hrv_rmssd',   'HRV',  'ms');
+  tile('spo2',        'SpO2', '%');
+  tile('respiration_rate', 'Resp', 'br/min');
+
+  if (!tiles.length) {
+    section.classList.add('hidden');
+    return;
+  }
+  section.classList.remove('hidden');
+  document.getElementById('vitals-grid').innerHTML = tiles.join('');
+
+  // Find the most-recent sample timestamp across the four to age the strip
+  const mostRecent = Math.max(
+    ...['hr','hrv_rmssd','spo2','respiration_rate']
+      .map(k => latest[k] ? new Date(latest[k].ts).getTime() : 0)
+  );
+  document.getElementById('vitals-ago').textContent =
+    mostRecent ? `· ${formatAgo(new Date(mostRecent).toISOString())}` : '';
+
+  document.getElementById('vitals-ring-name').textContent =
+    device.name || 'Neeve Ring';
+}
+
+// "Tag a reading" — on-demand capture-with-note. Stub for now; wires
+// into the live measurement service once #59 + #61 land.
+async function tagReading() {
+  // For now, open the log sheet pre-filled with a "tag" hint. When the
+  // live measurement service exists, this triggers a one-shot HR+temp
+  // and writes the value+context as a note.
+  openLogSheet();
+  document.getElementById('ql-body').placeholder =
+    'What were you doing when you opened this? (Standing? Mid-flare?) — I\'ll capture a fresh reading next.';
+  document.getElementById('ql-body').focus();
+}
+
+// ── Quick-log sheet ───────────────────────────────────
+let _qlKind = null;
 function openLogSheet() {
   document.getElementById('ql-backdrop').classList.add('open');
   document.getElementById('ql-sheet').classList.add('open');
@@ -465,40 +594,30 @@ function closeLogSheet() {
   document.getElementById('ql-backdrop').classList.remove('open');
   document.getElementById('ql-sheet').classList.remove('open');
 }
-
-function selectMood(m) {
-  _qlMood = _qlMood === m ? null : m;
-  document.querySelectorAll('#ql-moods .ql-chip').forEach(b => {
-    b.classList.toggle('on', b.dataset.mood === _qlMood);
-  });
-  refreshQlSubmit();
-}
 function selectKind(k) {
   _qlKind = _qlKind === k ? null : k;
-  document.querySelectorAll('#ql-kinds .ql-chip').forEach(b => {
-    b.classList.toggle('on', b.dataset.kind === _qlKind);
-  });
+  document.querySelectorAll('#ql-kinds .ql-chip').forEach(b =>
+    b.classList.toggle('on', b.dataset.kind === _qlKind));
   refreshQlSubmit();
 }
 function refreshQlSubmit() {
   const text = (document.getElementById('ql-body').value || '').trim();
-  document.getElementById('ql-submit').disabled = !(text || _qlMood);
+  document.getElementById('ql-submit').disabled = !text;
 }
-// Live-enable submit as the user types.
 document.getElementById('ql-body').addEventListener('input', refreshQlSubmit);
 
 async function submitQuickLog() {
   const status = document.getElementById('ql-status');
   const btn    = document.getElementById('ql-submit');
   const text   = document.getElementById('ql-body').value.trim();
-  if (!text && !_qlMood) return;
+  if (!text) return;
   status.textContent = 'Logging…';
   status.style.color = 'var(--taupe)';
   btn.disabled = true;
   try {
     const r = await api('/me/note', {
       method: 'POST',
-      body: JSON.stringify({ mood: _qlMood, kind: _qlKind, body: text }),
+      body: JSON.stringify({ kind: _qlKind, body: text }),
     });
     const reply = r?.note?.alys_reply;
     status.textContent = reply
@@ -506,10 +625,12 @@ async function submitQuickLog() {
       : 'Logged.';
     status.style.color = 'var(--ink-soft)';
     document.getElementById('ql-body').value = '';
-    _qlMood = null; _qlKind = null;
+    _qlKind = null;
     document.querySelectorAll('.ql-chip').forEach(b => b.classList.remove('on'));
-    // Auto-close after 1.6s so the user sees Alys's reply briefly.
-    setTimeout(closeLogSheet, 1800);
+    setTimeout(() => {
+      closeLogSheet();
+      load();
+    }, 1500);
   } catch (e) {
     status.textContent = `Couldn't log: ${e.message}`;
     status.style.color = 'var(--clay)';
@@ -517,10 +638,8 @@ async function submitQuickLog() {
   }
 }
 
+// ── Refresh while visible ─────────────────────────────
 load();
-// Refresh every 90s while the page is visible — ring data updates on
-// 2-min cycles anyway, so polling faster just burns battery without
-// surfacing new readings. Pause when hidden; resume on visibility.
 let _refreshTimer = null;
 function _startRefresh() {
   if (_refreshTimer) return;
@@ -530,120 +649,11 @@ function _stopRefresh() {
   if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) _stopRefresh(); else { load(); _startRefresh(); }
+  if (document.hidden) _stopRefresh();
+  else { load(); _startRefresh(); }
 });
 if (!document.hidden) _startRefresh();
 onResume(load);
-
-function escapeHtml(s) {
-  return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-}
-
-function renderRingCard(device, samples) {
-  const el = document.getElementById('ring-card');
-  if (!device) {
-    el.innerHTML = `
-      <div class="ring-status">
-        <span class="name">No ring paired</span>
-        <span class="conn"><span class="dot dot-off"></span>Not connected</span>
-      </div>
-      <p class="caption">Open the Ring tab to pair a ring. Heart rate, blood oxygen, steps and sleep will show here once it's connected.</p>`;
-    return;
-  }
-  const latest = latestPerMetric(samples);
-  const tiles = [];
-  const t = (m, label) => {
-    const s = latest[m]; if (!s) return;
-    let valHtml = `<span>${formatValue(m, s.value)}</span><span class="unit">${metricUnit(m, s.unit)}</span>`;
-    if (m === 'bp_sys' && latest.bp_dia) {
-      valHtml = `<span>${Math.round(s.value)}/${Math.round(latest.bp_dia.value)}</span><span class="unit">mmHg</span>`;
-    }
-    // Special-case BP — open the combined sys+dia detail rather than just sys.
-    const detailMetric = (m === 'bp_sys' || m === 'bp_dia') ? 'bp' : m;
-    const detailUrl = `/health/v2/metric.html?metric=${encodeURIComponent(detailMetric)}&days=7`;
-    tiles.push(`
-      <a class="metric-tile-link" href="${detailUrl}" style="text-decoration:none;color:inherit;display:block">
-        <div class="metric-tile">
-          <div class="lbl">${label}</div>
-          <div class="val">${valHtml}</div>
-          <div class="ago">${formatAgo(s.ts)}</div>
-        </div>
-      </a>`);
-  };
-  t('hr',                'Heart rate');
-  t('spo2',              'Blood oxygen');
-  t('steps',             'Steps today');
-  t('hrv_rmssd',         'HRV');
-  t('respiration_rate',  'Respiration');
-  t('bp_sys',            'Blood pressure');
-  t('temp_skin',         'Skin temp');
-  t('temp_delta',        'Skin temp Δ');
-  t('stress',            'Stress');
-  t('vo2max',            'VO₂ max');
-  t('glucose',           'Glucose');
-
-  const connOn = device.last_seen_at && (Date.now() - new Date(device.last_seen_at)) < 10 * 60 * 1000;
-  el.innerHTML = `
-    <div class="ring-status">
-      <span class="name">${escapeHtml(device.name || 'Ring')}</span>
-      <span class="conn">
-        <span class="dot ${connOn ? 'dot-on' : 'dot-off'}"></span>
-        ${connOn ? 'Connected' : 'Last seen ' + formatAgo(device.last_seen_at)}
-      </span>
-    </div>
-    ${tiles.length
-       ? `<div class="metric-grid">${tiles.join('')}</div>`
-       : `<p class="caption">No readings yet. Open the Ring tab to take a measurement.</p>`}`;
-}
-
-function renderWeek(checkins) {
-  const el = document.getElementById('week');
-  if (!checkins.length) {
-    el.innerHTML = `<div class="empty" style="padding:20px 0">
-      Do a couple more check-ins and they'll show up here.
-    </div>`;
-    return;
-  }
-  el.innerHTML = checkins.slice(0, 7).map(c => {
-    const dt = new Date(c.completed_at || c.started_at || c.created_at);
-    const summary = buildSummary(c);
-    return `
-      <div class="recent-day">
-        <div class="when-col">
-          <div class="date">${dt.getDate()}</div>
-          <div class="month">${dt.toLocaleDateString('en-AU', {weekday: 'short'})}</div>
-        </div>
-        <div class="content">
-          <div class="summary">${summary || '<em>Logged</em>'}</div>
-          ${c.note ? `<div class="note">${escapeHtml(c.note)}</div>` : ''}
-        </div>
-      </div>`;
-  }).join('');
-}
-
-// Build a one-line summary from check-in answers — uses whichever keys
-// are populated. Shape varies; defensive.
-function buildSummary(c) {
-  const a = c.answers || {};
-  const parts = [];
-  if (a.sleep)    parts.push(`Slept <em>${a.sleep}h</em>`);
-  if (a.anxiety)  parts.push(`anxiety <em>${a.anxiety}</em>`);
-  if (a.fatigue)  parts.push(`fatigue <em>${a.fatigue}</em>`);
-  if (a.mood)     parts.push(`mood <em>${a.mood}</em>`);
-  if (a.fog)      parts.push(`fog <em>${a.fog}</em>`);
-  return parts.join(', ') + (parts.length ? '.' : '');
-}
-
-function callNative(method, args = {}) {
-  // Flutter webview_flutter registers channels as window.<channelName> with
-  // postMessage(stringPayload). Don't use window.webkit.messageHandlers —
-  // that's raw WKWebView and Flutter doesn't surface channels there.
-  if (window.neeve?.postMessage) {
-    window.neeve.postMessage(JSON.stringify({ method, args }));
-  } else {
-    alert('That action only works in the Neeve app.');
-  }
-}
 </script>
 </body>
 </html>

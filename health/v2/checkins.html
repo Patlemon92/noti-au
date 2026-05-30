@@ -110,8 +110,8 @@ function renderCta() {
     host.innerHTML = `
       <a class="cta" href="/health/v2/checkin.html?checkin=${encodeURIComponent(checkinId)}">
         <div class="lbl">${slot === 'morning' ? 'Morning' : 'Evening'} check-in · today</div>
-        <div class="ttl">${escapeHtml(summariseAnswers(slotDone.answers).headline)}</div>
-        <div class="sub">Tap to view or edit your answers.</div>
+        <div class="ttl">${escapeHtml(summariseAnswers(slotDone.answers))}</div>
+        <div class="sub">Tap to view your answers.</div>
       </a>`;
   } else {
     host.innerHTML = `
@@ -141,7 +141,7 @@ function renderList() {
         <div class="when"><span class="d">${d}</span>${dow}</div>
         <div class="body">
           <div class="slot">${slot}</div>
-          <div class="summary">${escapeHtml(summary.headline)}</div>
+          <div class="summary">${escapeHtml(summary)}</div>
         </div>
         <span class="chev">›</span>
       </a>`;

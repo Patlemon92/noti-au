@@ -63,6 +63,46 @@ function escapeHtml(s) {
   }[c]));
 }
 
+// Deterministic one-line summary of a completed check-in. Built purely
+// from the answers blob — no LLM, no Alys. Sleep gets a dedicated
+// fragment; numeric scales (0-10) get grouped into a short list ordered
+// by familiarity; a notes/freeform field if present gets truncated and
+// appended. Result reads like: "Slept 8h. Mood 7, fatigue 3, fog 2.
+// Noted: chest tight after lunch."
+function summariseAnswers(a) {
+  if (!a || typeof a !== 'object') return 'Logged a moment ago.';
+  const parts  = [];
+  const scales = [];
+  const SCALE_ORDER = ['mood','energy','fatigue','fog','pain','headache','anxiety','sleep_quality'];
+  const SCALE_LABEL = {
+    mood: 'mood', energy: 'energy', fatigue: 'fatigue', fog: 'fog',
+    pain: 'pain', headache: 'headache', anxiety: 'anxiety',
+    sleep_quality: 'sleep quality',
+  };
+
+  if (a.sleep != null && a.sleep !== '') {
+    const s = Number(a.sleep);
+    if (!isNaN(s)) parts.push(`Slept ${s % 1 === 0 ? s : s.toFixed(1)}h`);
+  }
+
+  for (const key of SCALE_ORDER) {
+    if (a[key] == null || a[key] === '') continue;
+    const v = Number(a[key]);
+    if (isNaN(v)) continue;
+    scales.push(`${SCALE_LABEL[key]} ${v}`);
+  }
+  if (scales.length) parts.push(scales.join(', '));
+
+  const note = a.notes || a.note || a.freeform || a.anything || '';
+  if (typeof note === 'string' && note.trim()) {
+    const t = note.trim();
+    parts.push('Noted: ' + (t.length > 90 ? t.slice(0, 87) + '…' : t));
+  }
+
+  if (!parts.length) return 'Logged a moment ago.';
+  return parts.join('. ') + '.';
+}
+
 function formatAgo(iso) {
   if (!iso) return '—';
   const dt = new Date(iso);

@@ -295,7 +295,11 @@ load();
 let _refreshTimer = null;
 function _startRefresh() {
   if (_refreshTimer) return;
-  _refreshTimer = setInterval(load, 90000);
+  // Match Today's cadence so the two pages don't show different
+  // "last updated" timestamps. Patrick saw "8:54" on Ring and
+  // "3 mins ago" on Today at the same moment because Ring polled
+  // every 90s vs Today's 2-30s.
+  _refreshTimer = setInterval(load, 15000);
 }
 function _stopRefresh() {
   if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }

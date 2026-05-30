@@ -3,164 +3,428 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#FAF6F0" />
+<meta name="theme-color" content="#F8F1E7" />
+<link rel="manifest" href="/health/manifest-health.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
 <title>Record · Neeve</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/health/v2/styles.css">
+
 <style>
-.range { display: inline-flex; gap: 6px; margin-bottom: 16px; }
-.range .pill { cursor: pointer; user-select: none; padding: 6px 12px; }
-.range .pill.on { background: var(--terra); color: white; }
-.day-card {
-  background: white; border: 1px solid var(--hair); border-radius: 16px;
-  padding: 16px; margin-bottom: 12px;
-}
-.day-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
-.day-head .date { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500; }
-.day-head .month { font-size: 12px; color: var(--ink-mute); margin-left: 6px; }
-.day-head .slot { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-mute); }
-.kv-mini { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
-.kv-mini .k { color: var(--ink-soft); }
-.kv-mini .v { color: var(--ink); font-weight: 500; }
-.kv-mini .v em { font-style: normal; color: var(--terra); }
-.note-line { font-size: 14px; color: var(--ink-soft); font-style: italic; padding-top: 8px; margin-top: 8px; border-top: 1px solid var(--hair); }
-.pattern {
-  background: var(--cream); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
-  font-size: 14px; color: var(--ink);
-}
-.pattern .tier { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-mute); margin-bottom: 4px; }
+  /* Same paper grain + warm wash as Today + check-in. One notebook. */
+  body {
+    background: var(--cream);
+    background-image:
+      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.15 0 0 0 0 0.1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(120% 32% at 50% -6%,
+        rgba(248, 200, 175, .42) 0%,
+        rgba(248, 200, 175, .15) 35%,
+        rgba(248, 200, 175, 0) 65%),
+      linear-gradient(180deg, #faf3e7 0%, var(--cream) 32%);
+    background-attachment: fixed, fixed, fixed;
+    background-size: 200px 200px, auto, auto;
+  }
+  .page-record {
+    max-width: 460px; margin: 0 auto;
+    padding: 20px 22px 110px;
+    animation: page-fade .5s ease;
+  }
+  @keyframes page-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .eyebrow-label {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--taupe); font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .page-title {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 38px; letter-spacing: -.8px; line-height: 1;
+    color: var(--ink); margin-bottom: 28px;
+  }
+
+  /* Sub-tabs — clean underline bar */
+  .sub-tabs {
+    display: flex; gap: 4px; margin-bottom: 24px;
+    border-bottom: 1px solid rgba(43, 32, 24, .08);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .sub-tabs::-webkit-scrollbar { display: none; }
+  .sub-tabs a {
+    position: relative;
+    padding: 10px 14px; text-decoration: none;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 14px; font-weight: 500;
+    color: var(--taupe); white-space: nowrap;
+    transition: color .15s ease;
+  }
+  .sub-tabs a.active { color: var(--ink); }
+  .sub-tabs a.active::after {
+    content: ''; position: absolute;
+    left: 14px; right: 14px; bottom: -1px; height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #cb8270 0%, #bf5a3c 100%);
+  }
+
+  /* Range pill row */
+  .range-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 18px;
+  }
+  .range-pills { display: flex; gap: 6px; }
+  .range-pills button {
+    border: 1px solid rgba(43, 32, 24, .12);
+    background: rgba(255, 255, 255, .65); color: var(--ink-soft);
+    padding: 6px 12px; border-radius: 99px;
+    font-family: inherit; font-size: 12.5px; font-weight: 500;
+    cursor: pointer;
+  }
+  .range-pills button.on { background: var(--ink); color: #fff7f0; border-color: var(--ink); }
+  .range-count {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 12px; color: var(--taupe); font-weight: 500;
+  }
+
+  /* Day group */
+  .day-group { margin-bottom: 24px; }
+  .day-head {
+    margin: 0 4px 10px;
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--taupe); font-weight: 600;
+  }
+  .day-head .day-num {
+    font-family: 'Fraunces', serif; font-size: 22px;
+    color: var(--ink); font-weight: 500; letter-spacing: -.3px;
+  }
+  .day-head .day-rule {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(43,32,24,.12) 0%, transparent 100%);
+  }
+
+  /* Envelope row */
+  .envelope-row {
+    display: block; text-decoration: none; color: inherit;
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 8px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 14px 28px -22px rgba(140, 80, 50, .25),
+      0 2px 8px -6px rgba(140, 80, 50, .08);
+    transition: transform .12s ease;
+  }
+  .envelope-row:active { transform: scale(.99); }
+  .envelope-head {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--terra); font-weight: 700; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .envelope-head .time { color: var(--taupe); font-weight: 500; letter-spacing: .08em; }
+  .envelope-summary {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 15.5px; line-height: 1.4; color: var(--ink);
+    letter-spacing: -.1px;
+  }
+
+  /* Notes */
+  .note-kinds {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px;
+  }
+  .note-kind {
+    border: 1px solid rgba(43, 32, 24, .12);
+    background: rgba(255, 255, 255, .65); color: var(--ink-soft);
+    padding: 6px 12px; border-radius: 99px;
+    font-family: inherit; font-size: 12.5px; font-weight: 500;
+    cursor: pointer; white-space: nowrap;
+  }
+  .note-kind.on { background: var(--ink); color: #fff7f0; border-color: var(--ink); }
+  .note-row {
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 8px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 14px 28px -22px rgba(140, 80, 50, .25);
+  }
+  .note-meta {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--terra); font-weight: 700; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .note-meta .when { color: var(--taupe); font-weight: 500; letter-spacing: .08em; }
+  .note-body {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 15.5px; line-height: 1.45; color: var(--ink);
+    letter-spacing: -.1px;
+  }
+
+  /* Stubs */
+  .stub {
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 18px; padding: 32px 24px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 18px 34px -26px rgba(140, 80, 50, .3);
+    text-align: center;
+  }
+  .stub h2 {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 24px; letter-spacing: -.4px; color: var(--ink);
+    margin: 0 0 10px;
+  }
+  .stub p {
+    font-size: 14.5px; line-height: 1.55; color: var(--ink-soft);
+    margin: 0 auto; max-width: 320px; font-style: italic;
+  }
+  .stub .icon {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: linear-gradient(135deg, #fff5e8 0%, #fde0c8 100%);
+    border: 1px solid rgba(220, 110, 75, .18);
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 16px;
+    font-family: 'Fraunces', serif; font-size: 22px; color: var(--clay, #BF5A3C);
+    box-shadow: 0 12px 24px -18px rgba(220, 110, 75, .4);
+  }
+
+  .empty {
+    font-family: 'Fraunces', serif; font-style: italic;
+    color: var(--taupe); font-size: 15px; line-height: 1.5;
+    padding: 24px 4px;
+  }
 </style>
 </head>
 <body>
-<main class="page">
-  <p class="label">Record</p>
-  <h1 class="title">Everything you've logged</h1>
 
-  <div class="range" id="range">
-    <span class="pill" data-d="7"  onclick="setRange(7)">7d</span>
-    <span class="pill on" data-d="30" onclick="setRange(30)">30d</span>
-    <span class="pill" data-d="90" onclick="setRange(90)">90d</span>
-  </div>
+<div class="page-record">
+  <div class="eyebrow-label">RECORD</div>
+  <h1 class="page-title">Your record</h1>
 
-  <section class="section" id="patterns-section" style="display:none">
-    <div class="section-label">What the system is noticing</div>
-    <div id="patterns"></div>
-  </section>
+  <nav class="sub-tabs" id="sub-tabs">
+    <a href="?tab=checkins" data-tab="checkins">Check-ins</a>
+    <a href="?tab=notes"    data-tab="notes">Notes</a>
+    <a href="?tab=patterns" data-tab="patterns">Patterns</a>
+    <a href="?tab=prepare"  data-tab="prepare">Prepare</a>
+  </nav>
 
-  <section class="section">
-    <div class="section-label">Daily entries</div>
-    <div id="entries"><div class="empty">Loading…</div></div>
-  </section>
-</main>
+  <main id="content"></main>
+</div>
 
 <div id="nav-mount"></div>
-<script src="/health/v2/lib.js"></script>
+
+<script src="lib.js"></script>
 <script>
-document.getElementById('nav-mount').innerHTML = renderNav('more');
+document.getElementById('nav-mount').innerHTML = renderNav('checkin');
 
-let days = 30;
-async function setRange(d) {
-  days = d;
-  document.querySelectorAll('#range .pill').forEach(p => p.classList.toggle('on', Number(p.dataset.d) === d));
-  await load();
-}
+const params = new URLSearchParams(location.search);
+const tab = params.get('tab') || 'checkins';
+let range = Number(params.get('days')) || 30;
 
-async function load() {
-  document.getElementById('entries').innerHTML = '<div class="empty">Loading…</div>';
-  try {
-    const [patterns, checkins, notes] = await Promise.all([
-      api(`/me/patterns?days=${days}`).catch(() => ({ patterns: [] })),
-      api(`/me/checkins?days=${days}`).catch(() => ({ checkins: [] })),
-      api(`/me/notes?days=${days}`).catch(() => ({ notes: [] })),
-    ]);
-    renderPatterns(patterns.patterns || []);
-    renderEntries(checkins.checkins || [], notes.notes || []);
-  } catch (e) {
-    document.getElementById('entries').innerHTML = `<div class="empty">Couldn't load: ${e.message}</div>`;
-  }
-}
+document.querySelectorAll('#sub-tabs a').forEach(el => {
+  if (el.dataset.tab === tab) el.classList.add('active');
+});
 
-function renderPatterns(list) {
-  const sec = document.getElementById('patterns-section');
-  if (!list.length) { sec.style.display = 'none'; return; }
-  sec.style.display = 'block';
-  document.getElementById('patterns').innerHTML = list.map(p => `
-    <div class="pattern">
-      <div class="tier">${p.confidence || 'preliminary'} · n=${p.n || '?'}</div>
-      <div>${escapeHtml(p.text || p.description || '')}</div>
+if (tab === 'checkins')      renderCheckins();
+else if (tab === 'notes')    renderNotes();
+else if (tab === 'patterns') renderPatterns();
+else if (tab === 'prepare')  renderPrepare();
+
+// ── CHECK-INS ──────────────────────────────────────
+async function renderCheckins() {
+  const root = document.getElementById('content');
+  root.innerHTML = `
+    <div class="range-row">
+      <div class="range-pills" id="range-pills">
+        <button data-d="14">14d</button>
+        <button data-d="30">30d</button>
+        <button data-d="90">90d</button>
+        <button data-d="365">1y</button>
+      </div>
+      <div class="range-count" id="range-count">—</div>
     </div>
-  `).join('');
+    <div id="checkin-list"></div>`;
+  wireRangePills(renderCheckins);
+
+  try {
+    const r = await api(\`/me/checkins?days=\${range}\`);
+    const checkins = (r.checkins || []).sort((a, b) =>
+      new Date(b.completed_at) - new Date(a.completed_at));
+    document.getElementById('range-count').textContent =
+      \`\${checkins.length} logged\`;
+    renderCheckinList(checkins);
+  } catch (e) {
+    document.getElementById('checkin-list').innerHTML =
+      '<div class="empty">Couldn\\'t load your check-ins right now.</div>';
+  }
 }
 
-function renderEntries(checkins, notes) {
-  // Build day-keyed map combining check-ins and notes
-  const byDay = {};
-  for (const c of checkins) {
-    const day = (c.completed_at || c.started_at || c.created_at || '').slice(0,10);
-    if (!day) continue;
-    (byDay[day] = byDay[day] || { checkins: [], notes: [] }).checkins.push(c);
-  }
-  for (const n of notes) {
-    const day = (n.created_at || '').slice(0,10);
-    if (!day) continue;
-    (byDay[day] = byDay[day] || { checkins: [], notes: [] }).notes.push(n);
-  }
-  const sortedDays = Object.keys(byDay).sort().reverse();
-  const el = document.getElementById('entries');
-  if (!sortedDays.length) {
-    el.innerHTML = '<div class="empty">Nothing logged in this range yet.</div>';
+function renderCheckinList(checkins) {
+  const root = document.getElementById('checkin-list');
+  if (!checkins.length) {
+    root.innerHTML = '<div class="empty">No check-ins in this window yet.</div>';
     return;
   }
-  el.innerHTML = sortedDays.map(day => {
-    const d = new Date(day + 'T12:00:00');
-    const data = byDay[day];
-    return `
-      <div class="day-card">
+  const byDay = {};
+  for (const c of checkins) {
+    const d = new Date(c.completed_at);
+    const key = d.toISOString().slice(0, 10);
+    if (!byDay[key]) byDay[key] = { date: d, items: [] };
+    byDay[key].items.push(c);
+  }
+  const keys = Object.keys(byDay).sort().reverse();
+
+  let html = '';
+  for (const k of keys) {
+    const { date, items } = byDay[k];
+    const dayLabel = date.toLocaleDateString('en-AU',
+      { weekday: 'short', day: 'numeric', month: 'short' });
+    html += \`
+      <div class="day-group">
         <div class="day-head">
-          <div>
-            <span class="date">${d.toLocaleDateString('en-AU', { weekday:'long', day:'numeric' })}</span>
-            <span class="month">${d.toLocaleDateString('en-AU', { month:'long' })}</span>
+          <span class="day-num">\${date.getDate()}</span>
+          <span>\${dayLabel.toUpperCase()}</span>
+          <span class="day-rule"></span>
+        </div>\`;
+    for (const c of items) {
+      const slot = c.slot === 'morning' ? 'morning' : 'evening';
+      const time = new Date(c.completed_at).toLocaleTimeString('en-AU',
+        { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+      const summary = summariseAnswers(c.answers || {});
+      const id = c.checkin_id || c.id;
+      html += \`
+        <a class="envelope-row" href="checkin.html?checkin=\${encodeURIComponent(id)}">
+          <div class="envelope-head">
+            <span>\${slot}</span>
+            <span class="time">· \${escapeHtml(time)}</span>
           </div>
-          <span class="slot">${data.checkins.length} entr${data.checkins.length === 1 ? 'y' : 'ies'}</span>
+          <div class="envelope-summary">\${escapeHtml(summary)}</div>
+        </a>\`;
+    }
+    html += \`</div>\`;
+  }
+  root.innerHTML = html;
+}
+
+// ── NOTES ──────────────────────────────────────────
+let _notesAll = [];
+let _notesKind = 'all';
+
+async function renderNotes() {
+  const root = document.getElementById('content');
+  root.innerHTML = \`
+    <div class="range-row">
+      <div class="range-pills" id="range-pills">
+        <button data-d="14">14d</button>
+        <button data-d="30">30d</button>
+        <button data-d="90">90d</button>
+      </div>
+      <div class="range-count" id="range-count">—</div>
+    </div>
+    <div class="note-kinds" id="note-kinds">
+      <button class="note-kind on"   data-k="all">All</button>
+      <button class="note-kind"      data-k="symptom">Symptoms</button>
+      <button class="note-kind"      data-k="appointment">Appointments</button>
+      <button class="note-kind"      data-k="medication">Medications</button>
+      <button class="note-kind"      data-k="trigger">Triggers</button>
+      <button class="note-kind"      data-k="event">Events</button>
+      <button class="note-kind"      data-k="thought">Thoughts</button>
+    </div>
+    <div id="note-list"></div>\`;
+  wireRangePills(renderNotes);
+  document.querySelectorAll('#note-kinds .note-kind').forEach(b => {
+    b.addEventListener('click', () => {
+      _notesKind = b.dataset.k;
+      document.querySelectorAll('#note-kinds .note-kind').forEach(x =>
+        x.classList.toggle('on', x.dataset.k === _notesKind));
+      paintNotes();
+    });
+  });
+
+  try {
+    const r = await api(\`/me/notes?days=\${range}\`);
+    _notesAll = (r.notes || []).sort((a, b) =>
+      new Date(b.created_at || b.ts) - new Date(a.created_at || a.ts));
+    document.getElementById('range-count').textContent =
+      \`\${_notesAll.length} notes\`;
+    paintNotes();
+  } catch (e) {
+    document.getElementById('note-list').innerHTML =
+      '<div class="empty">Couldn\\'t load your notes right now.</div>';
+  }
+}
+
+function paintNotes() {
+  const root = document.getElementById('note-list');
+  const filtered = _notesKind === 'all'
+    ? _notesAll
+    : _notesAll.filter(n => (n.kind || '').toLowerCase() === _notesKind);
+
+  if (!filtered.length) {
+    root.innerHTML = '<div class="empty">Nothing in this view yet.</div>';
+    return;
+  }
+  root.innerHTML = filtered.map(n => {
+    const ts = new Date(n.created_at || n.ts);
+    const when = ts.toLocaleString('en-AU',
+      { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
+    const kind = (n.kind || 'note').toString();
+    const body = (n.body || n.text || '').toString().trim() || '—';
+    return \`
+      <div class="note-row">
+        <div class="note-meta">
+          <span>\${escapeHtml(kind)}</span>
+          <span class="when">· \${escapeHtml(when.toLowerCase())}</span>
         </div>
-        ${data.checkins.map(c => renderCheckin(c)).join('')}
-        ${data.notes.length ? data.notes.map(n =>
-          `<div class="note-line">${escapeHtml(n.body || n.text || '')}</div>`).join('') : ''}
-      </div>`;
+        <div class="note-body">\${escapeHtml(body)}</div>
+      </div>\`;
   }).join('');
 }
 
-function renderCheckin(c) {
-  const slotLabel = c.slot ? `${c.slot.charAt(0).toUpperCase()}${c.slot.slice(1)}` : '';
-  const a = c.answers || {};
-  const rows = [];
-  const k = (label, val) => {
-    if (val == null || val === '') return;
-    rows.push(`<div class="kv-mini"><span class="k">${label}</span><span class="v"><em>${val}</em></span></div>`);
-  };
-  k('Sleep',   a.sleep != null ? a.sleep + 'h' : null);
-  k('Mood',    a.mood);
-  k('Anxiety', a.anxiety);
-  k('Fatigue', a.fatigue);
-  k('Fog',     a.fog);
-  k('Pain',    a.pain);
-  const note = c.note || a.note || a.note_universal;
-  return `
-    <div style="margin-bottom:8px">
-      ${slotLabel ? `<div class="day-head" style="margin-bottom:6px"><span class="slot">${slotLabel}</span></div>` : ''}
-      ${rows.join('')}
-      ${note ? `<div class="note-line">${escapeHtml(note)}</div>` : ''}
-    </div>`;
+// ── PATTERNS (stub) ────────────────────────────────
+function renderPatterns() {
+  document.getElementById('content').innerHTML = \`
+    <div class="stub">
+      <div class="icon">∿</div>
+      <h2>Patterns are coming</h2>
+      <p>This is where your sleep, HRV, standing-HR jumps, recovery and symptom correlations will live — each one a card you can flag for the doctor.</p>
+    </div>\`;
+}
+
+// ── PREPARE (stub) ─────────────────────────────────
+function renderPrepare() {
+  document.getElementById('content').innerHTML = \`
+    <div class="stub">
+      <div class="icon">✎</div>
+      <h2>Prepare a doctor visit</h2>
+      <p>Pick a window, say what you'd like to bring up, get a structured PDF for your appointment. Coming next — same record, doctor-ready.</p>
+    </div>\`;
+}
+
+function wireRangePills(reload) {
+  document.querySelectorAll('#range-pills button').forEach(b => {
+    b.classList.toggle('on', Number(b.dataset.d) === range);
+    b.addEventListener('click', () => {
+      range = Number(b.dataset.d);
+      reload();
+    });
+  });
 }
 
 function escapeHtml(s) {
-  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+  }[c]));
 }
-
-load();
-onResume(load);
 </script>
 </body>
 </html>

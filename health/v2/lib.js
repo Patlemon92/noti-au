@@ -474,7 +474,7 @@ function renderNav(active) {
       icon: '<path d="M3 12 12 3l9 9M5 10v10h14V10"/>' },
     { id: 'alys',     href: '/health/v2/alys.html',   label: 'Alys',
       icon: '<path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.3A8 8 0 1 1 21 12Z"/>' },
-    { id: 'checkin',  href: '/health/v2/checkins.html', label: 'Check-in',
+    { id: 'checkin',  href: '/health/v2/record.html', label: 'Record',
       icon: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16M9 16l2 2 4-4"/>' },
     { id: 'ring',     href: '/health/v2/ring.html',   label: 'Ring',
       icon: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/>' },

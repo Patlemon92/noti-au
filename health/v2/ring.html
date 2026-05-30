@@ -265,14 +265,23 @@ async function load() {
   try {
     const trendsSince = new Date(Date.now() - currentRange * 86400 * 1000).toISOString();
     const trendsQ = `/ring/samples?metric=${TREND_METRICS.join(',')}&limit=5000&since=${encodeURIComponent(trendsSince)}`;
-    const [{ devices }, { samples }] = await Promise.all([
+    // Sleep needs its own query — the combined trends pull is saturated
+    // with high-frequency HR/HRV/SpO2 samples and the older but vital
+    // sleep_session + sleep_stage rows get cut off the bottom of the
+    // limit=5000 buffer. Window: 30 days regardless of trend range
+    // pill so the sleep card always renders if you've slept this month.
+    const sleepSince = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
+    const sleepQ = `/ring/samples?metric=sleep_session,sleep_stage&limit=2000&since=${encodeURIComponent(sleepSince)}`;
+    const [{ devices }, { samples }, sleepRes] = await Promise.all([
       api('/ring/status'),
       api(trendsQ),
+      api(sleepQ).catch(() => ({ samples: [] })),
     ]);
     cachedDevice = devices[0];
     cachedSamples = (samples || []).filter(s => s.metric !== 'sleep_session' && s.metric !== 'sleep_stage');
-    cachedSleep.sessions = (samples || []).filter(s => s.metric === 'sleep_session');
-    cachedSleep.stages   = (samples || []).filter(s => s.metric === 'sleep_stage');
+    const sleepSamples = sleepRes.samples || [];
+    cachedSleep.sessions = sleepSamples.filter(s => s.metric === 'sleep_session');
+    cachedSleep.stages   = sleepSamples.filter(s => s.metric === 'sleep_stage');
     renderHeadPill();
     if (firstLoad) {
       document.getElementById(`range-${currentRange}`)?.classList.add('pill-rose');
@@ -537,6 +546,9 @@ function renderBpCard(sysS, diaS) {
         <div class="metric-row" style="border-bottom:none;padding:4px 0">
           <span class="caption">Average</span>
           <span class="caption">${avgStr} mmHg</span>
+        </div>
+        <div style="margin-top:10px;padding:8px 10px;background:rgba(220,110,75,.06);border:1px solid rgba(220,110,75,.16);border-radius:8px;font-size:11px;line-height:1.4;color:var(--clay-2,#bf5a3c)">
+          <strong>Experimental.</strong> Optical PPG estimates, not a clinical reading. Calibrate against a cuff in More → Your Neeve Ring. Use a real cuff for anything that matters.
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
           <span class="caption" style="width:30px">sys</span>

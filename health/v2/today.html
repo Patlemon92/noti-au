@@ -57,10 +57,10 @@
      detects from the device clock; text colour applies via the
      [data-phase] attribute set by mountAmbient so warm phases get
      light cream text and the day phase gets brown. -->
-<!-- Home hero: warm phase-aware gradient (painted by ambient.js inside
-     this header) with Alys's orb as the centerpiece. The orb pulses
-     at the user's live HR; tapping the CTA opens the quick-log sheet
-     or starts the pending check-in. -->
+<!-- Home hero: pale cream backdrop with Alys's orb as the centerpiece.
+     The orb is the home page's identity; pulses at the user's live HR.
+     CTA flips between "Start <slot> check-in" (pending) and "Log
+     something" (always available). -->
 <header id="ambient-host" class="home-hero">
   <div class="amb-content home-hero-content">
     <div class="amb-pill" id="ambient-pill">
@@ -70,32 +70,24 @@
     </div>
     <div class="ambient-text home-greeting serif" id="ambient-greeting">Hey.</div>
     <div class="home-orb-wrap" id="alys-orb-mount"></div>
-    <div class="ambient-text home-orb-sub" id="ambient-orb-sub">alys</div>
     <button class="amb-cta-dark home-cta" id="ambient-cta" type="button">Log something</button>
   </div>
 </header>
 
 <style>
-  .home-hero { padding: 22px 0 36px; }
+  .home-hero { padding: 26px 0 40px; }
   .home-hero-content { text-align: center; }
-  #ambient-pill { margin-bottom: 18px; }
+  #ambient-pill { margin-bottom: 22px; }
   .home-greeting {
     font-family: 'Fraunces', Georgia, serif;
     font-size: 24px; font-weight: 500;
-    text-shadow: 0 1px 18px rgba(80,40,30,.22);
-    margin-bottom: 28px;
+    margin-bottom: 32px;
   }
   .home-orb-wrap {
     display: flex; justify-content: center; align-items: center;
-    margin: 8px 0 4px;
+    margin: 4px 0 36px;
   }
-  .home-orb-sub {
-    font-family: 'Fraunces', Georgia, serif;
-    font-size: 13px; letter-spacing: .35em; text-transform: lowercase;
-    opacity: .82; margin-top: 6px; margin-bottom: 28px;
-    text-shadow: 0 1px 14px rgba(80,40,30,.18);
-  }
-  .home-cta { margin-top: 6px; }
+  .home-cta { margin-top: 4px; }
 </style>
 
 <main class="page" style="padding-top: 20px;">

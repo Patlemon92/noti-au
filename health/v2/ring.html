@@ -29,15 +29,21 @@ body {
   margin-bottom: 4px;
   position: relative;
 }
-/* Sync indicator — top-right; spins while any /ring/samples fetch is
-   in flight so the user can see the page is keeping itself current. */
+/* Sync indicator — top-right. Tap to force a fresh measurement +
+   buffer drain on the ring. Also spins on its own while any
+   /ring/samples fetch is in flight. */
 .sync-indicator {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 50%;
+  width: 36px; height: 36px; border-radius: 50%;
   color: var(--clay-2, #bf5a3c);
-  opacity: .55; transition: opacity .25s ease;
+  background: var(--warm-card, #fffdf9);
+  border: 1px solid rgba(44, 32, 23, .08);
+  cursor: pointer;
+  opacity: .85; transition: opacity .2s ease, transform .12s ease;
   margin-left: 8px;
+  box-shadow: 0 8px 22px -16px rgba(70, 45, 25, .35);
 }
+.sync-indicator:active { transform: scale(.94); }
 .sync-indicator.active { opacity: 1; }
 .sync-indicator svg { width: 18px; height: 18px; transition: transform .3s ease; }
 .sync-indicator.spinning svg {
@@ -138,14 +144,15 @@ body {
         <span class="dot" id="ring-dot"></span>
         <span id="ring-pill-text">Details</span>
       </button>
-      <div class="sync-indicator" id="sync-indicator" aria-hidden="true">
+      <button class="sync-indicator" id="sync-indicator" type="button"
+              onclick="manualSync()" aria-label="Sync now">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
           <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
           <polyline points="21 3 21 8 16 8"/>
           <polyline points="3 21 3 16 8 16"/>
         </svg>
-      </div>
+      </button>
     </div>
   </div>
 
@@ -233,6 +240,23 @@ function syncEnd() {
         if (_syncInFlight === 0) el.classList.remove('active');
       }, 400);
     }
+  }
+}
+
+// Tap-to-sync — fires a fresh measurement + buffer drain on the
+// ring side via the native bridge, then reloads the page data.
+async function manualSync() {
+  syncStart();
+  if (window.neeve && window.neeve.postMessage) {
+    window.neeve.postMessage(JSON.stringify({ method: 'freshRefresh' }));
+  }
+  try {
+    await load();
+    // Give the ring time to land fresh samples, then reload again.
+    await new Promise(r => setTimeout(r, 16000));
+    await load();
+  } finally {
+    syncEnd();
   }
 }
 

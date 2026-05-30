@@ -148,27 +148,9 @@ function renderList() {
   }).join('');
 }
 
-// Pluck familiar scaled answers for the inline summary. Mirrors today.html.
-function summariseAnswers(a) {
-  const pairs = [];
-  const score = (k, label) => {
-    const v = a[k];
-    if (v == null || v === '') return;
-    pairs.push(`${label} ${v}`);
-  };
-  score('sleep',    'sleep');
-  score('fatigue',  'fatigue');
-  score('fog',      'fog');
-  score('mood',     'mood');
-  score('anxiety',  'anxiety');
-  score('energy',   'energy');
-  score('pain',     'pain');
-  score('headache', 'headache');
-  const headline = pairs.length
-    ? pairs.slice(0, 4).join(', ')
-    : 'Logged, no scaled answers.';
-  return { headline };
-}
+// Uses the shared summariseAnswers from lib.js (returns a plain
+// sentence string). Don't redefine it here — the local copy used to
+// return {headline} and got stringified as "[object Object]".
 </script>
 </body>
 </html>

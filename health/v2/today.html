@@ -90,7 +90,10 @@
     flex: 1; height: 1px; background: rgba(44, 32, 23, .12);
   }
 
-  /* Vitals — 2-column grid (4 tiles total: HR / SpO2 / HRV / temp).
+  /* Vitals layout:
+       - HR full-width on top (the most important reading)
+       - SpO2 + HRV side-by-side below
+       - Temp full-width below that
      Each tile has a mini sparkline. */
   .vitals-grid {
     display: grid;
@@ -103,6 +106,10 @@
     padding: 14px 13px 8px;
     border: 1px solid rgba(44, 32, 23, .05);
     transition: transform .2s ease;
+  }
+  /* HR + temp span the full row */
+  .vital[data-key="hr"], .vital[data-key="temp_skin"] {
+    grid-column: 1 / -1;
   }
   /* When a vital value updates, briefly pulse the tile to show liveness */
   .vital.updated {
@@ -495,7 +502,7 @@ function renderVitals(device, samples) {
           <span class="num">${value}</span>
           <span class="unit">${escapeHtml(m.unit)}</span>
         </div>
-        ${renderSparkSvg(series)}
+        ${renderSparkSvg(series, m.key)}
         <div class="range">${escapeHtml(range)}</div>
       </div>`;
   }).filter(Boolean).join('');
@@ -538,12 +545,11 @@ function renderVitals(device, samples) {
   }
 }
 
-// SVG sparkline for vital tiles. Width 150 viewBox, height 50.
-function renderSparkSvg(series) {
-  if (!series || series.length < 2) {
-    return '<svg class="spark" viewBox="0 0 150 50" aria-hidden="true"></svg>';
-  }
-  const W = 150, H = 50, pad = 4;
+// SVG sparkline. Animates only on FIRST paint per metric — re-renders
+// after that update just the path data so the line doesn't re-draw
+// every 2 seconds (which read as jittery).
+const _drawn = {};
+function sparkPath(series, W, H, pad) {
   const lo = Math.min(...series);
   const hi = Math.max(...series);
   const span = (hi - lo) || 1;
@@ -553,12 +559,25 @@ function renderSparkSvg(series) {
     const y = pad + (1 - (series[i] - lo) / span) * (H - 2 * pad);
     d += (i === 0 ? 'M ' : 'L ') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
   }
+  return d.trim();
+}
+function renderSparkSvg(series, key) {
+  if (!series || series.length < 2) {
+    return '<svg class="spark" viewBox="0 0 150 50" aria-hidden="true"></svg>';
+  }
+  const W = 150, H = 50, pad = 4;
+  const d = sparkPath(series, W, H, pad);
+  const firstPaint = !_drawn[key];
+  _drawn[key] = true;
+  const animStyle = firstPaint
+    ? 'stroke-dasharray:900;stroke-dashoffset:900;animation:te-draw 1.1s .1s ease-out forwards'
+    : '';
   return `
     <svg class="spark" viewBox="0 0 150 50" aria-hidden="true">
-      <path d="${d.trim()}" fill="none"
+      <path d="${d}" fill="none"
             stroke="#bf5a3c" stroke-width="1.5"
             stroke-linecap="round" stroke-linejoin="round"
-            style="stroke-dasharray:900;stroke-dashoffset:900;animation:te-draw 1.3s .1s ease-out forwards"/>
+            ${animStyle ? `style="${animStyle}"` : ''}/>
     </svg>`;
 }
 

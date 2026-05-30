@@ -35,17 +35,23 @@
     position: relative;
   }
 
-  /* Sync indicator — top-right corner. Quietly idle; gently spins
-     while a /ring/samples fetch is in flight so the user can see the
-     app is keeping itself current. */
+  /* Sync indicator — top-right. Tap to force a fresh measurement +
+     buffer drain on the ring (the most aggressive sync we can do).
+     Spins on its own while any /ring/samples fetch is in flight so
+     the user sees passive activity too. */
   .sync-indicator {
     position: absolute; top: 22px; right: 22px;
-    width: 28px; height: 28px; border-radius: 50%;
+    width: 36px; height: 36px; border-radius: 50%;
     display: inline-flex; align-items: center; justify-content: center;
+    background: var(--warm-card);
+    border: 1px solid rgba(44, 32, 23, .08);
     color: var(--clay-2);
-    opacity: .55;
-    transition: opacity .25s ease;
+    cursor: pointer;
+    opacity: .85;
+    transition: opacity .2s ease, transform .12s ease;
+    box-shadow: 0 8px 22px -16px rgba(70, 45, 25, .35);
   }
+  .sync-indicator:active { transform: scale(.94); }
   .sync-indicator.active { opacity: 1; }
   .sync-indicator svg {
     width: 18px; height: 18px;
@@ -386,15 +392,18 @@
 <body>
 
 <div class="page-today te">
-  <!-- Sync wheel — top-right; spins while a /ring/samples fetch is in flight -->
-  <div class="sync-indicator" id="sync-indicator" aria-hidden="true">
+  <!-- Sync wheel — top-right; tap to force a fresh measurement +
+       buffer drain on the ring. Also spins on its own while a
+       /ring/samples fetch is in flight. -->
+  <button class="sync-indicator" id="sync-indicator" type="button"
+          onclick="manualSync()" aria-label="Sync now">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
       <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
       <polyline points="21 3 21 8 16 8"/>
       <polyline points="3 21 3 16 8 16"/>
     </svg>
-  </div>
+  </button>
 
   <!-- Clock + weather pill -->
   <div class="pill te-card">
@@ -788,6 +797,29 @@ function callNative(method) {
     return true;
   }
   return false;
+}
+
+// Tap-to-sync — fires a fresh HR measurement + buffer drain on the
+// ring side, then re-polls vitals for the new readings. Visible spin
+// continues until the web-side re-poll completes.
+async function manualSync() {
+  syncStart();
+  // Trigger the native freshRefresh handler — fires measureHeartRate,
+  // waits ~14s for the PPG cycle, then deep-syncs.
+  callNative('freshRefresh');
+  // Web-side poll: keep the spinner going + refresh visible vitals
+  // through the same fast-poll path. The native side will populate
+  // the DB with fresh samples within ~15s; our 2-second polling
+  // picks them up.
+  try {
+    await fastRefreshVitals();
+    // Give the ring time to land fresh samples, then re-poll.
+    await new Promise(r => setTimeout(r, 16000));
+    await fastRefreshVitals();
+    await fullRefresh();
+  } finally {
+    syncEnd();
+  }
 }
 
 async function captureReading() {

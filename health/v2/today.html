@@ -56,13 +56,13 @@
      detects from the device clock; text colour applies via the
      [data-phase] attribute set by mountAmbient so warm phases get
      light cream text and the day phase gets brown. -->
-<header id="ambient-host" style="padding-bottom: 30px;">
-  <div class="amb-content" id="ambient-content" style="padding-top:30px;text-align:center">
-    <div class="amb-pill" id="ambient-pill" style="margin-bottom:18px"><span id="amb-clock">—</span><span style="opacity:.6">·</span><span id="amb-weather">—</span></div>
-    <div class="ambient-text serif" id="ambient-greeting" style="font-family:'Fraunces',Georgia,serif;font-size:30px;font-weight:500;text-shadow:0 1px 18px rgba(80,40,30,.22)">Hey.</div>
-    <div style="height:160px"></div>
-    <div class="ambient-text serif" id="ambient-title" style="font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:56px;letter-spacing:-1px;line-height:1;text-shadow:0 2px 22px rgba(80,40,30,.28)">Today</div>
-    <div style="height:34px"></div>
+<header id="ambient-host" style="padding-bottom: 26px;">
+  <div class="amb-content" id="ambient-content" style="padding-top:22px;text-align:center">
+    <div class="amb-pill" id="ambient-pill" style="margin-bottom:14px"><span id="amb-clock">—</span><span style="opacity:.6">·</span><span id="amb-weather">—</span></div>
+    <div class="ambient-text serif" id="ambient-greeting" style="font-family:'Fraunces',Georgia,serif;font-size:26px;font-weight:500;text-shadow:0 1px 18px rgba(80,40,30,.22)">Hey.</div>
+    <div style="height:60px"></div>
+    <div class="ambient-text serif" id="ambient-title" style="font-family:'Fraunces',Georgia,serif;font-weight:500;font-size:48px;letter-spacing:-1px;line-height:1;text-shadow:0 2px 22px rgba(80,40,30,.28)">Today</div>
+    <div style="height:24px"></div>
     <!-- Hero CTA: pending check-in → "Start check-in"; otherwise → "Log
          something" which opens the quick-log bottom sheet. updateHeroCta
          rewrites text/handler at runtime. -->
@@ -363,7 +363,7 @@ function paintTile(slot, done, slotMins, nowMins, slotTimeStr) {
     foot.textContent = '~2 min · tap to start';
     tile.setAttribute('href', '/health/v2/checkin.html');
   } else if (nowMins < slotMins) {
-    body.textContent = `Later — ${slotTimeStr}`;
+    body.textContent = `Later — ${formatSlotTime(slotTimeStr)}`;
     foot.textContent = '';
     tile.setAttribute('href', '/health/v2/checkin.html');
   } else {
@@ -400,6 +400,18 @@ function parseTime(s) {
   const m = s.match(/^(\d{1,2}):(\d{2})/);
   if (!m) return 8 * 60;
   return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+}
+
+// "20:00" / "20:00:00" → "8pm", "08:30" → "8:30am". AU casing.
+function formatSlotTime(s) {
+  if (!s || typeof s !== 'string') return '';
+  const m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return s;
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  const suffix = h >= 12 ? 'pm' : 'am';
+  h = h % 12; if (h === 0) h = 12;
+  return min === 0 ? `${h}${suffix}` : `${h}:${String(min).padStart(2,'0')}${suffix}`;
 }
 
 // ── Quick log (bottom sheet) ────────────────────────────

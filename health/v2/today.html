@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#F8F1E7" />
+<meta name="theme-color" content="#F6E6D6" />
 <link rel="manifest" href="/health/manifest-health.json" />
 <link rel="apple-touch-icon" href="/health/icon-192.png" />
 <title>Today · Neeve</title>
@@ -14,361 +14,191 @@
 <link rel="stylesheet" href="/health/v2/styles.css">
 
 <style>
-  /* ── Page atmosphere ──────────────────────────────────
-     Soft warm wash at the top + a paper grain over the whole page
-     so it feels like a notebook, not a screen. The grain is an SVG
-     fractal noise base64-inlined so there's no network round-trip. */
+  :root {
+    --ink-2: #2b2018;
+    --clay-2: #bf5a3c;
+    --taupe-2: #9a8369;
+    --warm-card: #fffdf9;
+  }
+
+  /* Page atmosphere — soft peach-to-cream gradient. No paper grain.
+     Today is calm but warm; Ring shows the full data, Today shows
+     "how you are right now + a way in." */
   body {
-    background: var(--cream);
-    background-image:
-      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.15 0 0 0 0 0.1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-      radial-gradient(120% 32% at 50% -6%,
-        rgba(248, 200, 175, .42) 0%,
-        rgba(248, 200, 175, .15) 35%,
-        rgba(248, 200, 175, 0) 65%),
-      linear-gradient(180deg, #faf3e7 0%, var(--cream) 32%);
-    background-attachment: fixed, fixed, fixed;
-    background-size: 200px 200px, auto, auto;
+    background: linear-gradient(180deg, #f6e6d6 0%, #f6efe4 30%, #f6efe4 100%);
+    background-attachment: fixed;
+    color: var(--ink-2);
   }
   .page-today {
-    max-width: 460px; margin: 0 auto; padding: 20px 22px 110px;
-    animation: page-fade .5s ease;
+    max-width: 460px; margin: 0 auto;
+    padding: 18px 22px 110px;
   }
-  /* Sections fade up sequentially when the page loads — premium polish */
-  @keyframes page-fade {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: none; }
-  }
-  .page-today > * { animation: section-rise .6s ease both; }
-  .page-today > *:nth-child(1) { animation-delay: .04s; }
-  .page-today > *:nth-child(2) { animation-delay: .10s; }
-  .page-today > *:nth-child(3) { animation-delay: .16s; }
-  .page-today > *:nth-child(4) { animation-delay: .22s; }
-  .page-today > *:nth-child(5) { animation-delay: .28s; }
-  .page-today > *:nth-child(6) { animation-delay: .34s; }
-  .page-today > *:nth-child(7) { animation-delay: .40s; }
-  .page-today > *:nth-child(8) { animation-delay: .46s; }
-  @keyframes section-rise {
+  .te-card { animation: te-up .55s both; }
+  @keyframes te-up {
     from { opacity: 0; transform: translateY(10px); }
     to   { opacity: 1; transform: none; }
   }
+  @keyframes te-draw { to { stroke-dashoffset: 0; } }
+  .serif { font-family: 'Fraunces', Georgia, serif; }
 
-  /* Daily Alys whisper — between greeting and Log button. ONE
-     italic line that quietly nods at how things are. */
-  .whisper {
-    font-family: 'Fraunces', serif; font-style: italic;
-    font-size: 15.5px; line-height: 1.45;
-    color: var(--clay, #BF5A3C); letter-spacing: -.1px;
-    margin: -16px 0 28px;
-    opacity: .82;
-  }
-
-  /* Clock + weather pill — frosted, the only floating element at the
-     very top so it feels like a tab on a notebook. */
+  /* Clock + weather pill */
   .pill {
     display: inline-flex; align-items: center; gap: 8px;
-    padding: 8px 16px; border-radius: 99px;
-    background: rgba(255, 255, 255, .82);
-    color: var(--ink);
-    border: 1px solid rgba(255, 255, 255, .9);
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.7) inset,
-      0 8px 24px -16px rgba(140, 80, 50, .22);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    font-size: 13px; font-weight: 500; letter-spacing: .01em;
-    margin-bottom: 22px;
+    padding: 8px 15px; border-radius: 99px;
+    background: var(--warm-card);
+    box-shadow: 0 8px 22px -16px rgba(70, 45, 25, .5);
+    font-size: 13.5px; font-weight: 500;
   }
-  .pill .dot { opacity: .3; }
+  .pill .dot { color: var(--taupe-2); }
+  .pill .wx { color: var(--taupe-2); }
 
-  /* Greeting — name in italic warm clay. Editorial, not Notion. */
+  /* Greeting — editorial, italic clay name accent */
+  .greeting-wrap { margin-top: 20px; }
   .greeting {
-    font-family: 'Fraunces', serif; font-weight: 400;
-    font-size: 34px; letter-spacing: -.6px; line-height: 1.1;
-    color: var(--ink); margin-bottom: 28px;
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 500; font-size: 42px; line-height: 1.05;
+    letter-spacing: -.5px; color: var(--ink-2);
   }
   .greeting em {
-    font-style: italic; font-weight: 500;
-    color: var(--clay, #BF5A3C);
+    color: var(--clay-2); font-style: italic;
+  }
+  .subhead {
+    font-size: 16px; color: var(--taupe-2);
+    margin-top: 8px; line-height: 1.5;
   }
 
-  /* Log something — a single-line frosted button. Sentence-case label
-     so it doesn't wrap or feel institutional. */
+  /* Section dividers */
+  .section {
+    display: flex; align-items: center; gap: 10px;
+    margin: 26px 2px 12px;
+  }
+  .section .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--clay-2);
+  }
+  .section .label {
+    font-family: 'Hanken Grotesk', system-ui, sans-serif;
+    font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ink-2); font-weight: 700;
+  }
+  .section .meta {
+    font-family: 'Hanken Grotesk', system-ui, sans-serif;
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--taupe-2);
+  }
+  .section .rule {
+    flex: 1; height: 1px; background: rgba(44, 32, 23, .12);
+  }
+
+  /* Vitals — 3-column grid, each tile has a mini sparkline */
+  .vitals-grid {
+    display: flex; gap: 10px;
+  }
+  .vital {
+    flex: 1;
+    background: var(--warm-card);
+    border-radius: 16px;
+    padding: 14px 13px 8px;
+    border: 1px solid rgba(44, 32, 23, .05);
+  }
+  .vital .label {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--taupe-2); font-weight: 600;
+  }
+  .vital .value {
+    margin-top: 3px; margin-bottom: 2px;
+    line-height: 1;
+  }
+  .vital .value .num {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 23px; font-weight: 600;
+    color: var(--ink-2);
+  }
+  .vital .value .unit {
+    font-size: 12px; color: var(--taupe-2);
+    margin-left: 3px;
+  }
+  .vital .spark { width: 100%; height: 50px; display: block; }
+  .vital .range {
+    font-size: 10.5px; color: var(--taupe-2);
+    margin-top: 2px;
+  }
+
+  /* "All your data on Ring →" link */
+  .all-data {
+    text-align: right; margin-top: 8px;
+    font-size: 13.5px; color: var(--clay-2);
+    text-decoration: none; display: block;
+  }
+
+  /* Log button */
   .log-cta {
-    position: relative; display: flex; align-items: center; gap: 12px;
-    width: 100%; padding: 14px 18px; margin-bottom: 32px;
-    background: rgba(255, 255, 255, .92);
-    border: 1px solid rgba(255, 255, 255, .85);
-    border-radius: 18px;
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.85) inset,
-      0 14px 30px -22px rgba(140, 80, 50, .32);
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    font-family: inherit; font-size: 15px; color: var(--ink);
-    cursor: pointer; text-align: left;
+    background: var(--warm-card);
+    border-radius: 20px;
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer;
+    box-shadow: 0 16px 38px -32px rgba(70, 45, 25, .5);
+    border: none; width: 100%; text-align: left;
+    font-family: inherit; color: var(--ink-2);
     transition: transform .12s ease;
   }
-  .log-cta:active { transform: translateY(1px); }
+  .log-cta:active { transform: scale(.99); }
   .log-cta .plus {
-    width: 26px; height: 26px; flex-shrink: 0;
-    border-radius: 50%; background: var(--ink); color: #fff7f0;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--ink-2);
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 16px; line-height: 1; font-weight: 300;
+    flex-shrink: 0;
   }
+  .log-cta .plus svg { stroke: #fff7f0; }
   .log-cta .label {
-    font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 16px; color: var(--ink); letter-spacing: -.1px;
-    white-space: nowrap;
+    font-size: 15.5px; font-weight: 600;
   }
   .log-cta .hint {
-    flex: 1; text-align: right;
-    font-size: 12.5px; color: var(--taupe);
-    font-style: italic;
+    font-size: 13.5px; color: var(--taupe-2);
+    margin-top: 1px;
   }
 
-  /* Eyebrow section labels — with a tiny ornamental dot before them
-     and a soft hairline rule, so they feel anchored, not floating. */
-  .eyebrow {
-    font-family: 'Inter Tight', sans-serif;
-    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--taupe); font-weight: 600;
-    margin: 32px 0 14px;
-    display: flex; align-items: center; gap: 10px;
+  /* Alys card */
+  .alys-card {
+    margin-top: 22px;
+    padding: 18px 20px;
+    border-radius: 20px;
+    background: rgba(239, 230, 216, .6);
+    border: 1px solid rgba(255, 255, 255, .5);
   }
-  .eyebrow::before {
-    content: ''; flex-shrink: 0;
-    width: 5px; height: 5px; border-radius: 50%;
-    background: var(--clay, #BF5A3C); opacity: .65;
-  }
-  .eyebrow .meta {
-    color: var(--ink-mute); font-weight: 500;
-    letter-spacing: .06em; font-size: 11px;
-  }
-  .eyebrow::after {
-    content: ''; flex: 1; height: 1px;
-    background: linear-gradient(90deg, rgba(43,32,24,.12) 0%, transparent 100%);
-  }
-  .eyebrow:first-child { margin-top: 0; }
-
-  /* Slot cards — crafted depth with a section accent strip at the top.
-     The strip colour is the slot's identity tint. */
-  .slot {
-    position: relative; overflow: hidden;
-    display: block; text-decoration: none; color: inherit;
-    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
-    border: 1px solid rgba(255, 255, 255, .9);
-    border-radius: 18px; padding: 18px 20px; margin-bottom: 12px;
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.9) inset,
-      0 18px 34px -26px rgba(140, 80, 50, .35),
-      0 3px 10px -6px rgba(140, 80, 50, .12);
-    transition: transform .14s ease, box-shadow .2s ease;
-  }
-  .slot:active {
-    transform: scale(.992);
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.7) inset,
-      0 10px 20px -18px rgba(140, 80, 50, .3);
-  }
-  /* Accent strips — distinctive per slot. Morning gets a sunrise band
-     (peach/gold/pink). Evening gets a dusk band (clay/plum). When
-     logged, both shift to sage. */
-  .slot::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0;
-    height: 4px;
-  }
-  #slot-morning::before {
-    background: linear-gradient(90deg,
-      #f5b78c 0%,
-      #f0c89a 30%,
-      #ecd6a7 60%,
-      transparent 100%);
-  }
-  #slot-evening::before {
-    background: linear-gradient(90deg,
-      #c97f6a 0%,
-      #b8709a 50%,
-      transparent 100%);
-  }
-  .slot.is-done::before {
-    background: linear-gradient(90deg,
-      #94A87A 0%,
-      rgba(148, 168, 122, .45) 60%,
-      transparent 100%) !important;
-  }
-  .slot.is-later::before {
-    opacity: .35;
-  }
-  .slot-head {
-    display: flex; align-items: center; gap: 10px;
-    font-family: 'Inter Tight', sans-serif;
-    font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--ink); font-weight: 700;
+  .alys-head {
+    display: flex; align-items: center; gap: 8px;
     margin-bottom: 10px;
   }
-  .slot-state {
-    font-family: 'Inter Tight', sans-serif;
-    font-size: 10.5px; color: var(--taupe);
-    font-weight: 500; letter-spacing: .1em; text-transform: lowercase;
+  .alys-head .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--clay-2);
   }
-  .slot-state.done  { color: var(--sage-deep, #94A87A); }
-  .slot-state.later { color: var(--taupe); }
-  .slot-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: rgba(220, 130, 95, .85);
-    box-shadow: 0 0 0 3px rgba(220, 130, 95, .15);
+  .alys-head .name {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 18px; font-weight: 500;
   }
-  .slot-dot.done {
-    background: var(--sage-deep, #94A87A);
-    box-shadow: 0 0 0 3px rgba(148, 168, 122, .22);
-  }
-  .slot-dot.later {
-    background: rgba(155, 130, 100, .55);
-    box-shadow: 0 0 0 3px rgba(155, 130, 100, .14);
-  }
-  .slot-body {
-    font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 19px; line-height: 1.32; color: var(--ink);
-    letter-spacing: -.1px;
-  }
-  .slot-foot {
-    font-size: 12.5px; color: var(--taupe); font-style: italic;
-    margin-top: 10px;
+  .alys-body {
+    font-size: 16px; line-height: 1.5;
+    color: #3a2e22;
   }
 
-  /* Notes — inline empty state, only becomes a card when there's content */
-  .notes-empty-inline {
-    font-family: 'Fraunces', serif; font-style: italic;
-    color: var(--taupe); font-size: 15px; line-height: 1.55;
-    padding: 4px 4px 8px;
+  /* Ring nudge for fresh users (no ring) */
+  .ring-nudge {
+    margin-top: 24px;
+    color: var(--taupe-2); font-size: 14px; line-height: 1.55;
   }
-  .notes-block {
-    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
-    border: 1px solid rgba(255, 255, 255, .9);
-    border-radius: 18px; padding: 18px 20px;
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.9) inset,
-      0 18px 34px -26px rgba(140, 80, 50, .32),
-      0 3px 10px -6px rgba(140, 80, 50, .1);
+  .ring-nudge .top {
+    font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--taupe-2); font-weight: 600; margin-bottom: 6px;
   }
-  .notes-latest {
-    font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 17px; line-height: 1.4; color: var(--ink);
-    letter-spacing: -.1px; margin-bottom: 6px;
-  }
-  .notes-ago { font-size: 12.5px; color: var(--taupe); }
-  .notes-more {
-    display: inline-block; margin-top: 12px;
-    color: var(--clay, #BF5A3C); font-size: 13px;
-    font-weight: 500; text-decoration: none;
+  .ring-nudge a {
+    color: var(--clay-2); text-decoration: none; font-size: 13px;
+    display: inline-block; margin-top: 8px;
   }
 
-  /* RIGHT NOW vitals strip — same card depth, no breathing pulse
-     (was too cute), just clean type. */
-  .vitals {
-    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
-    border: 1px solid rgba(255, 255, 255, .9);
-    border-radius: 18px; padding: 18px 20px;
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.9) inset,
-      0 18px 34px -26px rgba(140, 80, 50, .35),
-      0 3px 10px -6px rgba(140, 80, 50, .12);
-  }
-  /* Signature HR sparkline — a graceful curve with a soft warm
-     watercolor fill underneath. The single most distinctive visual
-     element on Today; says "your heart over the last few hours". */
-  .hr-spark {
-    position: relative; height: 64px; margin: -4px -4px 14px;
-    border-radius: 12px; overflow: hidden;
-  }
-  .hr-spark svg { display: block; width: 100%; height: 100%; }
-  .hr-spark .empty {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Fraunces', serif; font-style: italic;
-    font-size: 13px; color: var(--taupe);
-  }
-  .vitals-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px;
-    margin-bottom: 14px;
-  }
-  .vitals-grid .v {
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .vitals-grid .v .label {
-    font-family: 'Inter Tight', sans-serif;
-    font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase;
-    color: var(--taupe); font-weight: 700;
-  }
-  .vitals-grid .v .value-row {
-    display: flex; align-items: baseline; gap: 6px;
-  }
-  .vitals-grid .v .value {
-    font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 26px; line-height: 1; color: var(--ink);
-    letter-spacing: -.5px;
-  }
-  .vitals-grid .v .unit {
-    font-size: 11.5px; color: var(--taupe); font-style: italic;
-  }
-  .vitals-foot {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-top: 14px; padding-top: 14px;
-    border-top: 1px solid rgba(43, 32, 24, .06);
-    font-size: 12px; color: var(--taupe);
-  }
-  .vitals-name {
-    display: inline-flex; align-items: center; gap: 8px;
-  }
-  .vitals-name .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--sage-deep, #94A87A); opacity: .85;
-  }
-  .vitals-tag {
-    border: 1px solid rgba(43, 32, 24, .12);
-    background: rgba(255, 255, 255, .8);
-    color: var(--ink);
-    padding: 8px 14px; border-radius: 99px;
-    font-size: 13px; font-weight: 500;
-    font-family: inherit; cursor: pointer;
-    box-shadow: 0 6px 14px -10px rgba(140, 80, 50, .35);
-    transition: transform .12s ease;
-  }
-  .vitals-tag:active { transform: scale(.97); }
-
-  /* ALYS NOTICED card — warm gradient with hand-written feel */
-  .alys-card {
-    position: relative;
-    background: linear-gradient(135deg, #fff5e8 0%, #fde0c8 100%);
-    border: 1px solid rgba(220, 110, 75, .18);
-    border-radius: 18px; padding: 18px 20px;
-    box-shadow:
-      0 18px 34px -26px rgba(220, 110, 75, .35),
-      0 3px 10px -6px rgba(220, 110, 75, .14);
-  }
-  .alys-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg,
-      rgba(220, 110, 75, .85) 0%,
-      rgba(220, 110, 75, .25) 60%,
-      transparent 100%);
-    border-radius: 18px 18px 0 0;
-  }
-  .alys-card .said {
-    font-family: 'Fraunces', serif; font-weight: 500;
-    font-size: 17px; line-height: 1.5; color: var(--ink);
-    font-style: italic; letter-spacing: -.1px;
-  }
-  .alys-card .deeper {
-    display: inline-block;
-    color: var(--clay, #BF5A3C); font-size: 13px; font-weight: 500;
-    margin-top: 12px; text-decoration: none;
-  }
-
-  /* Hidden helper */
-  .hidden { display: none !important; }
-
-  /* Quick-log bottom sheet (carries over from previous version) */
+  /* Quick-log bottom sheet */
   .ql-backdrop {
     position: fixed; inset: 0; background: rgba(43, 32, 24, .45);
     z-index: 1000; opacity: 0; pointer-events: none;
@@ -377,7 +207,8 @@
   .ql-backdrop.open { opacity: 1; pointer-events: auto; }
   .ql-sheet {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 1001;
-    background: var(--cream); border-radius: 22px 22px 0 0;
+    background: #f6efe4;
+    border-radius: 22px 22px 0 0;
     padding: 18px 20px max(28px, env(safe-area-inset-bottom)) 20px;
     transform: translateY(100%); transition: transform .25s ease;
     max-height: 85vh; overflow-y: auto;
@@ -389,126 +220,101 @@
   }
   .ql-sheet h2 {
     font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px;
-    color: var(--ink); margin: 6px 0 4px;
+    color: var(--ink-2); margin: 6px 0 4px;
   }
-  .ql-sheet .sub { font-size: 13px; color: var(--taupe); margin-bottom: 14px; }
+  .ql-sheet .sub { font-size: 13px; color: var(--taupe-2); margin-bottom: 14px; }
   .ql-sheet textarea {
     width: 100%; box-sizing: border-box; background: white;
     border: 1px solid rgba(43, 32, 24, .12); border-radius: 14px;
     padding: 14px; font-family: inherit; font-size: 16px;
-    color: var(--ink); resize: vertical; min-height: 110px;
+    color: var(--ink-2); resize: vertical; min-height: 110px;
   }
   .ql-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
   .ql-chip {
     padding: 7px 12px; border-radius: 99px;
     border: 1px solid rgba(43, 32, 24, .12);
     background: white; font-family: inherit; font-size: 13px;
-    color: var(--ink-soft); cursor: pointer;
+    color: var(--taupe-2); cursor: pointer;
   }
-  .ql-chip.on { background: var(--ink); color: #fff7f0; border-color: var(--ink); }
+  .ql-chip.on { background: var(--ink-2); color: #fff7f0; border-color: var(--ink-2); }
   .ql-actions {
     display: flex; align-items: center; gap: 10px; margin-top: 14px;
   }
-  .ql-status { flex: 1; min-height: 18px; font-size: 13px; color: var(--taupe); }
+  .ql-status { flex: 1; min-height: 18px; font-size: 13px; color: var(--taupe-2); }
+  .btn { padding: 10px 20px; border-radius: 99px; font-family: inherit; font-size: 14px; cursor: pointer; border: 1px solid rgba(43,32,24,.12); background: white; color: var(--ink-2); }
+  .btn-primary { background: var(--ink-2); color: #fff7f0; border-color: var(--ink-2); font-weight: 500; }
+  .btn-primary:disabled { opacity: .4; }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-<div class="page-today">
+<div class="page-today te">
   <!-- Clock + weather pill -->
-  <div class="pill">
+  <div class="pill te-card">
     <span id="pill-clock">—</span>
     <span class="dot">·</span>
-    <span id="pill-weather">—</span>
+    <span class="wx" id="pill-weather">—</span>
   </div>
 
-  <!-- Greeting + Alys's quiet daily whisper -->
-  <div class="greeting" id="greeting">Hey.</div>
-  <div class="whisper" id="alys-whisper"></div>
+  <!-- Greeting + static subhead -->
+  <div class="greeting-wrap te-card" style="animation-delay:.04s">
+    <div class="greeting">
+      <span id="greeting-text">Hey</span>, <em id="greeting-name">there</em>.
+    </div>
+    <div class="subhead">Here when you want it. Nothing needs doing.</div>
+  </div>
 
-  <!-- Log something — always-available capture entry -->
-  <button class="log-cta" type="button" onclick="openLogSheet()">
-    <span class="plus" aria-hidden="true">+</span>
-    <span class="label">Log something</span>
-    <span class="hint">a thought, a symptom, anything</span>
+  <!-- RIGHT NOW · vitals (ring-conditional) -->
+  <div id="vitals-section">
+    <div class="section te-card" style="animation-delay:.06s">
+      <span class="dot"></span>
+      <span class="label">Right now</span>
+      <span class="meta" id="vitals-ago">·</span>
+      <span class="rule"></span>
+    </div>
+    <div class="vitals-grid te-card" id="vitals-grid" style="animation-delay:.08s">
+      <!-- vital tiles painted by JS -->
+    </div>
+    <a class="all-data te-card" href="/health/v2/ring.html" style="animation-delay:.1s">all your data on Ring →</a>
+  </div>
+
+  <!-- NOTE -->
+  <div class="section te-card" style="animation-delay:.12s">
+    <span class="dot"></span>
+    <span class="label">Note</span>
+    <span class="meta" id="note-meta">· nothing today</span>
+    <span class="rule"></span>
+  </div>
+  <button class="log-cta te-card" type="button" onclick="openLogSheet()" style="animation-delay:.14s">
+    <span class="plus" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </span>
+    <div>
+      <div class="label">Log something</div>
+      <div class="hint">a thought, a symptom, an appointment</div>
+    </div>
   </button>
 
-  <!-- TODAY · slot cards -->
-  <div class="eyebrow">
-    Today <span class="meta" id="today-date">—</span>
-  </div>
-
-  <a class="slot" id="slot-morning" href="/health/v2/checkin.html">
-    <div class="slot-head">
-      <span class="slot-dot" id="morning-dot"></span>
-      <span>MORNING</span>
-      <span class="slot-state" id="morning-state">available</span>
+  <!-- Alys -->
+  <div class="alys-card te-card" id="alys-card" style="animation-delay:.18s">
+    <div class="alys-head">
+      <span class="dot"></span>
+      <span class="name">Alys</span>
     </div>
-    <div class="slot-body" id="morning-body">Start when you're ready.</div>
-    <div class="slot-foot" id="morning-foot">Takes a few minutes.</div>
-  </a>
-
-  <a class="slot" id="slot-evening" href="/health/v2/checkin.html">
-    <div class="slot-head">
-      <span class="slot-dot" id="evening-dot"></span>
-      <span>EVENING</span>
-      <span class="slot-state" id="evening-state">later</span>
-    </div>
-    <div class="slot-body" id="evening-body">Comes around at 8 pm.</div>
-    <div class="slot-foot" id="evening-foot"></div>
-  </a>
-
-  <!-- NOTES TODAY -->
-  <div class="eyebrow">
-    Notes today <span class="meta" id="notes-count">· 0</span>
-  </div>
-  <div id="notes-empty" class="notes-empty-inline">
-    Nothing yet. A thought, a symptom, an appointment — anything you want noted.
-  </div>
-  <div id="notes-content" class="notes-block hidden">
-    <div class="notes-latest" id="notes-latest">—</div>
-    <div class="notes-ago" id="notes-ago">—</div>
-    <a class="notes-more" id="notes-more" href="/health/v2/record.html?tab=notes">View all notes →</a>
-  </div>
-
-  <!-- RIGHT NOW · vitals strip (ring-conditional) -->
-  <div id="vitals-section" class="hidden">
-    <div class="eyebrow">
-      Right now <span class="meta" id="vitals-ago">·</span>
-    </div>
-    <div class="vitals">
-      <!-- 6-hour HR sparkline — signature visual element -->
-      <div class="hr-spark" id="hr-spark"></div>
-      <div class="vitals-grid" id="vitals-grid"></div>
-      <div class="vitals-foot">
-        <span class="vitals-name">
-          <span class="dot" aria-hidden="true"></span>
-          <span id="vitals-ring-name">Neeve Ring</span>
-        </span>
-        <!-- Tag a reading button parked until the native bridge for
-             on-demand measurements lands (task #61). Showing a stub
-             that opens the log sheet was misleading. -->
-      </div>
+    <div class="alys-body" id="alys-body">
+      steady numbers through the day — nothing stands out from your usual, which is its own kind of information.
     </div>
   </div>
 
-  <!-- ALYS NOTICED card (alys-conditional) -->
-  <div id="alys-section" class="hidden">
-    <div class="eyebrow">Alys noticed</div>
-    <div class="alys-card">
-      <div class="said" id="alys-said">—</div>
-      <a class="deeper" id="alys-deeper" href="/health/v2/alys.html">read more →</a>
-    </div>
-  </div>
-
-  <!-- Onboarding nudge if no ring paired (only shown if ring missing) -->
-  <div id="ring-nudge" class="hidden" style="margin-top:28px; color:var(--ink-soft); font-size:14px; line-height:1.55;">
-    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-bottom:6px">
-      ⌗ Neeve Ring not paired
-    </div>
+  <!-- Ring nudge for fresh users with no ring -->
+  <div id="ring-nudge" class="ring-nudge hidden">
+    <div class="top">⌗ Neeve Ring not paired</div>
     Pairing a Neeve Ring adds context to your record — sleep, HR, HRV.
     Optional. Your record works without one.<br>
-    <a href="/health/v2/ring.html" style="color:var(--terra);text-decoration:none;font-size:13px;display:inline-block;margin-top:8px">Open ring setup →</a>
+    <a href="/health/v2/ring.html">Open ring setup →</a>
   </div>
 </div>
 
@@ -519,7 +325,7 @@
   <h2>What's on your mind?</h2>
   <div class="sub">Anything you want noted. Alys reads it; past you might thank you.</div>
   <textarea id="ql-body" placeholder="A symptom, an appointment, something that helped, a thought to remember…"></textarea>
-  <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-top:14px;margin-bottom:6px">
+  <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--taupe-2);font-weight:600;margin-top:14px;margin-bottom:6px">
     Tag it (optional)
   </div>
   <div class="ql-row" id="ql-kinds">
@@ -532,7 +338,7 @@
   </div>
   <div class="ql-actions">
     <span class="ql-status" id="ql-status"></span>
-    <button class="btn btn-ghost" onclick="closeLogSheet()">Cancel</button>
+    <button class="btn" onclick="closeLogSheet()">Cancel</button>
     <button class="btn btn-primary" id="ql-submit" onclick="submitQuickLog()" disabled>Log it</button>
   </div>
 </div>
@@ -543,38 +349,30 @@
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('today');
 
-// Welcome-flow gate: brand-new users land on /welcome before Today.
+// Brand-new users land on /welcome before Today.
 (async function gateUnonboarded() {
   try {
     const u = await api('/me');
     if (u && u.id && !u.onboarded) {
       location.replace('/health/v2/welcome.html');
     }
-  } catch (_) { /* unauth bounces to login elsewhere */ }
+  } catch (_) {}
 })();
 
-// ── Greeting + pill ────────────────────────────────────
 function greetFromHour(h) {
   if (h < 12) return 'Good morning';
   if (h < 17) return 'Good afternoon';
   if (h < 21) return 'Good evening';
   return 'Good night';
 }
+
 (function bootGreeting() {
   const name = localStorage.getItem('neeve_name') || '';
   const g = greetFromHour(new Date().getHours());
-  // Render the name in italic warm-clay accent for editorial feel
-  // ("Good afternoon, *Patrick*.") — when no name, just the greeting.
-  const el = document.getElementById('greeting');
-  if (name) {
-    el.innerHTML = `${escapeHtml(g)}, <em>${escapeHtml(name)}</em>.`;
-  } else {
-    el.textContent = `${g}.`;
-  }
+  document.getElementById('greeting-text').textContent = g;
+  document.getElementById('greeting-name').textContent = name || 'you';
   document.getElementById('pill-clock').textContent = new Date()
     .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
 })();
 
 function escapeHtml(s) {
@@ -583,37 +381,38 @@ function escapeHtml(s) {
   }[c]));
 }
 
-// ── Main load ─────────────────────────────────────────
-async function load() {
-  let devices = [], samples = [], checkins = [], notes = [];
-  let user = null;
+function wmoLabel(c) {
+  if (c == null) return 'clear';
+  if (c === 0) return 'clear';
+  if (c === 45 || c === 48) return 'fog';
+  if (c >= 51 && c < 71) return 'rain';
+  if (c >= 71 && c < 80) return 'snow';
+  if (c >= 80) return 'showers';
+  return 'clouds';
+}
 
+async function load() {
+  let devices = [], samples = [], notes = [];
   try {
     const [ringStatus, ringSamples] = await Promise.all([
       api('/ring/status').catch(() => ({ devices: [] })),
-      api('/ring/samples?limit=300').catch(() => ({ samples: [] })),
+      api('/ring/samples?limit=500').catch(() => ({ samples: [] })),
     ]);
     devices = ringStatus.devices || [];
     samples = ringSamples.samples || [];
   } catch (e) { console.error(e); }
 
   try {
-    const [c, u, n] = await Promise.all([
-      api('/me/checkins?days=7').catch(() => ({ checkins: [] })),
-      api('/me').catch(() => null),
-      api('/me/notes?days=1').catch(() => ({ notes: [] })),
-    ]);
-    checkins = c.checkins || [];
-    notes    = n.notes || [];
-    user = u;
+    const n = await api('/me/notes?days=1').catch(() => ({ notes: [] }));
+    notes = n.notes || [];
   } catch (e) {}
 
-  // Weather pill (best-effort)
+  // Weather pill
   try {
     const w = await api('/me/weather').catch(() => null);
     if (w && w.weather_code != null) {
       const label = wmoLabel(Number(w.weather_code));
-      const temp  = w.temperature != null ? `${Math.round(w.temperature)}°` : '';
+      const temp = w.temperature != null ? `${Math.round(w.temperature)}°` : '';
       document.getElementById('pill-weather').textContent =
         [temp, label].filter(Boolean).join(' ');
     } else {
@@ -623,268 +422,113 @@ async function load() {
     document.getElementById('pill-weather').textContent = 'clear';
   }
 
-  renderSlots(checkins, user);
-  renderNotes(notes);
   renderVitals(devices[0], samples);
-  renderHrSpark(samples);
-  renderWhisper(checkins, samples);
-  // Alys observation deferred until that surface exists; hide for now.
-  document.getElementById('alys-section').classList.add('hidden');
-
-  // Ring-nudge for fresh users with no ring + no check-ins yet
-  if (!devices.length && !checkins.length) {
+  renderNoteMeta(notes);
+  // Ring nudge for fresh users
+  if (!devices.length) {
+    document.getElementById('vitals-section').classList.add('hidden');
     document.getElementById('ring-nudge').classList.remove('hidden');
   }
 }
 
-// ── Daily Alys whisper ────────────────────────────────
-// One quiet italic line under the greeting. Picks from a small
-// deterministic bank based on current state — never AI-generated
-// for Today's first impression (anti-mismatch on a bad morning).
-function renderWhisper(checkins, samples) {
-  const el = document.getElementById('alys-whisper');
-  if (!el) return;
-  const today = new Date().toDateString();
-  const todayCheckins = (checkins || []).filter(c =>
-    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
-  const hour = new Date().getHours();
-  const latest = latestPerMetric(samples);
-
-  let line = '';
-  if (!todayCheckins.length && hour < 11) {
-    line = 'A quiet start. Whenever you\'re ready.';
-  } else if (!todayCheckins.length && hour >= 11 && hour < 17) {
-    line = 'The day\'s here when you are.';
-  } else if (todayCheckins.length === 1 && hour < 17) {
-    line = 'Morning\'s logged. The body keeps a record either way.';
-  } else if (todayCheckins.length >= 2) {
-    line = 'A full day on the record.';
-  } else if (hour >= 17 && hour < 21) {
-    line = 'Soft hours, if you want them.';
-  } else if (hour >= 21 || hour < 5) {
-    line = 'It\'s late. Rest, when you can.';
-  } else if (latest.hrv_rmssd && latest.hrv_rmssd.value < 30) {
-    line = 'Steady on. The numbers can wait.';
-  } else {
-    line = 'Here, when you need.';
-  }
-  el.textContent = line;
-}
-
-// ── Signature HR sparkline ────────────────────────────
-// 6-hour rolling HR curve. Gracefully fades out if no data.
-function renderHrSpark(samples) {
-  const el = document.getElementById('hr-spark');
-  if (!el) return;
-  const sixHrAgo = Date.now() - 6 * 3600 * 1000;
-  const hrs = (samples || [])
-    .filter(s => s.metric === 'hr' && new Date(s.ts).getTime() > sixHrAgo)
-    .map(s => ({ t: new Date(s.ts).getTime(), v: Number(s.value) }))
-    .filter(p => !isNaN(p.v))
-    .sort((a, b) => a.t - b.t);
-
-  if (hrs.length < 4) {
-    el.innerHTML = '<div class="empty">Building your picture — sparkline appears with more readings.</div>';
+function renderVitals(device, samples) {
+  if (!device) {
+    document.getElementById('vitals-section').classList.add('hidden');
     return;
   }
+  document.getElementById('vitals-section').classList.remove('hidden');
 
-  // Normalize to viewBox
-  const W = 600, H = 64;
-  const t0 = hrs[0].t, t1 = hrs[hrs.length - 1].t;
-  const dt = Math.max(1, t1 - t0);
-  const minV = Math.min(...hrs.map(p => p.v)) - 3;
-  const maxV = Math.max(...hrs.map(p => p.v)) + 3;
-  const dv = Math.max(1, maxV - minV);
+  // Pull last 6h of each metric for the mini sparklines
+  const sixHrAgo = Date.now() - 6 * 3600 * 1000;
+  const inWindow = (samples || []).filter(s =>
+    new Date(s.ts).getTime() > sixHrAgo);
 
-  const points = hrs.map(p => {
-    const x = ((p.t - t0) / dt) * W;
-    const y = H - ((p.v - minV) / dv) * (H - 12) - 6;
-    return [x, y];
-  });
+  const latest = latestPerMetric(samples);
+  const grid = document.getElementById('vitals-grid');
 
-  // Smooth path through points using cardinal interpolation
-  let d = `M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
-  for (let i = 1; i < points.length; i++) {
-    const [x0, y0] = points[i - 1];
-    const [x1, y1] = points[i];
-    const cx = (x0 + x1) / 2;
-    d += ` Q ${cx.toFixed(1)} ${y0.toFixed(1)} ${cx.toFixed(1)} ${((y0 + y1) / 2).toFixed(1)} T ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+  const metricsToShow = [
+    { key: 'hr',        label: 'Heart rate', unit: 'bpm' },
+    { key: 'hrv_rmssd', label: 'HRV',        unit: 'ms' },
+    { key: 'spo2',      label: 'Blood O₂',   unit: '%' },
+  ];
+
+  const tiles = metricsToShow.map(m => {
+    const last = latest[m.key];
+    if (!last) return '';
+    const series = inWindow
+      .filter(s => s.metric === m.key)
+      .map(s => Number(s.value))
+      .filter(v => !isNaN(v));
+    const value = Math.round(Number(last.value));
+    const range = series.length > 1
+      ? `${Math.min(...series)}–${Math.max(...series)} today`
+      : '';
+    return `
+      <div class="vital">
+        <div class="label">${escapeHtml(m.label)}</div>
+        <div class="value">
+          <span class="num">${value}</span>
+          <span class="unit">${escapeHtml(m.unit)}</span>
+        </div>
+        ${renderSparkSvg(series)}
+        <div class="range">${escapeHtml(range)}</div>
+      </div>`;
+  }).filter(Boolean).join('');
+
+  if (!tiles) {
+    grid.innerHTML = `<div style="flex:1;text-align:center;color:var(--taupe-2);font-style:italic;font-size:14px;padding:20px 0">No readings in the window yet.</div>`;
+    return;
   }
-  // Close the area to baseline for fill
-  const dFill = d + ` L ${W} ${H} L 0 ${H} Z`;
+  grid.innerHTML = tiles;
 
-  el.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="hr-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="rgba(220, 130, 95, .35)"/>
-          <stop offset="100%" stop-color="rgba(220, 130, 95, 0)"/>
-        </linearGradient>
-        <linearGradient id="hr-line" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"   stop-color="#cb8270"/>
-          <stop offset="100%" stop-color="#bf5a3c"/>
-        </linearGradient>
-      </defs>
-      <path d="${dFill}" fill="url(#hr-fill)"/>
-      <path d="${d}" fill="none" stroke="url(#hr-line)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+  // Update "ago" meta
+  const mostRecent = Math.max(
+    ...metricsToShow
+      .map(m => latest[m.key])
+      .filter(Boolean)
+      .map(s => new Date(s.ts).getTime())
+  );
+  if (isFinite(mostRecent)) {
+    document.getElementById('vitals-ago').textContent =
+      '· ' + formatAgo(new Date(mostRecent).toISOString());
+  }
+}
+
+// SVG sparkline for vital tiles. Width 150 viewBox, height 50.
+function renderSparkSvg(series) {
+  if (!series || series.length < 2) {
+    return '<svg class="spark" viewBox="0 0 150 50" aria-hidden="true"></svg>';
+  }
+  const W = 150, H = 50, pad = 4;
+  const lo = Math.min(...series);
+  const hi = Math.max(...series);
+  const span = (hi - lo) || 1;
+  let d = '';
+  for (let i = 0; i < series.length; i++) {
+    const x = pad + (i / (series.length - 1)) * (W - 2 * pad);
+    const y = pad + (1 - (series[i] - lo) / span) * (H - 2 * pad);
+    d += (i === 0 ? 'M ' : 'L ') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+  }
+  return `
+    <svg class="spark" viewBox="0 0 150 50" aria-hidden="true">
+      <path d="${d.trim()}" fill="none"
+            stroke="#bf5a3c" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round"
+            style="stroke-dasharray:900;stroke-dashoffset:900;animation:te-draw 1.3s .1s ease-out forwards"/>
     </svg>`;
 }
 
-function wmoLabel(c) {
-  if (c == null) return 'clear';
-  if (c === 0)                 return 'clear';
-  if (c === 45 || c === 48)    return 'fog';
-  if (c >= 51 && c < 71)       return 'rain';
-  if (c >= 71 && c < 80)       return 'snow';
-  if (c >= 80)                 return 'showers';
-  return 'clouds';
-}
-
-// ── Slots: morning + evening ──────────────────────────
-function renderSlots(checkins, user) {
-  const today = new Date().toDateString();
-  const todayCheckins = (checkins || []).filter(c =>
-    new Date(c.completed_at || c.completedAt || c.day).toDateString() === today);
-  const morningDone = todayCheckins.find(c => c.slot === 'morning');
-  const eveningDone = todayCheckins.find(c => c.slot === 'evening');
-
-  paintSlot('morning', morningDone, user?.morningTime || '08:00');
-  paintSlot('evening', eveningDone, user?.eveningTime || '19:00');
-}
-
-function paintSlot(slot, done, slotTimeStr) {
-  const dot   = document.getElementById(`${slot}-dot`);
-  const state = document.getElementById(`${slot}-state`);
-  const body  = document.getElementById(`${slot}-body`);
-  const foot  = document.getElementById(`${slot}-foot`);
-  const card  = document.getElementById(`slot-${slot}`);
-
-  // Reset state classes — card carries identity tint via accent strip
-  card.classList.remove('is-done', 'is-later');
-  dot.classList.remove('done', 'later');
-  state.classList.remove('done', 'later');
-
-  if (done) {
-    const sentence = summariseAnswers(done.answers || {});
-    const id = done.checkin_id || done.id;
-    card.classList.add('is-done');
-    dot.classList.add('done');
-    state.classList.add('done');
-    state.textContent = 'logged';
-    body.textContent = sentence;
-    foot.textContent = 'tap to view →';
-    card.setAttribute('href', `/health/v2/checkin.html?checkin=${encodeURIComponent(id)}`);
-    return;
-  }
-  // Pending — DO NOT narrate lateness. Always "available" or "later".
-  const now    = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const slotMin = parseTime(slotTimeStr);
-
-  if (nowMin < slotMin && slot === 'evening') {
-    card.classList.add('is-later');
-    dot.classList.add('later');
-    state.classList.add('later');
-    state.textContent = 'later';
-    body.textContent = `Comes around at ${formatSlotTime(slotTimeStr)}.`;
-    foot.textContent = '';
-  } else {
-    state.textContent = 'available';
-    body.textContent = 'Start when you\'re ready.';
-    foot.textContent = 'Takes a few minutes.';
-  }
-  card.setAttribute('href', '/health/v2/checkin.html');
-}
-
-function parseTime(s) {
-  if (!s || typeof s !== 'string') return 8 * 60;
-  const m = s.match(/^(\d{1,2}):(\d{2})/);
-  if (!m) return 8 * 60;
-  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-}
-function formatSlotTime(s) {
-  if (!s) return '';
-  const m = s.match(/^(\d{1,2}):(\d{2})/);
-  if (!m) return s;
-  let h = parseInt(m[1], 10);
-  const min = parseInt(m[2], 10);
-  const suffix = h >= 12 ? 'pm' : 'am';
-  h = h % 12; if (h === 0) h = 12;
-  return min === 0 ? `${h}${suffix}` : `${h}:${String(min).padStart(2,'0')}${suffix}`;
-}
-
-// ── Notes ─────────────────────────────────────────────
-function renderNotes(notes) {
+function renderNoteMeta(notes) {
   const today = new Date().toDateString();
   const todayNotes = (notes || []).filter(n =>
     new Date(n.created_at || n.createdAt || n.ts).toDateString() === today);
-  document.getElementById('notes-count').textContent = `· ${todayNotes.length}`;
-  if (!todayNotes.length) {
-    document.getElementById('notes-empty').classList.remove('hidden');
-    document.getElementById('notes-content').classList.add('hidden');
-    return;
-  }
-  document.getElementById('notes-empty').classList.add('hidden');
-  document.getElementById('notes-content').classList.remove('hidden');
-  const latest = todayNotes[0];
-  const body = (latest.body || latest.text || latest.kind || '').toString().trim();
-  document.getElementById('notes-latest').textContent =
-    body.length > 110 ? `"${body.slice(0, 107)}…"` : `"${body}"`;
-  document.getElementById('notes-ago').textContent =
-    formatAgo(latest.created_at || latest.createdAt || latest.ts);
+  const meta = document.getElementById('note-meta');
+  meta.textContent = todayNotes.length
+    ? `· ${todayNotes.length} today`
+    : '· nothing today';
 }
 
-// ── Vitals: RIGHT NOW (ring-conditional) ──────────────
-function renderVitals(device, samples) {
-  const section = document.getElementById('vitals-section');
-  const tagBtn  = document.getElementById('vitals-tag-btn');
-  if (!device) {
-    section.classList.add('hidden');
-    return;
-  }
-  const latest = latestPerMetric(samples);
-  const tiles = [];
-  const tile = (m, lbl, unit) => {
-    const s = latest[m];
-    if (!s) return;
-    tiles.push(`
-      <div class="v">
-        <span class="label">${lbl}</span>
-        <span class="value-row">
-          <span class="value">${formatValue(m, s.value)}</span>
-          <span class="unit">${unit}</span>
-        </span>
-      </div>`);
-  };
-  tile('hr',          'HR',   'bpm');
-  tile('hrv_rmssd',   'HRV',  'ms');
-  tile('spo2',        'SpO2', '%');
-  tile('respiration_rate', 'Resp', 'br/min');
-
-  if (!tiles.length) {
-    section.classList.add('hidden');
-    return;
-  }
-  section.classList.remove('hidden');
-  document.getElementById('vitals-grid').innerHTML = tiles.join('');
-
-  // Find the most-recent sample timestamp across the four to age the strip
-  const mostRecent = Math.max(
-    ...['hr','hrv_rmssd','spo2','respiration_rate']
-      .map(k => latest[k] ? new Date(latest[k].ts).getTime() : 0)
-  );
-  document.getElementById('vitals-ago').textContent =
-    mostRecent ? `· ${formatAgo(new Date(mostRecent).toISOString())}` : '';
-
-  document.getElementById('vitals-ring-name').textContent =
-    device.name || 'Neeve Ring';
-}
-
-// "Tag a reading" — removed for now (was a stub that just opened the
-// log sheet; misleading). Comes back when task #61 lands the native
-// bridge for on-demand HR / temp measurements.
-
-// ── Quick-log sheet ───────────────────────────────────
+// ── Quick-log sheet ───────────────────────────────
 let _qlKind = null;
 function openLogSheet() {
   document.getElementById('ql-backdrop').classList.add('open');
@@ -914,33 +558,27 @@ async function submitQuickLog() {
   const text   = document.getElementById('ql-body').value.trim();
   if (!text) return;
   status.textContent = 'Logging…';
-  status.style.color = 'var(--taupe)';
+  status.style.color = 'var(--taupe-2)';
   btn.disabled = true;
   try {
-    const r = await api('/me/note', {
+    await api('/me/note', {
       method: 'POST',
       body: JSON.stringify({ kind: _qlKind, body: text }),
     });
-    const reply = r?.note?.alys_reply;
-    status.textContent = reply
-      ? reply.slice(0, 120) + (reply.length > 120 ? '…' : '')
-      : 'Logged.';
-    status.style.color = 'var(--ink-soft)';
+    status.textContent = 'Logged.';
+    status.style.color = '#3a2e22';
     document.getElementById('ql-body').value = '';
     _qlKind = null;
     document.querySelectorAll('.ql-chip').forEach(b => b.classList.remove('on'));
-    setTimeout(() => {
-      closeLogSheet();
-      load();
-    }, 1500);
+    setTimeout(() => { closeLogSheet(); load(); }, 1200);
   } catch (e) {
     status.textContent = `Couldn't log: ${e.message}`;
-    status.style.color = 'var(--clay)';
+    status.style.color = 'var(--clay-2)';
     btn.disabled = false;
   }
 }
 
-// ── Refresh while visible ─────────────────────────────
+// ── Refresh while visible ─────────────────────────
 load();
 let _refreshTimer = null;
 function _startRefresh() {

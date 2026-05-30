@@ -37,20 +37,45 @@
     to   { opacity: 1; transform: none; }
   }
 
-  /* Orb hero */
+  /* Orb hero — sticky at the top so she stays visible while the
+     user scrolls through chat history. The orb shrinks smoothly
+     once the page scrolls past its natural position. */
   .orb-stage {
+    position: sticky; top: 0;
+    z-index: 5;
     display: flex; flex-direction: column; align-items: center;
-    margin-bottom: 22px;
+    margin-bottom: 22px; padding: 16px 0 14px;
+    background: linear-gradient(180deg,
+      rgba(246, 230, 214, .98) 0%,
+      rgba(246, 239, 228, .92) 80%,
+      rgba(246, 239, 228, 0) 100%);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    transition: padding .3s ease;
+  }
+  .orb-stage .alys-orb { transition: transform .3s ease; }
+  /* When the page is scrolled, the orb shrinks via JS toggling
+     [data-stuck=true] on the orb-stage. The here/quiet lines fade. */
+  .orb-stage[data-stuck="true"] {
+    padding: 10px 0 8px;
+  }
+  .orb-stage[data-stuck="true"] .alys-orb {
+    transform: scale(.55);
+  }
+  .orb-stage[data-stuck="true"] .here,
+  .orb-stage[data-stuck="true"] .quiet {
+    display: none;
   }
   .orb-stage .here {
     font-family: 'Fraunces', serif; font-style: italic;
     font-size: 19px; color: var(--ink);
     margin-top: 22px; letter-spacing: -.2px;
+    transition: opacity .25s ease;
   }
   .orb-stage .quiet {
     font-family: 'Fraunces', serif; font-style: italic;
     font-size: 14px; color: var(--taupe);
     margin-top: 8px; line-height: 1.5; max-width: 320px; text-align: center;
+    transition: opacity .25s ease;
   }
 
   /* Eyebrows */
@@ -195,6 +220,24 @@ document.getElementById('nav-mount').innerHTML = renderNav('alys');
   if (mount && typeof renderAlysOrb === 'function') {
     mount.innerHTML = renderAlysOrb({ size: 200 });
   }
+})();
+
+// Sticky-orb shrink: when the page scrolls past ~80px the orb-stage
+// collapses to a compact pinned header so the orb stays visible while
+// the user reads chat history without taking up half the viewport.
+(function bootStickyOrb() {
+  const stage = document.querySelector('.orb-stage');
+  if (!stage) return;
+  let raf = null;
+  function update() {
+    raf = null;
+    const y = window.scrollY || document.documentElement.scrollTop || 0;
+    stage.setAttribute('data-stuck', y > 80 ? 'true' : 'false');
+  }
+  window.addEventListener('scroll', () => {
+    if (raf == null) raf = requestAnimationFrame(update);
+  }, { passive: true });
+  update();
 })();
 
 loadAll();

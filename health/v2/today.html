@@ -52,12 +52,15 @@
   .pill .dot { color: var(--taupe-2); }
   .pill .wx { color: var(--taupe-2); }
 
-  /* Greeting — editorial, italic clay name accent */
+  /* Greeting — editorial, italic clay name accent. Size scales down
+     on narrow viewports so "Good evening, Patrick." doesn't wrap. */
   .greeting-wrap { margin-top: 20px; }
   .greeting {
     font-family: 'Fraunces', Georgia, serif;
-    font-weight: 500; font-size: 42px; line-height: 1.05;
-    letter-spacing: -.5px; color: var(--ink-2);
+    font-weight: 500;
+    font-size: clamp(32px, 9.5vw, 42px);
+    line-height: 1.1;
+    letter-spacing: -.4px; color: var(--ink-2);
   }
   .greeting em {
     color: var(--clay-2); font-style: italic;
@@ -652,11 +655,10 @@ let _lastRingDevice = null;
 
 async function fastRefreshVitals() {
   try {
-    const r = await api('/ring/samples?limit=24').catch(() => null);
+    // 500 samples is enough to render proper 6h sparklines for all 4
+    // vitals (HR ~ 1/3min = 120 samples in 6h × 4 metrics ≈ 480).
+    const r = await api('/ring/samples?limit=500').catch(() => null);
     if (!r || !r.samples) return;
-    // Only re-render if we have a device on file (otherwise no tile UI
-    // to update). renderVitals also handles the "no readings yet" case
-    // gracefully when the latest sample bag is small.
     if (_lastRingDevice) renderVitals(_lastRingDevice, r.samples);
   } catch (_) {}
 }

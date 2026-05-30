@@ -222,8 +222,21 @@ function renderSparkline(container, samples, options = {}) {
   const yFor = v => chartH - pad - ((v - min) / vrng) * (chartH - pad * 2);
 
   const pts = arr.map(a => [xFor(a.ts), yFor(a.v)]);
-  const d = pts.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ');
-  const stroke = options.color || 'var(--terra)';
+  // Smooth path using quadratic-bezier midpoints (matches Today's
+  // sparkline treatment). Reads as a soft curve rather than jagged
+  // L-segments, even with noisy minute-to-minute samples.
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) {
+    const [px, py] = pts[i - 1];
+    const [cx, cy] = pts[i];
+    const mx = (px + cx) / 2;
+    const my = (py + cy) / 2;
+    d += ` Q ${px} ${py} ${mx} ${my}`;
+  }
+  if (pts.length > 1) {
+    d += ` T ${pts[pts.length - 1][0]} ${pts[pts.length - 1][1]}`;
+  }
+  const stroke = options.color || '#bf5a3c';
 
   // Time-axis formatting
   const sameDay = tSpan < 28 * 3600 * 1000; // ≤ ~1 day
@@ -248,10 +261,11 @@ function renderSparkline(container, samples, options = {}) {
          preserveAspectRatio="none" style="touch-action:none">
       <line x1="${pad}" y1="${chartH}" x2="${W - pad}" y2="${chartH}"
             stroke="var(--hair)" stroke-width="1"/>
-      <path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.5"
-            stroke-linecap="round" stroke-linejoin="round"/>
-      ${pts.length < 60 ? pts.map(p =>
-        `<circle cx="${p[0]}" cy="${p[1]}" r="1.5" fill="${stroke}"/>`).join('') : ''}
+      <path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.6"
+            stroke-linecap="round" stroke-linejoin="round"
+            vector-effect="non-scaling-stroke"/>
+      ${pts.length < 40 ? pts.map(p =>
+        `<circle cx="${p[0]}" cy="${p[1]}" r="1.2" fill="${stroke}" opacity=".55"/>`).join('') : ''}
       ${ticks}
       <line class="cursor" x1="0" y1="0" x2="0" y2="${chartH}"
             stroke="${stroke}" stroke-width="1" stroke-dasharray="3,3"

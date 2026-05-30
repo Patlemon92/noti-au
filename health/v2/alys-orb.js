@@ -25,7 +25,7 @@ function ensureAlysOrbStyles() {
       position: relative;
       width: var(--orb-size, 260px);
       height: var(--orb-size, 260px);
-      animation: alys-orb-pulse var(--hr-period, 1.2s) ease-in-out infinite;
+      animation: alys-orb-breathe var(--breath-period, 5s) ease-in-out infinite;
       will-change: transform;
     }
     .alys-orb svg { display: block; width: 100%; height: 100%; }
@@ -39,11 +39,11 @@ function ensureAlysOrbStyles() {
       from { transform: rotate(0deg); }
       to   { transform: rotate(360deg); }
     }
-    @keyframes alys-orb-pulse {
+    /* Two-stop breath — smooth sine-like inhale / exhale via
+       ease-in-out, no heartbeat bounce. */
+    @keyframes alys-orb-breathe {
       0%, 100% { transform: scale(1); }
-      30%      { transform: scale(1.025); }
-      55%      { transform: scale(0.995); }
-      80%      { transform: scale(1.008); }
+      50%      { transform: scale(1.04); }
     }
   `;
   const s = document.createElement('style');
@@ -132,36 +132,46 @@ function renderAlysOrb(opts = {}) {
 // that calls it doesn't break — the SVG is now self-animating via CSS.
 function startAlysOrbAnimation(_host) { /* no-op */ }
 
-// Re-time the wrapper pulse from a heart-rate value. null/missing → resting.
-function setAlysOrbHR(host, bpm) {
+// Re-time the breath cadence from a respiration rate (breaths per
+// minute). Resting is ~12–16 br/min → ~4–5 s per breath, which feels
+// calming and meditative — much slower than a heartbeat. null/missing
+// → 5 s default.
+function setAlysOrbBreath(host, brpm) {
   if (!host) return;
   const orb = host.classList && host.classList.contains('alys-orb')
     ? host
     : host.querySelector('.alys-orb');
   if (!orb) return;
-  const v = Number(bpm);
-  if (!isFinite(v) || v < 30 || v > 220) {
-    orb.dataset.hr = 'resting';
-    orb.style.removeProperty('--hr-period');
+  const v = Number(brpm);
+  if (!isFinite(v) || v < 4 || v > 40) {
+    orb.dataset.breath = 'resting';
+    orb.style.removeProperty('--breath-period');
     return;
   }
-  // Clamp so a sprint reading doesn't strobe and a low HR doesn't freeze.
-  const period = Math.min(1.4, Math.max(0.45, 60 / v));
-  orb.dataset.hr = String(Math.round(v));
-  orb.style.setProperty('--hr-period', period.toFixed(2) + 's');
+  // Clamp so we never go faster than ~2.5s/breath (anxious) or slower
+  // than ~7s (deep rest), even if the sample is wonky.
+  const period = Math.min(7, Math.max(2.5, 60 / v));
+  orb.dataset.breath = String(Math.round(v));
+  orb.style.setProperty('--breath-period', period.toFixed(2) + 's');
 }
 
-function wireAlysOrbHR(host) {
+// Backwards-compat alias — older today.html called setAlysOrbHR with
+// the latest HR. We now ignore the value (breathing isn't tied to HR
+// any more) and just keep the orb on the resting cadence.
+function setAlysOrbHR(host, _bpm) { setAlysOrbBreath(host, null); }
+
+function wireAlysOrbBreath(host) {
   let stopped = false;
   async function tick() {
     if (stopped) return;
     try {
-      const r = await api('/ring/samples?metric=hr&limit=1');
+      const r = await api('/ring/samples?metric=respiration_rate&limit=1');
       const s = (r && r.samples && r.samples[0]) || null;
-      if (s && s.value != null) setAlysOrbHR(host, s.value);
+      if (s && s.value != null) setAlysOrbBreath(host, s.value);
     } catch (_) {}
   }
   tick();
-  const id = setInterval(tick, 30000);
+  const id = setInterval(tick, 60000);
   return () => { stopped = true; clearInterval(id); };
 }
+function wireAlysOrbHR(host) { return wireAlysOrbBreath(host); }

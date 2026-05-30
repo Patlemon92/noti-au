@@ -315,10 +315,11 @@ async function load() {
   renderRoundup(checkins, notes, user);
   updateHeroCta(checkins, user);
 
-  // Pulse Alys's orb at the latest HR if we have one.
+  // Breath the orb at the latest respiration rate if we have one;
+  // otherwise it sits on the 5s resting cadence.
   const latest = latestPerMetric(samples);
-  if (latest.hr && typeof setAlysOrbHR === 'function') {
-    setAlysOrbHR(document.getElementById('alys-orb-mount'), latest.hr.value);
+  if (latest.respiration_rate && typeof setAlysOrbBreath === 'function') {
+    setAlysOrbBreath(document.getElementById('alys-orb-mount'), latest.respiration_rate.value);
   }
 }
 

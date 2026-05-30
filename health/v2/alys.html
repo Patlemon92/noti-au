@@ -3,216 +3,359 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#FAF6F0" />
+<meta name="theme-color" content="#F8F1E7" />
+<link rel="manifest" href="/health/manifest-health.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
 <title>Alys · Neeve</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/health/v2/styles.css">
+<script src="/health/v2/alys-orb.js"></script>
+
 <style>
-.alys-header {
-  display: flex; align-items: center; gap: 14px;
-  margin-bottom: 24px;
-}
-.alys-avatar {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: var(--terra); color: var(--bone);
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Fraunces', serif; font-size: 20px; font-weight: 500;
-  font-style: italic;
-}
-.alys-meta .alys-name {
-  font-family: 'Fraunces', serif; font-weight: 500; font-size: 20px;
-  color: var(--ink); line-height: 1;
-}
-.alys-meta .alys-sub {
-  font-size: 12px; color: var(--ink-mute); margin-top: 4px;
-}
+  body {
+    background: var(--cream);
+    background-image:
+      url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.15 0 0 0 0 0.1 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      radial-gradient(120% 32% at 50% -6%,
+        rgba(248, 200, 175, .42) 0%,
+        rgba(248, 200, 175, .15) 35%,
+        rgba(248, 200, 175, 0) 65%),
+      linear-gradient(180deg, #faf3e7 0%, var(--cream) 32%);
+    background-attachment: fixed, fixed, fixed;
+    background-size: 200px 200px, auto, auto;
+  }
+  .page-alys {
+    max-width: 460px; margin: 0 auto;
+    padding: 28px 22px 200px;
+    animation: page-fade .55s ease;
+  }
+  @keyframes page-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
 
-/* Chat feed */
-.chat { padding-bottom: 100px; }
-.msg-row { margin: 14px 0; display: flex; }
-.msg {
-  max-width: 78%; padding: 12px 16px; border-radius: 18px;
-  font-size: 15px; line-height: 1.5; word-wrap: break-word;
-}
-.msg-alys {
-  background: white; border: 1px solid var(--hair);
-  color: var(--ink); border-bottom-left-radius: 6px;
-}
-.msg-mine {
-  background: var(--ink); color: var(--bone);
-  border-bottom-right-radius: 6px;
-  margin-left: auto;
-}
-.msg-time {
-  font-size: 11px; color: var(--ink-mute);
-  margin-top: 4px; padding: 0 4px;
-}
+  /* Orb hero */
+  .orb-stage {
+    display: flex; flex-direction: column; align-items: center;
+    margin-bottom: 22px;
+  }
+  .orb-stage .here {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 19px; color: var(--ink);
+    margin-top: 22px; letter-spacing: -.2px;
+  }
+  .orb-stage .quiet {
+    font-family: 'Fraunces', serif; font-style: italic;
+    font-size: 14px; color: var(--taupe);
+    margin-top: 8px; line-height: 1.5; max-width: 320px; text-align: center;
+  }
 
-/* Composer sits ABOVE the bottom nav so users can still navigate.
-   Nav height ≈ 64px (8+8 padding + ~22 icon + 11 text + line-height).  */
-.composer {
-  position: fixed;
-  bottom: calc(72px + env(safe-area-inset-bottom));
-  left: 0; right: 0;
-  background: rgba(250, 246, 240, 0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--hair);
-  padding: 10px 16px;
-  display: flex; gap: 10px; align-items: center;
-  z-index: 11;
-}
-.composer .input {
-  flex: 1; background: white; border: 1px solid var(--hair);
-  border-radius: 22px; padding: 11px 16px;
-  font-family: 'Inter Tight', sans-serif; font-size: 15px;
-  color: var(--ink); outline: none; min-height: 44px;
-  resize: none; max-height: 120px;
-}
-.composer .send {
-  background: var(--terra); color: white; border: none;
-  width: 44px; height: 44px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-}
-.composer .send:disabled { opacity: 0.4; cursor: default; }
+  /* Eyebrows */
+  .eyebrow {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--taupe); font-weight: 600;
+    margin: 32px 0 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before {
+    content: ''; flex-shrink: 0;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--clay, #BF5A3C); opacity: .65;
+  }
+  .eyebrow::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(43,32,24,.12) 0%, transparent 100%);
+  }
 
-/* Nav sits above composer */
-body { padding-bottom: 0 !important; }
+  /* Observations */
+  .obs {
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 16px; padding: 16px 18px; margin-bottom: 10px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 14px 28px -22px rgba(140, 80, 50, .28);
+  }
+  .obs .said {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 16px; line-height: 1.5; color: var(--ink);
+    letter-spacing: -.1px;
+  }
+  .obs .where {
+    display: inline-block; margin-top: 10px;
+    color: var(--clay, #BF5A3C); font-size: 13px;
+    font-weight: 500; text-decoration: none;
+  }
+
+  /* Chat */
+  .chat { margin-bottom: 32px; }
+  .day-divider {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--taupe); font-weight: 600;
+    margin: 18px 0 14px 4px;
+  }
+  .msg { margin-bottom: 18px; }
+  .msg .who {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--taupe); font-weight: 600; margin-bottom: 6px;
+  }
+  .msg .who.alys { color: var(--clay, #BF5A3C); }
+  .msg .body {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 16.5px; line-height: 1.55; color: var(--ink);
+    letter-spacing: -.1px; white-space: pre-wrap;
+  }
+  .msg .body.thinking {
+    font-style: italic; color: var(--taupe);
+  }
+
+  /* Composer */
+  .composer-wrap {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    padding: 10px 22px max(calc(56px + env(safe-area-inset-bottom)), 70px);
+    background: linear-gradient(180deg,
+      rgba(248, 241, 231, 0) 0%,
+      rgba(248, 241, 231, .92) 18%,
+      var(--cream) 38%);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .composer {
+    max-width: 460px; margin: 0 auto;
+    display: flex; align-items: flex-end; gap: 10px;
+    background: white;
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 22px; padding: 8px 8px 8px 16px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 18px 38px -28px rgba(140, 80, 50, .42),
+      0 4px 12px -8px rgba(140, 80, 50, .18);
+  }
+  .composer textarea {
+    flex: 1; border: none; outline: none; resize: none;
+    background: transparent;
+    font-family: inherit; font-size: 16px; line-height: 1.45;
+    color: var(--ink); padding: 9px 4px;
+    min-height: 22px; max-height: 140px;
+  }
+  .composer textarea::placeholder {
+    color: var(--taupe); font-style: italic;
+  }
+  .composer .send {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--ink); color: #fff7f0;
+    border: none; cursor: pointer; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-size: 18px;
+    transition: transform .12s ease, opacity .15s ease;
+  }
+  .composer .send:disabled { opacity: .35; cursor: default; }
+  .composer .send:active:not(:disabled) { transform: scale(.94); }
 </style>
 </head>
 <body>
 
-<main class="page" style="padding-bottom:120px">
-  <div class="alys-header">
-    <div class="alys-avatar">A</div>
-    <div class="alys-meta">
-      <div class="alys-name">Alys</div>
-      <div class="alys-sub">Quietly paying attention.</div>
-    </div>
+<div class="page-alys">
+  <div class="orb-stage">
+    <div id="alys-orb-mount"></div>
+    <div class="here" id="alys-here">I'm here.</div>
+    <div class="quiet" id="alys-quiet"></div>
   </div>
 
-  <div class="chat" id="chat">
-    <div class="empty">Loading…</div>
-  </div>
-</main>
+  <div class="eyebrow" id="obs-eyebrow" style="display:none">What I'm holding</div>
+  <div id="obs-list"></div>
 
-<div class="composer">
-  <textarea class="input" id="composer-input"
-            placeholder="Anything you want to tell her…"
-            rows="1"></textarea>
-  <button class="send" id="composer-send" onclick="sendMessage()">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="22" y1="2" x2="11" y2="13"/>
-      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-    </svg>
-  </button>
+  <div class="eyebrow">Talk to me</div>
+  <div class="chat" id="chat"></div>
+</div>
+
+<div class="composer-wrap">
+  <form class="composer" id="composer" onsubmit="event.preventDefault(); sendMessage();">
+    <textarea id="composer-input" rows="1" placeholder="Say something…"
+      oninput="autoSize(this); refreshSend()"></textarea>
+    <button class="send" id="composer-send" type="submit" disabled aria-label="Send">↑</button>
+  </form>
 </div>
 
 <div id="nav-mount"></div>
 
-<script src="/health/v2/lib.js"></script>
+<script src="lib.js"></script>
 <script>
 document.getElementById('nav-mount').innerHTML = renderNav('alys');
 
-const chat = document.getElementById('chat');
-const input = document.getElementById('composer-input');
-const sendBtn = document.getElementById('composer-send');
-
-// Auto-grow textarea
-input.addEventListener('input', () => {
-  input.style.height = 'auto';
-  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
-});
-
-// Send on Enter (allow Shift+Enter for newlines)
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
+// Mount the orb
+(function bootOrb() {
+  const mount = document.getElementById('alys-orb-mount');
+  if (mount && typeof renderAlysOrb === 'function') {
+    mount.innerHTML = renderAlysOrb({ size: 200 });
   }
-});
+})();
 
-async function load() {
+loadAll();
+
+async function loadAll() {
+  await Promise.all([loadObservations(), loadChat()]);
+  paintQuietLine();
+}
+
+async function loadObservations() {
+  const list = document.getElementById('obs-list');
+  const eyebrow = document.getElementById('obs-eyebrow');
   try {
-    const { messages } = await api('/me/messages?limit=50');
-    // Sort explicitly oldest → newest so chat reads top-to-bottom
-    // (newest at the bottom, like every other chat UI).
-    const sorted = (messages || []).slice().sort((a, b) =>
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-    );
-    renderMessages(sorted);
+    const r = await api('/me/alys-observations?limit=3').catch(() => null);
+    const items = (r && r.observations) || [];
+    if (!items.length) {
+      eyebrow.style.display = 'none';
+      list.innerHTML = '';
+      return;
+    }
+    eyebrow.style.display = '';
+    list.innerHTML = items.map(o => `
+      <div class="obs">
+        <div class="said">${escapeHtml(o.text || '')}</div>
+        ${o.link ? `<a class="where" href="${escapeHtml(o.link)}">${escapeHtml(o.link_label || 'see more')} →</a>` : ''}
+      </div>`).join('');
   } catch (e) {
-    chat.innerHTML = `<div class="empty">Couldn't load: ${e.message}</div>`;
+    eyebrow.style.display = 'none';
+    list.innerHTML = '';
   }
 }
 
-function renderMessages(list) {
-  if (!list.length) {
-    chat.innerHTML = `<div class="empty" style="padding:40px 0">
-      It's quiet here. Say anything — small things matter.
-    </div>`;
+async function loadChat() {
+  const chat = document.getElementById('chat');
+  try {
+    const r = await api('/me/messages?limit=50').catch(() => ({ messages: [] }));
+    const msgs = (r.messages || []).sort((a, b) =>
+      new Date(a.created_at || a.ts) - new Date(b.created_at || b.ts));
+    renderChat(msgs);
+  } catch (e) {
+    chat.innerHTML = '';
+  }
+}
+
+function renderChat(msgs) {
+  const chat = document.getElementById('chat');
+  if (!msgs.length) {
+    chat.innerHTML = '';
     return;
   }
-  chat.innerHTML = list.map(m => {
-    const mine = m.direction === 'in';
-    const time = formatAgo(m.created_at);
-    return `
-      <div class="msg-row" style="${mine ? 'justify-content:flex-end' : ''}">
-        <div>
-          <div class="msg ${mine ? 'msg-mine' : 'msg-alys'}">${escapeHtml(m.body || '')}</div>
-          <div class="msg-time" style="text-align:${mine ? 'right' : 'left'}">${time}</div>
-        </div>
+  let html = '';
+  let lastDay = '';
+  for (const m of msgs) {
+    const ts = new Date(m.created_at || m.ts);
+    const day = ts.toLocaleDateString('en-AU',
+      { weekday: 'short', day: 'numeric', month: 'short' });
+    if (day !== lastDay) {
+      html += `<div class="day-divider">${escapeHtml(day)}</div>`;
+      lastDay = day;
+    }
+    const isAlys = (m.role === 'alys') || (m.from === 'alys') || m.is_alys;
+    html += `
+      <div class="msg">
+        <div class="who ${isAlys ? 'alys' : ''}">${isAlys ? 'alys' : 'you'}</div>
+        <div class="body">${escapeHtml(m.body || m.text || '')}</div>
       </div>`;
-  }).join('');
-  // Scroll to bottom after layout settles
-  requestAnimationFrame(() => {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'auto' });
-  });
+  }
+  chat.innerHTML = html;
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
+}
+
+function paintQuietLine() {
+  const el = document.getElementById('alys-quiet');
+  const hasObs = document.getElementById('obs-list').children.length > 0;
+  const hasChat = document.getElementById('chat').children.length > 0;
+  const hour = new Date().getHours();
+  let line = '';
+  if (hasObs) {
+    line = "A couple of things worth noticing. No verdicts — just what I see.";
+  } else if (hour < 5 || hour >= 22) {
+    line = "It's late. Whenever you need.";
+  } else if (!hasChat) {
+    line = "Nothing standing out from your data right now. That's not a verdict — just what I see.";
+  } else {
+    line = "Here, listening.";
+  }
+  el.textContent = line;
+}
+
+function autoSize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(140, el.scrollHeight) + 'px';
+}
+function refreshSend() {
+  const text = document.getElementById('composer-input').value.trim();
+  document.getElementById('composer-send').disabled = !text;
 }
 
 async function sendMessage() {
+  const input = document.getElementById('composer-input');
   const text = input.value.trim();
   if (!text) return;
-  sendBtn.disabled = true;
-  input.value = '';
-  input.style.height = 'auto';
+  document.getElementById('composer-send').disabled = true;
 
-  // Optimistic render
-  chat.insertAdjacentHTML('beforeend', `
-    <div class="msg-row" style="justify-content:flex-end">
-      <div>
-        <div class="msg msg-mine">${escapeHtml(text)}</div>
-        <div class="msg-time" style="text-align:right">sending…</div>
-      </div>
-    </div>`);
-  window.scrollTo(0, document.body.scrollHeight);
+  appendMessage('you', text, false);
+  appendMessage('alys', '…', true);
+  input.value = '';
+  autoSize(input);
 
   try {
-    await api('/me/message', { method: 'POST', body: JSON.stringify({ body: text }) });
-    // Re-fetch to get Alys's reply (it's queued/async via the buffer)
-    setTimeout(load, 800);
-    setTimeout(load, 3000);
-    setTimeout(load, 8000);
+    const r = await api('/me/message', {
+      method: 'POST',
+      body: JSON.stringify({ body: text }),
+    });
+    const reply = (r && (r.reply || r.alys_reply || r.body)) || '';
+    replacePlaceholder(reply || "I'm here, but I didn't catch that. Try again?");
   } catch (e) {
-    chat.insertAdjacentHTML('beforeend', `
-      <div class="msg-row"><div class="msg msg-alys" style="color:var(--rose-deep)">
-        Couldn't send: ${escapeHtml(e.message)}
-      </div></div>`);
+    replacePlaceholder("I couldn't get that through. Try again in a moment.");
   } finally {
-    sendBtn.disabled = false;
+    refreshSend();
   }
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function appendMessage(who, body, isThinking) {
+  const chat = document.getElementById('chat');
+  const isAlys = who === 'alys';
+  const todayLabel = new Date().toLocaleDateString('en-AU',
+    { weekday: 'short', day: 'numeric', month: 'short' });
+  if (!chat.innerHTML.includes(todayLabel)) {
+    chat.insertAdjacentHTML('beforeend',
+      `<div class="day-divider">${escapeHtml(todayLabel)}</div>`);
+  }
+  chat.insertAdjacentHTML('beforeend', `
+    <div class="msg" ${isThinking ? 'data-thinking="1"' : ''}>
+      <div class="who ${isAlys ? 'alys' : ''}">${isAlys ? 'alys' : 'you'}</div>
+      <div class="body ${isThinking ? 'thinking' : ''}">${escapeHtml(body)}</div>
+    </div>`);
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
-load();
-onResume(load);
+function replacePlaceholder(text) {
+  const chat = document.getElementById('chat');
+  const placeholder = chat.querySelector('.msg[data-thinking="1"]');
+  if (placeholder) {
+    placeholder.removeAttribute('data-thinking');
+    const body = placeholder.querySelector('.body');
+    if (body) {
+      body.classList.remove('thinking');
+      body.textContent = text;
+    }
+  } else {
+    appendMessage('alys', text, false);
+  }
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
+  }[c]));
+}
 </script>
 </body>
 </html>

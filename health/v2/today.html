@@ -623,24 +623,51 @@ async function submitQuickLog() {
 }
 
 // ── Refresh while visible ─────────────────────────
-// 10-second interval so the vitals feel near-live. The server caches
-// /me/weather for 15min so the pill doesn't churn; ring samples ingest
-// every BLE wake event so we pick up new readings quickly.
-load();
-let _refreshTimer = null;
+// Two-speed polling:
+// - Fast (2s): just the latest ring samples → updates vitals tiles
+//   and pulses them when a new reading lands. Feels live.
+// - Slow (30s): everything else — notes, weather, ring device
+//   status, full sample window for sparklines. Doesn't churn.
+let _fastTimer = null, _slowTimer = null;
+let _lastRingDevice = null;
+
+async function fastRefreshVitals() {
+  try {
+    const r = await api('/ring/samples?limit=24').catch(() => null);
+    if (!r || !r.samples) return;
+    // Only re-render if we have a device on file (otherwise no tile UI
+    // to update). renderVitals also handles the "no readings yet" case
+    // gracefully when the latest sample bag is small.
+    if (_lastRingDevice) renderVitals(_lastRingDevice, r.samples);
+  } catch (_) {}
+}
+
+async function fullRefresh() {
+  await load();
+  // Cache the device so the fast tick can render vitals without
+  // re-hitting /ring/status every 2s.
+  try {
+    const r = await api('/ring/status').catch(() => ({ devices: [] }));
+    _lastRingDevice = (r.devices || [])[0] || null;
+  } catch (_) {}
+}
+
+fullRefresh();
 function _startRefresh() {
-  if (_refreshTimer) return;
-  _refreshTimer = setInterval(load, 10000);
+  if (_fastTimer || _slowTimer) return;
+  _fastTimer = setInterval(fastRefreshVitals, 2000);
+  _slowTimer = setInterval(fullRefresh, 30000);
 }
 function _stopRefresh() {
-  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+  if (_fastTimer) { clearInterval(_fastTimer); _fastTimer = null; }
+  if (_slowTimer) { clearInterval(_slowTimer); _slowTimer = null; }
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) _stopRefresh();
-  else { load(); _startRefresh(); }
+  else { fullRefresh(); _startRefresh(); }
 });
 if (!document.hidden) _startRefresh();
-onResume(load);
+onResume(fullRefresh);
 </script>
 </body>
 </html>

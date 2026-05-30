@@ -24,6 +24,116 @@ body {
   background-attachment: fixed;
   color: var(--ink-2);
 }
+/* ── Bring Ring in line with the rest of v2 (Today / Record /
+   More / Alys) — warm cream cards, Fraunces titles, soft shadows,
+   matching pills + eyebrows. */
+
+.page { max-width: 460px; margin: 0 auto; padding: 20px 22px 110px; animation: ring-fade .5s ease; }
+@keyframes ring-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Top labels: small eyebrow + big Fraunces title */
+.page .label {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--taupe-2, #9a8369); font-weight: 600;
+  margin-bottom: 8px;
+}
+.page .title {
+  font-family: 'Fraunces', serif; font-weight: 500;
+  font-size: 38px; letter-spacing: -.8px; line-height: 1;
+  color: var(--ink-2, #2b2018); margin-bottom: 28px;
+}
+
+/* Trends section header → eyebrow style with clay accent + hairline */
+.section-head { margin: 28px 0 12px; }
+.section-head h2.title-sm {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--taupe-2, #9a8369); font-weight: 600;
+  display: inline-flex; align-items: center; gap: 10px;
+  margin: 0;
+}
+.section-head h2.title-sm::before {
+  content: ''; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--clay-2, #bf5a3c); opacity: .65;
+}
+
+/* Range pills match the More / Record range-pills style */
+.section-head .pill,
+.section-head button.pill {
+  border: 1px solid rgba(43, 32, 24, .12);
+  background: rgba(255, 255, 255, .65); color: var(--ink-2, #2b2018);
+  padding: 6px 12px; border-radius: 99px;
+  font-family: 'Inter Tight', sans-serif; font-size: 12.5px; font-weight: 500;
+  cursor: pointer;
+  margin-left: 4px;
+}
+.section-head .pill.pill-rose {
+  background: var(--ink-2, #2b2018); color: #fff7f0;
+  border-color: var(--ink-2, #2b2018);
+}
+
+/* Metric cards: warm cream with soft warm shadow (matches Today's
+   slot cards + Record's envelope rows + More's group cards) */
+.card {
+  background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 18px; padding: 18px 20px; margin-bottom: 12px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.9) inset,
+    0 18px 34px -26px rgba(140, 80, 50, .32),
+    0 3px 10px -6px rgba(140, 80, 50, .1);
+  transition: transform .14s ease;
+}
+.metric-card-link:active .card { transform: scale(.992); }
+
+/* Metric card title in Fraunces */
+.card .section-head h3.title-sm {
+  font-family: 'Fraunces', serif !important;
+  font-weight: 500;
+  font-size: 18px !important;
+  letter-spacing: -.2px;
+  color: var(--ink-2, #2b2018);
+  text-transform: none;
+}
+.card .section-head h3.title-sm::before { display: none; }
+
+/* Latest / Range labels in small caps */
+.card .metric-row .caption {
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--taupe-2, #9a8369); font-weight: 600;
+}
+.card .metric-row .metric-value {
+  font-family: 'Fraunces', serif !important;
+  font-weight: 500 !important;
+  font-size: 22px !important;
+  color: var(--ink-2, #2b2018) !important;
+  letter-spacing: -.4px;
+}
+.card .metric-row .metric-unit {
+  font-size: 12px; color: var(--taupe-2, #9a8369);
+}
+
+/* Chev arrow on tappable metric cards */
+.metric-card-link .chev {
+  color: var(--ink-mute, #b9a994);
+  font-size: 22px;
+}
+
+/* Connection pill matches Today's frosted pill */
+.head-pill {
+  background: var(--warm-card, #fffdf9) !important;
+  color: var(--ink-2, #2b2018) !important;
+  border: 1px solid rgba(43, 32, 24, .08) !important;
+  font-family: 'Inter Tight', sans-serif;
+  font-size: 12.5px; font-weight: 500;
+  padding: 7px 14px !important;
+  box-shadow: 0 8px 22px -16px rgba(70, 45, 25, .35);
+}
+.head-pill .dot { background: var(--ink-mute); }
+.head-pill .dot-on { background: var(--sage-deep, #94a87a); box-shadow: 0 0 0 3px rgba(148, 168, 122, .22); }
+
 .page-head {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 4px;

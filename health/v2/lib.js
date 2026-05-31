@@ -50,9 +50,74 @@ async function api(path, opts = {}) {
     window.location.href = '/health/login.html';
     throw new Error('unauthorised');
   }
-  if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    // Emit a telemetry event so we can SEE failures landing on users'
+    // phones without them having to screenshot the console. Bypasses
+    // the api() helper to avoid recursion.
+    track('error', 'api_error', { path, status: res.status });
+    throw new Error(`${res.status}: ${await res.text()}`);
+  }
   return res.json();
 }
+
+// =====================================================================
+// Telemetry — page views, button taps, surfaced errors.
+// Batched + flushed every 5s or on pagehide. Failure to flush is silent
+// (we never want telemetry to be load-bearing).
+// =====================================================================
+const _telemetryBuf = [];
+function track(kind, name, props) {
+  try {
+    _telemetryBuf.push({
+      kind, name,
+      props: props || null,
+      occurred_at: new Date().toISOString(),
+    });
+    if (_telemetryBuf.length >= 30) _flushTelemetry();
+  } catch (_) {}
+}
+
+async function _flushTelemetry() {
+  if (!_telemetryBuf.length) return;
+  const token = getToken();
+  if (!token) return; // pre-login events are dropped intentionally
+  const batch = _telemetryBuf.splice(0, _telemetryBuf.length);
+  try {
+    await fetch(API_BASE + '/me/events', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      keepalive: true,    // survive page unload
+      body: JSON.stringify({
+        events:   batch,
+        platform: 'web',
+      }),
+    });
+  } catch (_) {
+    // Drop on the floor — telemetry must never break the app.
+  }
+}
+// Periodic flush + flush on unload.
+setInterval(_flushTelemetry, 5000);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) _flushTelemetry();
+});
+// Capture uncaught errors + promise rejections at the page level.
+window.addEventListener('error', e => {
+  track('error', 'window_error', {
+    message: String(e.message || '').slice(0, 200),
+    filename: e.filename, lineno: e.lineno,
+  });
+});
+window.addEventListener('unhandledrejection', e => {
+  track('error', 'promise_rejection', {
+    reason: String(e.reason && e.reason.message || e.reason || '').slice(0, 200),
+  });
+});
+// Page view on load — uses pathname so it survives querystring noise.
+track('view', (location.pathname || '/').replace(/^\/health\/v2\//, '') || 'unknown');
 
 // ── helpers ────────────────────────────────────────────────
 
@@ -291,10 +356,15 @@ function renderSparkline(container, samples, options = {}) {
       <circle class="cursorDot" cx="0" cy="0" r="4"
               fill="${stroke}" opacity="0"/>
       <g class="cursorLabel" opacity="0" transform="translate(0,0)">
-        <rect x="-32" y="-22" width="64" height="18" rx="4"
+        <!-- Wider + taller pill + larger font so the scrub readout is
+             actually legible on a phone. Previous 64x18 px clipped any
+             text beyond '85 · 30 May' and the 10pt was too small to
+             read at arm's length. -->
+        <rect x="-58" y="-30" width="116" height="22" rx="6"
               fill="var(--ink)" />
-        <text x="0" y="-10" text-anchor="middle"
-              font-family="Inter Tight, sans-serif" font-size="10"
+        <text x="0" y="-15" text-anchor="middle"
+              font-family="Inter Tight, sans-serif" font-size="12"
+              font-weight="600"
               fill="var(--bone)" class="cursorTxt"></text>
       </g>
     </svg>
@@ -322,8 +392,11 @@ function renderSparkline(container, samples, options = {}) {
     cursor.setAttribute('opacity', 1);
     dot.setAttribute('cx', x); dot.setAttribute('cy', y);
     dot.setAttribute('opacity', 1);
-    const lx = Math.max(34, Math.min(W - 34, x));
-    lblG.setAttribute('transform', `translate(${lx},${Math.max(20, y)})`);
+    // Clamp horizontally so the wider 116px pill stays fully visible.
+    const lx = Math.max(60, Math.min(W - 60, x));
+    // Always render with at least 30px headroom so the pill never
+    // overlaps the cursor dot at the top of the chart.
+    lblG.setAttribute('transform', `translate(${lx},${Math.max(34, y)})`);
     lblG.setAttribute('opacity', 1);
     const vStr  = (Number.isInteger(a.v) ? a.v : a.v.toFixed(1)).toString();
     const tStr  = fmt(a.ts);

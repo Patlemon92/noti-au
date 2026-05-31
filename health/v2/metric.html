@@ -22,11 +22,28 @@
   margin-top: 14px;
 }
 .stat-tile {
-  background: var(--bone-deep); border-radius: 12px; padding: 10px 12px;
+  background: var(--bone-deep); border-radius: 12px; padding: 12px 10px 14px;
   text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  min-height: 78px;
 }
-.stat-tile .stat-label { font-size: 11px; color: var(--ink-mute); text-transform: uppercase; letter-spacing: 0.04em; }
-.stat-tile .stat-value { font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px; color: var(--ink); margin-top: 2px; }
+.stat-tile .stat-label {
+  font-size: 10.5px; color: var(--ink-mute); text-transform: uppercase;
+  letter-spacing: 0.08em; font-weight: 600;
+}
+.stat-tile .stat-value {
+  font-family: 'Fraunces', serif; font-weight: 500; font-size: 26px;
+  color: var(--ink); margin-top: 6px; line-height: 1; letter-spacing: -.5px;
+}
+/* The unit sits on its OWN line under the value — so 86.5 and 81 both
+   show "bpm" centered below, instead of inline-wrapping when the number
+   is wider. Quieter typographically — Patrick: "the whole thing is
+   very clinical." */
+.stat-tile .stat-unit {
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-size: 11px; color: var(--ink-mute); margin-top: 2px;
+  letter-spacing: .02em;
+}
 .alys-card { background: var(--bone-deep); }
 .alys-card .alys-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .alys-card .alys-dot {
@@ -73,10 +90,10 @@
     </div>
     <div id="chart"></div>
     <div class="stats-grid" id="stats">
-      <div class="stat-tile"><div class="stat-label">Latest</div><div class="stat-value" id="s-latest">—</div></div>
-      <div class="stat-tile"><div class="stat-label">Average</div><div class="stat-value" id="s-mean">—</div></div>
-      <div class="stat-tile"><div class="stat-label">Low</div><div class="stat-value" id="s-min">—</div></div>
-      <div class="stat-tile"><div class="stat-label">High</div><div class="stat-value" id="s-max">—</div></div>
+      <div class="stat-tile"><div class="stat-label">Latest</div><div class="stat-value" id="s-latest">—</div><div class="stat-unit" id="u-latest"></div></div>
+      <div class="stat-tile"><div class="stat-label">Average</div><div class="stat-value" id="s-mean">—</div><div class="stat-unit" id="u-mean"></div></div>
+      <div class="stat-tile"><div class="stat-label">Low</div><div class="stat-value" id="s-min">—</div><div class="stat-unit" id="u-min"></div></div>
+      <div class="stat-tile"><div class="stat-label">High</div><div class="stat-value" id="s-max">—</div><div class="stat-unit" id="u-max"></div></div>
     </div>
   </section>
 
@@ -145,6 +162,8 @@ const LABELS = {
   rhr_derived:          { title: 'Resting HR',     unit: 'bpm',     cat: 'Recovery' },
   hrv_sleep_median:     { title: 'Overnight HRV',  unit: 'ms',      cat: 'Recovery' },
   wear_state:           { title: 'Ring wear',      unit: '',        cat: 'Ring' },
+  sleep_marker:         { title: 'Sleep marker',   unit: '',        cat: 'Sleep' },
+  wake_marker:          { title: 'Wake marker',    unit: '',        cat: 'Sleep' },
 };
 
 if (!metric || !LABELS[metric]) {
@@ -221,10 +240,14 @@ function renderStats(samples) {
   const max = Math.max(...values);
   const latest = samples[samples.length - 1].value;
   const u = unitTxt();
-  document.getElementById('s-latest').innerHTML = `${fmt(latest)}<span style="font-size:13px;color:var(--ink-mute)"> ${u}</span>`;
-  document.getElementById('s-mean').innerHTML   = `${fmt(mean)}<span style="font-size:13px;color:var(--ink-mute)"> ${u}</span>`;
-  document.getElementById('s-min').innerHTML    = `${fmt(min)}<span style="font-size:13px;color:var(--ink-mute)"> ${u}</span>`;
-  document.getElementById('s-max').innerHTML    = `${fmt(max)}<span style="font-size:13px;color:var(--ink-mute)"> ${u}</span>`;
+  document.getElementById('s-latest').textContent = fmt(latest);
+  document.getElementById('s-mean').textContent   = fmt(mean);
+  document.getElementById('s-min').textContent    = fmt(min);
+  document.getElementById('s-max').textContent    = fmt(max);
+  ['u-latest','u-mean','u-min','u-max'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = u;
+  });
 }
 
 function renderBpStats(sys, dia) {
@@ -242,11 +265,14 @@ function renderBpStats(sys, dia) {
   const sysHigh = sys.length ? Math.max(...sys.map(s => s.value)) : null;
   const diaHigh = dia.length ? Math.max(...dia.map(s => s.value)) : null;
   const pair = (a, b) => `${a != null ? Math.round(a) : '—'}/${b != null ? Math.round(b) : '—'}`;
-  const u = '<span style="font-size:13px;color:var(--ink-mute)"> mmHg</span>';
-  document.getElementById('s-latest').innerHTML = pair(sysLast, diaLast) + u;
-  document.getElementById('s-mean').innerHTML   = pair(sysAvg, diaAvg)   + u;
-  document.getElementById('s-min').innerHTML    = pair(sysLow, diaLow)   + u;
-  document.getElementById('s-max').innerHTML    = pair(sysHigh, diaHigh) + u;
+  document.getElementById('s-latest').textContent = pair(sysLast, diaLast);
+  document.getElementById('s-mean').textContent   = pair(sysAvg, diaAvg);
+  document.getElementById('s-min').textContent    = pair(sysLow, diaLow);
+  document.getElementById('s-max').textContent    = pair(sysHigh, diaHigh);
+  ['u-latest','u-mean','u-min','u-max'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = 'mmHg';
+  });
 }
 
 function renderBpChart(sysSamples, diaSamples) {
@@ -284,9 +310,10 @@ function renderBpChart(sysSamples, diaSamples) {
   const pathFor = pts => pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
 
   const yMid = (vMin + vMax) / 2;
+  // Whole-number y-axis labels — BP is always integers.
   const grid = [vMin, yMid, vMax].map(v => `
     <line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="var(--hair)" stroke-width="0.5"/>
-    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${Math.round(v)}</text>
+    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${Math.round(v).toString()}</text>
   `).join('');
 
   const fmtT = ms => {
@@ -349,11 +376,16 @@ function renderChart(samples) {
 
   const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
 
-  // Y-axis: 3 grid lines (min / mid / max).
+  // Y-axis: 3 grid lines (min / mid / max). Skin temp keeps its 0.1°C
+  // resolution; everything else rounds to whole numbers — "220.3 bpm"
+  // reads as clinical noise; "220" reads as the human number we mean.
   const yMid = (vMin + vMax) / 2;
+  const axisFmt = v => metric === 'temp_skin'
+    ? Number(v).toFixed(1)
+    : Math.round(v).toString();
   const grid = [vMin, yMid, vMax].map(v => `
     <line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="var(--hair)" stroke-width="0.5"/>
-    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmt(v)}</text>
+    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${axisFmt(v)}</text>
   `).join('');
 
   // X-axis: first / mid / last timestamp.

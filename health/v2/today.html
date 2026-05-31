@@ -484,9 +484,9 @@
         <span class="tag-dot" aria-hidden="true"></span>
         Tag a reading
       </button>
-      <button class="tag-btn" id="sleep-mark-btn" type="button" onclick="markGoingToSleep()" title="Mark sleep onset — optional, helps the engines align overnight HRV / RHR.">
+      <button class="tag-btn" id="sleep-mark-btn" type="button" onclick="toggleSleepMarker()" title="Mark sleep onset / wake — helps the engines align overnight HRV / RHR.">
         <span class="tag-dot" aria-hidden="true" style="background:var(--taupe-2)"></span>
-        Going to sleep
+        <span id="sleep-mark-label">Going to sleep</span>
       </button>
     </div>
     <a class="all-data" href="/health/v2/ring.html">all your data on Ring →</a>
@@ -997,60 +997,86 @@ function renderNoteMeta(notes) {
     : '· nothing today';
 }
 
-// ── Sleep marker ──────────────────────────────────
-// Optional user-initiated sleep onset. Helps the overnight engines
-// (RHR derivation, HRV, wake events) align to the actual asleep time
-// instead of the ring's stage classifier — R11's classifier under-fires
-// 'awake' segments and we'd rather trust an explicit user marker.
-// Quiet UX: tap → toast → button disabled for 8h so it doesn't get
-// double-pressed at 11pm and 3am.
-async function markGoingToSleep() {
+// ── Sleep / wake markers ──────────────────────────
+// Paired toggle: tap "Going to sleep" → writes sleep_marker, button
+// flips to "Woke up". Tap again → writes wake_marker, button flips back.
+// State persisted in localStorage so a refresh in the morning still
+// shows "Woke up" until the user acknowledges it.
+//
+// Why: R11's sleep-stage classifier under-fires 'awake' segments and
+// often gets onset wrong; explicit user-marked onset + wake give the
+// overnight engines (RHR derivation, HRV, wake detection) honest
+// window endpoints to align to.
+const SLEEP_KEY = 'neeve:asleep_since';
+
+function refreshSleepLabel() {
+  const lbl = document.getElementById('sleep-mark-label');
+  if (!lbl) return;
+  const asleep = !!localStorage.getItem(SLEEP_KEY);
+  lbl.textContent = asleep ? 'Woke up' : 'Going to sleep';
+}
+
+async function toggleSleepMarker() {
   const btn = document.getElementById('sleep-mark-btn');
   if (!btn || btn.disabled) return;
+  const asleepSince = localStorage.getItem(SLEEP_KEY);
+  const metric = asleepSince ? 'wake_marker' : 'sleep_marker';
   btn.disabled = true;
-  const original = btn.innerHTML;
-  btn.innerHTML = '<span class="tag-dot" aria-hidden="true" style="background:var(--taupe-2)"></span>Noted ✓';
+  const lbl = document.getElementById('sleep-mark-label');
+  const prevText = lbl ? lbl.textContent : '';
+  if (lbl) lbl.textContent = 'Saving…';
   try {
-    // Find the user's first active device — the marker needs a device_id.
     const status = await api('/ring/status').catch(() => ({ devices: [] }));
     const dev = (status.devices || [])[0];
     if (dev) {
+      const meta = { source: 'user_button' };
+      if (metric === 'wake_marker' && asleepSince) {
+        meta.asleep_since = asleepSince;
+      }
       await api('/ring/ingest', {
         method: 'POST',
         body: JSON.stringify({
           device_id: dev.id,
           samples: [{
             ts: new Date().toISOString(),
-            metric: 'sleep_marker',
+            metric,
             value: 1,
             unit: 'event',
-            meta: { source: 'user_button' },
+            meta,
           }],
         }),
       });
-      track('action', 'sleep_marker', { device_id: dev.id });
+      track('action', metric, { device_id: dev.id });
     } else {
-      // No paired ring — still log the intent locally as a note so it isn't lost.
+      // No ring — fall back to a note so the intent isn't lost.
       await api('/me/note', {
         method: 'POST',
-        body: JSON.stringify({ kind: 'event', body: 'Going to sleep' }),
+        body: JSON.stringify({
+          kind: 'event',
+          body: metric === 'sleep_marker' ? 'Going to sleep' : 'Woke up',
+        }),
       });
-      track('action', 'sleep_marker_noring');
+      track('action', metric + '_noring');
+    }
+    if (metric === 'sleep_marker') {
+      localStorage.setItem(SLEEP_KEY, new Date().toISOString());
+    } else {
+      localStorage.removeItem(SLEEP_KEY);
     }
   } catch (e) {
     console.error('sleep marker failed', e);
-    track('error', 'sleep_marker_failed', { error: String(e).substring(0, 120) });
-    btn.innerHTML = original;
+    track('error', metric + '_failed', { error: String(e).substring(0, 120) });
+    if (lbl) lbl.textContent = prevText;
     btn.disabled = false;
     return;
   }
-  // Keep the button disabled for 8h so the same night doesn't get
-  // marked twice.
+  refreshSleepLabel();
+  // Briefly confirm, then return to the new resting label.
+  if (lbl) lbl.textContent = 'Noted ✓';
   setTimeout(() => {
-    if (!btn) return;
-    btn.innerHTML = original;
     btn.disabled = false;
-  }, 8 * 3600 * 1000);
+    refreshSleepLabel();
+  }, 1400);
 }
 
 // ── Tag a reading ─────────────────────────────────
@@ -1318,6 +1344,7 @@ async function fullRefresh() {
 }
 
 fullRefresh();
+refreshSleepLabel();
 function _startRefresh() {
   if (_fastTimer || _slowTimer) return;
   _fastTimer = setInterval(fastRefreshVitals, 2000);

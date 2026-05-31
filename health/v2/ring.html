@@ -316,9 +316,11 @@ let cachedDevice = null;
 // Every metric the trends section can chart. 'bp' is virtual — fetch
 // the two real metrics. Sleep is its own card (using sleep_session
 // rows) which we also pull in the same single request.
+// Steps deliberately excluded: chronic-illness audience can't read step
+// counts as wellness. See [[feedback-no-steps]] memory.
 const TREND_METRICS = [
   'hr', 'hrv_rmssd', 'hrv_index', 'spo2', 'respiration_rate',
-  'steps', 'bp_sys', 'bp_dia', 'temp_skin', 'stress', 'pressure_index',
+  'bp_sys', 'bp_dia', 'temp_skin', 'stress', 'pressure_index',
   'load_index', 'body_index', 'vo2max', 'sleep_session', 'sleep_stage',
 ];
 
@@ -567,7 +569,7 @@ function renderCharts() {
   const metrics = [
     'sleep',
     'hr', 'hrv_rmssd', 'hrv_index', 'spo2', 'respiration_rate',
-    'steps', 'bp', 'temp_skin', 'stress', 'pressure_index',
+    'bp', 'temp_skin', 'stress', 'pressure_index',
     'load_index', 'body_index', 'vo2max',
   ];
   const html = metrics

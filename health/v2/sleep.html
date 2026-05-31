@@ -165,7 +165,13 @@ setHist(7);
 
 async function loadLastNight() {
   try {
-    const since = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+    // Widened from 36h → 7d. The shorter window dropped the session row
+    // for anyone whose last sleep was >36h ago (e.g. a paired ring that
+    // hasn't reconnected since yesterday) — leaving only partial stage
+    // data, which then renders as a tiny "1h 37m" total instead of the
+    // real overnight. We always want the latest session row visible,
+    // even if it's a few days stale.
+    const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
     const q = `/ring/samples?metric=sleep_stage,sleep_session&limit=2000&since=${encodeURIComponent(since)}`;
     const { samples } = await api(q);
     const stages   = (samples || []).filter(s => s.metric === 'sleep_stage');

@@ -114,6 +114,22 @@ function formatAgo(iso) {
   return dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
 }
 
+// Freshness tier for an ISO timestamp. Drives the colour + "data may be
+// paused" hint on Today / Ring. Reflects what iOS background coverage
+// actually gives us:
+//   fresh    < 15 min  — green-warm pill, ring stream alive
+//   warm     15-60 min — taupe, normal between BG wakes
+//   stale    1-3 h     — clay, app probably suspended a while
+//   cold     > 3 h     — clay + nudge to open the app
+function freshnessTier(iso) {
+  if (!iso) return 'cold';
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 15 * 60)  return 'fresh';
+  if (diff < 60 * 60)  return 'warm';
+  if (diff < 180 * 60) return 'stale';
+  return 'cold';
+}
+
 function formatValue(metric, value) {
   if (value == null) return '—';
   if (metric === 'temp_skin') return value.toFixed(1);

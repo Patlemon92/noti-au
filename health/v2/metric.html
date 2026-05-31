@@ -128,6 +128,19 @@ const LABELS = {
   body_index:           { title: 'Body index',     unit: '',        cat: 'Recovery' },
   pressure_index:       { title: 'Pressure',       unit: '',        cat: 'Recovery' },
   sympathetic_activity: { title: 'Sympathetic',    unit: '',        cat: 'Recovery' },
+  // Derived (engines.js) — strain, recovery, behaviour bursts,
+  // sleep-derived events. Each tap from a Ring card opens here.
+  strain_score:         { title: 'Strain',         unit: '',        cat: 'Daily' },
+  recovery_score:       { title: 'Recovery',       unit: '',        cat: 'Daily' },
+  burst_event:          { title: 'Activity bursts', unit: 'steps',   cat: 'Activity' },
+  pem_episode:          { title: 'PEM candidates', unit: '',        cat: 'Pattern' },
+  pacing_pattern:       { title: 'Pacing pattern', unit: '',        cat: 'Pattern' },
+  nap_session:          { title: 'Naps',           unit: 'min',     cat: 'Sleep' },
+  wake_event:           { title: 'Wake events',    unit: '',        cat: 'Sleep' },
+  sleep_onset:          { title: 'Sleep onset',    unit: 'min',     cat: 'Sleep' },
+  waso:                 { title: 'Wake after sleep', unit: 'min',   cat: 'Sleep' },
+  sleep_session:        { title: 'Sleep',          unit: 'h',       cat: 'Sleep' },
+  pots_orthostatic_delta: { title: 'POTS delta',   unit: 'bpm',     cat: 'Pattern' },
 };
 
 if (!metric || !LABELS[metric]) {

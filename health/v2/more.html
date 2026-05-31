@@ -205,6 +205,35 @@
     </a>
   </div>
 
+  <!-- Manage ring sheet (buzz / recolour / unpair) -->
+  <div id="manage-ring-backdrop"
+       style="position:fixed;inset:0;background:rgba(43,32,24,.45);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s ease"
+       onclick="closeManageRing()"></div>
+  <div id="manage-ring-sheet"
+       role="dialog" aria-modal="true"
+       style="position:fixed;left:0;right:0;bottom:0;z-index:1001;background:#f6efe4;border-radius:22px 22px 0 0;padding:18px 22px max(28px,env(safe-area-inset-bottom)) 22px;transform:translateY(100%);transition:transform .25s ease;max-width:460px;margin:0 auto">
+    <div style="width:36px;height:4px;background:rgba(43,32,24,.15);border-radius:2px;margin:0 auto 14px"></div>
+    <h2 style="font-family:'Fraunces',serif;font-weight:500;font-size:24px;color:var(--ink-2,#2b2018);margin:0 0 14px">Manage ring</h2>
+
+    <button onclick="manageRingBuzz()"
+            style="width:100%;background:white;border:1px solid rgba(43,32,24,.12);border-radius:14px;padding:14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:15px;color:var(--ink-2,#2b2018)">
+      <span>Buzz this ring</span>
+      <span style="font-size:13px;color:var(--taupe-2,#9a8369)">tap to identify</span>
+    </button>
+
+    <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--taupe-2);font-weight:600;margin:10px 0 8px">Change colour</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <button class="manage-color-btn" data-color="black"     onclick="manageRingChangeColor('black')"     style="background:#2b2018;color:#f6efe4;border:none;border-radius:14px;padding:14px;font-family:'Fraunces',serif;font-size:15px;cursor:pointer">Black</button>
+      <button class="manage-color-btn" data-color="gold"      onclick="manageRingChangeColor('gold')"      style="background:#c9a559;color:#2b2018;border:none;border-radius:14px;padding:14px;font-family:'Fraunces',serif;font-size:15px;cursor:pointer">Gold</button>
+      <button class="manage-color-btn" data-color="silver"    onclick="manageRingChangeColor('silver')"    style="background:#c0c4c8;color:#2b2018;border:none;border-radius:14px;padding:14px;font-family:'Fraunces',serif;font-size:15px;cursor:pointer">Silver</button>
+      <button class="manage-color-btn" data-color="rose_gold" onclick="manageRingChangeColor('rose_gold')" style="background:#d8a39a;color:#2b2018;border:none;border-radius:14px;padding:14px;font-family:'Fraunces',serif;font-size:15px;cursor:pointer">Rose gold</button>
+    </div>
+
+    <button onclick="manageRingUnpair()"
+            style="width:100%;background:transparent;border:1px solid rgba(220,110,75,.3);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;font-size:14px;color:var(--clay-2,#bf5a3c)">Unpair this ring</button>
+    <button onclick="closeManageRing()" style="width:100%;background:transparent;border:none;color:var(--taupe-2);padding:10px;font-size:14px;cursor:pointer">Cancel</button>
+  </div>
+
   <!-- Pair-ring colour picker sheet -->
   <div id="pair-ring-backdrop"
        style="position:fixed;inset:0;background:rgba(43,32,24,.45);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s ease"
@@ -620,8 +649,6 @@ function paintRings(devices) {
     group.insertBefore(empty, addBtn);
     return;
   }
-  // Most-recently-seen ring is first per server sort. Mark it as "active"
-  // (currently in use); older ones get a "switch" affordance.
   devices.forEach((d, i) => {
     const row = document.createElement('div');
     row.className = 'row';
@@ -632,18 +659,29 @@ function paintRings(devices) {
       ? (conn ? 'connected' : 'active')
       : 'paired';
     const battery = (typeof d.last_battery_pct === 'number') ? `${d.last_battery_pct}%` : '—';
+
+    // Swatch is tappable to buzz the ring (only works on the active one
+    // because the SDK can only buzz the connected ring).
     row.innerHTML =
-      '<span class="label">' + ringSwatch(d.color) + ringColorLabel(d.color) + '</span>' +
+      '<span class="label" style="display:flex;align-items:center">' +
+        '<span onclick="event.stopPropagation();buzzRing(' + (i===0 ? 'true' : 'false') + ')" style="cursor:pointer;display:inline-flex">' +
+          ringSwatch(d.color) +
+        '</span>' +
+        ringColorLabel(d.color) +
+      '</span>' +
       '<span class="value">' + status + ' · ' + battery + '</span>';
-    // Tap row to switch (only for non-active rings). Long-press / chev = manage.
+
     if (i !== 0) {
       row.style.cursor = 'pointer';
-      row.onclick = () => switchRing(d.id);
+      row.onclick = (e) => {
+        if (e.target.closest('[onclick]')) return;
+        switchRing(d.id);
+      };
       row.querySelector('.value').insertAdjacentHTML('afterend',
         '<span class="chev">⇄</span>');
     } else {
       row.querySelector('.value').insertAdjacentHTML('afterend',
-        '<a href="javascript:manageRing(\'' + d.id + '\',\'' + (d.color||'black') + '\')" class="chev" style="text-decoration:none;color:var(--taupe-2)">›</a>');
+        '<a href="javascript:openManageRing(\'' + d.id + '\',\'' + (d.color||'black') + '\')" class="chev" style="text-decoration:none;color:var(--taupe-2)">›</a>');
     }
     group.insertBefore(row, addBtn);
   });
@@ -654,24 +692,53 @@ function switchRing(deviceId) {
   window.neeve.postMessage(JSON.stringify({ method: 'switchRing', deviceId }));
 }
 
-function manageRing(deviceId, color) {
-  const pick = prompt(
-    'Manage ring\\n\\n1. Black\\n2. Gold\\n3. Silver\\n4. Rose gold\\n5. Unpair this ring\\n\\nEnter a number:',
-    '1'
-  );
-  if (!pick) return;
-  const mapByNum = { '1':'black', '2':'gold', '3':'silver', '4':'rose_gold' };
-  if (pick === '5') {
-    if (!confirm('Unpair this ring? Historical data is kept.')) return;
-    window.neeve && window.neeve.postMessage(JSON.stringify({ method: 'unpairRing', deviceId }));
+// Buzzes the active ring to identify it physically. Only the
+// currently-connected ring can buzz.
+function buzzRing(isActive) {
+  if (!isActive) {
+    alert('Switch to this ring first, then tap its swatch to buzz it.');
     return;
   }
-  const newColor = mapByNum[pick];
-  if (newColor && newColor !== color) {
-    window.neeve && window.neeve.postMessage(JSON.stringify({
-      method: 'updateRingColor', deviceId, color: newColor
-    }));
+  if (window.neeve && window.neeve.postMessage) {
+    window.neeve.postMessage(JSON.stringify({ method: 'buzzRing' }));
   }
+}
+
+// ── Manage ring sheet (replaces rough prompt) ──
+let _manageRingId = null;
+let _manageRingColor = null;
+function openManageRing(deviceId, color) {
+  _manageRingId = deviceId;
+  _manageRingColor = color;
+  document.querySelectorAll('#manage-ring-sheet .manage-color-btn').forEach(b => {
+    const c = b.getAttribute('data-color');
+    b.style.outline = (c === color) ? '3px solid #bf5a3c' : 'none';
+    b.style.outlineOffset = (c === color) ? '2px' : '0';
+  });
+  document.getElementById('manage-ring-backdrop').style.opacity = '1';
+  document.getElementById('manage-ring-backdrop').style.pointerEvents = 'auto';
+  document.getElementById('manage-ring-sheet').style.transform = 'translateY(0)';
+}
+function closeManageRing() {
+  document.getElementById('manage-ring-backdrop').style.opacity = '0';
+  document.getElementById('manage-ring-backdrop').style.pointerEvents = 'none';
+  document.getElementById('manage-ring-sheet').style.transform = 'translateY(100%)';
+}
+function manageRingBuzz() { buzzRing(true); }
+function manageRingChangeColor(color) {
+  if (!_manageRingId || color === _manageRingColor) { closeManageRing(); return; }
+  window.neeve && window.neeve.postMessage(JSON.stringify({
+    method: 'updateRingColor', deviceId: _manageRingId, color
+  }));
+  closeManageRing();
+}
+function manageRingUnpair() {
+  if (!_manageRingId) return;
+  if (!confirm("Unpair this ring? Historical data is kept — you can re-pair the same ring later.")) return;
+  window.neeve && window.neeve.postMessage(JSON.stringify({
+    method: 'unpairRing', deviceId: _manageRingId
+  }));
+  closeManageRing();
 }
 
 // ── Pair-another ring flow ──────────────────────

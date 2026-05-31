@@ -605,14 +605,20 @@ function wmoLabel(c) {
 }
 
 async function load() {
-  let devices = [], samples = [], notes = [];
+  let devices = [], samples = [], strainSamples = [], notes = [];
   try {
-    const [ringStatus, ringSamples] = await Promise.all([
+    // Strain is stamped at midnight UTC = 10am Sydney — the OLDEST sample
+    // of the day. With limit=500 sorted DESC, on a busy day (≥500 samples
+    // before strain runs) it gets truncated out. Fetch it explicitly so
+    // the card always renders if there's a score.
+    const [ringStatus, ringSamples, strainResp] = await Promise.all([
       api('/ring/status').catch(() => ({ devices: [] })),
       api('/ring/samples?limit=500').catch(() => ({ samples: [] })),
+      api('/ring/samples?metric=strain_score&limit=10').catch(() => ({ samples: [] })),
     ]);
     devices = ringStatus.devices || [];
     samples = ringSamples.samples || [];
+    strainSamples = strainResp.samples || [];
   } catch (e) { console.error(e); }
 
   try {
@@ -636,7 +642,7 @@ async function load() {
   }
 
   renderVitals(devices[0], samples);
-  renderStrain(samples);
+  renderStrain(strainSamples);
   renderNoteMeta(notes);
   // Ring nudge for fresh users
   if (!devices.length) {

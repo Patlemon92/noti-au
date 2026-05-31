@@ -448,6 +448,16 @@
     <div class="vitals-grid te-card" id="vitals-grid" style="animation-delay:.08s">
       <!-- vital tiles painted by JS -->
     </div>
+    <!-- Stale-data nudge — appears when last sample is >1h old. Honest
+         framing: iOS suspends the app and the ring stream pauses; this
+         tells the user rather than letting them mistake stale numbers
+         for current ones. -->
+    <div id="vitals-stale" class="te-card" style="display:none;animation-delay:.09s;
+         margin-top:14px;padding:12px 14px;border-radius:12px;
+         background:rgba(191,90,60,.08);border:1px solid rgba(191,90,60,.18);
+         color:var(--clay-2);font-size:13px;line-height:1.5">
+      <span id="vitals-stale-text">These numbers are from a while ago. Open Neeve briefly to take a fresh reading.</span>
+    </div>
     <div class="te-card vitals-actions" style="animation-delay:.1s">
     <button class="tag-btn" type="button" onclick="openTagSheet()">
       <span class="tag-dot" aria-hidden="true"></span>
@@ -725,8 +735,29 @@ function renderVitals(device, samples) {
       .map(s => new Date(s.ts).getTime())
   );
   if (isFinite(mostRecent)) {
-    document.getElementById('vitals-ago').textContent =
-      '· ' + formatAgo(new Date(mostRecent).toISOString());
+    const iso = new Date(mostRecent).toISOString();
+    const tier = freshnessTier(iso);
+    const ago  = formatAgo(iso);
+    const agoEl = document.getElementById('vitals-ago');
+    agoEl.textContent = '· ' + ago;
+    // Colour shift as the data ages — taupe → clay.
+    agoEl.style.color =
+      tier === 'fresh' ? 'var(--taupe-2)'
+    : tier === 'warm'  ? 'var(--taupe-2)'
+    :                    'var(--clay-2)';
+    // Nudge banner once we're 1h+ stale.
+    const stale = document.getElementById('vitals-stale');
+    if (stale) {
+      if (tier === 'stale' || tier === 'cold') {
+        const txt = tier === 'cold'
+          ? `Last fresh reading was ${ago}. Open Neeve briefly to take a new one.`
+          : `Last fresh reading was ${ago}. The app pauses ring data when iOS suspends it.`;
+        document.getElementById('vitals-stale-text').textContent = txt;
+        stale.style.display = 'block';
+      } else {
+        stale.style.display = 'none';
+      }
+    }
   }
 }
 

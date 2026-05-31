@@ -585,7 +585,22 @@ function renderCharts() {
       if (m === 'sleep') return renderSleepCard(sleepInWindow);
       if (m === 'bp') return renderBpCard(grouped.bp_sys || [], grouped.bp_dia || []);
       const samples = grouped[m];
-      const latest = samples[samples.length - 1];
+      let latest = samples[samples.length - 1];
+      // Steps are a cumulative-today counter — display max-of-today,
+      // not latest. Defensive against stray non-monotonic samples that
+      // can slip in (e.g. a ring side reset, multi-ring crossover).
+      // PRODUCT_BRIEF.md no-steps rule still applies: steps remain in
+      // deep-dive trends here, never as a hero on Today.
+      if (m === 'steps') {
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        const todaySamples = samples.filter(s =>
+          new Date(s.ts).getTime() >= todayStart.getTime());
+        if (todaySamples.length) {
+          const maxToday = Math.max(...todaySamples.map(s => s.value));
+          // Spoof the headline reading; keep ts so 'ago' still works.
+          latest = { ...latest, value: maxToday };
+        }
+      }
       const avg = (samples.reduce((a, s) => a + s.value, 0) / samples.length);
       const min = Math.min(...samples.map(s => s.value));
       const max = Math.max(...samples.map(s => s.value));

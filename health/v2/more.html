@@ -195,6 +195,10 @@
       <span class="label" style="color:var(--clay-2,#bf5a3c);font-weight:500">Pair another ring</span>
       <span class="chev" style="color:var(--clay-2,#bf5a3c)">+</span>
     </a>
+    <a class="row" href="javascript:syncAllRings()" id="rings-sync-all">
+      <span class="label">Sync all rings now</span>
+      <span><span class="value" id="sync-all-status" style="font-size:12.5px;color:var(--taupe-2)">drains each paired ring</span><span class="chev">›</span></span>
+    </a>
     <div class="row" style="cursor:default">
       <span class="label">Auto-collection</span>
       <span class="value" style="max-width:240px">HR · HRV · temp · SpO2 · sleep</span>
@@ -693,6 +697,37 @@ function switchRing(deviceId) {
 }
 
 // Buzzes the active ring to identify it physically. Only the
+// Sync every paired ring in sequence. Native bridge connects to each
+// ring's BLE identifier, drains its on-device monitoring buffer (HR,
+// SpO2, HRV, respiration, BP, temp), then restores the active ring.
+// Use this when one ring's data hasn't surfaced in Today / Ring — e.g.
+// you swapped rings without opening the app in between.
+function syncAllRings() {
+  if (!(window.neeve && window.neeve.postMessage)) {
+    alert('"Sync all rings" only works in the Neeve app.');
+    return;
+  }
+  const status = document.getElementById('sync-all-status');
+  if (status) {
+    status.textContent = 'syncing…';
+    status.style.color = 'var(--clay-2,#bf5a3c)';
+  }
+  window.neeve.postMessage(JSON.stringify({ method: 'syncAllRings' }));
+  // The bridge doesn't return a result — give the user feedback for ~20s
+  // (each ring takes ~10s; expect 1-2 rings normally) then reset.
+  setTimeout(() => {
+    if (status) {
+      status.textContent = 'drains each paired ring';
+      status.style.color = 'var(--taupe-2)';
+    }
+    // Refresh the ring list + status panel since drain may have moved
+    // last_seen / latest_sample timestamps.
+    if (typeof paintRings === 'function') {
+      api('/ring/status').then(r => paintRings(r.devices || [])).catch(() => {});
+    }
+  }, 20000);
+}
+
 // currently-connected ring can buzz.
 function buzzRing(isActive) {
   if (!isActive) {

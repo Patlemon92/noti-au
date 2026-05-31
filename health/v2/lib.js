@@ -125,6 +125,8 @@ function formatValue(metric, value) {
 
 function metricLabel(metric) {
   return {
+    strain_score:     'Strain',
+    recovery_score:   'Recovery',
     hr:               'Heart rate',
     hrv_rmssd:        'HRV',
     spo2:             'Blood oxygen',

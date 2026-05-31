@@ -420,6 +420,23 @@
     <div class="subhead">Here when you want it. Nothing needs doing.</div>
   </div>
 
+  <!-- STRAIN TODAY · hero card (warning signal for overexertion) -->
+  <div id="strain-card" class="te-card" style="animation-delay:.05s;display:none;background:linear-gradient(135deg,#fff5e8 0%,#fde0c8 100%);border:1px solid rgba(220,110,75,.18);border-radius:18px;padding:18px 20px;margin-bottom:18px;cursor:pointer;box-shadow:0 14px 28px -22px rgba(140,80,50,.35)" onclick="openStrainExplain()">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-family:'Inter Tight',sans-serif;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--taupe-2);font-weight:600;margin-bottom:4px">Strain today</div>
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <div id="strain-num" style="font-family:'Fraunces',serif;font-weight:500;font-size:46px;line-height:1;color:var(--ink-2)">—</div>
+          <div id="strain-label" style="font-family:'Fraunces',serif;font-style:italic;font-size:15px;color:var(--clay-2)">·</div>
+        </div>
+      </div>
+      <div id="strain-arc" style="width:64px;height:64px;flex-shrink:0">
+        <!-- arc SVG painted by JS -->
+      </div>
+    </div>
+    <div id="strain-meta" style="margin-top:10px;font-size:12.5px;color:var(--taupe-2);line-height:1.5"></div>
+  </div>
+
   <!-- RIGHT NOW · vitals (ring-conditional) -->
   <div id="vitals-section">
     <div class="section te-card" style="animation-delay:.06s">
@@ -609,6 +626,7 @@ async function load() {
   }
 
   renderVitals(devices[0], samples);
+  renderStrain(samples);
   renderNoteMeta(notes);
   // Ring nudge for fresh users
   if (!devices.length) {
@@ -760,6 +778,80 @@ function renderSparkSvg(series, key) {
             vector-effect="non-scaling-stroke"
             ${animStyle ? `style="${animStyle}"` : ''}/>
     </svg>`;
+}
+
+// Render the "Strain today" hero card. Strain is a 0-100 score derived
+// by the engine cron from elevated HR minutes + pressure_index + HR
+// peaks + resting-HR-above-baseline. For chronic illness, strain is
+// the warning signal — "am I overdoing it today?" — not a goal to
+// chase. We show it whenever the engine has produced a score for the
+// current day.
+function renderStrain(samples) {
+  const card = document.getElementById('strain-card');
+  if (!card) return;
+  const today = new Date().toDateString();
+  const strainSamples = (samples || [])
+    .filter(s => s.metric === 'strain_score'
+                 && new Date(s.ts).toDateString() === today);
+  if (!strainSamples.length) { card.style.display = 'none'; return; }
+  const latest = strainSamples[strainSamples.length - 1];
+  const score = Math.round(Number(latest.value));
+  const label = score >= 75 ? 'high — ease off'
+              : score >= 50 ? 'building — watch it'
+              : score >= 25 ? 'moderate'
+              :               'low';
+  document.getElementById('strain-num').textContent  = score;
+  document.getElementById('strain-label').textContent = label;
+  const meta = latest.meta || {};
+  const parts = [];
+  if (meta.elevated_min != null) {
+    parts.push(`${meta.elevated_min} min elevated HR`);
+  }
+  if (meta.pressure_factor != null && meta.pressure_factor > 0.5) {
+    parts.push('sympathetic load up');
+  }
+  if (meta.resting_factor != null && meta.resting_factor > 0.4) {
+    parts.push('resting HR above baseline');
+  }
+  document.getElementById('strain-meta').textContent =
+    parts.length ? parts.join(' · ') : 'no strong strain signals yet today';
+  // Arc visualisation — quarter-circle that fills with the score.
+  const arc = document.getElementById('strain-arc');
+  if (arc) {
+    const ang = (score / 100) * 360;
+    const rad = ang * Math.PI / 180;
+    const cx = 32, cy = 32, r = 26;
+    const x = cx + r * Math.sin(rad);
+    const y = cy - r * Math.cos(rad);
+    const large = ang > 180 ? 1 : 0;
+    const color = score >= 75 ? '#bf5a3c'
+                : score >= 50 ? '#c9784a'
+                : score >= 25 ? '#caa05f'
+                :               '#9a8369';
+    arc.innerHTML = `
+      <svg viewBox="0 0 64 64" width="64" height="64">
+        <circle cx="${cx}" cy="${cy}" r="${r}"
+                fill="none" stroke="rgba(154,131,105,.18)" stroke-width="6"/>
+        ${ang > 0 ? `<path d="M ${cx} ${cy - r}
+                A ${r} ${r} 0 ${large} 1 ${x} ${y}"
+                fill="none" stroke="${color}" stroke-width="6"
+                stroke-linecap="round"/>` : ''}
+      </svg>`;
+  }
+  card.style.display = 'block';
+}
+
+function openStrainExplain() {
+  alert(
+    'Strain today is your body\\'s "am I overdoing it?" signal.\\n\\n' +
+    'It rises with elevated heart rate minutes, sympathetic-nervous-' +
+    'system load from the ring, heart rate peaks, and your resting ' +
+    'heart rate sitting above your sleep baseline.\\n\\n' +
+    'Steps are deliberately not in this score — for chronic illness, ' +
+    'how much your body is working matters more than how many steps ' +
+    'you took.\\n\\n' +
+    '0–25 calm · 25–50 moderate · 50–75 building · 75+ ease off'
+  );
 }
 
 function renderNoteMeta(notes) {

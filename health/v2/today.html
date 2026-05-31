@@ -588,6 +588,36 @@ function greetFromHour(h) {
     .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 })();
 
+// Self-relative framing — PRODUCT_BRIEF.md "Advanced Baseline System"
+// principle: never show a raw biometric without a comparison to the
+// user's OWN healthy baseline. Falls back to lifetime / p30 / p7 when
+// the healthy baseline isn't established yet.
+//
+// Returns { label, color, percentDelta } or null if no baseline exists.
+function baselineDelta(metric, currentValue) {
+  const b = _baselines && _baselines[metric];
+  if (!b) return null;
+  // Hierarchy: healthy → lifetime → p30 → p7
+  let ref = null, refLabel = null;
+  if (Number.isFinite(b.healthy) && (b.healthy_day_count || 0) >= 14) {
+    ref = b.healthy; refLabel = 'healthy baseline';
+  } else if (Number.isFinite(b.lifetime)) {
+    ref = b.lifetime; refLabel = 'usual';
+  } else if (Number.isFinite(b.p30)) {
+    ref = b.p30; refLabel = '30-day';
+  } else if (Number.isFinite(b.p7)) {
+    ref = b.p7; refLabel = '7-day';
+  }
+  if (ref == null || ref === 0 || !Number.isFinite(currentValue)) return null;
+  const pct = ((currentValue - ref) / Math.abs(ref)) * 100;
+  const sign = pct >= 0 ? '+' : '';
+  return {
+    pct,
+    refLabel,
+    text: `${sign}${pct.toFixed(0)}% vs ${refLabel}`,
+  };
+}
+
 function escapeHtml(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;',
@@ -604,6 +634,11 @@ function wmoLabel(c) {
   return 'clouds';
 }
 
+// Cached for use by vitals tiles. Populated on the first load() call and
+// refreshed on every fullRefresh — they shift slowly so we don't need to
+// refetch on every fastRefreshVitals tick.
+let _baselines = {};
+
 async function load() {
   let devices = [], samples = [], strainSamples = [], notes = [];
   try {
@@ -611,14 +646,16 @@ async function load() {
     // of the day. With limit=500 sorted DESC, on a busy day (≥500 samples
     // before strain runs) it gets truncated out. Fetch it explicitly so
     // the card always renders if there's a score.
-    const [ringStatus, ringSamples, strainResp] = await Promise.all([
+    const [ringStatus, ringSamples, strainResp, baselinesResp] = await Promise.all([
       api('/ring/status').catch(() => ({ devices: [] })),
       api('/ring/samples?limit=500').catch(() => ({ samples: [] })),
       api('/ring/samples?metric=strain_score&limit=10').catch(() => ({ samples: [] })),
+      api('/me/baselines').catch(() => ({ baselines: {} })),
     ]);
     devices = ringStatus.devices || [];
     samples = ringSamples.samples || [];
     strainSamples = strainResp.samples || [];
+    _baselines = baselinesResp.baselines || {};
   } catch (e) { console.error(e); }
 
   try {
@@ -696,6 +733,12 @@ function renderVitals(device, samples) {
     const range = series.length > 1
       ? `${formatNum(Math.min(...series))}–${formatNum(Math.max(...series))} today`
       : '';
+    // Self-relative chip: "+12% vs healthy baseline". Falls through
+    // to range when no baseline exists yet (new user / not enough days).
+    const delta = baselineDelta(m.key, raw);
+    const subline = delta
+      ? `<span style="color:${delta.pct >= 0 ? 'var(--clay-2)' : 'var(--taupe-2)'}">${escapeHtml(delta.text)}</span>`
+      : escapeHtml(range);
     return `
       <div class="vital" data-key="${escapeHtml(m.key)}">
         <div class="label">${escapeHtml(m.label)}</div>
@@ -704,7 +747,7 @@ function renderVitals(device, samples) {
           <span class="unit">${escapeHtml(m.unit)}</span>
         </div>
         ${renderSparkSvg(series, m.key)}
-        <div class="range">${escapeHtml(range)}</div>
+        <div class="range">${subline}</div>
       </div>`;
   }).filter(Boolean).join('');
 

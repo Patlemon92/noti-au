@@ -456,7 +456,7 @@
          margin-top:14px;padding:12px 14px;border-radius:12px;
          background:rgba(191,90,60,.08);border:1px solid rgba(191,90,60,.18);
          color:var(--clay-2);font-size:13px;line-height:1.5">
-      <span id="vitals-stale-text">These numbers are from a while ago. Open Neeve briefly to take a fresh reading.</span>
+      <span id="vitals-stale-text">These numbers are from a while ago.</span>
     </div>
     <div class="te-card vitals-actions" style="animation-delay:.1s">
     <button class="tag-btn" type="button" onclick="openTagSheet()">
@@ -798,9 +798,11 @@ function renderVitals(device, samples) {
     const stale = document.getElementById('vitals-stale');
     if (stale) {
       if (tier === 'stale' || tier === 'cold') {
+        // Describe-only: state what the data shows; no prompt to act.
+        // PRODUCT_BRIEF.md principle 5.
         const txt = tier === 'cold'
-          ? `Last fresh reading was ${ago}. Open Neeve briefly to take a new one.`
-          : `Last fresh reading was ${ago}. The app pauses ring data when iOS suspends it.`;
+          ? `Last fresh reading was ${ago}.`
+          : `Last fresh reading was ${ago}. iOS pauses ring data when the app is suspended.`;
         document.getElementById('vitals-stale-text').textContent = txt;
         stale.style.display = 'block';
       } else {
@@ -876,8 +878,11 @@ function renderStrain(samples) {
   if (!strainSamples.length) { card.style.display = 'none'; return; }
   const latest = strainSamples[strainSamples.length - 1];
   const score = Math.round(Number(latest.value));
-  const label = score >= 75 ? 'high — ease off'
-              : score >= 50 ? 'building — watch it'
+  // Describe-only labels — no prescription. The user / their GP / Alys
+  // interpret what to do. PRODUCT_BRIEF.md principle 5: "Describe +
+  // validate, never prescribe."
+  const label = score >= 75 ? 'high'
+              : score >= 50 ? 'building'
               : score >= 25 ? 'moderate'
               :               'low';
   document.getElementById('strain-num').textContent  = score;
@@ -923,13 +928,13 @@ function renderStrain(samples) {
 
 function openStrainExplain() {
   alert(
-    `Strain today is your body's "am I overdoing it?" signal.
+    `Strain reflects how hard your body has been working today.
 
 It rises with elevated heart rate minutes, sympathetic-nervous-system load from the ring, heart rate peaks, and your resting heart rate sitting above your sleep baseline.
 
 Steps are deliberately not in this score — for chronic illness, how much your body is working matters more than how many steps you took.
 
-0–25 calm · 25–50 moderate · 50–75 building · 75+ ease off`
+0–25 low · 25–50 moderate · 50–75 building · 75+ high`
   );
 }
 

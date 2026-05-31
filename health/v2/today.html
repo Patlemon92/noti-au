@@ -123,6 +123,25 @@
   .section .rule {
     flex: 1; height: 1px; background: rgba(44, 32, 23, .12);
   }
+  /* Wear-state chip in the Right-now header. Only shows when the ring
+     is off the finger or on the charger — never when worn. Describes
+     what the ring is doing, doesn't prompt action. */
+  .wear-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px 3px 8px; border-radius: 99px;
+    font-family: 'Hanken Grotesk', system-ui, sans-serif;
+    font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    font-weight: 600;
+    background: rgba(191, 90, 60, .08);
+    border: 1px solid rgba(191, 90, 60, .18);
+    color: var(--clay-2);
+  }
+  .wear-chip .glyph { font-size: 11px; opacity: .8; }
+  .wear-chip.charging {
+    background: rgba(86, 109, 84, .08);
+    border-color: rgba(86, 109, 84, .18);
+    color: var(--taupe-2);
+  }
 
   /* Vitals layout:
        - HR full-width on top (the most important reading)
@@ -443,6 +462,7 @@
       <span class="dot"></span>
       <span class="label">Right now</span>
       <span class="meta" id="vitals-ago">·</span>
+      <span id="vitals-wear" class="wear-chip" style="display:none"></span>
       <span class="rule"></span>
     </div>
     <div class="vitals-grid te-card" id="vitals-grid" style="animation-delay:.08s">
@@ -459,10 +479,16 @@
       <span id="vitals-stale-text">These numbers are from a while ago.</span>
     </div>
     <div class="te-card vitals-actions" style="animation-delay:.1s">
-    <button class="tag-btn" type="button" onclick="openTagSheet()">
-      <span class="tag-dot" aria-hidden="true"></span>
-      Tag a reading
-    </button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="tag-btn" type="button" onclick="openTagSheet()">
+        <span class="tag-dot" aria-hidden="true"></span>
+        Tag a reading
+      </button>
+      <button class="tag-btn" id="sleep-mark-btn" type="button" onclick="markGoingToSleep()" title="Mark sleep onset — optional, helps the engines align overnight HRV / RHR.">
+        <span class="tag-dot" aria-hidden="true" style="background:var(--taupe-2)"></span>
+        Going to sleep
+      </button>
+    </div>
     <a class="all-data" href="/health/v2/ring.html">all your data on Ring →</a>
   </div>
   </div>
@@ -646,16 +672,18 @@ async function load() {
     // of the day. With limit=500 sorted DESC, on a busy day (≥500 samples
     // before strain runs) it gets truncated out. Fetch it explicitly so
     // the card always renders if there's a score.
-    const [ringStatus, ringSamples, strainResp, baselinesResp] = await Promise.all([
+    const [ringStatus, ringSamples, strainResp, baselinesResp, wearResp] = await Promise.all([
       api('/ring/status').catch(() => ({ devices: [] })),
       api('/ring/samples?limit=500').catch(() => ({ samples: [] })),
       api('/ring/samples?metric=strain_score&limit=10').catch(() => ({ samples: [] })),
       api('/me/baselines').catch(() => ({ baselines: {} })),
+      api('/ring/samples?metric=wear_state&limit=5').catch(() => ({ samples: [] })),
     ]);
     devices = ringStatus.devices || [];
     samples = ringSamples.samples || [];
     strainSamples = strainResp.samples || [];
     _baselines = baselinesResp.baselines || {};
+    renderWearChip(wearResp.samples || []);
   } catch (e) { console.error(e); }
 
   try {
@@ -691,6 +719,27 @@ async function load() {
 // Remember the last value we displayed per metric so we can pulse
 // the tile when a fresh reading arrives.
 const _lastSeen = {};
+
+// wear_state values: 0 = off finger, 1 = charging, 2 = worn.
+// Pill only paints when the ring isn't being worn — when it's worn the
+// vitals already tell that story, no chip needed.
+function renderWearChip(wearSamples) {
+  const el = document.getElementById('vitals-wear');
+  if (!el) return;
+  const latest = (wearSamples || [])[0];
+  if (!latest) { el.style.display = 'none'; return; }
+  const v = Number(latest.value);
+  if (v === 2) { el.style.display = 'none'; return; }
+  const sinceTxt = formatAgo(latest.ts);
+  if (v === 1) {
+    el.className = 'wear-chip charging';
+    el.innerHTML = `<span class="glyph">⌁</span><span>On charger · ${escapeHtml(sinceTxt)}</span>`;
+  } else {
+    el.className = 'wear-chip';
+    el.innerHTML = `<span class="glyph">○</span><span>Off finger · ${escapeHtml(sinceTxt)}</span>`;
+  }
+  el.style.display = 'inline-flex';
+}
 
 function renderVitals(device, samples) {
   if (!device) {
@@ -946,6 +995,62 @@ function renderNoteMeta(notes) {
   meta.textContent = todayNotes.length
     ? `· ${todayNotes.length} today`
     : '· nothing today';
+}
+
+// ── Sleep marker ──────────────────────────────────
+// Optional user-initiated sleep onset. Helps the overnight engines
+// (RHR derivation, HRV, wake events) align to the actual asleep time
+// instead of the ring's stage classifier — R11's classifier under-fires
+// 'awake' segments and we'd rather trust an explicit user marker.
+// Quiet UX: tap → toast → button disabled for 8h so it doesn't get
+// double-pressed at 11pm and 3am.
+async function markGoingToSleep() {
+  const btn = document.getElementById('sleep-mark-btn');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  const original = btn.innerHTML;
+  btn.innerHTML = '<span class="tag-dot" aria-hidden="true" style="background:var(--taupe-2)"></span>Noted ✓';
+  try {
+    // Find the user's first active device — the marker needs a device_id.
+    const status = await api('/ring/status').catch(() => ({ devices: [] }));
+    const dev = (status.devices || [])[0];
+    if (dev) {
+      await api('/ring/ingest', {
+        method: 'POST',
+        body: JSON.stringify({
+          device_id: dev.id,
+          samples: [{
+            ts: new Date().toISOString(),
+            metric: 'sleep_marker',
+            value: 1,
+            unit: 'event',
+            meta: { source: 'user_button' },
+          }],
+        }),
+      });
+      track('action', 'sleep_marker', { device_id: dev.id });
+    } else {
+      // No paired ring — still log the intent locally as a note so it isn't lost.
+      await api('/me/note', {
+        method: 'POST',
+        body: JSON.stringify({ kind: 'event', body: 'Going to sleep' }),
+      });
+      track('action', 'sleep_marker_noring');
+    }
+  } catch (e) {
+    console.error('sleep marker failed', e);
+    track('error', 'sleep_marker_failed', { error: String(e).substring(0, 120) });
+    btn.innerHTML = original;
+    btn.disabled = false;
+    return;
+  }
+  // Keep the button disabled for 8h so the same night doesn't get
+  // marked twice.
+  setTimeout(() => {
+    if (!btn) return;
+    btn.innerHTML = original;
+    btn.disabled = false;
+  }, 8 * 3600 * 1000);
 }
 
 // ── Tag a reading ─────────────────────────────────

@@ -141,6 +141,10 @@ const LABELS = {
   waso:                 { title: 'Wake after sleep', unit: 'min',   cat: 'Sleep' },
   sleep_session:        { title: 'Sleep',          unit: 'h',       cat: 'Sleep' },
   pots_orthostatic_delta: { title: 'POTS delta',   unit: 'bpm',     cat: 'Pattern' },
+  // Derived-from-raw — sleep-window medians beat R11's pre-computed numbers.
+  rhr_derived:          { title: 'Resting HR',     unit: 'bpm',     cat: 'Recovery' },
+  hrv_sleep_median:     { title: 'Overnight HRV',  unit: 'ms',      cat: 'Recovery' },
+  wear_state:           { title: 'Ring wear',      unit: '',        cat: 'Ring' },
 };
 
 if (!metric || !LABELS[metric]) {

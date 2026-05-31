@@ -683,9 +683,11 @@ function paintRings(devices) {
       };
       // Tappable swap button — full 44px target so it actually responds
       // on a phone. Was a bare ⇄ glyph (~12px wide) that was effectively
-      // un-tappable next to the manage chev.
+      // un-tappable next to the manage chev. Disabled-while-in-flight so
+      // rapid taps don't queue 30+ disconnect/reconnect cycles (BLE flap).
       row.querySelector('.value').insertAdjacentHTML('afterend',
-        '<button type="button" onclick="event.stopPropagation();switchRing(\'' + d.id + '\')" ' +
+        '<button type="button" class="ring-switch-btn" ' +
+        'onclick="event.stopPropagation();switchRingFromBtn(this, \'' + d.id + '\')" ' +
         'style="background:rgba(191,90,60,.08);border:1px solid rgba(191,90,60,.2);' +
         'border-radius:10px;padding:8px 12px;margin-left:6px;min-width:44px;min-height:36px;' +
         'color:var(--clay-2,#bf5a3c);font-size:14px;cursor:pointer;font-family:inherit">' +
@@ -707,6 +709,29 @@ function paintRings(devices) {
 function switchRing(deviceId) {
   if (!(window.neeve && window.neeve.postMessage)) return;
   window.neeve.postMessage(JSON.stringify({ method: 'switchRing', deviceId }));
+}
+
+// Button-level wrapper that disables the button + flips its label to
+// 'Switching…' while the BLE handshake is in flight. Without this,
+// rapid taps queue 30+ disconnect/reconnect cycles on the iOS side and
+// the ring's BLE link flaps badly. ~12s is enough for the scan-fallback
+// reconnect + the post-connect monitoring setup to settle.
+function switchRingFromBtn(btn, deviceId) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Switching…';
+  btn.style.opacity = '0.6';
+  switchRing(deviceId);
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+    btn.style.opacity = '1';
+    // Refresh the ring list — after the switch, the row order changes.
+    if (typeof paintRings === 'function') {
+      api('/ring/status').then(r => paintRings(r.devices || [])).catch(() => {});
+    }
+  }, 12000);
 }
 
 // Buzzes the active ring to identify it physically. Only the

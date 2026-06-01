@@ -414,25 +414,36 @@ async function load() {
 }
 
 load();
-// Refresh every 90s while visible — ring's monitoring scheduler is on a
-// 2-min cadence so faster polling can't surface new readings.
+// Refresh every 5s while visible. The ring's continuous-monitoring
+// scheduler is on a 2-min cadence so most ticks won't have new data
+// — but on-demand PPG measurements (Tag-a-reading, BP measure, Sync
+// now) land within ~12s and Patrick wants the page to reflect them
+// without a manual pull. load() is a single GET; cheap to repeat.
+// Also listen for explicit ring-tick events from the native bridge so
+// new samples land immediately on ingest, not on next poll boundary.
 let _refreshTimer = null;
+let _lastLoadAt = 0;
+function _loadIfFresh() {
+  // Debounce: a ring tick + a scheduled tick shouldn't both fire load
+  // within a few hundred ms. Skip if a load ran in the last 1.5s.
+  const now = Date.now();
+  if (now - _lastLoadAt < 1500) return;
+  _lastLoadAt = now;
+  load();
+}
 function _startRefresh() {
   if (_refreshTimer) return;
-  // Match Today's cadence so the two pages don't show different
-  // "last updated" timestamps. Patrick saw "8:54" on Ring and
-  // "3 mins ago" on Today at the same moment because Ring polled
-  // every 90s vs Today's 2-30s.
-  _refreshTimer = setInterval(load, 15000);
+  _refreshTimer = setInterval(_loadIfFresh, 5000);
 }
 function _stopRefresh() {
   if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) _stopRefresh(); else { load(); _startRefresh(); }
+  if (document.hidden) _stopRefresh(); else { _loadIfFresh(); _startRefresh(); }
 });
+window.addEventListener('neeve:ring-tick', _loadIfFresh);
 if (!document.hidden) _startRefresh();
-onResume(load);
+onResume(_loadIfFresh);
 
 function renderHeadPill() {
   const pill   = document.getElementById('ring-pill');

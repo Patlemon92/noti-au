@@ -683,10 +683,18 @@ function rollupState(states) {
 function baselineDelta(metric, currentValue) {
   const b = _baselines && _baselines[metric];
   if (!b) return null;
-  // Hierarchy: healthy → lifetime → p30 → p7
+  // Never gate on day-count. Show signal with a confidence label so the
+  // user/doctor weights it correctly. Patrick: early-symptom users with
+  // 5 days of data are a defining use case — they're walking into
+  // appointments NOW and need anything we have.
   let ref = null, refLabel = null;
-  if (Number.isFinite(b.healthy) && (b.healthy_day_count || 0) >= 14) {
-    ref = b.healthy; refLabel = 'healthy baseline';
+  if (Number.isFinite(b.healthy)) {
+    ref = b.healthy;
+    const days = b.healthy_day_count || 0;
+    refLabel = days >= 30 ? 'healthy baseline'
+             : days >= 14 ? 'healthy baseline (28 days)'
+             : days >= 7  ? `emerging baseline (${days} days)`
+             :              `early baseline (${days} days)`;
   } else if (Number.isFinite(b.lifetime)) {
     ref = b.lifetime; refLabel = 'usual';
   } else if (Number.isFinite(b.p30)) {

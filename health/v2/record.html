@@ -566,6 +566,18 @@ function renderPrepare() {
       </div>
 
       <div class="prepare-row">
+        <label class="lbl">Audience</label>
+        <select id="prep-role">
+          <option value="patient" selected>Me (full report)</option>
+          <option value="gp">GP — whole picture</option>
+          <option value="specialist">Specialist — whole picture</option>
+          <option value="psychologist">Psychologist — mood, sleep, fog, anxiety</option>
+          <option value="dietitian">Dietitian — gut, hydration, weight, food</option>
+        </select>
+        <p style="font-size:11px;color:var(--ink-50);margin:6px 0 0;line-height:1.4">Changes which sections appear. Methodology, appointment questions, and missing-data prompts always appear.</p>
+      </div>
+
+      <div class="prepare-row">
         <label class="lbl">Note</label>
         <textarea id="prep-note" rows="3" placeholder="(optional) anything you want to flag at the top of the report"></textarea>
       </div>
@@ -642,12 +654,14 @@ async function prepGenerate() {
   status.textContent = 'Generating…';
   const recipient = document.getElementById('prep-recipient').value.trim();
   const note      = document.getElementById('prep-note').value.trim();
+  const role      = document.getElementById('prep-role').value;
   const sel       = document.getElementById('prep-range').value;
   const from      = document.getElementById('prep-from').value;
   const to        = document.getElementById('prep-to').value;
   // Custom range → send {from, to}; quick range → send {days}.
-  // Either way, range is validated server-side.
-  const body = { recipient, note };
+  // role selects the section preset on the worker side. Either way,
+  // server validates and applies sane defaults.
+  const body = { recipient, note, role };
   if (sel === 'custom' && from && to) {
     body.from = from;
     body.to   = to;

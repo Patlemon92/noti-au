@@ -218,15 +218,32 @@
     font-weight: 600;
   }
   .prepare-row select,
-  .prepare-row input,
+  .prepare-row input[type="text"],
   .prepare-row textarea {
-    width: 100%; padding: 11px 13px;
-    border: 1px solid rgba(44, 32, 23, .15); border-radius: 12px;
-    background: var(--warm-card, #FFFFFF); color: var(--ink-2, #2C2420);
-    font-family: inherit; font-size: 14px; line-height: 1.45;
-    -webkit-appearance: none; appearance: none;
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    min-height: 46px;
+    padding: 12px 14px;
+    border: 1px solid rgba(44, 32, 23, .18);
+    border-radius: 12px;
+    background: #FFFFFF;
+    color: #2B2018;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.45;
   }
-  .prepare-row textarea { resize: vertical; min-height: 70px; }
+  .prepare-row select {
+    /* Keep the native iOS picker — appearance:none made the control
+       disappear inside the in-app webview for Patrick. */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%237A5F52' stroke-width='1.5' d='M1 1.5l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+  }
+  .prepare-row textarea { resize: vertical; min-height: 84px; }
+  .prepare-row input::placeholder,
+  .prepare-row textarea::placeholder { color: #B5A595; }
   .prepare-go {
     display: block; width: 100%; padding: 14px 18px;
     border: 0; border-radius: 14px;
@@ -537,7 +554,7 @@ function prepUpdateRange() {
   _prepDays = Number(document.getElementById('prep-range').value) || 30;
 }
 
-async function prepGenerate() {
+function prepGenerate() {
   const btn = document.getElementById('prep-go');
   const status = document.getElementById('prep-status');
   btn.disabled = true;
@@ -545,41 +562,60 @@ async function prepGenerate() {
   const recipient = document.getElementById('prep-recipient').value.trim();
   const note      = document.getElementById('prep-note').value.trim();
   const body = { days: _prepDays, recipient, note };
-  try {
-    const token = getToken();
-    const res = await fetch('https://api.noti.au/me/export', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`${res.status}: ${(await res.text()).slice(0,120)}`);
-    const data = await res.json();
-    if (!data.url) throw new Error('No report URL returned');
-    let html = '';
+
+  // Open the destination window IMMEDIATELY in the click's user-gesture
+  // context. iOS WebView (and Safari) block window.open called after an
+  // await — the popup permission is gone by then. So we open a blank
+  // tab now, then fill it in once the fetch resolves. Patrick: "the
+  // report just opens a blank page" → this was the cause.
+  const win = window.open('', '_blank');
+  if (win) {
     try {
+      win.document.write('<!doctype html><meta charset="utf-8"><title>Generating your report…</title><body style="font-family:system-ui,sans-serif;padding:40px;color:#7A5F52">Generating your report…</body>');
+    } catch (_) {}
+  }
+
+  (async () => {
+    try {
+      const token = getToken();
+      const res = await fetch('https://api.noti.au/me/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`${res.status}: ${(await res.text()).slice(0,120)}`);
+      const data = await res.json();
+      if (!data.url) throw new Error('No report URL returned');
+      let html = '';
       const match = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
       if (match) {
-        html = atob(match[1]);
-        try { html = decodeURIComponent(escape(html)); } catch (_) {}
+        try {
+          html = atob(match[1]);
+          try { html = decodeURIComponent(escape(html)); } catch (_) {}
+        } catch (_) {}
       }
-    } catch (_) {}
-    if (html) {
-      const w = window.open('', '_blank');
-      if (w) {
-        w.document.open(); w.document.write(html); w.document.close();
+      if (win && html) {
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
         status.textContent = 'Report opened — use your browser\'s Save-as-PDF.';
+      } else if (win) {
+        // Fallback: navigate the new tab to the data URL directly.
+        win.location.href = data.url;
+        status.textContent = 'Report opened.';
       } else {
-        status.textContent = 'Pop-up blocked. Allow pop-ups for this site and try again.';
+        // Popup blocked even though we opened sync — offer a link inline.
+        const blob = new Blob([html || data.url], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        status.innerHTML = `Pop-up blocked. <a href="${blobUrl}" target="_blank" rel="noopener">Open report →</a>`;
       }
-    } else {
-      window.open(data.url, '_blank');
-      status.textContent = 'Report opened in a new tab.';
+    } catch (e) {
+      if (win) try { win.close(); } catch (_) {}
+      status.textContent = "Couldn't generate: " + (e.message || e);
+    } finally {
+      btn.disabled = false;
     }
-  } catch (e) {
-    status.textContent = "Couldn't generate: " + (e.message || e);
-  } finally {
-    btn.disabled = false;
-  }
+  })();
 }
 
 function wireRangePills(reload) {

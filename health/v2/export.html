@@ -168,6 +168,17 @@ async function generate() {
   // 'days' is also accepted as fallback if from/to missing.
   const body = { from, to, sections, recipient, note };
 
+  // Open the destination window IMMEDIATELY in the click's user-gesture
+  // context so iOS Safari / WebView don't block it as a popup after the
+  // async fetch resolves. Patrick saw 'just opens a blank page' — that
+  // was the popup being blocked. Filling it in once fetch lands.
+  const win = window.open('', '_blank');
+  if (win) {
+    try {
+      win.document.write('<!doctype html><meta charset="utf-8"><title>Generating your report…</title><body style="font-family:system-ui,sans-serif;padding:40px;color:#7A5F52">Generating your report…</body>');
+    } catch (_) {}
+  }
+
   try {
     const token = getToken();
     const res = await fetch('https://api.noti.au/me/export', {
@@ -178,33 +189,29 @@ async function generate() {
     if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
     const data = await res.json();
     if (!data.url) throw new Error('No report URL returned');
-    // Worker returns data:text/html;base64 — browsers block these in new
-    // tabs for security, so decode and write the HTML into a fresh tab
-    // ourselves. Same result, doesn't get blocked. (Carried from v1
-    // export.html — that flow worked.)
     let html = '';
-    try {
-      const match = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
-      if (match) {
+    const match = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
+    if (match) {
+      try {
         html = atob(match[1]);
         try { html = decodeURIComponent(escape(html)); } catch (_) {}
-      }
-    } catch (_) {}
-    if (html) {
-      const w = window.open('', '_blank');
-      if (w) {
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
-        status.textContent = 'Report opened in a new tab — use your browser\'s Save-as-PDF.';
-      } else {
-        status.textContent = 'Pop-up blocked — please allow pop-ups for this site.';
-      }
+      } catch (_) {}
+    }
+    if (win && html) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      status.textContent = 'Report opened — use your browser\'s Save-as-PDF.';
+    } else if (win) {
+      win.location.href = data.url;
+      status.textContent = 'Report opened.';
     } else {
-      window.open(data.url, '_blank');
-      status.textContent = 'Report opened in a new tab.';
+      const blob = new Blob([html || data.url], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      status.innerHTML = `Pop-up blocked. <a href="${blobUrl}" target="_blank" rel="noopener">Open report →</a>`;
     }
   } catch (e) {
+    if (win) try { win.close(); } catch (_) {}
     status.textContent = 'Couldn\'t generate: ' + e.message;
   } finally {
     go.disabled = false;

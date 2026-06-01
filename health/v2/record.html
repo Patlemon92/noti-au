@@ -559,14 +559,21 @@ function renderPrepare() {
     </div>`;
 }
 
-// Open a URL in Safari via the native bridge. The in-app WKWebView's
-// in-app browser can't trigger window.print(); Safari can.
-function _openReport(url) {
+// Open the iOS native print dialog with the report HTML. From there the
+// user picks Save as PDF — full iOS print system → Share → Save to
+// Files. WKWebView's in-app browser can't do this and Safari refuses
+// data: URLs, so we go straight to UIPrintInteractionController via
+// the bridge.
+function _saveReportPdf(html, filename) {
   if (window.neeve && window.neeve.postMessage) {
-    window.neeve.postMessage(JSON.stringify({ method: 'openInSafari', url }));
+    window.neeve.postMessage(JSON.stringify({
+      method: 'presentReportPdf',
+      html, filename,
+    }));
   } else {
-    // PWA fallback: open in a new tab
-    window.open(url, '_blank');
+    // PWA fallback: open in a new tab so the user can print from Safari.
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    window.open(URL.createObjectURL(blob), '_blank');
   }
 }
 
@@ -595,15 +602,24 @@ async function prepGenerate() {
     const data = await res.json();
     if (!data.url) throw new Error('No report URL returned');
 
-    // The in-app WKWebView can't trigger window.print() or expose a
-    // Share/Save-as-PDF flow for blob URLs. Hand the report off to
-    // real Safari via the native bridge — full Print → Save to Files
-    // available there. data.url is already a base64 data URL we can
-    // hand to UIApplication.open directly.
+    // Decode the HTML out of the data URL — bridge takes raw HTML.
+    let html = '';
+    const m = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
+    if (m) {
+      try {
+        html = atob(m[1]);
+        try { html = decodeURIComponent(escape(html)); } catch (_) {}
+      } catch (_) {}
+    }
+    if (!html) throw new Error('Could not decode report HTML');
+    const fname = `neeve-report-${new Date().toISOString().slice(0,10)}`;
+    // Store on window so the inline onclick can reach it.
+    window._lastReportHtml = html;
+    window._lastReportFilename = fname;
     status.innerHTML =
-      `<button class="report-link" onclick='_openReport(${JSON.stringify(data.url)})'>` +
-      `Open report in Safari →</button>` +
-      `<br><span class="report-hint">In Safari: tap the Share button → Print → pinch the preview → Share → Save to Files.</span>`;
+      `<button class="report-link" onclick='_saveReportPdf(window._lastReportHtml, window._lastReportFilename)'>` +
+      `Save as PDF →</button>` +
+      `<br><span class="report-hint">Opens iOS print preview. Tap the Share button → Save to Files.</span>`;
   } catch (e) {
     status.textContent = "Couldn't generate: " + (e.message || e);
   } finally {

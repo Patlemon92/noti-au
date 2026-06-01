@@ -529,19 +529,35 @@ function renderPatterns() {
 // sleep / activity / methodology default-on; per-condition sections
 // follow the user's enabled templates.
 function renderPrepare() {
+  // Default custom-date range = last 30 days.
+  const _today = new Date();
+  const _ago30 = new Date(_today.getTime() - 30 * 86400 * 1000);
+  const _toIso = (d) => d.toISOString().slice(0, 10);
   document.getElementById('content').innerHTML = `
     <div class="prepare">
       <h2>Prepare a doctor visit</h2>
       <p class="prepare-sub">Generates a PDF for your appointment — your vitals against your healthy baseline, the patterns the engines found, and your check-in data over the period.</p>
 
       <div class="prepare-row">
-        <label class="lbl">Period</label>
-        <select id="prep-range" onchange="prepUpdateRange()">
+        <label class="lbl">Quick range</label>
+        <select id="prep-range" onchange="prepApplyQuickRange()">
           <option value="14">Last 14 days</option>
           <option value="30" selected>Last 30 days</option>
           <option value="90">Last 90 days</option>
           <option value="365">Last 12 months</option>
+          <option value="custom">Custom range…</option>
         </select>
+      </div>
+
+      <div class="prepare-row prepare-date-row">
+        <div style="flex:1">
+          <label class="lbl">From</label>
+          <input id="prep-from" type="date" value="${_toIso(_ago30)}" onchange="prepDateChange()">
+        </div>
+        <div style="flex:1">
+          <label class="lbl">To</label>
+          <input id="prep-to" type="date" value="${_toIso(_today)}" onchange="prepDateChange()">
+        </div>
       </div>
 
       <div class="prepare-row">
@@ -597,8 +613,26 @@ function _saveReportPdf(html, filename) {
 }
 
 let _prepDays = 30;
-function prepUpdateRange() {
-  _prepDays = Number(document.getElementById('prep-range').value) || 30;
+
+// Quick-range select drives the From/To dates so they stay in sync.
+// Picking "Custom range" leaves the inputs untouched for the user to edit.
+function prepApplyQuickRange() {
+  const sel = document.getElementById('prep-range');
+  const v = sel.value;
+  if (v === 'custom') return;
+  const n = Number(v) || 30;
+  const t = new Date();
+  const f = new Date(t.getTime() - n * 86400 * 1000);
+  const iso = (d) => d.toISOString().slice(0, 10);
+  document.getElementById('prep-from').value = iso(f);
+  document.getElementById('prep-to').value   = iso(t);
+  _prepDays = n;
+}
+
+// User edited a date manually — flip the select to "Custom range".
+function prepDateChange() {
+  const sel = document.getElementById('prep-range');
+  if (sel) sel.value = 'custom';
 }
 
 async function prepGenerate() {
@@ -608,7 +642,18 @@ async function prepGenerate() {
   status.textContent = 'Generating…';
   const recipient = document.getElementById('prep-recipient').value.trim();
   const note      = document.getElementById('prep-note').value.trim();
-  const body = { days: _prepDays, recipient, note };
+  const sel       = document.getElementById('prep-range').value;
+  const from      = document.getElementById('prep-from').value;
+  const to        = document.getElementById('prep-to').value;
+  // Custom range → send {from, to}; quick range → send {days}.
+  // Either way, range is validated server-side.
+  const body = { recipient, note };
+  if (sel === 'custom' && from && to) {
+    body.from = from;
+    body.to   = to;
+  } else {
+    body.days = _prepDays;
+  }
 
   try {
     const token = getToken();

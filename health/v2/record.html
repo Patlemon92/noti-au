@@ -201,6 +201,46 @@
     color: var(--taupe); font-size: 15px; line-height: 1.5;
     padding: 24px 4px;
   }
+
+  /* Prepare-a-doctor-visit panel — replaces the old 'coming soon' stub. */
+  .prepare h2 {
+    font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px;
+    color: var(--ink-2, #2C2420); margin: 10px 0 6px;
+  }
+  .prepare-sub {
+    font-size: 13.5px; color: var(--taupe-2, #7A5F52);
+    line-height: 1.55; margin: 0 0 22px;
+  }
+  .prepare-row { margin-bottom: 14px; }
+  .prepare-row .lbl {
+    display: block; font-size: 11px; color: var(--taupe-2, #7A5F52);
+    letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .prepare-row select,
+  .prepare-row input,
+  .prepare-row textarea {
+    width: 100%; padding: 11px 13px;
+    border: 1px solid rgba(44, 32, 23, .15); border-radius: 12px;
+    background: var(--warm-card, #FFFFFF); color: var(--ink-2, #2C2420);
+    font-family: inherit; font-size: 14px; line-height: 1.45;
+    -webkit-appearance: none; appearance: none;
+  }
+  .prepare-row textarea { resize: vertical; min-height: 70px; }
+  .prepare-go {
+    display: block; width: 100%; padding: 14px 18px;
+    border: 0; border-radius: 14px;
+    background: var(--ink-2, #2C2420); color: #FFE4D0;
+    font-family: inherit; font-size: 15px; font-weight: 500;
+    cursor: pointer; margin-top: 6px;
+    transition: transform .12s ease, opacity .15s ease;
+  }
+  .prepare-go:active { transform: scale(.99); }
+  .prepare-go:disabled { opacity: .55; cursor: wait; }
+  .prepare-status {
+    font-size: 13px; color: var(--taupe-2, #7A5F52);
+    margin: 14px 0 0; min-height: 18px;
+  }
 </style>
 </head>
 <body>
@@ -456,14 +496,90 @@ function renderPatterns() {
     </div>`;
 }
 
-// ── PREPARE (stub) ─────────────────────────────────
+// ── PREPARE ─────────────────────────────────────────
+// Doctor-ready report generator. Picks up the existing /me/export flow
+// from export.html. Cover & key findings always included; vitals /
+// sleep / activity / methodology default-on; per-condition sections
+// follow the user's enabled templates.
 function renderPrepare() {
   document.getElementById('content').innerHTML = `
-    <div class="stub">
-      <div class="icon">✎</div>
+    <div class="prepare">
       <h2>Prepare a doctor visit</h2>
-      <p>Pick a window, say what you'd like to bring up, get a structured PDF for your appointment. Coming next — same record, doctor-ready.</p>
+      <p class="prepare-sub">Generates a PDF for your appointment — your vitals against your healthy baseline, the patterns the engines found, and your check-in data over the period.</p>
+
+      <div class="prepare-row">
+        <label class="lbl">Period</label>
+        <select id="prep-range" onchange="prepUpdateRange()">
+          <option value="14">Last 14 days</option>
+          <option value="30" selected>Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last 12 months</option>
+        </select>
+      </div>
+
+      <div class="prepare-row">
+        <label class="lbl">For</label>
+        <input id="prep-recipient" type="text" placeholder="e.g. Dr Patel, GP appointment" />
+      </div>
+
+      <div class="prepare-row">
+        <label class="lbl">Note</label>
+        <textarea id="prep-note" rows="3" placeholder="(optional) anything you want to flag at the top of the report"></textarea>
+      </div>
+
+      <button id="prep-go" class="prepare-go" onclick="prepGenerate()">Generate PDF</button>
+      <p class="prepare-status" id="prep-status"></p>
     </div>`;
+}
+
+let _prepDays = 30;
+function prepUpdateRange() {
+  _prepDays = Number(document.getElementById('prep-range').value) || 30;
+}
+
+async function prepGenerate() {
+  const btn = document.getElementById('prep-go');
+  const status = document.getElementById('prep-status');
+  btn.disabled = true;
+  status.textContent = 'Generating…';
+  const recipient = document.getElementById('prep-recipient').value.trim();
+  const note      = document.getElementById('prep-note').value.trim();
+  const body = { days: _prepDays, recipient, note };
+  try {
+    const token = getToken();
+    const res = await fetch('https://api.noti.au/me/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`${res.status}: ${(await res.text()).slice(0,120)}`);
+    const data = await res.json();
+    if (!data.url) throw new Error('No report URL returned');
+    let html = '';
+    try {
+      const match = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
+      if (match) {
+        html = atob(match[1]);
+        try { html = decodeURIComponent(escape(html)); } catch (_) {}
+      }
+    } catch (_) {}
+    if (html) {
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.open(); w.document.write(html); w.document.close();
+        status.textContent = 'Report opened — use your browser\'s Save-as-PDF.';
+      } else {
+        status.textContent = 'Pop-up blocked. Allow pop-ups for this site and try again.';
+      }
+    } else {
+      window.open(data.url, '_blank');
+      status.textContent = 'Report opened in a new tab.';
+    }
+  } catch (e) {
+    status.textContent = "Couldn't generate: " + (e.message || e);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function wireRangePills(reload) {

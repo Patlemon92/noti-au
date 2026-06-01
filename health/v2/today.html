@@ -900,11 +900,21 @@ function renderVitals(device, samples) {
   // Live-beat dot — pulse if the latest HR sample is < 10s old. The
   // realtime stream from the ring fires every ~1-2s when it's actively
   // measuring, so this means "ring is actively streaming RIGHT now."
+  // Animation duration matches the actual BPM so the dot beats with
+  // the user's heart: 60 BPM → 1.0s/beat, 80 → 0.75s/beat, 120 → 0.5s.
   const hrDot = document.getElementById('hr-live-dot');
   if (hrDot && latest.hr) {
     const ageMs = Date.now() - new Date(latest.hr.ts).getTime();
-    if (ageMs < 10000) hrDot.classList.add('on');
-    else hrDot.classList.remove('on');
+    if (ageMs < 10000) {
+      const bpm = Number(latest.hr.value);
+      if (bpm > 30 && bpm < 220) {
+        const secPerBeat = Math.max(0.30, Math.min(2.0, 60 / bpm));
+        hrDot.style.animationDuration = secPerBeat.toFixed(2) + 's';
+      }
+      hrDot.classList.add('on');
+    } else {
+      hrDot.classList.remove('on');
+    }
   }
 
   // Roll up vital metric states → Right Now section state. HR is

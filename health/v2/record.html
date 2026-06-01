@@ -559,6 +559,17 @@ function renderPrepare() {
     </div>`;
 }
 
+// Open a URL in Safari via the native bridge. The in-app WKWebView's
+// in-app browser can't trigger window.print(); Safari can.
+function _openReport(url) {
+  if (window.neeve && window.neeve.postMessage) {
+    window.neeve.postMessage(JSON.stringify({ method: 'openInSafari', url }));
+  } else {
+    // PWA fallback: open in a new tab
+    window.open(url, '_blank');
+  }
+}
+
 let _prepDays = 30;
 function prepUpdateRange() {
   _prepDays = Number(document.getElementById('prep-range').value) || 30;
@@ -584,23 +595,15 @@ async function prepGenerate() {
     const data = await res.json();
     if (!data.url) throw new Error('No report URL returned');
 
-    // Decode the HTML out of the data URL and store it on a Blob URL.
-    // Blob URLs work reliably inside iOS WKWebView; the user taps an
-    // anchor we render below and the in-app browser handles navigation
-    // natively. Avoids the window.open/popup permission flakiness.
-    let html = '';
-    const m = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
-    if (m) {
-      try {
-        html = atob(m[1]);
-        try { html = decodeURIComponent(escape(html)); } catch (_) {}
-      } catch (_) {}
-    }
-    const blob = new Blob([html || ''], { type: 'text/html;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
+    // The in-app WKWebView can't trigger window.print() or expose a
+    // Share/Save-as-PDF flow for blob URLs. Hand the report off to
+    // real Safari via the native bridge — full Print → Save to Files
+    // available there. data.url is already a base64 data URL we can
+    // hand to UIApplication.open directly.
     status.innerHTML =
-      `<a href="${url}" target="_blank" rel="noopener" class="report-link">Open your report →</a>` +
-      `<br><span class="report-hint">Tap to view. Use your browser's Save-as-PDF or Share → Print → Save to Files.</span>`;
+      `<button class="report-link" onclick='_openReport(${JSON.stringify(data.url)})'>` +
+      `Open report in Safari →</button>` +
+      `<br><span class="report-hint">In Safari: tap the Share button → Print → pinch the preview → Share → Save to Files.</span>`;
   } catch (e) {
     status.textContent = "Couldn't generate: " + (e.message || e);
   } finally {

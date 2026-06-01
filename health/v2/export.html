@@ -101,22 +101,26 @@ document.getElementById('nav-mount').innerHTML = renderNav('more');
 // Section list matches the v1 export — these keys are what the
 // worker /me/export expects in body.sections (array form).
 const SECTIONS = [
-  { key: 'cover_findings', title: 'Cover & key findings',        sub: 'Always included · 2 pages',                   pages: 2, locked: true, on: true },
-  { key: 'mood',           title: 'Mood',                         sub: 'Daily averages, weekly trend · 1 page',       pages: 1, on: true },
-  { key: 'anxiety',        title: 'Anxiety',                      sub: 'Daily averages, patterns · 1 page',           pages: 1, on: true },
-  { key: 'depression',     title: 'Depression',                   sub: 'Low-mood markers, patterns · 1 page',         pages: 1, on: true },
-  { key: 'headaches',      title: 'Headaches',                    sub: 'Frequency, intensity, triggers · 1 page',     pages: 1, on: true },
-  { key: 'pots',           title: 'POTS',                         sub: 'Dizziness, standing, triggers · 1 page',      pages: 1, on: true },
-  { key: 'pain',           title: 'Pain',                         sub: 'Averages, sites, intensity · 1 page',         pages: 1, on: true },
-  { key: 'fatigue',        title: 'Fatigue',                      sub: 'Severity, context · 1 page',                  pages: 1, on: true },
-  { key: 'fog',            title: 'Brain fog',                    sub: 'Severity, context · 1 page',                  pages: 1, on: true },
-  { key: 'gut',            title: 'Gut & digestion',              sub: 'Symptoms, patterns · 1 page',                 pages: 1, on: true },
-  { key: 'cycle',          title: 'Cycle',                        sub: 'Phases, correlations · 1 page',               pages: 1, on: true },
-  { key: 'weight',         title: 'Weight',                       sub: 'Trend over period · 1 page',                  pages: 1, on: true },
-  { key: 'medications',    title: 'Medications',                  sub: 'Log of medications taken · 1 page',           pages: 1, on: true },
-  { key: 'lifestyle',      title: 'Sleep, hydration & lifestyle', sub: 'Averages, distribution · 1 page',             pages: 1, on: true },
-  { key: 'daily_log',      title: 'Daily log',                    sub: 'Scannable table, one row per day · 1 page',   pages: 1, on: true },
-  { key: 'own_words',      title: 'Notes & reflections',          sub: 'Free-text entries, grouped by theme · 1 page',pages: 1, on: true },
+  { key: 'cover_findings', title: 'Cover & key findings',        sub: 'Always included · 2 pages',                                pages: 2, locked: true, on: true },
+  { key: 'vitals',         title: 'Vitals (ring)',                sub: 'HR, HRV, SpO₂, BP, respiration vs your healthy · 1 page',  pages: 1, on: true },
+  { key: 'sleep',          title: 'Sleep (ring)',                 sub: 'Duration, wake events, naps, stages · 1 page',             pages: 1, on: true },
+  { key: 'activity',       title: 'Activity & pacing',            sub: 'Bursts, PEM candidates, strain, recovery · 1 page',        pages: 1, on: true },
+  { key: 'mood',           title: 'Mood',                         sub: 'Daily averages, weekly trend · 1 page',                    pages: 1, on: true },
+  { key: 'anxiety',        title: 'Anxiety',                      sub: 'Daily averages, patterns · 1 page',                        pages: 1, on: true },
+  { key: 'depression',     title: 'Depression',                   sub: 'Low-mood markers, patterns · 1 page',                      pages: 1, on: true },
+  { key: 'headaches',      title: 'Headaches',                    sub: 'Frequency, intensity, triggers · 1 page',                  pages: 1, on: true },
+  { key: 'pots',           title: 'POTS',                         sub: 'Dizziness, standing, triggers · 1 page',                   pages: 1, on: true },
+  { key: 'pain',           title: 'Pain',                         sub: 'Averages, sites, intensity · 1 page',                      pages: 1, on: true },
+  { key: 'fatigue',        title: 'Fatigue',                      sub: 'Severity, context · 1 page',                               pages: 1, on: true },
+  { key: 'fog',            title: 'Brain fog',                    sub: 'Severity, context · 1 page',                               pages: 1, on: true },
+  { key: 'gut',            title: 'Gut & digestion',              sub: 'Symptoms, patterns · 1 page',                              pages: 1, on: true },
+  { key: 'cycle',          title: 'Cycle',                        sub: 'Phases, correlations · 1 page',                            pages: 1, on: true },
+  { key: 'weight',         title: 'Weight',                       sub: 'Trend over period · 1 page',                               pages: 1, on: true },
+  { key: 'medications',    title: 'Medications',                  sub: 'Log of medications taken · 1 page',                        pages: 1, on: true },
+  { key: 'lifestyle',      title: 'Sleep, hydration & lifestyle', sub: 'Averages, distribution · 1 page',                          pages: 1, on: true },
+  { key: 'daily_log',      title: 'Daily log',                    sub: 'Scannable table, one row per day · 1 page',                pages: 1, on: true },
+  { key: 'own_words',      title: 'Notes & reflections',          sub: 'Free-text entries, grouped by theme · 1 page',             pages: 1, on: true },
+  { key: 'methodology',    title: 'Methodology',                  sub: 'How baselines + the day classifier work · 1 page',         pages: 1, on: true },
 ];
 
 // Render sections
@@ -172,15 +176,34 @@ async function generate() {
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `neeve-${new Date().toISOString().slice(0,10)}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    status.textContent = 'PDF generated.';
+    const data = await res.json();
+    if (!data.url) throw new Error('No report URL returned');
+    // Worker returns data:text/html;base64 — browsers block these in new
+    // tabs for security, so decode and write the HTML into a fresh tab
+    // ourselves. Same result, doesn't get blocked. (Carried from v1
+    // export.html — that flow worked.)
+    let html = '';
+    try {
+      const match = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
+      if (match) {
+        html = atob(match[1]);
+        try { html = decodeURIComponent(escape(html)); } catch (_) {}
+      }
+    } catch (_) {}
+    if (html) {
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        status.textContent = 'Report opened in a new tab — use your browser\'s Save-as-PDF.';
+      } else {
+        status.textContent = 'Pop-up blocked — please allow pop-ups for this site.';
+      }
+    } else {
+      window.open(data.url, '_blank');
+      status.textContent = 'Report opened in a new tab.';
+    }
   } catch (e) {
     status.textContent = 'Couldn\'t generate: ' + e.message;
   } finally {

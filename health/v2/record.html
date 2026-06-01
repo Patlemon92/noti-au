@@ -258,6 +258,16 @@
     font-size: 13px; color: var(--taupe-2, #7A5F52);
     margin: 14px 0 0; min-height: 18px;
   }
+  .report-link {
+    display: inline-block; margin-top: 4px;
+    padding: 12px 18px; border-radius: 12px;
+    background: var(--ink-2, #2B2018); color: #FFE4D0 !important;
+    text-decoration: none; font-weight: 500; font-size: 15px;
+  }
+  .report-hint {
+    display: block; margin-top: 8px;
+    font-size: 12px; color: var(--taupe-2, #9a8369);
+  }
 </style>
 </head>
 <body>
@@ -554,7 +564,7 @@ function prepUpdateRange() {
   _prepDays = Number(document.getElementById('prep-range').value) || 30;
 }
 
-function prepGenerate() {
+async function prepGenerate() {
   const btn = document.getElementById('prep-go');
   const status = document.getElementById('prep-status');
   btn.disabled = true;
@@ -563,59 +573,39 @@ function prepGenerate() {
   const note      = document.getElementById('prep-note').value.trim();
   const body = { days: _prepDays, recipient, note };
 
-  // Open the destination window IMMEDIATELY in the click's user-gesture
-  // context. iOS WebView (and Safari) block window.open called after an
-  // await — the popup permission is gone by then. So we open a blank
-  // tab now, then fill it in once the fetch resolves. Patrick: "the
-  // report just opens a blank page" → this was the cause.
-  const win = window.open('', '_blank');
-  if (win) {
-    try {
-      win.document.write('<!doctype html><meta charset="utf-8"><title>Generating your report…</title><body style="font-family:system-ui,sans-serif;padding:40px;color:#7A5F52">Generating your report…</body>');
-    } catch (_) {}
-  }
+  try {
+    const token = getToken();
+    const res = await fetch('https://api.noti.au/me/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`${res.status}: ${(await res.text()).slice(0,120)}`);
+    const data = await res.json();
+    if (!data.url) throw new Error('No report URL returned');
 
-  (async () => {
-    try {
-      const token = getToken();
-      const res = await fetch('https://api.noti.au/me/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(`${res.status}: ${(await res.text()).slice(0,120)}`);
-      const data = await res.json();
-      if (!data.url) throw new Error('No report URL returned');
-      let html = '';
-      const match = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
-      if (match) {
-        try {
-          html = atob(match[1]);
-          try { html = decodeURIComponent(escape(html)); } catch (_) {}
-        } catch (_) {}
-      }
-      if (win && html) {
-        win.document.open();
-        win.document.write(html);
-        win.document.close();
-        status.textContent = 'Report opened — use your browser\'s Save-as-PDF.';
-      } else if (win) {
-        // Fallback: navigate the new tab to the data URL directly.
-        win.location.href = data.url;
-        status.textContent = 'Report opened.';
-      } else {
-        // Popup blocked even though we opened sync — offer a link inline.
-        const blob = new Blob([html || data.url], { type: 'text/html' });
-        const blobUrl = URL.createObjectURL(blob);
-        status.innerHTML = `Pop-up blocked. <a href="${blobUrl}" target="_blank" rel="noopener">Open report →</a>`;
-      }
-    } catch (e) {
-      if (win) try { win.close(); } catch (_) {}
-      status.textContent = "Couldn't generate: " + (e.message || e);
-    } finally {
-      btn.disabled = false;
+    // Decode the HTML out of the data URL and store it on a Blob URL.
+    // Blob URLs work reliably inside iOS WKWebView; the user taps an
+    // anchor we render below and the in-app browser handles navigation
+    // natively. Avoids the window.open/popup permission flakiness.
+    let html = '';
+    const m = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
+    if (m) {
+      try {
+        html = atob(m[1]);
+        try { html = decodeURIComponent(escape(html)); } catch (_) {}
+      } catch (_) {}
     }
-  })();
+    const blob = new Blob([html || ''], { type: 'text/html;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    status.innerHTML =
+      `<a href="${url}" target="_blank" rel="noopener" class="report-link">Open your report →</a>` +
+      `<br><span class="report-hint">Tap to view. Use your browser's Save-as-PDF or Share → Print → Save to Files.</span>`;
+  } catch (e) {
+    status.textContent = "Couldn't generate: " + (e.message || e);
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function wireRangePills(reload) {

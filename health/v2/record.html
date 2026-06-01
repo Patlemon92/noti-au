@@ -565,13 +565,22 @@ function renderPrepare() {
 // data: URLs, so we go straight to UIPrintInteractionController via
 // the bridge.
 function _saveReportPdf(html, filename) {
+  const status = document.getElementById('prep-status');
   if (window.neeve && window.neeve.postMessage) {
-    window.neeve.postMessage(JSON.stringify({
-      method: 'presentReportPdf',
-      html, filename,
-    }));
+    if (status) status.textContent = 'Rendering PDF…';
+    try {
+      window.neeve.postMessage(JSON.stringify({
+        method: 'presentReportPdf',
+        html, filename,
+      }));
+      // Update status a moment later so user knows we're alive.
+      setTimeout(() => {
+        if (status) status.textContent = 'Opening share sheet…';
+      }, 1000);
+    } catch (e) {
+      if (status) status.textContent = 'Bridge error: ' + (e.message || e);
+    }
   } else {
-    // PWA fallback: open in a new tab so the user can print from Safari.
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     window.open(URL.createObjectURL(blob), '_blank');
   }

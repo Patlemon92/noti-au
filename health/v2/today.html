@@ -106,10 +106,18 @@
     display: flex; align-items: center; gap: 10px;
     margin: 26px 2px 12px;
   }
+  /* Section dot — calm by default (muted taupe), terracotta only when
+     the section's underlying data is actually elevated/flare. Reads a
+     data-state attr set by JS after vitals + baselines load. Patrick's
+     complaint: "all sections have the dot even when the day is good." */
   .section .dot {
     width: 7px; height: 7px; border-radius: 50%;
-    background: var(--clay-2);
+    background: var(--taupe-2);
+    opacity: .55;
+    transition: background-color .25s ease, opacity .25s ease;
   }
+  .section[data-state="elevated"] .dot { background: #D99843; opacity: .9; }
+  .section[data-state="flare"]    .dot { background: var(--clay-2); opacity: 1; }
   .section .label {
     font-family: 'Hanken Grotesk', system-ui, sans-serif;
     font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
@@ -458,7 +466,7 @@
 
   <!-- RIGHT NOW · vitals (ring-conditional) -->
   <div id="vitals-section">
-    <div class="section te-card" style="animation-delay:.06s">
+    <div class="section te-card" id="section-right-now" style="animation-delay:.06s">
       <span class="dot"></span>
       <span class="label">Right now</span>
       <span class="meta" id="vitals-ago">·</span>
@@ -620,6 +628,44 @@ function greetFromHour(h) {
 // the healthy baseline isn't established yet.
 //
 // Returns { label, color, percentDelta } or null if no baseline exists.
+// Classify a section's state by walking its metrics: any 'flare' wins,
+// otherwise 'elevated' wins, otherwise 'calm'. Sets data-state on the
+// section element so the dot CSS lights up the right colour. Calm
+// sections stay muted taupe — that's the "default rest" Patrick asked
+// for ("the dot lights up on every section even when the day is good").
+function classifyMetricState(metric, value, dir = 'lower_is_better') {
+  const b = _baselines && _baselines[metric];
+  if (!b) return 'calm';
+  const healthy = Number(b.healthy);
+  const flare   = Number(b.flare);
+  const okH = Number.isFinite(healthy);
+  const okF = Number.isFinite(flare);
+  if (!Number.isFinite(value)) return 'calm';
+  if (dir === 'lower_is_better') {
+    if (okH && value <= healthy * 1.15) return 'calm';
+    if (okF && value >= flare * 0.90)   return 'flare';
+    return 'elevated';
+  } else {
+    if (okH && value >= healthy * 0.85) return 'calm';
+    if (okF && value <= flare * 1.10)   return 'flare';
+    return 'elevated';
+  }
+}
+
+function setSectionState(id, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (state === 'calm') el.removeAttribute('data-state');
+  else el.setAttribute('data-state', state);
+}
+
+// Roll up multiple metric states to a single section state.
+function rollupState(states) {
+  if (states.includes('flare')) return 'flare';
+  if (states.includes('elevated')) return 'elevated';
+  return 'calm';
+}
+
 function baselineDelta(metric, currentValue) {
   const b = _baselines && _baselines[metric];
   if (!b) return null;
@@ -824,6 +870,15 @@ function renderVitals(device, samples) {
     }
     _lastSeen[m.key] = v;
   }
+
+  // Roll up vital metric states → Right Now section state. HR is
+  // lower-is-better as a state-classifier (we treat elevated resting HR
+  // as concerning), HRV is higher-is-better, SpO2 higher, temp neutral.
+  const vitalStates = [];
+  if (latest.hr        != null) vitalStates.push(classifyMetricState('hr',        Number(latest.hr.value),        'lower_is_better'));
+  if (latest.hrv_rmssd != null) vitalStates.push(classifyMetricState('hrv_rmssd', Number(latest.hrv_rmssd.value), 'higher_is_better'));
+  if (latest.spo2      != null) vitalStates.push(classifyMetricState('spo2',      Number(latest.spo2.value),      'higher_is_better'));
+  setSectionState('section-right-now', rollupState(vitalStates));
 
   // Update "ago" meta
   const mostRecent = Math.max(

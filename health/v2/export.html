@@ -150,13 +150,17 @@ function applyQuickRange() {
   document.getElementById('date-to').value   = t.toISOString().slice(0,10);
 }
 
-// Open a URL in Safari via the native bridge — WKWebView's in-app
-// viewer can't do Print → Save as PDF; Safari can.
-function _openReport(url) {
+// Hand the report HTML to the iOS native print dialog — that's the
+// only reliable Save-as-PDF path inside the in-app WKWebView.
+function _saveReportPdf(html, filename) {
   if (window.neeve && window.neeve.postMessage) {
-    window.neeve.postMessage(JSON.stringify({ method: 'openInSafari', url }));
+    window.neeve.postMessage(JSON.stringify({
+      method: 'presentReportPdf',
+      html, filename,
+    }));
   } else {
-    window.open(url, '_blank');
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    window.open(URL.createObjectURL(blob), '_blank');
   }
 }
 
@@ -196,11 +200,21 @@ async function generate() {
         try { html = decodeURIComponent(escape(html)); } catch (_) {}
       } catch (_) {}
     }
-    // Hand the report off to real Safari via the native bridge. The
-    // in-app WKWebView can't trigger Print → Save to PDF; Safari can.
+    let html = '';
+    const m = data.url.match(/^data:text\/html;charset=utf-8;base64,(.+)$/);
+    if (m) {
+      try {
+        html = atob(m[1]);
+        try { html = decodeURIComponent(escape(html)); } catch (_) {}
+      } catch (_) {}
+    }
+    if (!html) throw new Error('Could not decode report HTML');
+    const fname = `neeve-report-${new Date().toISOString().slice(0,10)}`;
+    window._lastReportHtml = html;
+    window._lastReportFilename = fname;
     status.innerHTML =
-      `<button onclick='_openReport(${JSON.stringify(data.url)})' style="display:inline-block;margin-top:4px;padding:12px 18px;border-radius:12px;background:#2B2018;color:#FFE4D0;border:0;font-weight:500;font-size:15px;cursor:pointer">Open report in Safari →</button>` +
-      `<br><span style="font-size:12px;color:#9a8369;display:block;margin-top:8px">In Safari: tap the Share button → Print → pinch the preview → Share → Save to Files.</span>`;
+      `<button onclick='_saveReportPdf(window._lastReportHtml, window._lastReportFilename)' style="display:inline-block;margin-top:4px;padding:12px 18px;border-radius:12px;background:#2B2018;color:#FFE4D0;border:0;font-weight:500;font-size:15px;cursor:pointer">Save as PDF →</button>` +
+      `<br><span style="font-size:12px;color:#9a8369;display:block;margin-top:8px">Opens iOS print preview. Tap the Share button → Save to Files.</span>`;
   } catch (e) {
     status.textContent = 'Couldn\'t generate: ' + e.message;
   } finally {

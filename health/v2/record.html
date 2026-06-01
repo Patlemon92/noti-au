@@ -564,19 +564,29 @@ function renderPrepare() {
 // Files. WKWebView's in-app browser can't do this and Safari refuses
 // data: URLs, so we go straight to UIPrintInteractionController via
 // the bridge.
+// Listen for the native bridge's reply — Swift posts a CustomEvent
+// via Dart with {ok, message} so we can show the actual outcome
+// instead of leaving the user staring at "Opening share sheet…".
+if (!window._pdfResultListener) {
+  document.addEventListener('neeve:pdf-result', (e) => {
+    const status = document.getElementById('prep-status');
+    if (!status) return;
+    const ok = e.detail && e.detail.ok;
+    const msg = (e.detail && e.detail.message) || (ok ? 'Done' : 'Failed');
+    status.textContent = ok ? 'Share sheet opened.' : ('Failed: ' + msg);
+  });
+  window._pdfResultListener = true;
+}
+
 function _saveReportPdf(html, filename) {
   const status = document.getElementById('prep-status');
   if (window.neeve && window.neeve.postMessage) {
-    if (status) status.textContent = 'Rendering PDF…';
+    if (status) status.textContent = 'Rendering PDF (5-10s)…';
     try {
       window.neeve.postMessage(JSON.stringify({
         method: 'presentReportPdf',
         html, filename,
       }));
-      // Update status a moment later so user knows we're alive.
-      setTimeout(() => {
-        if (status) status.textContent = 'Opening share sheet…';
-      }, 1000);
     } catch (e) {
       if (status) status.textContent = 'Bridge error: ' + (e.message || e);
     }

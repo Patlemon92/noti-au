@@ -290,6 +290,8 @@ body {
   <div class="action-row">
     <button class="btn btn-primary" onclick="callNative('reconnectRing'); closeSheet()">Reconnect ring</button>
     <button class="btn btn-ghost"   onclick="callNative('measureHeartRate'); closeSheet()">Measure heart rate</button>
+    <button class="btn btn-ghost"   id="sheet-ecg-btn" onclick="startEcgFromSheet()">Record 30-second ECG</button>
+    <p id="sheet-ecg-status" style="font-size:11px;color:var(--ink-50);margin:-4px 0 6px;line-height:1.45;display:none"></p>
     <button class="btn btn-ghost"   onclick="callNative('syncNow');   closeSheet()">Sync historical data</button>
     <button class="btn btn-ghost"   onclick="callNative('scanForRing'); closeSheet()">Pair another ring</button>
     <a class="btn btn-ghost" href="/health/v2/profile" onclick="closeSheet()" style="text-align:center">Ring profile (More tab)</a>
@@ -750,6 +752,48 @@ function callNative(method, args = {}) {
   } else {
     alert('That action only works in the Neeve app.');
   }
+}
+
+// ── ECG flow ─────────────────────────────────────────────
+// Tap → triggers a 30s on-ring recording via the native bridge. The
+// bridge dispatches neeve:ecg-result CustomEvents at each phase
+// (starting / recording / done) which we surface inline. The summary
+// row lands in ring_samples as 'ecg_summary' — page polling picks it
+// up on the next tick.
+function startEcgFromSheet() {
+  const btn = document.getElementById('sheet-ecg-btn');
+  const status = document.getElementById('sheet-ecg-status');
+  if (!window.neeve?.postMessage) {
+    alert('ECG only works in the Neeve app.');
+    return;
+  }
+  if (btn) btn.disabled = true;
+  if (status) { status.style.display = 'block'; status.textContent = 'Starting…'; }
+  window.neeve.postMessage(JSON.stringify({ method: 'runEcg' }));
+}
+
+if (!window._ecgResultListener) {
+  document.addEventListener('neeve:ecg-result', (e) => {
+    const btn = document.getElementById('sheet-ecg-btn');
+    const status = document.getElementById('sheet-ecg-status');
+    const phase = e.detail?.phase || 'done';
+    const ok = e.detail?.ok;
+    const msg = e.detail?.message;
+    if (status) {
+      status.style.display = 'block';
+      if (phase === 'starting') {
+        status.textContent = 'Starting ECG…';
+      } else if (phase === 'recording') {
+        status.textContent = 'Recording — keep the ring on for 30s.';
+      } else {
+        status.textContent = (ok ? 'Done. ' : 'Failed. ') + (msg || '');
+        if (btn) btn.disabled = false;
+        // refresh the data so the new ecg_summary row surfaces
+        if (typeof load === 'function') load();
+      }
+    }
+  });
+  window._ecgResultListener = true;
 }
 
 // ── Pull-to-refresh ──────────────────────────────────────

@@ -1041,6 +1041,7 @@ function renderNoticed(events) {
   list.querySelectorAll('.noticed-card').forEach(card => {
     const id = card.dataset.id;
     card.querySelector('.nb.add')?.addEventListener('click', () => {
+      console.log('[noticed] add-note tap', id);
       card.classList.toggle('expanded');
       if (card.classList.contains('expanded')) {
         const ta = card.querySelector('textarea');
@@ -1051,7 +1052,19 @@ function renderNoticed(events) {
       const btn = ev.currentTarget;
       const ta = card.querySelector('textarea');
       const note = (ta.value || '').trim();
-      if (!note) return;
+      console.log('[noticed] save tap', id, 'noteLen:', note.length,
+                  'expanded:', card.classList.contains('expanded'));
+      // If textarea isn't expanded yet OR is empty, expand + focus
+      // instead of silently returning. Previous behaviour: tap Save
+      // without typing → handler returns → looks like the button does
+      // nothing. Now every tap produces something visible.
+      if (!note) {
+        if (!card.classList.contains('expanded')) {
+          card.classList.add('expanded');
+        }
+        ta.focus();
+        return;
+      }
       // Lock button + show in-progress so users see the click registered.
       // Previously the click silently failed — the catch ate the error
       // and the UI just looked dead.
@@ -1065,6 +1078,7 @@ function renderNoticed(events) {
         });
         // api() throws on non-2xx, but double-check for explicit error.
         if (r && r.error) throw new Error(r.error);
+        console.log('[noticed] save ok', id);
         reloadNoticed();
       } catch (e) {
         // ignore: avoid_print
@@ -1086,11 +1100,13 @@ function renderNoticed(events) {
     card.querySelector('.nb.dismiss')?.addEventListener('click', async (ev) => {
       const btn = ev.currentTarget;
       const original = btn.textContent;
+      console.log('[noticed] dismiss tap', id);
       btn.disabled = true;
       btn.textContent = '…';
       try {
         const r = await api('/me/flagged-events/' + id + '/dismiss', { method: 'POST' });
         if (r && r.error) throw new Error(r.error);
+        console.log('[noticed] dismiss ok', id);
         reloadNoticed();
       } catch (e) {
         console.error('[noticed] dismiss failed:', e);

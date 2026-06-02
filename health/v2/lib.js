@@ -502,19 +502,12 @@ function renderHypnogram(container, sleepSamples, sessionSamples) {
   const night = arr.filter(a => a.ts >= tMin - 60_000 && a.ts <= tMax + 60_000);
   const span  = (tMax - tMin) || 1;
 
-  const W = container.clientWidth || 340;
-  const H = 140;
-  const pad = 6;
-  const axisH = 18;
-  const chartH = H - axisH;
-  const laneH = chartH / 4;
-
-  // Lane order (top → bottom): awake, rem, light, deep
-  const laneFor = stage => ({ 0: 0, 3: 1, 1: 2, 2: 3 }[stage] ?? 2);
-  // Single source of truth for stage colours: the --stage-* palette
-  // defined at the top of styles.css. Sleep page legend dots, Ring page
-  // hypnogram bar, this lib.js hypnogram all read from the same vars
-  // so they CAN'T drift apart.
+  // Single-bar hypnogram — matches the Ring page card's clean look
+  // instead of the old multi-lane SVG with disconnected blocks
+  // floating at different Y positions (Patrick: "this looks
+  // terrible"). All stages render on the same row, side by side,
+  // width proportional to duration. The colour IS the stage; we
+  // don't need a lane to tell them apart.
   const colorFor = stage => ({
     0: 'var(--stage-awake)',
     1: 'var(--stage-light)',
@@ -522,61 +515,55 @@ function renderHypnogram(container, sleepSamples, sessionSamples) {
     3: 'var(--stage-rem)',
   }[stage] ?? 'var(--ink-mute)');
 
-  const xFor = t => pad + ((t - tMin) / span) * (W - pad * 2);
-
-  // Build blocks. Default duration: 5 min if not provided.
-  const rects = night.map(b => {
-    const x1 = xFor(b.ts);
-    const x2 = xFor(b.ts + (b.dur || 5 * 60 * 1000));
-    const w = Math.max(2, x2 - x1);
-    const lane = laneFor(b.stage);
-    const y = lane * laneH;
-    const h = laneH - 4;
-    return `<rect x="${x1}" y="${y + 2}" width="${w}" height="${h}"
-                   fill="${colorFor(b.stage)}" rx="2"/>`;
-  }).join('');
-
-  // Connector lines between adjacent blocks (stage transitions)
-  let lines = '';
-  for (let i = 1; i < night.length; i++) {
-    const a = night[i - 1];
+  const segments = [];
+  for (let i = 0; i < night.length; i++) {
     const b = night[i];
-    if (a.stage === b.stage) continue;
-    const x = xFor(b.ts);
-    const y1 = laneFor(a.stage) * laneH + laneH / 2;
-    const y2 = laneFor(b.stage) * laneH + laneH / 2;
-    lines += `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}"
-                    stroke="var(--ink-mute)" stroke-width="0.5" opacity="0.4"/>`;
+    const next = night[i + 1];
+    const segEnd = next ? next.ts : (b.ts + (b.dur || 5 * 60 * 1000));
+    const x = ((b.ts   - tMin) / span) * 100;
+    const w = ((segEnd - b.ts)  / span) * 100;
+    if (w <= 0) continue;
+    segments.push(
+      `<div style="position:absolute;left:${x.toFixed(2)}%;width:${w.toFixed(2)}%;top:0;bottom:0;background:${colorFor(b.stage)}"></div>`
+    );
   }
 
   const fmt = ms => new Date(ms).toLocaleTimeString('en-AU', {
     hour: 'numeric', minute: '2-digit', hour12: false,
   });
 
-  container.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
-      ${lines}
-      ${rects}
-      <text x="${pad}" y="${H - 4}" font-size="10" fill="var(--ink-mute)"
-            font-family="Inter Tight, sans-serif">${fmt(tMin)}</text>
-      <text x="${W - pad}" y="${H - 4}" text-anchor="end" font-size="10"
-            fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmt(tMax)}</text>
-    </svg>
-  `;
+  // Mid-window time tick. Three labels: start, middle, end.
+  const tMid = tMin + span / 2;
 
-  // Totals — prefer the session row's authoritative seconds when present,
-  // otherwise sum per-stage durations.
+  container.innerHTML = `
+    <div style="position:relative;height:32px;border-radius:10px;overflow:hidden;background:var(--bone-deep,#F2EBE0)">
+      ${segments.join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--ink-mute,#9A8369);font-family:'Inter Tight',sans-serif">
+      <span>${fmt(tMin)}</span>
+      <span>${fmt(tMid)}</span>
+      <span>${fmt(tMax)}</span>
+    </div>`;
+
+  // Totals — prefer the session row's authoritative seconds for the
+  // sleep stages when present (deep/light/rem), but ALWAYS derive
+  // awake from the stage rows. The session.meta record from the SDK
+  // doesn't carry an awake_s field (firmware retrospectively folds
+  // brief wakes into light); the only honest awake number comes from
+  // device-log-derived stage=0 rows.
   const totals = { awake: 0, light: 0, deep: 0, rem: 0 };
+  const keys = { 0: 'awake', 1: 'light', 2: 'deep', 3: 'rem' };
+  for (const b of night) {
+    const k = keys[b.stage];
+    if (k) totals[k] += (b.dur || 0) / 60000;
+  }
   if (session && (session.meta?.deep_s != null || session.meta?.light_s != null || session.meta?.rem_s != null)) {
+    // Session meta overrides for the stages it knows about; awake
+    // stays computed from rows so device-log-derived events get
+    // counted no matter what the session row says.
     totals.deep  = (session.meta.deep_s  || 0) / 60;
     totals.light = (session.meta.light_s || 0) / 60;
     totals.rem   = (session.meta.rem_s   || 0) / 60;
-  } else {
-    const keys = { 0: 'awake', 1: 'light', 2: 'deep', 3: 'rem' };
-    for (const b of night) {
-      const k = keys[b.stage];
-      if (k) totals[k] += (b.dur || 0) / 60000;
-    }
   }
   totals.total = totals.awake + totals.light + totals.deep + totals.rem;
   totals.startTs = tMin;

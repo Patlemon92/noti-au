@@ -280,10 +280,14 @@ function renderSparkline(container, samples, options = {}) {
     return;
   }
   // Back-compat: if caller passed raw values not objects, wrap them.
-  const arr = samples.map((s, i) => typeof s === 'object'
-    ? { ts: new Date(s.ts).getTime(), v: s.value }
-    : { ts: i, v: s }
-  );
+  // Bucketed trend rows arrive with meta.min/meta.max — capture them
+  // so we can draw a faint range band behind the avg line.
+  const arr = samples.map((s, i) => {
+    if (typeof s !== 'object') return { ts: i, v: s };
+    const lo = s.meta && Number.isFinite(s.meta.min) ? s.meta.min : null;
+    const hi = s.meta && Number.isFinite(s.meta.max) ? s.meta.max : null;
+    return { ts: new Date(s.ts).getTime(), v: s.value, lo, hi };
+  });
   arr.sort((a, b) => a.ts - b.ts);
 
   const W   = container.clientWidth || 300;
@@ -293,8 +297,13 @@ function renderSparkline(container, samples, options = {}) {
   const chartH = H - axisH;
 
   const vs   = arr.map(a => a.v);
-  const min  = Math.min(...vs);
-  const max  = Math.max(...vs);
+  // If samples carry meta.min/meta.max (bucketed data from /ring/trend),
+  // include those in the Y-axis range so the band stays inside the
+  // chart. Otherwise fall back to just the avg values.
+  const lows  = arr.map(a => (a.lo != null && isFinite(a.lo)) ? a.lo : a.v);
+  const highs = arr.map(a => (a.hi != null && isFinite(a.hi)) ? a.hi : a.v);
+  const min  = Math.min(...lows);
+  const max  = Math.max(...highs);
   const vrng = max - min || 1;
 
   const tMin  = arr[0].ts;
@@ -321,6 +330,23 @@ function renderSparkline(container, samples, options = {}) {
   }
   const stroke = options.color || '#bf5a3c';
 
+  // Range band — drawn behind the avg line when bucketed data carries
+  // min/max per point. Two polyline edges (upper = max, lower = min)
+  // joined back to back form a filled area. Reads as "during this
+  // bucket, the value swept across this range" without competing with
+  // the avg line. Skipped entirely if no min/max present (Today vitals
+  // tiles + sleep card still pass raw {ts, value} pairs).
+  let bandPath = '';
+  if (arr.some(a => a.lo != null && a.hi != null)) {
+    const top = arr.map(a => [xFor(a.ts), yFor(a.hi != null ? a.hi : a.v)]);
+    const bot = arr.map(a => [xFor(a.ts), yFor(a.lo != null ? a.lo : a.v)]);
+    bandPath = `M${top[0][0]},${top[0][1]} `
+      + top.slice(1).map(p => `L${p[0]},${p[1]}`).join(' ')
+      + ' '
+      + bot.slice().reverse().map(p => `L${p[0]},${p[1]}`).join(' ')
+      + ' Z';
+  }
+
   // Time-axis formatting
   const sameDay = tSpan < 28 * 3600 * 1000; // ≤ ~1 day
   const fmt = ms => {
@@ -344,6 +370,8 @@ function renderSparkline(container, samples, options = {}) {
          preserveAspectRatio="none" style="touch-action:none">
       <line x1="${pad}" y1="${chartH}" x2="${W - pad}" y2="${chartH}"
             stroke="var(--hair)" stroke-width="1"/>
+      ${bandPath ? `<path d="${bandPath}" fill="${stroke}" opacity="0.12"
+            stroke="none"/>` : ''}
       <path d="${d}" fill="none" stroke="${stroke}" stroke-width="1.6"
             stroke-linecap="round" stroke-linejoin="round"
             vector-effect="non-scaling-stroke"/>

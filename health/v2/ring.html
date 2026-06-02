@@ -378,22 +378,32 @@ async function manualSync() {
 async function load() {
   syncStart();
   try {
-    const trendsSince = new Date(Date.now() - currentRange * 86400 * 1000).toISOString();
-    const trendsQ = `/ring/samples?metric=${TREND_METRICS.join(',')}&limit=5000&since=${encodeURIComponent(trendsSince)}`;
-    // Sleep needs its own query — the combined trends pull is saturated
-    // with high-frequency HR/HRV/SpO2 samples and the older but vital
-    // sleep_session + sleep_stage rows get cut off the bottom of the
-    // limit=5000 buffer. Window: 30 days regardless of trend range
-    // pill so the sleep card always renders if you've slept this month.
+    // Per-metric bucketed trend queries. Replaces the old shared-cap
+    // /ring/samples call where 18 metrics fought for 5000 rows and
+    // each ended up with ~278 samples spread across 7 days (one point
+    // every ~36 minutes — scrub jumped an hour at a time).
+    // /ring/trend does server-side bucket averaging sized to the range,
+    // returning ~300 honest points per metric. Each query is a single
+    // RPC, so the parallel fan-out is cheap.
+    //
+    // Sleep still goes through /ring/samples — sleep_session and
+    // sleep_stage are categorical events, not series-averageable.
+    const trendMetrics = TREND_METRICS.filter(
+      m => m !== 'sleep_session' && m !== 'sleep_stage');
     const sleepSince = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
     const sleepQ = `/ring/samples?metric=sleep_session,sleep_stage&limit=2000&since=${encodeURIComponent(sleepSince)}`;
-    const [{ devices }, { samples }, sleepRes] = await Promise.all([
+
+    const trendPromises = trendMetrics.map(m =>
+      api(`/ring/trend?metric=${m}&days=${currentRange}`)
+        .then(r => r.samples || [])
+        .catch(() => []));
+    const [{ devices }, trendResults, sleepRes] = await Promise.all([
       api('/ring/status'),
-      api(trendsQ),
+      Promise.all(trendPromises),
       api(sleepQ).catch(() => ({ samples: [] })),
     ]);
     cachedDevice = devices[0];
-    cachedSamples = (samples || []).filter(s => s.metric !== 'sleep_session' && s.metric !== 'sleep_stage');
+    cachedSamples = trendResults.flat();
     const sleepSamples = sleepRes.samples || [];
     cachedSleep.sessions = sleepSamples.filter(s => s.metric === 'sleep_session');
     cachedSleep.stages   = sleepSamples.filter(s => s.metric === 'sleep_stage');

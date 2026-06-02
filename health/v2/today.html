@@ -394,6 +394,34 @@
   }
   .noticed-card.expanded textarea { display: block; }
 
+  /* Note something — quiet soft entry at the bottom of Today.
+     Single line, no big icon, no section header. Sits as a soft
+     invitation, not a CTA. Tap → opens the existing log sheet. */
+  .note-soft {
+    width: 100%; box-sizing: border-box;
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255, 251, 244, 0.85);
+    border: 1px dashed rgba(44, 32, 23, .18);
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-top: 4px;
+    margin-bottom: 18px;
+    cursor: pointer;
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic; font-size: 14.5px;
+    color: var(--taupe-2);
+    text-align: left;
+    transition: transform .12s ease, background .15s ease;
+  }
+  .note-soft:active { transform: scale(.99); background: rgba(255, 251, 244, 1); }
+  .note-soft-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--clay-2);
+    flex-shrink: 0;
+    opacity: .7;
+  }
+  .note-soft-text { flex: 1; line-height: 1.45; }
+
   /* Check-in pop-in — only shows during the scheduled morning/evening
      window. Soft warm card; tap whole card to start, "Later" inline. */
   .checkin-pop {
@@ -648,6 +676,13 @@
   </div>
   <div class="te-card" id="noticed-list" style="animation-delay:.118s;display:none;margin-bottom:18px"></div>
 
+  <!-- Note something — single soft entry. No section header, no big
+       icon. Sits as a quiet invitation, not a CTA. -->
+  <button class="note-soft te-card" type="button" onclick="openLogSheet()" style="animation-delay:.13s">
+    <span class="note-soft-dot" aria-hidden="true"></span>
+    <span class="note-soft-text">Note something — a thought, a symptom, a moment.</span>
+  </button>
+
   <!-- Hidden compat shells — kept so existing JS that reads/writes them
        doesn't throw. Their visible UI was retired. -->
   <div id="alys-card" style="display:none">
@@ -881,6 +916,11 @@ async function load() {
   // today's slot is already complete, honours session-dismissal.
   await refreshCheckinPop();
 
+  // Dynamic Alys observation under the greeting. Replaces the static
+  // "the shape of a quiet morning." line with a fresh 2-sentence reading
+  // generated from today's data. Cached on the server for 30 min.
+  refreshAlysLine();  // fire-and-forget; the static fallback shows until this lands
+
   // Weather pill
   try {
     const w = await api('/me/weather').catch(() => null);
@@ -912,35 +952,41 @@ async function load() {
 // the tile when a fresh reading arrives.
 const _lastSeen = {};
 
-// wear_state values: 0 = off finger, 1 = charging, 2 = worn.
-// The chip paints only when the ring isn't being worn. Critically: it
-// ALSO suppresses when there's a fresh HR sample (≤2 min old), because
-// the ring's wear sensor can falsely report 0 even while live streaming
-// (Patrick observed this on both rings). Live HR is the authoritative
-// "ring is on a finger" signal — beats the stale wear_state.
-function renderWearChip(wearSamples, allSamples) {
+// Off-finger detection is now data-time based, not sensor based. Patrick:
+// "we can just use the off finger as an algorithm — based on the last
+// data time." The ring's wear_state sensor is unreliable (gold + black
+// both observed reporting 0 while clearly worn). The arrival of HR data
+// is the real signal.
+//
+// Rule:
+//   - HR sample in last 3 min → worn → chip hidden
+//   - No HR in last 3 min     → off-finger or ring offline → chip shows
+//                                "Off finger · <ago>"
+// wearSamples kept in the signature for backwards compat; ignored now.
+function renderWearChip(_wearSamples, allSamples) {
   const el = document.getElementById('vitals-wear');
   if (!el) return;
-  const latest = (wearSamples || [])[0];
-  if (!latest) { el.style.display = 'none'; return; }
-  const v = Number(latest.value);
-  if (v === 2) { el.style.display = 'none'; return; }
-
-  // Authoritative override: if HR streamed in the last 2 minutes, the
-  // ring is clearly worn — sensor wear-state is wrong. Hide the chip.
-  if (hasRecentHr(allSamples, 2 * 60 * 1000)) {
+  const FRESH_MS = 3 * 60 * 1000;
+  if (hasRecentHr(allSamples, FRESH_MS)) {
     el.style.display = 'none'; return;
   }
-
-  const sinceTxt = formatAgo(latest.ts);
-  if (v === 1) {
-    el.className = 'wear-chip charging';
-    el.innerHTML = `<span class="glyph">⌁</span><span>On charger · ${escapeHtml(sinceTxt)}</span>`;
-  } else {
-    el.className = 'wear-chip';
-    el.innerHTML = `<span class="glyph">○</span><span>Off finger · ${escapeHtml(sinceTxt)}</span>`;
-  }
+  const last = lastHrSample(allSamples);
+  if (!last) { el.style.display = 'none'; return; }  // no data at all yet
+  el.className = 'wear-chip';
+  el.innerHTML = `<span class="glyph">○</span><span>Off finger · ${escapeHtml(formatAgo(last.ts))}</span>`;
   el.style.display = 'inline-flex';
+}
+
+function lastHrSample(allSamples) {
+  if (!allSamples || !allSamples.length) return null;
+  let best = null;
+  let bestTs = -Infinity;
+  for (const s of allSamples) {
+    if (s.metric !== 'hr') continue;
+    const t = Date.parse(s.ts);
+    if (Number.isFinite(t) && t > bestTs) { bestTs = t; best = s; }
+  }
+  return best;
 }
 
 // Has a heart-rate sample arrived in the last `windowMs` ms?
@@ -1013,6 +1059,22 @@ function renderNoticed(events) {
       reloadNoticed();
     });
   });
+}
+
+// ── Alys observation line ────────────────────────────
+// Fetches the dynamic 2-sentence reading from the backend and replaces
+// the static placeholder in #alys-line. Silent on failure — the static
+// line stays in place. Cached server-side for 30 min so this is cheap
+// to call on every Today load.
+async function refreshAlysLine() {
+  const el = document.getElementById('alys-line');
+  if (!el) return;
+  try {
+    const r = await api('/me/today-observation').catch(() => null);
+    const text = r && typeof r.text === 'string' ? r.text.trim() : '';
+    if (!text) return;
+    el.textContent = text;
+  } catch (_) { /* keep static fallback */ }
 }
 
 // ── Check-in pop-in ───────────────────────────────────

@@ -860,7 +860,7 @@ async function load() {
     samples = ringSamples.samples || [];
     strainSamples = strainResp.samples || [];
     _baselines = baselinesResp.baselines || {};
-    renderWearChip(wearResp.samples || []);
+    renderWearChip(wearResp.samples || [], samples);
   } catch (e) { console.error(e); }
 
   try {
@@ -913,15 +913,25 @@ async function load() {
 const _lastSeen = {};
 
 // wear_state values: 0 = off finger, 1 = charging, 2 = worn.
-// Pill only paints when the ring isn't being worn — when it's worn the
-// vitals already tell that story, no chip needed.
-function renderWearChip(wearSamples) {
+// The chip paints only when the ring isn't being worn. Critically: it
+// ALSO suppresses when there's a fresh HR sample (≤2 min old), because
+// the ring's wear sensor can falsely report 0 even while live streaming
+// (Patrick observed this on both rings). Live HR is the authoritative
+// "ring is on a finger" signal — beats the stale wear_state.
+function renderWearChip(wearSamples, allSamples) {
   const el = document.getElementById('vitals-wear');
   if (!el) return;
   const latest = (wearSamples || [])[0];
   if (!latest) { el.style.display = 'none'; return; }
   const v = Number(latest.value);
   if (v === 2) { el.style.display = 'none'; return; }
+
+  // Authoritative override: if HR streamed in the last 2 minutes, the
+  // ring is clearly worn — sensor wear-state is wrong. Hide the chip.
+  if (hasRecentHr(allSamples, 2 * 60 * 1000)) {
+    el.style.display = 'none'; return;
+  }
+
   const sinceTxt = formatAgo(latest.ts);
   if (v === 1) {
     el.className = 'wear-chip charging';
@@ -931,6 +941,18 @@ function renderWearChip(wearSamples) {
     el.innerHTML = `<span class="glyph">○</span><span>Off finger · ${escapeHtml(sinceTxt)}</span>`;
   }
   el.style.display = 'inline-flex';
+}
+
+// Has a heart-rate sample arrived in the last `windowMs` ms?
+function hasRecentHr(allSamples, windowMs) {
+  if (!allSamples || !allSamples.length) return false;
+  const cutoff = Date.now() - windowMs;
+  for (const s of allSamples) {
+    if (s.metric !== 'hr') continue;
+    const t = Date.parse(s.ts);
+    if (Number.isFinite(t) && t >= cutoff) return true;
+  }
+  return false;
 }
 
 // ── Noticed flags ────────────────────────────────────

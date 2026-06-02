@@ -121,6 +121,41 @@ body {
   font-size: 22px;
 }
 
+/* Compact 2-up stat row for Strain + Recovery at the top of the
+   trend list. Number-only — no chart, no axis, no range subline.
+   They're scored numbers (0-21 / 0-100), not time-series readings;
+   the trend line was always meaningless. Tap still leads to detail. */
+.stat-pair {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 14px;
+}
+.stat-pair .card { padding: 16px; }
+.stat-pair .stat-label {
+  font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--taupe-2, #9a8369);
+}
+.stat-pair .stat-value {
+  font-family: 'Apricosa','Fraunces',serif; font-weight: 500;
+  font-size: 38px; letter-spacing: -.7px;
+  color: var(--ink-2, #2b2018); line-height: 1;
+  margin-top: 6px;
+}
+.stat-pair .stat-sub {
+  font-size: 12.5px; color: var(--taupe-2, #9a8369);
+  font-style: italic; margin-top: 4px;
+}
+.stat-pair .card { position: relative; }
+/* Tap-to-explain affordance — small "ⓘ" in the corner of any card
+   that has a METRIC_EXPLAINERS entry. Scope is global (not .stat-pair)
+   so the same button appears on the regular trend cards too. */
+.stat-help {
+  position: absolute; top: 10px; right: 10px;
+  font-size: 14px; color: var(--ink-mute, #b9a994);
+  background: transparent; border: 0; padding: 4px 8px;
+  cursor: pointer; line-height: 1; z-index: 2;
+}
+.stat-help:active { color: var(--ink-2, #2b2018); }
+
 /* Connection pill matches Today's frosted pill */
 .head-pill {
   background: var(--warm-card, #fffdf9) !important;
@@ -213,6 +248,10 @@ body {
   background: var(--bone); z-index: 50;
   transition: height 0.18s ease;
 }
+/* Stops the WebKit native bounce so our touchmove handler is the
+   only thing reacting to the drag-from-top gesture. Without this
+   the native overscroll wins the race and PTR never triggers. */
+html, body { overscroll-behavior-y: contain; }
 .ptr-inner { padding: 10px 0; display: flex; align-items: center; gap: 8px; }
 .ptr-spinner {
   width: 14px; height: 14px; border-radius: 50%;
@@ -297,6 +336,17 @@ body {
   </div>
 </div>
 
+<!-- Per-metric "how this is calculated" explainer sheet. Reuses the
+     existing sheet styling — just a separate DOM root so it doesn't
+     stomp the ring-actions sheet's content. Opened from the ⓘ buttons
+     on each metric card. -->
+<div class="sheet-backdrop" id="explainer-bd" onclick="closeExplainer()"></div>
+<div class="sheet" id="explainer-sheet">
+  <div class="sheet-grip"></div>
+  <h2 id="explainer-title">—</h2>
+  <div id="explainer-body" style="font-size:14.5px;line-height:1.55;color:var(--ink-2,#2b2018);"></div>
+</div>
+
 <div id="nav-mount"></div>
 
 <script src="/health/v2/lib.js"></script>
@@ -310,6 +360,12 @@ if (window.neeve?.postMessage) {
 
 let currentRange = 7;
 let cachedSamples = [];
+// metric → {ts, value, unit} — the most recent RAW reading per metric,
+// returned alongside the bucketed series from /ring/trend. Used for
+// the headline number on each card so it stays honest about "what
+// did your ring actually read most recently" instead of "what was the
+// average of the last bucket".
+let cachedLatest = {};
 let cachedSleep = { stages: [], sessions: [] };
 let cachedDevice = null;
 
@@ -395,15 +451,21 @@ async function load() {
 
     const trendPromises = trendMetrics.map(m =>
       api(`/ring/trend?metric=${m}&days=${currentRange}`)
-        .then(r => r.samples || [])
-        .catch(() => []));
+        .then(r => ({ metric: m, samples: r.samples || [], latest: r.latest || null }))
+        .catch(() => ({ metric: m, samples: [], latest: null })));
     const [{ devices }, trendResults, sleepRes] = await Promise.all([
       api('/ring/status'),
       Promise.all(trendPromises),
       api(sleepQ).catch(() => ({ samples: [] })),
     ]);
     cachedDevice = devices[0];
-    cachedSamples = trendResults.flat();
+    cachedSamples = trendResults.flatMap(r => r.samples);
+    // Latest raw value per metric — used for the headline number on
+    // each card so it shows "actual most recent reading" instead of
+    // "last bucket's average". Was a regression introduced when the
+    // page switched from raw /ring/samples to bucketed /ring/trend.
+    cachedLatest = {};
+    for (const r of trendResults) if (r.latest) cachedLatest[r.metric] = r.latest;
     const sleepSamples = sleepRes.samples || [];
     cachedSleep.sessions = sleepSamples.filter(s => s.metric === 'sleep_session');
     cachedSleep.stages   = sleepSamples.filter(s => s.metric === 'sleep_stage');
@@ -503,6 +565,14 @@ function renderSleepCard(sessions) {
     // adjacent timestamps.
     const sorted = recentStages.slice().sort((a, b) =>
       new Date(a.ts) - new Date(b.ts));
+    // Inferred-awakening rule: the R11M firmware almost never emits a
+    // "stage = awake" sample. When the user briefly gets up (Patrick:
+    // helped his dog off the bed at 05:30am), the firmware DOES detect
+    // the activity but classifies it as a 20-60 second "light" blip.
+    // We treat any LIGHT segment shorter than 60 seconds as an inferred
+    // awakening so the breakdown matches lived experience. Conservative:
+    // only reclassifies light blips, leaves REM segments alone (those
+    // can legitimately be short during transitions).
     const totals = { 0: 0, 1: 0, 2: 0, 3: 0 };
     for (let i = 0; i < sorted.length; i++) {
       const cur = sorted[i];
@@ -510,7 +580,8 @@ function renderSleepCard(sessions) {
       const dur = next
         ? Math.max(0, (new Date(next.ts) - new Date(cur.ts)) / 60000)
         : 0;
-      const stage = Math.round(Number(cur.value));
+      let stage = Math.round(Number(cur.value));
+      if (stage === 1 && dur > 0 && dur < 1) stage = 0;
       if (totals[stage] != null) totals[stage] += dur;
     }
     const fmt = m => `${Math.floor(m / 60)}h ${Math.round(m % 60)}m`;
@@ -525,11 +596,17 @@ function renderSleepCard(sessions) {
     const t0 = new Date(sorted[0].ts).getTime();
     const t1 = new Date(sorted[sorted.length - 1].ts).getTime();
     const dt = Math.max(1, t1 - t0);
+    // Stage palette. Patrick's morning feedback: "light and REM are
+    // too close in colour" — they were gold #c8a23f vs sage #94a87a,
+    // both warm-olive-ish tones that blend at small sizes on the bar.
+    // Bumped REM to --sage-deep so it reads as clearly cool green
+    // against light's gold. Awake stays clay so brief 5:30 wake-ups
+    // (Patrick getting up for the dog) stand out visually.
     const stageColor = {
-      0: '#cb8270',  // awake (clay)
+      0: '#bf5a3c',  // awake (clay)
       1: '#c8a23f',  // light (gold)
       2: '#8f6c86',  // deep (plum)
-      3: '#94a87a',  // REM (sage)
+      3: '#7E927A',  // REM (sage-deep — cool green, distinct from light)
     };
     const segments = [];
     for (let i = 0; i < sorted.length - 1; i++) {
@@ -590,12 +667,46 @@ function renderCharts() {
   // Chart order. 'sleep' is virtual — renderSleepCard pulls from
   // cachedSleep.sessions (separate metric filter). 'bp' is virtual —
   // combines bp_sys + bp_dia. Skips sleep_stage and ecg_summary.
+  // Strain + Recovery are 0-21 / 0-100 scored numbers, not time-series
+  // — they go in the compact stat-pair row above the main list, no
+  // chart, just the value.
   const metrics = [
-    'strain_score', 'recovery_score', 'sleep',
+    'sleep',
     'hr', 'hrv_rmssd', 'hrv_index', 'spo2', 'respiration_rate',
     'steps', 'bp', 'temp_skin', 'stress', 'pressure_index',
     'load_index', 'body_index', 'vo2max',
   ];
+
+  // Build the compact stat-pair row for Strain + Recovery (when data
+  // exists for either). Empty otherwise so nothing reserves vertical
+  // space on accounts with no scoring engine output yet.
+  const strainSamples   = grouped['strain_score']   || [];
+  const recoverySamples = grouped['recovery_score'] || [];
+  const strainHas   = strainSamples.length   > 0;
+  const recoveryHas = recoverySamples.length > 0;
+  let statPairHtml = '';
+  if (strainHas || recoveryHas) {
+    const card = (m, samples, range) => {
+      const latest = cachedLatest[m] || samples[samples.length - 1];
+      const value  = latest ? Math.round(latest.value) : '—';
+      const sub    = range || '';
+      const href   = `/health/v2/metric.html?metric=${encodeURIComponent(m)}&days=${currentRange}`;
+      return `
+        <a class="metric-card-link" href="${href}">
+          <div class="card">
+            <button class="stat-help" type="button"
+                    onclick="event.preventDefault();event.stopPropagation();openExplainer('${m}')">ⓘ</button>
+            <div class="stat-label">${metricLabel(m)}</div>
+            <div class="stat-value">${value}</div>
+            ${sub ? `<div class="stat-sub">${escapeHtml(sub)}</div>` : ''}
+          </div>
+        </a>
+      `;
+    };
+    const strainCard   = strainHas   ? card('strain_score',   strainSamples,   '0–21') : '';
+    const recoveryCard = recoveryHas ? card('recovery_score', recoverySamples, '0–100') : '';
+    statPairHtml = `<div class="stat-pair">${strainCard}${recoveryCard}</div>`;
+  }
   const html = metrics
     .filter(m => {
       if (m === 'sleep') return sleepInWindow.length > 0;
@@ -606,7 +717,11 @@ function renderCharts() {
       if (m === 'sleep') return renderSleepCard(sleepInWindow);
       if (m === 'bp') return renderBpCard(grouped.bp_sys || [], grouped.bp_dia || []);
       const samples = grouped[m];
-      let latest = samples[samples.length - 1];
+      // Prefer the latest RAW reading (from /ring/trend's `latest`
+      // field) over the last bucket — the bucket's `value` is the
+      // 30-min average, not the most recent ping. Falls back to the
+      // last bucket when latest isn't available (older cached data).
+      let latest = cachedLatest[m] || samples[samples.length - 1];
       // Steps are a cumulative-today counter — display max-of-today,
       // not latest. Defensive against stray non-monotonic samples that
       // can slip in (e.g. a ring side reset, multi-ring crossover).
@@ -622,13 +737,28 @@ function renderCharts() {
           latest = { ...latest, value: maxToday };
         }
       }
+      // For range/avg badges we want the *bucket* aggregates' true min
+      // and max (which arrive in samples[i].meta.min/.max), not the
+      // min/max of the bucket AVERAGES. Falls back gracefully when
+      // meta isn't present.
+      const lows  = samples.map(s => Number.isFinite(s.meta?.min) ? s.meta.min : s.value);
+      const highs = samples.map(s => Number.isFinite(s.meta?.max) ? s.meta.max : s.value);
       const avg = (samples.reduce((a, s) => a + s.value, 0) / samples.length);
-      const min = Math.min(...samples.map(s => s.value));
-      const max = Math.max(...samples.map(s => s.value));
+      const min = Math.min(...lows);
+      const max = Math.max(...highs);
       const detailUrl = `/health/v2/metric.html?metric=${encodeURIComponent(m)}&days=${currentRange}`;
+      // Only render the ⓘ explainer button for metrics we have a
+      // calculation note for — avoids the empty-sheet dead-end.
+      const hasExplainer = !!METRIC_EXPLAINERS[m];
+      const explainerBtn = hasExplainer
+        ? `<button class="stat-help" type="button"
+             onclick="event.preventDefault();event.stopPropagation();openExplainer('${m}')"
+             aria-label="How this number is calculated">ⓘ</button>`
+        : '';
       return `
         <a class="metric-card-link" href="${detailUrl}">
-          <div class="card">
+          <div class="card" style="position:relative">
+            ${explainerBtn}
             <div class="section-head" style="margin-bottom:6px;display:flex;align-items:flex-start;justify-content:space-between">
               <h3 class="title-sm">${metricLabel(m)}</h3>
               <span class="chev">›</span>
@@ -646,7 +776,8 @@ function renderCharts() {
       `;
     }).join('');
 
-  document.getElementById('charts').innerHTML = html || '<div class="empty">No readings in this range yet.</div>';
+  document.getElementById('charts').innerHTML =
+    statPairHtml + (html || '<div class="empty">No readings in this range yet.</div>');
 
   metrics.forEach(m => {
     if (m === 'sleep') {
@@ -731,6 +862,140 @@ function closeSheet() {
   document.getElementById('sheet-bd').classList.remove('open');
   document.getElementById('sheet').classList.remove('open');
 }
+
+// ── Metric explainer sheet ────────────────────────────────
+// Tap the ⓘ on any card → bottom sheet with "how this is calculated"
+// for the metric. Patrick wanted these so the headline numbers stop
+// feeling magic — every reading should be traceable to the inputs.
+// Plain-English first paragraph, then a "How we got it" section.
+const METRIC_EXPLAINERS = {
+  strain_score: {
+    title: 'Strain',
+    body: `<p>How much load your body carried today, on a 0–21 scale (same
+range as Whoop's). Higher means more cardiovascular load.</p>
+<p><b>How it's calculated:</b> we sum the minutes you spent in each HR
+zone (light → moderate → hard) and weight harder zones more. HR zones
+are anchored to your resting HR + age-predicted max. Refreshed every
+~5 minutes throughout the day.</p>
+<p>Resting at the desk all day usually lands 5–8. A long walk pushes
+it to 12–14. Vigorous exercise can take it past 18.</p>`,
+  },
+  recovery_score: {
+    title: 'Recovery',
+    body: `<p>How ready your body is right now, on a 0–100 scale. Computed
+from last night's sleep + resting HR + HRV trend.</p>
+<p><b>How it's calculated:</b> we score three inputs against your
+14-day rolling baseline — sleep duration vs your typical night, RHR
+vs your typical morning, and HRV vs your typical overnight median —
+then blend them. HRV is weighted most heavily because it's the most
+sensitive autonomic-nervous-system signal.</p>
+<p>50 is "about average for you". Above 70 means you're in better
+shape than usual; below 30 means your nervous system is loaded and a
+lighter day is worth considering.</p>`,
+  },
+  hr: {
+    title: 'Heart rate',
+    body: `<p>The most recent beats-per-minute reading from your ring's PPG
+sensor.</p>
+<p><b>How it's calculated:</b> the ring's optical sensor samples your
+blood-flow waveform at 1000 Hz and the firmware computes a 1-second
+rolling HR from peak-to-peak intervals. We log it every ~2 minutes
+into the autonomous monitor, plus continuously when the app is open.</p>
+<p>The range shown on the card is the true min and max across the
+selected window (not averaged). Avg is the mean of all readings.</p>`,
+  },
+  hrv_rmssd: {
+    title: 'HRV (RMSSD)',
+    body: `<p>Heart rate variability, in milliseconds. The ms difference
+between consecutive heartbeats — a window into how your autonomic
+nervous system is balancing recovery vs stress.</p>
+<p><b>How it's calculated:</b> the ring identifies successive R-R
+intervals from the PPG waveform and computes the root-mean-square of
+the successive differences (RMSSD) over a 5-minute window. Higher
+generally means better recovery state.</p>
+<p>Reference points: 20-30 ms is typical at rest for adults 40+, 30-50
+ms for healthy younger adults, 50+ ms is excellent. Your own baseline
+matters more than these absolutes.</p>`,
+  },
+  spo2: {
+    title: 'Blood oxygen',
+    body: `<p>Percentage of haemoglobin in your blood saturated with
+oxygen, measured optically.</p>
+<p><b>How it's calculated:</b> the ring's red + infrared LEDs measure
+how much light passes through your finger; the ratio at the two
+wavelengths is mapped to SpO₂ via a calibration curve.</p>
+<p>95-100% is normal at rest. Drops to 92-94% are common during sleep
+and not concerning on their own. Consistent readings below 90% are
+worth flagging to a doctor.</p>`,
+  },
+  respiration_rate: {
+    title: 'Respiration rate',
+    body: `<p>Breaths per minute, derived from your heart-rate waveform
+(no separate breathing sensor — the ring infers it).</p>
+<p><b>How it's calculated:</b> the ring uses the small HR variations
+that happen with each breath (respiratory sinus arrhythmia) to estimate
+how fast you're breathing. Computed every 2 minutes from a 5-minute
+window.</p>
+<p>12-20 br/min is typical at rest. Elevated readings can come from
+stress, fever, or just being active before the measurement.</p>`,
+  },
+  bp: {
+    title: 'Blood pressure',
+    body: `<p><b>Experimental.</b> The ring estimates BP from the shape
+of your PPG waveform — not a real cuff measurement.</p>
+<p><b>How it's calculated:</b> the firmware looks at the time delay
+between pulse features (pulse transit time) and maps that to a sys/dia
+estimate via a population calibration curve. Accuracy depends heavily
+on per-user calibration against a real cuff.</p>
+<p><b>Use a real cuff for anything that matters.</b> Treat the ring's
+number as a trend-spotting tool, not a clinical reading.</p>`,
+  },
+  steps: {
+    title: 'Steps',
+    body: `<p>Steps counted today by the ring's accelerometer.</p>
+<p><b>How it's calculated:</b> the ring's 3-axis accelerometer runs a
+gait-detection filter — only motion patterns that look like walking
+get counted (so swinging your arm at a desk doesn't add false steps).
+Counter resets at midnight local time.</p>
+<p>Cumulative through the day. The number you see is the running total
+since 00:00, not the latest measurement.</p>`,
+  },
+  temp_skin: {
+    title: 'Skin temperature',
+    body: `<p>Surface temperature measured at the inside of the ring,
+in degrees Celsius.</p>
+<p><b>How it's calculated:</b> a thermistor in contact with the
+finger samples temperature periodically. The reading is influenced by
+ambient temperature, finger circulation, and how recently you washed
+your hands.</p>
+<p>The Δ (delta) version compares each reading to your 14-day rolling
+average for the same time of day — useful for spotting fever or
+hormonal shifts that absolute readings miss.</p>`,
+  },
+  stress: {
+    title: 'Stress',
+    body: `<p>The ring's stress-level estimate, 0-100.</p>
+<p><b>How it's calculated:</b> the firmware blends recent HRV (lower
+= higher stress score), HR (above your resting baseline = higher
+stress), and SDNN trends over a 5-minute window.</p>
+<p>0-30 relaxed, 30-60 normal, 60-100 elevated. The score is most
+useful as a within-day trend (am I winding up or winding down?), not
+as an absolute reading.</p>`,
+  },
+};
+
+function openExplainer(metric) {
+  const ex = METRIC_EXPLAINERS[metric];
+  if (!ex) return;
+  document.getElementById('explainer-title').textContent = ex.title;
+  document.getElementById('explainer-body').innerHTML   = ex.body;
+  document.getElementById('explainer-bd').classList.add('open');
+  document.getElementById('explainer-sheet').classList.add('open');
+}
+function closeExplainer() {
+  document.getElementById('explainer-bd').classList.remove('open');
+  document.getElementById('explainer-sheet').classList.remove('open');
+}
 function populateSheet() {
   const d = cachedDevice;
   if (!d) {
@@ -792,11 +1057,17 @@ function callNative(method, args = {}) {
     if (!pulling) return;
     const dy = e.touches[0].clientY - startY;
     if (dy <= 0) { setHeight(0); return; }
+    // Prevent iOS WebKit's native overscroll bounce from competing
+    // with our PTR gesture. Without preventDefault the native bounce
+    // captures the drag and our handler sees a noisy / clipped signal,
+    // so the indicator never grows to the trigger threshold. Needs
+    // passive:false to be allowed to call preventDefault.
+    e.preventDefault();
     // Rubber-band: resistance grows with distance.
     const eased = dy * 0.55;
     setHeight(eased);
     ptrText.textContent = eased >= TRIGGER ? 'Release to refresh' : 'Pull to refresh';
-  }, { passive: true });
+  }, { passive: false });
 
   document.addEventListener('touchend', () => {
     if (!pulling) return;

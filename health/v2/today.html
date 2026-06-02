@@ -461,13 +461,21 @@
     text-decoration: underline; text-decoration-thickness: 1px;
     text-underline-offset: 3px;
   }
-  /* One-line Alys observation under the greeting. Replaces the old
-     subhead "Here when you want it." and the bottom Alys card body. */
+  /* Alys observation paragraph under the greeting. Hanken Grotesk
+     (brand body face) — visibly distinct from the Apricosa greeting so
+     the two read as different voices: display + observation. Generous
+     line-height so the 2-3 sentence reading breathes; wider max-width
+     so it doesn't feel cramped at typical iPhone widths. */
   .alys-line {
-    font-family: 'Apricosa', 'Fraunces', Georgia, serif;
-    font-style: italic; font-size: 15px;
-    line-height: 1.45; color: var(--taupe-2);
-    margin-top: 10px; max-width: 28em;
+    font-family: 'Hanken Grotesk', 'Inter Tight', system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--ink-mute, #5C4F45);
+    margin-top: 16px;
+    margin-bottom: 6px;
+    max-width: 36em;
+    letter-spacing: -.05px;
   }
   /* Vitals meta-row sits BELOW the stats grid (no "Right now" header
      above). Holds the "X min ago" timestamp + wear-state chip on the
@@ -1877,6 +1885,12 @@ async function fastRefreshVitals() {
     const r = await api('/ring/samples?limit=500').catch(() => null);
     if (!r || !r.samples) return;
     if (_lastRingDevice) renderVitals(_lastRingDevice, r.samples);
+    // Re-render the off-finger chip every fast tick so it disappears
+    // the moment a fresh HR sample lands (Patrick: chip was stuck on
+    // stale wear_state while HR was streaming). renderWearChip now
+    // derives off-finger purely from data-time, so passing the latest
+    // samples is enough.
+    renderWearChip(null, r.samples);
   } catch (_) {
   } finally {
     syncEnd();

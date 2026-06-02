@@ -153,7 +153,9 @@
   .composer-wrap {
     position: fixed;
     left: 0; right: 0; bottom: 0;
-    padding: 10px 22px max(calc(56px + env(safe-area-inset-bottom)), 70px);
+    /* Bottom padding clears the floating pill nav (sits ~80px above
+       safe-area inset) with breathing room above it. */
+    padding: 10px 22px max(calc(96px + env(safe-area-inset-bottom)), 108px);
     background: linear-gradient(180deg,
       rgba(248, 241, 231, 0) 0%,
       rgba(248, 241, 231, .92) 18%,

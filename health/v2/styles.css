@@ -48,6 +48,18 @@
   --butter-deep: var(--gold);
 }
 
+/* Tap-to-explain affordance — small "ⓘ" in the corner of any card
+   that has a METRIC_EXPLAINERS entry in lib.js. Defined globally so
+   Today vitals tiles, Ring page cards and any future surface all use
+   the same button styling. */
+.stat-help {
+  position: absolute; top: 10px; right: 10px;
+  font-size: 14px; color: var(--ink-mute, #b9a994);
+  background: transparent; border: 0; padding: 4px 8px;
+  cursor: pointer; line-height: 1; z-index: 2;
+}
+.stat-help:active { color: var(--ink-2, #2b2018); }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Apricosa — Neeve's display face by Sweetest Goods. Self-hosted at

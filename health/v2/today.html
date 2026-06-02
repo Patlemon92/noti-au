@@ -1360,8 +1360,15 @@ function renderVitals(device, samples) {
     // the freshness check below — if the latest HR sample is < 10s old,
     // the ring is actively streaming and the dot pulses.
     const labelExtra = m.key === 'hr' ? '<span class="live-dot" id="hr-live-dot"></span>' : '';
+    // ⓘ explainer button — same global pattern as Ring page. Renders
+    // only when an explainer exists for this metric so we don't get
+    // a sheet-with-no-content if a new vital is added.
+    const explainer = (typeof explainerButton === 'function')
+      ? explainerButton(m.key)
+      : '';
     return `
-      <div class="vital" data-key="${escapeHtml(m.key)}">
+      <div class="vital" data-key="${escapeHtml(m.key)}" style="position:relative">
+        ${explainer}
         <div class="label">${escapeHtml(m.label)}${labelExtra}</div>
         <div class="value">
           <span class="num">${value}</span>

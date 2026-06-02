@@ -601,6 +601,197 @@ function onResume(fn) {
   });
 }
 
+// ── Per-metric explainer — global "how this is calculated" sheet ────
+// Lifted out of ring.html so any page can drop a ⓘ button on any
+// metric and call openExplainer('hr') to surface the plain-English
+// explanation. The sheet HTML is auto-injected into the page on first
+// open, so callers don't need to add markup — just the button.
+//
+// Add new metrics to METRIC_EXPLAINERS as we surface them. Each entry:
+//   { title: 'Visible heading', body: '<p>…</p><p>…</p>' }
+const METRIC_EXPLAINERS = {
+  strain_score: {
+    title: 'Strain',
+    body: `<p>How much load your body carried today, on a 0–21 scale (same
+range as Whoop's). Higher means more cardiovascular load.</p>
+<p><b>How it's calculated:</b> we sum the minutes you spent in each HR
+zone (light → moderate → hard) and weight harder zones more. HR zones
+are anchored to your resting HR + age-predicted max. Refreshed every
+~5 minutes throughout the day.</p>
+<p>Resting at the desk all day usually lands 5–8. A long walk pushes
+it to 12–14. Vigorous exercise can take it past 18.</p>`,
+  },
+  recovery_score: {
+    title: 'Recovery',
+    body: `<p>How ready your body is right now, on a 0–100 scale. Computed
+from last night's sleep + resting HR + HRV trend.</p>
+<p><b>How it's calculated:</b> we score three inputs against your
+14-day rolling baseline — sleep duration vs your typical night, RHR
+vs your typical morning, and HRV vs your typical overnight median —
+then blend them. HRV is weighted most heavily because it's the most
+sensitive autonomic-nervous-system signal.</p>
+<p>50 is "about average for you". Above 70 means you're in better
+shape than usual; below 30 means your nervous system is loaded and a
+lighter day is worth considering.</p>`,
+  },
+  hr: {
+    title: 'Heart rate',
+    body: `<p>The most recent beats-per-minute reading from your ring's PPG
+sensor.</p>
+<p><b>How it's calculated:</b> the ring's optical sensor samples your
+blood-flow waveform at 1000 Hz and the firmware computes a 1-second
+rolling HR from peak-to-peak intervals. We log it every ~2 minutes
+into the autonomous monitor, plus continuously when the app is open.</p>
+<p>The range shown on the card is the true min and max across the
+selected window (not averaged). Avg is the mean of all readings.</p>`,
+  },
+  hrv_rmssd: {
+    title: 'HRV (RMSSD)',
+    body: `<p>Heart rate variability, in milliseconds. The ms difference
+between consecutive heartbeats — a window into how your autonomic
+nervous system is balancing recovery vs stress.</p>
+<p><b>How it's calculated:</b> the ring identifies successive R-R
+intervals from the PPG waveform and computes the root-mean-square of
+the successive differences (RMSSD) over a 5-minute window. Higher
+generally means better recovery state.</p>
+<p>Reference points: 20–30 ms is typical at rest for adults 40+, 30–50
+ms for healthy younger adults, 50+ ms is excellent. Your own baseline
+matters more than these absolutes.</p>`,
+  },
+  spo2: {
+    title: 'Blood oxygen',
+    body: `<p>Percentage of haemoglobin in your blood saturated with
+oxygen, measured optically.</p>
+<p><b>How it's calculated:</b> the ring's red + infrared LEDs measure
+how much light passes through your finger; the ratio at the two
+wavelengths is mapped to SpO₂ via a calibration curve.</p>
+<p>95–100% is normal at rest. Drops to 92–94% are common during sleep
+and not concerning on their own. Consistent readings below 90% are
+worth flagging to a doctor.</p>`,
+  },
+  respiration_rate: {
+    title: 'Respiration rate',
+    body: `<p>Breaths per minute, derived from your heart-rate waveform
+(no separate breathing sensor — the ring infers it).</p>
+<p><b>How it's calculated:</b> the ring uses the small HR variations
+that happen with each breath (respiratory sinus arrhythmia) to estimate
+how fast you're breathing. Computed every 2 minutes from a 5-minute
+window.</p>
+<p>12–20 br/min is typical at rest. Elevated readings can come from
+stress, fever, or just being active before the measurement.</p>`,
+  },
+  bp: {
+    title: 'Blood pressure',
+    body: `<p><b>Experimental.</b> The ring estimates BP from the shape
+of your PPG waveform — not a real cuff measurement.</p>
+<p><b>How it's calculated:</b> the firmware looks at the time delay
+between pulse features (pulse transit time) and maps that to a sys/dia
+estimate via a population calibration curve. Accuracy depends heavily
+on per-user calibration against a real cuff.</p>
+<p><b>Use a real cuff for anything that matters.</b> Treat the ring's
+number as a trend-spotting tool, not a clinical reading.</p>`,
+  },
+  steps: {
+    title: 'Steps',
+    body: `<p>Steps counted today by the ring's accelerometer.</p>
+<p><b>How it's calculated:</b> the ring's 3-axis accelerometer runs a
+gait-detection filter — only motion patterns that look like walking
+get counted (so swinging your arm at a desk doesn't add false steps).
+Counter resets at midnight local time.</p>
+<p>Cumulative through the day. The number you see is the running total
+since 00:00, not the latest measurement.</p>`,
+  },
+  temp_skin: {
+    title: 'Skin temperature',
+    body: `<p>Surface temperature measured at the inside of the ring,
+in degrees Celsius.</p>
+<p><b>How it's calculated:</b> a thermistor in contact with the
+finger samples temperature periodically. The reading is influenced by
+ambient temperature, finger circulation, and how recently you washed
+your hands.</p>
+<p>The Δ (delta) version compares each reading to your 14-day rolling
+average for the same time of day — useful for spotting fever or
+hormonal shifts that absolute readings miss.</p>`,
+  },
+  stress: {
+    title: 'Stress',
+    body: `<p>The ring's stress-level estimate, 0–100.</p>
+<p><b>How it's calculated:</b> the firmware blends recent HRV (lower
+= higher stress score), HR (above your resting baseline = higher
+stress), and SDNN trends over a 5-minute window.</p>
+<p>0–30 relaxed, 30–60 normal, 60–100 elevated. The score is most
+useful as a within-day trend (am I winding up or winding down?), not
+as an absolute reading.</p>`,
+  },
+  sleep_session: {
+    title: 'Last night',
+    body: `<p>How long you slept last night, broken down by stage.</p>
+<p><b>How it's calculated:</b> the ring identifies sleep onset from
+HR + motion stilling, then classifies each ~2-minute window into deep
+(plum) / light (gold) / REM (sage) / awake (clay) using PPG waveform
+features and accelerometer data.</p>
+<p><b>About awake time:</b> the R11M firmware almost never emits an
+explicit "awake" stage — when you get up briefly, it usually classifies
+it as a 20–60 second light blip. We treat those short light blips as
+awakenings so your breakdown matches what actually happened.</p>`,
+  },
+  battery_pct: {
+    title: 'Ring battery',
+    body: `<p>The ring's remaining charge, 0–100%.</p>
+<p><b>How it's calculated:</b> the ring's onboard fuel gauge IC
+estimates remaining capacity from voltage + recent discharge rate.
+The reading is reported every time the app drains the buffer (~every
+few minutes when connected, or on each reconnect).</p>
+<p>Typical full charge lasts 24–48h on R11M with our autonomous
+monitor at 2-minute intervals. Heavy realtime streaming (eg leaving
+the Today page open) burns it faster.</p>`,
+  },
+};
+
+function _ensureExplainerSheet() {
+  if (document.getElementById('explainer-sheet')) return;
+  // Inject the sheet markup once per page lifetime. Uses the same
+  // .sheet / .sheet-backdrop styling each surface already has — if a
+  // page lacks those rules the sheet will look bare but still work.
+  const html = `
+    <div class="sheet-backdrop" id="explainer-bd" onclick="closeExplainer()"></div>
+    <div class="sheet" id="explainer-sheet">
+      <div class="sheet-grip"></div>
+      <h2 id="explainer-title">—</h2>
+      <div id="explainer-body" style="font-size:14.5px;line-height:1.55;color:var(--ink-2,#2b2018);"></div>
+    </div>`;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap);
+}
+
+function openExplainer(metric) {
+  _ensureExplainerSheet();
+  const ex = METRIC_EXPLAINERS[metric];
+  if (!ex) return;
+  document.getElementById('explainer-title').textContent = ex.title;
+  document.getElementById('explainer-body').innerHTML   = ex.body;
+  document.getElementById('explainer-bd').classList.add('open');
+  document.getElementById('explainer-sheet').classList.add('open');
+}
+function closeExplainer() {
+  const bd = document.getElementById('explainer-bd');
+  const sh = document.getElementById('explainer-sheet');
+  if (bd) bd.classList.remove('open');
+  if (sh) sh.classList.remove('open');
+}
+
+/// HTML snippet for a small ⓘ button positioned in the corner of any
+/// card. Pages can string-concat this into a card template — pair it
+/// with a positioned card (relative/absolute) and the global .stat-help
+/// CSS that Ring page defines (or roll equivalent inline styles).
+function explainerButton(metric) {
+  if (!METRIC_EXPLAINERS[metric]) return '';
+  return `<button class="stat-help" type="button"
+    onclick="event.preventDefault();event.stopPropagation();openExplainer('${metric}')"
+    aria-label="How this number is calculated">ⓘ</button>`;
+}
+
 // Bottom nav HTML (call once per page; pass active tab id).
 // Five items — covers everything the v1 PWA exposed so nothing's hidden:
 // Today (v2) · Alys (v1 chat) · Check-in (v1 daily) · Ring (v2 device) · More (v1 profile)

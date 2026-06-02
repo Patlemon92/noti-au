@@ -38,10 +38,15 @@
      values come from a hand-picked separation pass: gold vs
      sage-deep are clearly distinguishable on a small bar, clay vs
      plum are clearly distinguishable for the bookends. */
-  --stage-awake: #BF5A3C;   /* clay  — brief get-ups stand out warmly */
-  --stage-light: #C8A23F;   /* gold  — the bulk of the night */
-  --stage-deep:  #8F6C86;   /* plum  — restorative */
-  --stage-rem:   #7E927A;   /* sage-deep — cool green, distinct vs gold */
+  /* Patrick's pick: earthy warm + cool. No yellow/gold anywhere; the
+     bar reads as two warm tones (clay → salmon) lying alongside two
+     cool tones (plum → sage). Awake stays clay because it should pop
+     when it appears; light gets the lighter, calmer salmon since it
+     dominates the night and shouldn't visually shout. */
+  --stage-awake: #BF5A3C;   /* clay   — brief get-ups stand out warmly */
+  --stage-light: #CB8270;   /* salmon — the bulk of the night, calm warm */
+  --stage-deep:  #8F6C86;   /* plum   — restorative */
+  --stage-rem:   #7E927A;   /* sage-deep — cool green, balances the warm tones */
   --sage:        #A9B89A;
   --sage-deep:   #7E927A;
   --butter:      #EBC982;

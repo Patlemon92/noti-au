@@ -24,7 +24,12 @@
   --ink-mute:    var(--taupe);
   --hair:        #E5DCCE;
   --rose:        var(--salmon);
-  --rose-deep:   var(--clay);
+  /* Light sleep should be salmon (per the canonical base palette
+     comments); REM stays on clay. Both were aliased to --clay so the
+     hypnogram showed light + REM as identical pixels — Patrick's
+     "light and REM are too close in colour" was actually "they ARE
+     the same colour." Fixed. */
+  --rose-deep:   var(--salmon);
   --terra:       var(--clay);
   --sage:        #A9B89A;
   --sage-deep:   #7E927A;

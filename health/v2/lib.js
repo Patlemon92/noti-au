@@ -565,7 +565,20 @@ function renderHypnogram(container, sleepSamples, sessionSamples) {
     totals.light = (session.meta.light_s || 0) / 60;
     totals.rem   = (session.meta.rem_s   || 0) / 60;
   }
-  totals.total = totals.awake + totals.light + totals.deep + totals.rem;
+  // Carve device-log-derived awake out of light. The R11M firmware
+  // re-classifies brief wakes as "light" in its session meta — when
+  // we then add awake from the device log on top, light double-counts.
+  // Subtract awake from light so deep + light + rem + awake equals
+  // the actual sleep window (e.g. 7h 30m bed time, not 9h 31m total).
+  // Floor at 0 so a misclassified day with awake > light doesn't go
+  // negative.
+  if (totals.awake > 0 && totals.light > 0) {
+    totals.light = Math.max(0, totals.light - totals.awake);
+  }
+  // `total` is asleep time: deep + light + rem, excluding awake.
+  // Time in bed = total + awake.
+  totals.total       = totals.deep + totals.light + totals.rem;
+  totals.timeInBed   = totals.total + totals.awake;
   totals.startTs = tMin;
   totals.endTs = tMax;
   return totals;

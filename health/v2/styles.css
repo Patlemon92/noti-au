@@ -34,6 +34,17 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Apricosa — Neeve's display face by Sweetest Goods. Self-hosted at
+   /health/v2/fonts/. Available on every v2 page via this stylesheet. */
+@font-face {
+  font-family: 'Apricosa';
+  src: url('/health/v2/fonts/Apricosa-Regular.woff') format('woff'),
+       url('/health/v2/fonts/Apricosa-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 html, body {
   background: var(--cream);
   color: var(--ink);

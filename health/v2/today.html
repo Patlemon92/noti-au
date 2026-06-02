@@ -582,11 +582,12 @@
   </div>
   </div>
 
-  <!-- NOTICED · system-spotted moments awaiting your reaction -->
-  <div class="section te-card" id="section-noticed" style="animation-delay:.115s">
+  <!-- NOTICED · system-spotted moments. Hidden entirely until at least
+       one open flag exists — empty-state was distracting noise. -->
+  <div class="section te-card" id="section-noticed" style="animation-delay:.115s;display:none">
     <span class="dot"></span>
     <span class="label">Noticed</span>
-    <span class="meta" id="noticed-meta">· nothing today</span>
+    <span class="meta" id="noticed-meta"></span>
     <span class="rule"></span>
   </div>
   <div class="te-card" id="noticed-list" style="animation-delay:.118s;display:none;margin-bottom:18px"></div>
@@ -905,7 +906,7 @@ function renderNoticed(events) {
   if (!meta || !list || !section) return;
 
   if (!events.length) {
-    meta.textContent = '· nothing today';
+    section.style.display = 'none';
     list.style.display = 'none';
     list.innerHTML = '';
     section.removeAttribute('data-state');
@@ -916,6 +917,7 @@ function renderNoticed(events) {
   meta.textContent = todayCount === events.length
     ? `· ${todayCount} ${todayCount === 1 ? 'thing' : 'things'} today`
     : `· ${events.length} this week`;
+  section.style.display = '';
   section.setAttribute('data-state', 'elevated');
   list.style.display = 'block';
   list.innerHTML = events.map(renderNoticedCard).join('');

@@ -511,11 +511,15 @@ function renderHypnogram(container, sleepSamples, sessionSamples) {
 
   // Lane order (top → bottom): awake, rem, light, deep
   const laneFor = stage => ({ 0: 0, 3: 1, 1: 2, 2: 3 }[stage] ?? 2);
+  // Single source of truth for stage colours: the --stage-* palette
+  // defined at the top of styles.css. Sleep page legend dots, Ring page
+  // hypnogram bar, this lib.js hypnogram all read from the same vars
+  // so they CAN'T drift apart.
   const colorFor = stage => ({
-    0: 'var(--butter-deep)', // awake
-    3: 'var(--terra)',       // rem
-    1: 'var(--rose-deep)',   // light
-    2: 'var(--plum)',        // deep
+    0: 'var(--stage-awake)',
+    1: 'var(--stage-light)',
+    2: 'var(--stage-deep)',
+    3: 'var(--stage-rem)',
   }[stage] ?? 'var(--ink-mute)');
 
   const xFor = t => pad + ((t - tMin) / span) * (W - pad * 2);

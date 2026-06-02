@@ -388,7 +388,10 @@
     width: 100%; box-sizing: border-box;
     background: white; border: 1px solid rgba(43, 32, 24, .12);
     border-radius: 12px; padding: 10px 12px;
-    font-family: inherit; font-size: 14.5px; color: var(--ink-2);
+    /* 16px is the iOS Safari threshold for "don't auto-zoom on focus".
+       Anything less and tapping the textarea triggers a viewport zoom
+       that doesn't unzoom afterwards — feels broken on phones. */
+    font-family: inherit; font-size: 16px; color: var(--ink-2);
     resize: vertical; min-height: 56px; margin-top: 8px;
     display: none;
   }
@@ -1054,27 +1057,17 @@ function renderNoticed(events) {
       const note = (ta.value || '').trim();
       console.log('[noticed] save tap', id, 'noteLen:', note.length,
                   'expanded:', card.classList.contains('expanded'));
-      // If textarea isn't expanded yet OR is empty, expand + focus
-      // instead of silently returning. Previous behaviour: tap Save
-      // without typing → handler returns → looks like the button does
-      // nothing. Now every tap produces something visible.
-      if (!note) {
-        if (!card.classList.contains('expanded')) {
-          card.classList.add('expanded');
-        }
-        ta.focus();
-        return;
-      }
-      // Lock button + show in-progress so users see the click registered.
-      // Previously the click silently failed — the catch ate the error
-      // and the UI just looked dead.
+      // Empty Save is a valid acknowledgement ("yes I saw this, no
+      // comment"). Server accepts it. We send {ack:true} with no note
+      // to distinguish from accidental empty submissions later.
       const original = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'Saving…';
       try {
+        const body = note ? { note } : { ack: true };
         const r = await api('/me/flagged-events/' + id + '/respond', {
           method: 'POST',
-          body: JSON.stringify({ note }),
+          body: JSON.stringify(body),
         });
         // api() throws on non-2xx, but double-check for explicit error.
         if (r && r.error) throw new Error(r.error);

@@ -1047,24 +1047,56 @@ function renderNoticed(events) {
         ta.focus();
       }
     });
-    card.querySelector('.nb.save')?.addEventListener('click', async () => {
+    card.querySelector('.nb.save')?.addEventListener('click', async (ev) => {
+      const btn = ev.currentTarget;
       const ta = card.querySelector('textarea');
       const note = (ta.value || '').trim();
       if (!note) return;
+      // Lock button + show in-progress so users see the click registered.
+      // Previously the click silently failed — the catch ate the error
+      // and the UI just looked dead.
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
       try {
-        await api('/me/flagged-events/' + id + '/respond', {
+        const r = await api('/me/flagged-events/' + id + '/respond', {
           method: 'POST',
           body: JSON.stringify({ note }),
         });
-      } catch (e) {}
-      // Re-fetch instead of guessing the new state — keeps UI honest.
-      reloadNoticed();
+        // api() throws on non-2xx, but double-check for explicit error.
+        if (r && r.error) throw new Error(r.error);
+        reloadNoticed();
+      } catch (e) {
+        // ignore: avoid_print
+        console.error('[noticed] save failed:', e);
+        btn.disabled = false;
+        btn.textContent = original;
+        // Show inline failure so user knows to retry instead of staring
+        // at an unchanged card thinking it's broken.
+        let err = card.querySelector('.save-err');
+        if (!err) {
+          err = document.createElement('div');
+          err.className = 'save-err';
+          err.style.cssText = 'color:#B8553B;font-size:13px;margin-top:6px;';
+          ta.parentNode.insertBefore(err, ta.nextSibling);
+        }
+        err.textContent = "Couldn't save. Check connection and try again.";
+      }
     });
-    card.querySelector('.nb.dismiss')?.addEventListener('click', async () => {
+    card.querySelector('.nb.dismiss')?.addEventListener('click', async (ev) => {
+      const btn = ev.currentTarget;
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '…';
       try {
-        await api('/me/flagged-events/' + id + '/dismiss', { method: 'POST' });
-      } catch (e) {}
-      reloadNoticed();
+        const r = await api('/me/flagged-events/' + id + '/dismiss', { method: 'POST' });
+        if (r && r.error) throw new Error(r.error);
+        reloadNoticed();
+      } catch (e) {
+        console.error('[noticed] dismiss failed:', e);
+        btn.disabled = false;
+        btn.textContent = original;
+      }
     });
   });
 }

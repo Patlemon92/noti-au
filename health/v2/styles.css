@@ -31,6 +31,17 @@
      the same colour." Fixed. */
   --rose-deep:   var(--salmon);
   --terra:       var(--clay);
+
+  /* Canonical sleep-stage palette. Single source of truth so the
+     Ring page's hypnogram bar, the sleep.html detail page's legend
+     dots + nightly bars, and any future surface all agree. The hex
+     values come from a hand-picked separation pass: gold vs
+     sage-deep are clearly distinguishable on a small bar, clay vs
+     plum are clearly distinguishable for the bookends. */
+  --stage-awake: #BF5A3C;   /* clay  — brief get-ups stand out warmly */
+  --stage-light: #C8A23F;   /* gold  — the bulk of the night */
+  --stage-deep:  #8F6C86;   /* plum  — restorative */
+  --stage-rem:   #7E927A;   /* sage-deep — cool green, distinct vs gold */
   --sage:        #A9B89A;
   --sage-deep:   #7E927A;
   --butter:      #EBC982;

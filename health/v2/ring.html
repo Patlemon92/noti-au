@@ -596,17 +596,15 @@ function renderSleepCard(sessions) {
     const t0 = new Date(sorted[0].ts).getTime();
     const t1 = new Date(sorted[sorted.length - 1].ts).getTime();
     const dt = Math.max(1, t1 - t0);
-    // Stage palette. Patrick's morning feedback: "light and REM are
-    // too close in colour" — they were gold #c8a23f vs sage #94a87a,
-    // both warm-olive-ish tones that blend at small sizes on the bar.
-    // Bumped REM to --sage-deep so it reads as clearly cool green
-    // against light's gold. Awake stays clay so brief 5:30 wake-ups
-    // (Patrick getting up for the dog) stand out visually.
+    // Stage palette reads from the canonical --stage-* CSS vars
+    // (defined at the top of styles.css). Sleep detail page, lib.js
+    // hypnogram and this Ring card all resolve through the same
+    // vars, so they can't drift.
     const stageColor = {
-      0: '#bf5a3c',  // awake (clay)
-      1: '#c8a23f',  // light (gold)
-      2: '#8f6c86',  // deep (plum)
-      3: '#7E927A',  // REM (sage-deep — cool green, distinct from light)
+      0: 'var(--stage-awake)',
+      1: 'var(--stage-light)',
+      2: 'var(--stage-deep)',
+      3: 'var(--stage-rem)',
     };
     const segments = [];
     for (let i = 0; i < sorted.length - 1; i++) {

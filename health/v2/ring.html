@@ -39,7 +39,7 @@ body {
   margin-bottom: 8px;
 }
 .page .title {
-  font-family: 'Fraunces', serif; font-weight: 500;
+  font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500;
   font-size: 38px; letter-spacing: -.8px; line-height: 1;
   color: var(--ink-2, #2b2018); margin-bottom: 28px;
 }
@@ -89,7 +89,7 @@ body {
 
 /* Metric card title in Fraunces */
 .card .section-head h3.title-sm {
-  font-family: 'Fraunces', serif !important;
+  font-family: 'Apricosa', 'Fraunces', serif !important;
   font-weight: 500;
   font-size: 18px !important;
   letter-spacing: -.2px;
@@ -105,7 +105,7 @@ body {
   color: var(--taupe-2, #9a8369); font-weight: 600;
 }
 .card .metric-row .metric-value {
-  font-family: 'Fraunces', serif !important;
+  font-family: 'Apricosa', 'Fraunces', serif !important;
   font-weight: 500 !important;
   font-size: 22px !important;
   color: var(--ink-2, #2b2018) !important;
@@ -226,7 +226,7 @@ body {
   width: 36px; height: 4px; background: var(--hair); border-radius: 2px;
   margin: 0 auto 12px;
 }
-.sheet h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px; color: var(--ink); margin: 0 0 4px; }
+.sheet h2 { font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500; font-size: 22px; color: var(--ink); margin: 0 0 4px; }
 .sheet .sheet-caption { font-size: 13px; color: var(--ink-mute); margin-bottom: 16px; }
 .sheet .kv { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
 .sheet .kv .k { color: var(--ink-mute); }
@@ -506,10 +506,10 @@ function renderSleepCard(sessions) {
     const fmt = m => `${Math.floor(m / 60)}h ${Math.round(m % 60)}m`;
     stagesHtml = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-top:14px;padding-top:14px;border-top:1px solid var(--hair)">
-        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">Deep</div><div style="font-family:'Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[2])}</div></div>
-        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">Light</div><div style="font-family:'Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[1])}</div></div>
-        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">REM</div><div style="font-family:'Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[3])}</div></div>
-        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">Awake</div><div style="font-family:'Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[0])}</div></div>
+        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">Deep</div><div style="font-family:'Apricosa','Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[2])}</div></div>
+        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">Light</div><div style="font-family:'Apricosa','Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[1])}</div></div>
+        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">REM</div><div style="font-family:'Apricosa','Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[3])}</div></div>
+        <div><div class="caption" style="font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)">Awake</div><div style="font-family:'Apricosa','Fraunces',serif;font-weight:500;font-size:17px;color:var(--ink)">${fmt(totals[0])}</div></div>
       </div>`;
     // Build a horizontal mini-hypnogram (each stage as a colored bar)
     const t0 = new Date(sorted[0].ts).getTime();
@@ -557,7 +557,7 @@ function renderSleepCard(sessions) {
           <span class="chev">›</span>
         </div>
         <div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 4px">
-          <span style="font-family:'Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.7px;color:var(--ink-2,#2b2018);line-height:1">${fmtHm(latest.value)}</span>
+          <span style="font-family:'Apricosa','Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.7px;color:var(--ink-2,#2b2018);line-height:1">${fmtHm(latest.value)}</span>
         </div>
         ${windowStr ? `<div style="font-size:12.5px;color:var(--taupe-2,#9a8369);font-style:italic">${windowStr}</div>` : ''}
         ${hypnoHtml}
@@ -624,7 +624,7 @@ function renderCharts() {
               <span class="chev">›</span>
             </div>
             <div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 4px">
-              <span class="metric-value" style="font-family:'Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.7px;color:var(--ink-2,#2b2018);line-height:1">${formatValue(m, latest.value)}</span>
+              <span class="metric-value" style="font-family:'Apricosa','Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.7px;color:var(--ink-2,#2b2018);line-height:1">${formatValue(m, latest.value)}</span>
               <span class="metric-unit" style="font-size:13px;color:var(--taupe-2,#9a8369)">${metricUnit(m, latest.unit)}</span>
             </div>
             <div style="font-size:12.5px;color:var(--taupe-2,#9a8369);font-style:italic">

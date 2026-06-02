@@ -314,6 +314,73 @@
   }
   .tag-actions .spacer { flex: 1; }
 
+  /* Noticed — system-spotted moments. Quiet cards, italic trigger
+     summary that reads more like a sentence than data. Tap "Add note"
+     to expand a textarea inline; tap "Dismiss" to set dismissed_at. */
+  .noticed-card {
+    background: var(--warm-card);
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(44, 32, 23, .05);
+    margin-bottom: 10px;
+  }
+  .noticed-card:last-child { margin-bottom: 0; }
+  .noticed-card .head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .noticed-card .kind {
+    font-family: 'Hanken Grotesk', system-ui, sans-serif;
+    font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-2); font-weight: 600;
+  }
+  .noticed-card .when {
+    font-size: 11px; color: var(--taupe-2);
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .noticed-card .summary {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic; font-size: 14.5px;
+    color: var(--ink-2); line-height: 1.45;
+    margin: 4px 0 10px;
+  }
+  .noticed-card .conf {
+    display: inline-block;
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase;
+    padding: 1px 6px; border-radius: 6px;
+    background: rgba(44, 32, 23, .07);
+    color: var(--taupe-2); margin-left: 6px;
+    vertical-align: middle;
+  }
+  .noticed-card .row {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .noticed-card .nb {
+    font-family: inherit; font-size: 12.5px;
+    padding: 6px 12px; border-radius: 99px;
+    border: 1px solid rgba(44, 32, 23, .14);
+    background: transparent; color: var(--ink-2);
+    cursor: pointer;
+  }
+  .noticed-card .nb.primary {
+    background: var(--ink-2); color: #FFF7EE; border-color: var(--ink-2);
+  }
+  .noticed-card .noted {
+    margin-top: 6px;
+    font-family: 'Fraunces', serif; font-style: italic; font-size: 13px;
+    color: var(--taupe-2);
+  }
+  .noticed-card textarea {
+    width: 100%; box-sizing: border-box;
+    background: white; border: 1px solid rgba(43, 32, 24, .12);
+    border-radius: 12px; padding: 10px 12px;
+    font-family: inherit; font-size: 14.5px; color: var(--ink-2);
+    resize: vertical; min-height: 56px; margin-top: 8px;
+    display: none;
+  }
+  .noticed-card.expanded textarea { display: block; }
+
   /* Log button */
   .log-cta {
     background: var(--warm-card);
@@ -514,6 +581,15 @@
     <a class="all-data" href="/health/v2/ring.html">all your data on Ring →</a>
   </div>
   </div>
+
+  <!-- NOTICED · system-spotted moments awaiting your reaction -->
+  <div class="section te-card" id="section-noticed" style="animation-delay:.115s">
+    <span class="dot"></span>
+    <span class="label">Noticed</span>
+    <span class="meta" id="noticed-meta">· nothing today</span>
+    <span class="rule"></span>
+  </div>
+  <div class="te-card" id="noticed-list" style="animation-delay:.118s;display:none;margin-bottom:18px"></div>
 
   <!-- NOTE -->
   <div class="section te-card" style="animation-delay:.12s">
@@ -759,6 +835,14 @@ async function load() {
     notes = n.notes || [];
   } catch (e) {}
 
+  // Noticed — flags written by the cron detector. Pull open ones only;
+  // dismissed/responded stay in DB but don't surface here.
+  try {
+    const f = await api('/me/flagged-events?only_open=1&days=7')
+      .catch(() => ({ events: [] }));
+    renderNoticed(f.events || []);
+  } catch (e) { renderNoticed([]); }
+
   // Weather pill
   try {
     const w = await api('/me/weather').catch(() => null);
@@ -807,6 +891,152 @@ function renderWearChip(wearSamples) {
     el.innerHTML = `<span class="glyph">○</span><span>Off finger · ${escapeHtml(sinceTxt)}</span>`;
   }
   el.style.display = 'inline-flex';
+}
+
+// ── Noticed flags ────────────────────────────────────
+// Render the list of open flagged_event rows under the "Noticed"
+// section header. When empty, the section still renders but the meta
+// reads "· nothing today" and the card list is hidden — matches the
+// quietness of the "Note" section.
+function renderNoticed(events) {
+  const meta  = document.getElementById('noticed-meta');
+  const list  = document.getElementById('noticed-list');
+  const section = document.getElementById('section-noticed');
+  if (!meta || !list || !section) return;
+
+  if (!events.length) {
+    meta.textContent = '· nothing today';
+    list.style.display = 'none';
+    list.innerHTML = '';
+    section.removeAttribute('data-state');
+    return;
+  }
+  // Today / earlier split for the meta line.
+  const todayCount = events.filter(isFlagToday).length;
+  meta.textContent = todayCount === events.length
+    ? `· ${todayCount} ${todayCount === 1 ? 'thing' : 'things'} today`
+    : `· ${events.length} this week`;
+  section.setAttribute('data-state', 'elevated');
+  list.style.display = 'block';
+  list.innerHTML = events.map(renderNoticedCard).join('');
+  // Wire actions per card. Event delegation would be cleaner but
+  // matching the inline-handler style elsewhere in this file.
+  list.querySelectorAll('.noticed-card').forEach(card => {
+    const id = card.dataset.id;
+    card.querySelector('.nb.add')?.addEventListener('click', () => {
+      card.classList.toggle('expanded');
+      if (card.classList.contains('expanded')) {
+        const ta = card.querySelector('textarea');
+        ta.focus();
+      }
+    });
+    card.querySelector('.nb.save')?.addEventListener('click', async () => {
+      const ta = card.querySelector('textarea');
+      const note = (ta.value || '').trim();
+      if (!note) return;
+      try {
+        await api('/me/flagged-events/' + id + '/respond', {
+          method: 'POST',
+          body: JSON.stringify({ note }),
+        });
+      } catch (e) {}
+      // Re-fetch instead of guessing the new state — keeps UI honest.
+      reloadNoticed();
+    });
+    card.querySelector('.nb.dismiss')?.addEventListener('click', async () => {
+      try {
+        await api('/me/flagged-events/' + id + '/dismiss', { method: 'POST' });
+      } catch (e) {}
+      reloadNoticed();
+    });
+  });
+}
+
+async function reloadNoticed() {
+  try {
+    const f = await api('/me/flagged-events?only_open=1&days=7')
+      .catch(() => ({ events: [] }));
+    renderNoticed(f.events || []);
+  } catch (_) {}
+}
+
+function renderNoticedCard(f) {
+  const kind = flagKindLabel(f.flag_type);
+  const when = formatFlagWhen(f.ts);
+  const conf = f.confidence
+    ? `<span class="conf">${escapeHtml(f.confidence)}</span>` : '';
+  const summary = flagSummary(f);
+  return `
+    <div class="noticed-card" data-id="${escapeHtml(f.id)}">
+      <div class="head">
+        <span class="kind">${escapeHtml(kind)}${conf}</span>
+        <span class="when">${escapeHtml(when)}</span>
+      </div>
+      <p class="summary">${escapeHtml(summary)}</p>
+      <div class="row">
+        <button class="nb add" type="button">Add note</button>
+        <button class="nb dismiss" type="button">Dismiss</button>
+      </div>
+      <textarea placeholder="what was happening? — meeting, stood up too fast, coffee…" rows="2"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="nb primary save" type="button">Save</button>
+      </div>
+    </div>
+  `;
+}
+
+function flagKindLabel(t) {
+  return ({
+    hr_spike:       'Heart rate elevated',
+    hr_orthostatic: 'HR jump on standing',
+    hrv_crash:      'HRV dropped',
+    spo2_dip:       'SpO₂ dipped',
+    bp_outlier:     'BP outside your usual',
+    rr_jump:        'Breathing rate up',
+  })[t] || t;
+}
+
+function flagSummary(f) {
+  const t = f.trigger || {};
+  if (f.flag_type === 'hr_spike') {
+    return `Hit ${t.value} bpm — sustained ${t.sustained_s}s above your usual.`;
+  }
+  if (f.flag_type === 'hr_orthostatic') {
+    return `HR went ${t.from_bpm}→${t.to_bpm} in ${t.seconds || 1}s — looks like a stand.`;
+  }
+  if (f.flag_type === 'hrv_crash') {
+    return `1-hr median ${t.window_median} ms vs your usual ${t.baseline} ms.`;
+  }
+  if (f.flag_type === 'spo2_dip') {
+    return `Dipped to ${t.value}%.`;
+  }
+  if (f.flag_type === 'bp_outlier') {
+    const sys = t.sys != null ? `${t.sys}` : '—';
+    const dia = t.dia != null ? `${t.dia}` : '—';
+    return `${sys}/${dia} mmHg — above your usual range.`;
+  }
+  if (f.flag_type === 'rr_jump') {
+    return `${t.value} breaths/min — above your usual ${t.baseline}.`;
+  }
+  return '';
+}
+
+function isFlagToday(f) {
+  if (!f.ts) return false;
+  const d = new Date(f.ts);
+  const now = new Date();
+  return d.toDateString() === now.toDateString();
+}
+
+function formatFlagWhen(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+  }
+  return d.toLocaleDateString([], { weekday: 'short' }) + ' ' +
+         d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
 }
 
 function renderVitals(device, samples) {

@@ -528,22 +528,10 @@
     <div class="subhead">Here when you want it. Nothing needs doing.</div>
   </div>
 
-  <!-- STRAIN TODAY · hero card (warning signal for overexertion) -->
-  <div id="strain-card" class="te-card" style="animation-delay:.05s;display:none;background:linear-gradient(135deg,#fff5e8 0%,#fde0c8 100%);border:1px solid rgba(220,110,75,.18);border-radius:18px;padding:18px 20px;margin-bottom:18px;cursor:pointer;box-shadow:0 14px 28px -22px rgba(140,80,50,.35)" onclick="openStrainExplain()">
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-family:'Inter Tight',sans-serif;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--taupe-2);font-weight:600;margin-bottom:4px">Strain today</div>
-        <div style="display:flex;align-items:baseline;gap:8px">
-          <div id="strain-num" style="font-family:'Fraunces',serif;font-weight:500;font-size:46px;line-height:1;color:var(--ink-2)">—</div>
-          <div id="strain-label" style="font-family:'Fraunces',serif;font-style:italic;font-size:15px;color:var(--clay-2)">·</div>
-        </div>
-      </div>
-      <div id="strain-arc" style="width:64px;height:64px;flex-shrink:0">
-        <!-- arc SVG painted by JS -->
-      </div>
-    </div>
-    <div id="strain-meta" style="margin-top:10px;font-size:12.5px;color:var(--taupe-2);line-height:1.5"></div>
-  </div>
+  <!-- STRAIN TODAY removed 2026-06-02 per design brief principle 1
+       ("describe, don't judge"). strain_score stays in the data layer
+       for Alys / engines / doctor PDF, but does NOT surface as a raw
+       score on Today. See memory/design-brief + memory/neeve-brand-identity. -->
 
   <!-- RIGHT NOW · vitals (ring-conditional) -->
   <div id="vitals-section">
@@ -860,7 +848,9 @@ async function load() {
   }
 
   renderVitals(devices[0], samples);
-  renderStrain(strainSamples);
+  // renderStrain(strainSamples) removed 2026-06-02 — strain card retired
+  // per design brief "describe, don't judge". strain_score remains in
+  // the data layer for Alys / doctor PDF.
   renderNoteMeta(notes);
   // Ring nudge for fresh users
   if (!devices.length) {

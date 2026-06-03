@@ -697,3 +697,44 @@
   buildChips();
   render();
 })();
+
+/* ============================================================
+   Footer refresh button — pulls the live SW cache version into
+   its label, taps to drop every cache + reload so the next
+   navigation re-precaches the freshly-deployed shell.
+   ============================================================ */
+(function setupVersionRefresh() {
+  var btn = document.getElementById("version-refresh");
+  if (!btn || !("serviceWorker" in navigator)) return;
+
+  navigator.serviceWorker.addEventListener("message", function (e) {
+    if (!e || !e.data) return;
+    if (e.data.type === "version" && e.data.cache) {
+      // "atlas-v9" → "atlas v9 · refresh"
+      btn.textContent = String(e.data.cache).replace(/^atlas-/, "atlas ") + " · refresh";
+    }
+    if (e.data.type === "cleared") {
+      // Force a navigation rather than location.reload() so the SW
+      // intercept goes through the fresh shell path.
+      window.location.replace(window.location.pathname);
+    }
+  });
+
+  navigator.serviceWorker.ready.then(function (reg) {
+    var sw = reg.active || reg.waiting || reg.installing;
+    if (sw) sw.postMessage("getVersion");
+  });
+
+  btn.addEventListener("click", function () {
+    btn.disabled = true;
+    btn.textContent = "refreshing…";
+    var sw = navigator.serviceWorker.controller;
+    if (sw) {
+      sw.postMessage("clearCache");
+      // Safety net: if the SW doesn't reply within 2.5s, reload anyway.
+      setTimeout(function () { window.location.replace(window.location.pathname); }, 2500);
+    } else {
+      window.location.replace(window.location.pathname);
+    }
+  });
+})();

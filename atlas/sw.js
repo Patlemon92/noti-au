@@ -4,7 +4,7 @@
    All paths are relative so it works under any sub-path
    (e.g. https://noti.au/atlas/). Bump CACHE to ship updates.
    ============================================================ */
-const CACHE = "atlas-v14";
+const CACHE = "atlas-v15";
 
 /* App shell + data, precached on install. Relative to the SW's
    own location, which is the app's scope root. */
@@ -123,16 +123,38 @@ self.addEventListener("fetch", (event) => {
      UI updates never reached them without a manual cache clear.
      SWR fixes that without sacrificing offline use. */
   if (url.origin === self.location.origin) {
+    // Version-stamped lookups: HTML loads app.js?v=15, but the precache
+    // stores plain "./app.js". Strip ?v= so a cache miss on the
+    // versioned URL falls back to the precached copy when offline.
+    // Live fetches still go to network → store the versioned URL on the
+    // way back so future loads are warm.
+    const stripped = new URL(req.url);
+    stripped.search = stripped.search.replace(/(\?|&)v=[^&]*/g, "")
+                                     .replace(/^\?$/, "");
+    const baseReq = stripped.toString() !== req.url
+      ? new Request(stripped.toString(), { method: "GET" })
+      : null;
     event.respondWith(
       caches.open(CACHE).then((c) =>
         c.match(req).then((hit) => {
-          const net = fetch(req).then((res) => {
+          if (hit) return hit;
+          if (baseReq) {
+            return c.match(baseReq).then((alt) => {
+              const net = fetch(req).then((res) => {
+                if (res && res.status === 200 && res.type === "basic") {
+                  c.put(req, res.clone());
+                }
+                return res;
+              }).catch(() => alt);
+              return alt || net;
+            });
+          }
+          return fetch(req).then((res) => {
             if (res && res.status === 200 && res.type === "basic") {
               c.put(req, res.clone());
             }
             return res;
-          }).catch(() => hit);
-          return hit || net;
+          }).catch(() => null);
         })
       )
     );

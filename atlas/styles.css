@@ -312,7 +312,13 @@ footer{text-align:center; color:var(--ink-soft); font-size:13px; margin-top:46px
    single textarea, two chip rows for application + avoid, one
    tactile recipe card with point + blend + caution.
    ============================================================ */
-.askpanel{max-width:680px; margin:0 auto; padding:8px 6px 32px}
+/* els.grid is a CSS grid (auto-fill, minmax(330px, 1fr)) so a single
+   <section> inside it lands in ONE column — that's what made the ask
+   form look pinched to ~440px while the tabs row ran full width.
+   Span every column so the panel inherits the page's content width;
+   max-width keeps prose comfy without going ultra-wide on a 27" mon. */
+.askpanel{grid-column:1 / -1; width:100%; max-width:880px; margin:0 auto;
+  padding:8px 6px 32px}
 .asklead{color:var(--ink-soft); font-size:16px; line-height:1.55; margin-bottom:22px;
   font-family:"Newsreader",Georgia,serif; font-style:italic}
 .askform{background:var(--card); border:1px solid var(--line); border-radius:18px;

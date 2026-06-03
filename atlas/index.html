@@ -106,6 +106,17 @@
   <footer>
     The Wellness Atlas · a traditional wellness reference ·
     built for curiosity and care
+    <div style="margin-top:14px">
+      <!-- Tap to force the service worker to drop its cache + reload.
+           PWAs aggressively cache assets, so when we ship a styling
+           or content update users need a way to pull it without
+           hunting through Safari settings. Version label lights up
+           from the SW on load. -->
+      <button id="version-refresh" type="button"
+        style="background:none;border:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);padding:5px 12px;border-radius:999px;cursor:pointer;transition:all .13s">
+        atlas · refresh
+      </button>
+    </div>
   </footer>
 
 </div>

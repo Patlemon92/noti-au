@@ -4,7 +4,7 @@
    All paths are relative so it works under any sub-path
    (e.g. https://noti.au/atlas/). Bump CACHE to ship updates.
    ============================================================ */
-const CACHE = "atlas-v8";
+const CACHE = "atlas-v9";
 
 /* App shell + data, precached on install. Relative to the SW's
    own location, which is the app's scope root. */
@@ -42,6 +42,25 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("message", (event) => {
   if (event.data === "skipWaiting") self.skipWaiting();
+  // The page footer's "refresh" button talks to the SW with these
+  // two messages. getVersion lets the button stamp its own label
+  // dynamically; clearCache nukes every Atlas cache so the next
+  // reload re-precaches with the freshly-deployed shell.
+  if (event.data === "getVersion") {
+    event.source && event.source.postMessage &&
+      event.source.postMessage({ type: "version", cache: CACHE });
+  }
+  if (event.data === "clearCache") {
+    event.waitUntil(
+      caches.keys()
+        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .then(() => {
+          if (event.source && event.source.postMessage) {
+            event.source.postMessage({ type: "cleared" });
+          }
+        })
+    );
+  }
 });
 
 self.addEventListener("fetch", (event) => {

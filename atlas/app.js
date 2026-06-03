@@ -160,7 +160,9 @@
     var html = '<button class="chip ' + (state.filter === "all" ? "active" : "") +
                '" data-f="all"' + (state.filter === "all" ? ' style="background:var(--ink)"' : "") +
                ">All</button>";
-    if (state.tab === "points") {
+    if (state.tab === "points" || state.tab === "map") {
+      // Same meridian set used on both — the map filters its markers
+      // by the chip exactly like the points list filters its cards.
       MERIDIAN_ORDER.forEach(function (code) {
         var m = MERIDIANS[code], on = state.filter === code;
         html += '<button class="chip ' + (on ? "active" : "") + '" data-f="' + code + '"' +
@@ -360,8 +362,17 @@
     return s;
   }
 
-  /* ---- pan & zoom over the figure (drag to move, +/- to zoom) ---- */
+  /* ---- pan & zoom over the figure ----
+     Phones: pinch with two pointers, single-pointer drag to pan,
+     ~12px deadzone before drag counts so a quick tap on a dot
+     doesn't accidentally shove the body (Patrick: "it does move
+     around easily"). Desktop keeps wheel-zoom.
+     Stage host gets touch-action:none so iOS doesn't try to scroll
+     the page during a gesture. */
   var _svg = null, _drag = null, _moved = false;
+  var _pts = Object.create(null); // pointerId → {x, y}
+  var _pinch = null;              // {dist, vbW, vbH, cx, cy} at pinch start
+  var DRAG_DEADZONE = 10;
 
   function applyVB() {
     if (!_svg) return;
@@ -381,7 +392,40 @@
     v.x = cx - v.w / 2; v.y = cy - v.h / 2;
     clampPan(); applyVB();
   }
+  // Zoom around a screen point so what was under the user's fingers
+  // stays under them. Maps client-x/y → viewBox space via the SVG's
+  // bounding rect, then anchors the new viewBox on that point.
+  function zoomAround(factor, sx, sy) {
+    if (!_svg) return;
+    var rect = _svg.getBoundingClientRect();
+    var v = state.mapVB;
+    var fx = (sx - rect.left) / rect.width;
+    var fy = (sy - rect.top)  / rect.height;
+    var ax = v.x + v.w * fx;
+    var ay = v.y + v.h * fy;
+    var nw = Math.max(46, Math.min(200, v.w * factor));
+    var nh = nw * (470 / 200);
+    v.w = nw; v.h = nh;
+    v.x = ax - nw * fx;
+    v.y = ay - nh * fy;
+    clampPan(); applyVB();
+  }
   function resetMap() { state.mapVB = { x: 0, y: 0, w: 200, h: 470 }; applyVB(); }
+
+  /* Fullscreen toggle — flips a class on the map section so the
+     CSS can pin it to the viewport. We keep the bar + body visible
+     so you can still pan/pinch + read details inside the fullscreen
+     overlay; on small phones this is the only way to actually get
+     the figure big enough to tap a point on the foot or hand. */
+  function toggleFullscreen() {
+    var sec = document.getElementById("mapSection");
+    if (!sec) return;
+    var on = sec.classList.toggle("fullscreen");
+    // Lock body scroll while fullscreen so iOS doesn't bounce.
+    document.body.style.overflow = on ? "hidden" : "";
+    // Reset the viewBox so the figure fits the new container.
+    resetMap();
+  }
 
   /* ---- point info popup, anchored at the tapped marker ---- */
   function hidePopup() {
@@ -396,44 +440,135 @@
     pop.classList.remove("hidden");
   }
 
-  function _onMove(e) {
-    if (!_drag) return;
-    var dx = e.clientX - _drag.x, dy = e.clientY - _drag.y;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) { _moved = true; hidePopup(); }
-    var s = state.mapVB.w / _drag.rectW;
-    state.mapVB.x = _drag.vx - dx * s;
-    state.mapVB.y = _drag.vy - dy * s;
-    clampPan(); applyVB();
+  function _ptList() {
+    var out = [];
+    for (var k in _pts) out.push(_pts[k]);
+    return out;
   }
-  function _onUp() {
-    _drag = null;
-    window.removeEventListener("pointermove", _onMove);
-    window.removeEventListener("pointerup", _onUp);
+  function _dist(a, b) {
+    var dx = a.x - b.x, dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
   }
+
+  function _onPointerDown(e) {
+    if (!_svg) return;
+    // Capture the pointer so we keep receiving moves even if the
+    // finger slides off the SVG.
+    try { _svg.setPointerCapture(e.pointerId); } catch (_) {}
+    _pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+    var list = _ptList();
+    if (list.length === 2) {
+      // Second finger → start pinch. Cache the starting distance and
+      // the viewBox so we can scale relative to it.
+      var v = state.mapVB;
+      _pinch = {
+        dist: _dist(list[0], list[1]),
+        vbW:  v.w, vbH: v.h,
+        cx:   (list[0].x + list[1].x) / 2,
+        cy:   (list[0].y + list[1].y) / 2,
+      };
+      _drag = null;
+      _moved = true;
+      hidePopup();
+    } else if (list.length === 1) {
+      // First finger → arm a single-pointer drag, but don't commit
+      // until movement crosses the deadzone (lets taps through to
+      // the dot click handler).
+      _drag = {
+        x: e.clientX, y: e.clientY,
+        vx: state.mapVB.x, vy: state.mapVB.y,
+        rectW: _svg.getBoundingClientRect().width,
+      };
+      _moved = false;
+    }
+  }
+
+  function _onPointerMove(e) {
+    if (!_svg || !(e.pointerId in _pts)) return;
+    _pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var list = _ptList();
+
+    if (list.length >= 2 && _pinch) {
+      var d = _dist(list[0], list[1]);
+      if (d <= 0 || _pinch.dist <= 0) return;
+      // Pinch ratio < 1 → fingers closer → zoom in (smaller viewBox).
+      // Anchor zoom on the pinch midpoint at start so the body grows
+      // out from where the fingers are.
+      var ratio = _pinch.dist / d;
+      var v = state.mapVB;
+      var nw = Math.max(46, Math.min(200, _pinch.vbW * ratio));
+      var nh = nw * (470 / 200);
+      // Use zoomAround so re-pinching across the screen keeps tracking.
+      var midX = (list[0].x + list[1].x) / 2;
+      var midY = (list[0].y + list[1].y) / 2;
+      // Compute factor relative to *current* width so zoomAround
+      // produces the same final size whether we got there in one
+      // step or many.
+      var factor = nw / v.w;
+      zoomAround(factor, midX, midY);
+      return;
+    }
+
+    if (_drag) {
+      var dx = e.clientX - _drag.x, dy = e.clientY - _drag.y;
+      if (!_moved && (Math.abs(dx) > DRAG_DEADZONE || Math.abs(dy) > DRAG_DEADZONE)) {
+        _moved = true;
+        hidePopup();
+      }
+      if (!_moved) return;
+      var s = state.mapVB.w / _drag.rectW;
+      state.mapVB.x = _drag.vx - dx * s;
+      state.mapVB.y = _drag.vy - dy * s;
+      clampPan(); applyVB();
+    }
+  }
+
+  function _onPointerEnd(e) {
+    if (e.pointerId in _pts) {
+      try { _svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      delete _pts[e.pointerId];
+    }
+    var list = _ptList();
+    if (list.length < 2) _pinch = null;
+    if (list.length === 0) _drag = null;
+  }
+
   function bindMapStage() {
     _svg = document.getElementById("bodysvg");
     if (!_svg) return;
     applyVB();
-    _svg.addEventListener("pointerdown", function (e) {
-      if (e.isPrimary === false) return;
-      _drag = { x: e.clientX, y: e.clientY, vx: state.mapVB.x, vy: state.mapVB.y, rectW: _svg.getBoundingClientRect().width };
-      _moved = false;
-      window.addEventListener("pointermove", _onMove);
-      window.addEventListener("pointerup", _onUp);
-    });
-    _svg.addEventListener("wheel", function (e) { e.preventDefault(); zoomMap(e.deltaY > 0 ? 1.12 : 0.89); }, { passive: false });
+    // touch-action:none lets pointer events handle pan/pinch without
+    // iOS hijacking them for page scroll or double-tap zoom. Set on
+    // the stage parent in styles.css; redundant inline just in case.
+    _svg.style.touchAction = "none";
+    _svg.addEventListener("pointerdown",   _onPointerDown);
+    _svg.addEventListener("pointermove",   _onPointerMove);
+    _svg.addEventListener("pointerup",     _onPointerEnd);
+    _svg.addEventListener("pointercancel", _onPointerEnd);
+    _svg.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      zoomAround(e.deltaY > 0 ? 1.12 : 0.89, e.clientX, e.clientY);
+    }, { passive: false });
   }
 
   function renderMap() {
     els.empty.classList.add("hidden");
     var view = state.mapView, dict = mapIndex();
 
+    // Meridian chip applies to the map too. "all" passes everything;
+    // anything else narrows to markers whose point belongs to that
+    // meridian. The other markers stay visible but dimmed so the
+    // body still reads as a body, not a sparse field of dots.
+    var activeMer = state.filter;
     var markers = POINT_MAP.filter(function (m) { return m.v === view; }).map(function (m) {
       var pt = dict[m.c];
       if (!pt) return "";
       var color = meridianOf(pt).color;
+      var matches = activeMer === "all" || pt.m === activeMer;
+      var dimClass = matches ? "" : " dim";
       function dot(cx) {
-        return '<g class="mkg" data-c="' + esc(m.c) + '">' +
+        return '<g class="mkg' + dimClass + '" data-c="' + esc(m.c) + '">' +
                '<circle class="mkhit" cx="' + cx + '" cy="' + m.y + '" r="6"/>' +
                '<circle class="mk" cx="' + cx + '" cy="' + m.y + '" r="2.8" fill="' + color + '">' +
                "<title>" + esc(m.c) + " · " + esc(pt.n) + "</title></circle>" +
@@ -460,6 +595,7 @@
           '<button class="zbtn" data-z="out" aria-label="Zoom out">−</button>' +
           '<button class="zbtn" data-z="reset" aria-label="Reset view">⤢</button>' +
           '<button class="zbtn" data-z="in" aria-label="Zoom in">+</button>' +
+          '<button class="zbtn" data-z="full" aria-label="Toggle full screen" title="Full screen">⛶</button>' +
         "</div>" +
       "</div>" +
       '<div class="mapstage">' +
@@ -485,7 +621,10 @@
 
   function applyChrome() {
     var onMap = state.tab === "map" && !isSearching();
-    els.chips.classList.toggle("hidden", isSearching() || state.tab === "map");
+    // Chips now appear on the map tab too — they filter the body
+    // markers as well as the list. Hidden only during a free-text
+    // search where the chip facet doesn't add anything.
+    els.chips.classList.toggle("hidden", isSearching());
     els.grid.classList.toggle("hidden", onMap);
     els.count.classList.toggle("hidden", onMap);
     if (els.addOil) els.addOil.classList.toggle("hidden", !(state.tab === "oils" && !isSearching()));
@@ -628,10 +767,19 @@
     if (!btn) return;
     var tab = btn.getAttribute("data-tab");
     if (tab === state.tab) return;
-    state.tab = tab; state.filter = "all";
+    // Don't blanket-reset the filter on tab change — map ↔ points
+    // share the meridian set so the user's pick should travel with
+    // them. Reset only when switching between meridian-set tabs and
+    // chakra-set tabs (oils), because the chip vocabulary changes.
+    var wasMer = state.tab === "points" || state.tab === "map";
+    var nowMer = tab === "points" || tab === "map";
+    if (wasMer !== nowMer) state.filter = "all";
+    state.tab = tab;
     var all = els.tabs.querySelectorAll(".tab");
     for (var i = 0; i < all.length; i++) all[i].classList.toggle("active", all[i] === btn);
-    if (tab === "map") els.chips.innerHTML = ""; else buildChips();
+    // Map shares the meridian chips with the points tab, so it
+    // needs them rendered too (was: cleared on map enter).
+    buildChips();
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
@@ -676,7 +824,10 @@
     var z = e.target.closest(".zbtn");
     if (z) {
       var k = z.getAttribute("data-z");
-      if (k === "in") zoomMap(0.8); else if (k === "out") zoomMap(1.25); else resetMap();
+      if (k === "in")        zoomMap(0.8);
+      else if (k === "out")  zoomMap(1.25);
+      else if (k === "full") toggleFullscreen();
+      else                   resetMap();
       hidePopup(); return;
     }
     if (_moved) { _moved = false; return; }

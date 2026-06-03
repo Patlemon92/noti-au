@@ -725,16 +725,53 @@
     if (sw) sw.postMessage("getVersion");
   });
 
+  // Force a navigation past any cached shell. Query-string defeats
+  // SWs that match by exact URL; the location.replace navigation
+  // gets handled network-first by the SW we ship anyway.
+  function hardReload() {
+    var url = window.location.pathname + "?fresh=" + Date.now()
+              + window.location.hash;
+    window.location.replace(url);
+  }
+
   btn.addEventListener("click", function () {
     btn.disabled = true;
     btn.textContent = "refreshing…";
+
+    // Three independent escape paths run in parallel so a stuck SW
+    // (e.g. the v7/v8 one without our clearCache handler) can't trap
+    // the user. Whichever finishes first triggers the reload via the
+    // 'cleared' message; otherwise the safety-net hardReload fires.
+    //
+    //   A) Ask the controlling SW to clear its caches (only useful
+    //      when the SW is recent enough to know the message).
+    //   B) Unregister every Atlas SW directly from the page, so the
+    //      next navigation has no SW intercepting at all.
+    //   C) Delete every cache by name from the page context — works
+    //      regardless of SW version.
     var sw = navigator.serviceWorker.controller;
-    if (sw) {
-      sw.postMessage("clearCache");
-      // Safety net: if the SW doesn't reply within 2.5s, reload anyway.
-      setTimeout(function () { window.location.replace(window.location.pathname); }, 2500);
-    } else {
-      window.location.replace(window.location.pathname);
-    }
+    if (sw) { try { sw.postMessage("clearCache"); } catch (_) {} }
+
+    var unregP = navigator.serviceWorker.getRegistrations
+      ? navigator.serviceWorker.getRegistrations().then(function (regs) {
+          return Promise.all(regs.map(function (r) {
+            try { return r.unregister(); } catch (_) { return null; }
+          }));
+        }).catch(function () {})
+      : Promise.resolve();
+
+    var cacheP = (window.caches && caches.keys)
+      ? caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (k) {
+            try { return caches.delete(k); } catch (_) { return null; }
+          }));
+        }).catch(function () {})
+      : Promise.resolve();
+
+    Promise.all([unregP, cacheP]).then(hardReload, hardReload);
+
+    // Belt + braces: even if the promises hang for some iOS reason,
+    // we reload within 3.5s.
+    setTimeout(hardReload, 3500);
   });
 })();

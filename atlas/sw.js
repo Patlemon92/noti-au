@@ -4,7 +4,7 @@
    All paths are relative so it works under any sub-path
    (e.g. https://noti.au/atlas/). Bump CACHE to ship updates.
    ============================================================ */
-const CACHE = "atlas-v13";
+const CACHE = "atlas-v14";
 
 /* App shell + data, precached on install. Relative to the SW's
    own location, which is the app's scope root. */

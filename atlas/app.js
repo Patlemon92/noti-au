@@ -134,6 +134,18 @@
      window.ATLAS_AI_ENDPOINT or by editing the line below. */
   var AI_ENDPOINT = (typeof window !== "undefined" && window.ATLAS_AI_ENDPOINT) ||
                     "https://api.noti.au/atlas/oil";
+  // Ask-the-atlas: posts {intention, context:{setting,avoid}} and gets back
+  // {points:[], blend:{}, caution, ask_id}. Requires the SMS login token.
+  var ASK_ENDPOINT = "https://api.noti.au/atlas/ask";
+  var ASK_HISTORY_KEY = "atlas_ask_history";
+  function loadAskHistory() {
+    try { return JSON.parse(localStorage.getItem(ASK_HISTORY_KEY) || "[]"); }
+    catch (e) { return []; }
+  }
+  function saveAskHistory(arr) {
+    try { localStorage.setItem(ASK_HISTORY_KEY, JSON.stringify(arr.slice(0, 20))); }
+    catch (e) {}
+  }
   var CUSTOM_KEY = "atlas_custom_oils";
   function loadCustomOils() {
     try { return JSON.parse(localStorage.getItem(CUSTOM_KEY) || "[]"); } catch (e) { return []; }
@@ -552,6 +564,153 @@
     }, { passive: false });
   }
 
+  /* ---- ask the atlas: intention → 1–2 points + 2–3 oil blend ----
+     One Claude call per ask, gated behind the SMS login token. The
+     server logs cost + content to Supabase so we can see who asked
+     for what and how much it cost. */
+  var _askState = {
+    setting: "diffuser",   // diffuser | roll-on | bath | massage | any
+    avoid:   {},           // { pregnancy?: true, children?: true, phototoxic?: true }
+    busy:    false,
+    last:    null,         // last response, kept so a tab-away/back doesn't lose it
+    error:   "",
+  };
+
+  function renderAsk() {
+    els.empty.classList.add("hidden");
+    var s = _askState;
+    var settings = [
+      { k: "diffuser", n: "Diffuser" },
+      { k: "roll-on",  n: "Roll-on"  },
+      { k: "bath",     n: "Bath"     },
+      { k: "massage",  n: "Massage"  },
+      { k: "any",      n: "Any"      },
+    ];
+    var avoids = [
+      { k: "phototoxic", n: "Sun-safe"   },
+      { k: "pregnancy",  n: "Pregnancy"  },
+      { k: "children",   n: "Children"   },
+    ];
+    var settingChips = settings.map(function (x) {
+      return '<button type="button" class="askchip ' + (s.setting === x.k ? "on" : "") +
+             '" data-ask-setting="' + x.k + '">' + esc(x.n) + "</button>";
+    }).join("");
+    var avoidChips = avoids.map(function (x) {
+      return '<button type="button" class="askchip ' + (s.avoid[x.k] ? "on" : "") +
+             '" data-ask-avoid="' + x.k + '">' + esc(x.n) + "</button>";
+    }).join("");
+
+    var history = loadAskHistory();
+    var historyHtml = "";
+    if (history.length) {
+      historyHtml = '<div class="askhist">' +
+        '<h3 class="askhisth">Recent</h3>' +
+        history.slice(0, 5).map(function (h, i) {
+          return '<button type="button" class="askhisti" data-ask-replay="' + i + '">' +
+                 '<span class="askhinten">' + esc(h.intention) + "</span>" +
+                 '<span class="askhintb">' + esc(h.setting || "any") + "</span></button>";
+        }).join("") + "</div>";
+    }
+
+    els.grid.innerHTML =
+      '<section class="askpanel">' +
+        '<p class="asklead">Tell the atlas what you\'re sitting with. It will offer a point or two to press, and a small oil blend to mix.</p>' +
+        '<div class="askform">' +
+          '<label class="asklab" for="askInput">Intention</label>' +
+          '<textarea id="askInput" class="askinput" rows="2" maxlength="200" ' +
+            'placeholder="settle before sleep · morning heaviness · grief sitting heavy"></textarea>' +
+          '<div class="askrow"><span class="asksub">Application</span><div class="askchiprow">' + settingChips + "</div></div>" +
+          '<div class="askrow"><span class="asksub">Avoid</span><div class="askchiprow">' + avoidChips + "</div></div>" +
+          '<div class="asksubmitrow">' +
+            '<button type="button" id="askSubmit" class="asksubmit"' + (s.busy ? " disabled" : "") + ">" +
+              (s.busy ? "…" : "Ask the atlas") + "</button>" +
+          "</div>" +
+          (s.error ? '<p class="askerr">' + esc(s.error) + "</p>" : "") +
+        "</div>" +
+        '<div id="askResult" class="askresult">' + (s.last ? renderAskCard(s.last) : "") + "</div>" +
+        historyHtml +
+      "</section>";
+
+    var input = document.getElementById("askInput");
+    if (input && !s.busy && !s.last) { try { input.focus(); } catch (e) {} }
+  }
+
+  function renderAskCard(r) {
+    if (!r) return "";
+    var pts = (r.points || []).map(function (p) {
+      return '<div class="askpt"><span class="askptc">' + esc(p.code) + "</span>" +
+             '<span class="askptn">' + esc(p.name) + "</span>" +
+             '<span class="askpti">' + esc(p.instruction || "") + "</span></div>";
+    }).join("");
+    var blend = r.blend || { oils: [], method: "", total_drops: 0 };
+    var oils = (blend.oils || []).map(function (o) {
+      return '<div class="askoil">' +
+        '<span class="askoild">' + esc(String(o.drops)) + '<small>drops</small></span>' +
+        '<span class="askoilm"><span class="askoiln">' + esc(o.name) + "</span>" +
+        '<span class="askoilw">' + esc(o.why || "") + "</span></span></div>";
+    }).join("");
+    return '<article class="askcardwrap"><div class="askcard">' +
+      '<p class="askunderstood">' + esc(r.intention_understood || "") + "</p>" +
+      (pts ? '<div class="askseck"><span class="asssecl">Press</span>' + pts + "</div>" : "") +
+      (oils ? '<div class="askseck"><span class="asssecl">Blend · ' + esc(blend.method || "") +
+             ' · ' + esc(String(blend.total_drops || 0)) + ' drops</span>' + oils + "</div>" : "") +
+      (r.caution ? '<p class="askcaution">' + esc(r.caution) + "</p>" : "") +
+    "</div></article>";
+  }
+
+  function submitAsk() {
+    var s = _askState;
+    if (s.busy) return;
+    var input = document.getElementById("askInput");
+    var intention = (input && input.value || "").trim();
+    if (!intention) { s.error = "What would you like the atlas to help with?"; renderAsk(); return; }
+    var token = "";
+    try { token = localStorage.getItem("noti_token") || ""; } catch (e) {}
+    if (!token) {
+      s.error = "Please sign in again — your session has timed out.";
+      renderAsk();
+      setTimeout(function () { location.replace("/atlas/login.html"); }, 1200);
+      return;
+    }
+    var avoid = Object.keys(s.avoid).filter(function (k) { return s.avoid[k]; });
+    s.busy = true; s.error = ""; renderAsk();
+    fetch(ASK_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+      body: JSON.stringify({
+        intention: intention,
+        context: { setting: s.setting === "any" ? null : s.setting, avoid: avoid },
+      }),
+    })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        s.busy = false;
+        if (!res.ok) {
+          s.error = res.body && res.body.error === "unauthorized"
+            ? "Please sign in again."
+            : "The atlas couldn't answer just now. Try again in a moment.";
+          renderAsk(); return;
+        }
+        s.last = res.body;
+        // Save to local history for the recent strip.
+        var h = loadAskHistory();
+        h.unshift({
+          intention: intention,
+          setting:   s.setting === "any" ? "" : s.setting,
+          avoid:     avoid,
+          response:  res.body,
+          ts:        Date.now(),
+        });
+        saveAskHistory(h);
+        renderAsk();
+      })
+      .catch(function (e) {
+        s.busy = false;
+        s.error = "Network issue — try again.";
+        renderAsk();
+      });
+  }
+
   function renderMap() {
     els.empty.classList.add("hidden");
     var view = state.mapView, dict = mapIndex();
@@ -621,12 +780,15 @@
 
   function applyChrome() {
     var onMap = state.tab === "map" && !isSearching();
-    // Chips now appear on the map tab too — they filter the body
-    // markers as well as the list. Hidden only during a free-text
-    // search where the chip facet doesn't add anything.
-    els.chips.classList.toggle("hidden", isSearching());
+    var onAsk = state.tab === "ask" && !isSearching();
+    // Chips appear on the map tab (filtering markers) and on the points
+    // tab (filtering list). Hidden during search + on the Ask tab where
+    // the chip facet doesn't apply.
+    els.chips.classList.toggle("hidden", isSearching() || onAsk);
+    // The grid is the host for list / map / ask renders — never hide it
+    // when the active tab IS one of those, just let renderX paint into it.
     els.grid.classList.toggle("hidden", onMap);
-    els.count.classList.toggle("hidden", onMap);
+    els.count.classList.toggle("hidden", onMap || onAsk);
     if (els.addOil) els.addOil.classList.toggle("hidden", !(state.tab === "oils" && !isSearching()));
   }
 
@@ -670,6 +832,7 @@
     var q = state.query.trim().toLowerCase();
     if (q) { renderSearch(q); return; }
     if (state.tab === "map") { renderMap(); return; }
+    if (state.tab === "ask") { renderAsk(); return; }
     renderList();
   }
 
@@ -800,6 +963,35 @@
   document.addEventListener("click", function (e) {
     var rm = e.target.closest(".oilrm");
     if (rm) { removeCustomOil(rm.getAttribute("data-rm")); return; }
+
+    // Ask-the-atlas chips + submit + history replay.
+    var sChip = e.target.closest("[data-ask-setting]");
+    if (sChip) {
+      _askState.setting = sChip.getAttribute("data-ask-setting");
+      renderAsk(); return;
+    }
+    var aChip = e.target.closest("[data-ask-avoid]");
+    if (aChip) {
+      var k = aChip.getAttribute("data-ask-avoid");
+      _askState.avoid[k] = !_askState.avoid[k];
+      renderAsk(); return;
+    }
+    var submit = e.target.closest("#askSubmit");
+    if (submit) { submitAsk(); return; }
+    var hi = e.target.closest("[data-ask-replay]");
+    if (hi) {
+      var idx = parseInt(hi.getAttribute("data-ask-replay"), 10) || 0;
+      var h = loadAskHistory()[idx];
+      if (h) {
+        _askState.last = h.response;
+        _askState.setting = h.setting || "any";
+        _askState.avoid = {};
+        (h.avoid || []).forEach(function (a) { _askState.avoid[a] = true; });
+        renderAsk();
+      }
+      return;
+    }
+
     var x = e.target.closest(".xlink");
     if (!x) return;
     els.search.value = x.getAttribute("data-q");

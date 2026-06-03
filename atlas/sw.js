@@ -4,7 +4,7 @@
    All paths are relative so it works under any sub-path
    (e.g. https://noti.au/atlas/). Bump CACHE to ship updates.
    ============================================================ */
-const CACHE = "atlas-v12";
+const CACHE = "atlas-v13";
 
 /* App shell + data, precached on install. Relative to the SW's
    own location, which is the app's scope root. */
@@ -25,9 +25,23 @@ const PRECACHE = [
 const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", (event) => {
+  // {cache: 'reload'} is the load-bearing detail here. The default
+  // c.addAll() goes through the HTTP cache, and Cloudflare Pages serves
+  // assets with Cache-Control: public, max-age=14400 — so the BROWSER
+  // cache layer can return stale app.js/styles.css to the SW install,
+  // which then stores them under the NEW cache name. Bumping CACHE
+  // doesn't help because the browser is still handing back yesterday's
+  // bytes. Forcing reload bypasses every cache layer above us and goes
+  // straight to the network for the precache fetch.
   event.waitUntil(
     caches.open(CACHE)
-      .then((c) => c.addAll(PRECACHE))
+      .then((c) =>
+        Promise.all(PRECACHE.map((u) =>
+          fetch(new Request(u, { cache: "reload" }))
+            .then((res) => (res && res.ok) ? c.put(u, res) : null)
+            .catch(() => null)
+        ))
+      )
       .then(() => self.skipWaiting())
   );
 });

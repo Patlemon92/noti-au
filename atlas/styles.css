@@ -55,7 +55,28 @@ h1.title{font-family:"Fraunces","Playfair Display",Georgia,serif; font-weight:60
 .chips{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin:14px auto 0; max-width:1000px}
 .chip{font-family:"JetBrains Mono",monospace; font-size:11.5px; letter-spacing:.04em;
   border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft);
-  border-radius:999px; padding:6px 13px; cursor:pointer; transition:all .13s; white-space:nowrap}
+  border-radius:999px; padding:6px 13px; cursor:pointer; transition:all .13s; white-space:nowrap;
+  flex:0 0 auto; scroll-snap-align:start}
+
+/* On phones, 16 channel pills wrapping into 7 rows of chrome ate
+   most of the viewport before the user could see any actual data
+   (Patrick: "section takes up too much room on phone"). Single-row
+   horizontal scroll instead — same pattern Apple News / Spotify
+   use for filter bars. Edge fade hints there's more to swipe to. */
+@media (max-width: 720px) {
+  .chips{
+    flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden;
+    justify-content:flex-start;
+    scroll-snap-type:x proximity;
+    padding:0 14px 4px;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    /* Soft fade at the right edge hints "swipe for more". */
+    -webkit-mask-image:linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
+            mask-image:linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
+  }
+  .chips::-webkit-scrollbar{display:none}
+}
 .chip:hover{color:var(--ink); border-color:var(--gold)}
 .chip.active{color:#fff; border-color:transparent}
 .chip .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:baseline}

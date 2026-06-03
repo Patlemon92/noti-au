@@ -502,12 +502,15 @@ function renderHypnogram(container, sleepSamples, sessionSamples) {
   const night = arr.filter(a => a.ts >= tMin - 60_000 && a.ts <= tMax + 60_000);
   const span  = (tMax - tMin) || 1;
 
-  // Single-bar hypnogram — matches the Ring page card's clean look
-  // instead of the old multi-lane SVG with disconnected blocks
-  // floating at different Y positions (Patrick: "this looks
-  // terrible"). All stages render on the same row, side by side,
-  // width proportional to duration. The colour IS the stage; we
-  // don't need a lane to tell them apart.
+  // Stage-track hypnogram — Patrick's pick after the single-bar
+  // version. Four horizontal tracks (Awake / REM / Light / Deep
+  // top-to-bottom) each running the full width of the night. A
+  // track lights up at time slices when that stage was active.
+  // Reads like a CGM glucose track — vertical position carries
+  // the stage, no need to remember a colour legend.
+  //
+  // Scrubbable: drag along the chart and the cursor labels the
+  // moment + the active stage at that moment.
   const colorFor = stage => ({
     0: 'var(--stage-awake)',
     1: 'var(--stage-light)',
@@ -515,35 +518,101 @@ function renderHypnogram(container, sleepSamples, sessionSamples) {
     3: 'var(--stage-rem)',
   }[stage] ?? 'var(--ink-mute)');
 
-  const segments = [];
-  for (let i = 0; i < night.length; i++) {
-    const b = night[i];
+  const stageOrder  = [0, 3, 1, 2];   // top → bottom
+  const stageLabel  = { 0: 'Awake', 3: 'REM', 1: 'Light', 2: 'Deep' };
+
+  // Pre-compute each block's start/end + its stage so we can build
+  // per-track segments quickly. Block end = next block's start (or
+  // declared duration when no next block).
+  const blocks = night.map((b, i) => {
     const next = night[i + 1];
-    const segEnd = next ? next.ts : (b.ts + (b.dur || 5 * 60 * 1000));
-    const x = ((b.ts   - tMin) / span) * 100;
-    const w = ((segEnd - b.ts)  / span) * 100;
-    if (w <= 0) continue;
-    segments.push(
-      `<div style="position:absolute;left:${x.toFixed(2)}%;width:${w.toFixed(2)}%;top:0;bottom:0;background:${colorFor(b.stage)}"></div>`
-    );
-  }
+    const end = next ? next.ts : (b.ts + (b.dur || 5 * 60 * 1000));
+    return { ts: b.ts, end, stage: b.stage };
+  });
+
+  const LABEL_W   = 56;    // px reserved for the stage label gutter
+  const TRACK_H   = 22;    // px per track
+  const TRACK_GAP = 6;     // px between tracks
+  const totalH    = stageOrder.length * (TRACK_H + TRACK_GAP) - TRACK_GAP;
 
   const fmt = ms => new Date(ms).toLocaleTimeString('en-AU', {
     hour: 'numeric', minute: '2-digit', hour12: false,
   });
 
+  // Build one track row per stage. The faint background bar shows
+  // the full night window; coloured segments overlay where the
+  // stage was active.
+  const tracksHtml = stageOrder.map(stage => {
+    const segments = blocks
+      .filter(b => b.stage === stage)
+      .map(b => {
+        const x = ((b.ts  - tMin) / span) * 100;
+        const w = ((b.end - b.ts)  / span) * 100;
+        if (w <= 0) return '';
+        return `<div style="position:absolute;left:${x.toFixed(2)}%;width:${w.toFixed(2)}%;top:0;bottom:0;background:${colorFor(stage)};border-radius:3px"></div>`;
+      }).join('');
+    return `
+      <div style="display:flex;align-items:center;gap:8px;height:${TRACK_H}px;margin-bottom:${TRACK_GAP}px">
+        <div style="width:${LABEL_W}px;flex:0 0 ${LABEL_W}px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute,#9A8369);font-family:'Inter Tight',sans-serif">${stageLabel[stage]}</div>
+        <div style="position:relative;flex:1;height:100%;background:var(--bone-deep,#F2EBE0);border-radius:5px;overflow:hidden">
+          ${segments}
+        </div>
+      </div>`;
+  }).join('');
+
   // Mid-window time tick. Three labels: start, middle, end.
   const tMid = tMin + span / 2;
 
+  // Wrap in a positioned host so the scrub cursor + tooltip can
+  // overlay the tracks. Cursor sits in the tracks region only;
+  // labels go below.
+  const id = 'hyp_' + Math.random().toString(36).slice(2, 8);
   container.innerHTML = `
-    <div style="position:relative;height:32px;border-radius:10px;overflow:hidden;background:var(--bone-deep,#F2EBE0)">
-      ${segments.join('')}
+    <div id="${id}" style="position:relative;touch-action:pan-y">
+      ${tracksHtml}
+      <div class="hyp-cursor" style="position:absolute;left:${LABEL_W}px;top:0;bottom:0;width:1px;background:var(--ink,#2B2018);opacity:0;pointer-events:none;display:flex;align-items:flex-end;transform:translateX(0);transition:opacity .12s ease"></div>
+      <div class="hyp-tip" style="position:absolute;top:-6px;background:var(--ink,#2B2018);color:#fff7f0;padding:5px 9px;border-radius:8px;font-family:'Inter Tight',sans-serif;font-size:11.5px;opacity:0;pointer-events:none;transform:translate(-50%, -100%);white-space:nowrap;transition:opacity .12s ease">—</div>
     </div>
-    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--ink-mute,#9A8369);font-family:'Inter Tight',sans-serif">
+    <div style="display:flex;justify-content:space-between;margin:8px ${LABEL_W + 4}px 0 ${LABEL_W + 4}px;font-size:11px;color:var(--ink-mute,#9A8369);font-family:'Inter Tight',sans-serif">
       <span>${fmt(tMin)}</span>
       <span>${fmt(tMid)}</span>
       <span>${fmt(tMax)}</span>
     </div>`;
+
+  // Wire scrub. Track host width minus label gutter = chart width.
+  // Touch X relative to chart maps to a moment in span; we look up
+  // the active stage at that moment by scanning blocks.
+  const host   = document.getElementById(id);
+  const cursor = host.querySelector('.hyp-cursor');
+  const tip    = host.querySelector('.hyp-tip');
+  function showAt(clientX) {
+    const rect = host.getBoundingClientRect();
+    const xRel = Math.max(0, Math.min(rect.width, clientX - rect.left));
+    // Map xRel (full-width incl. label) to time. Label gutter is
+    // dead-zone; clamp to chart range so the cursor doesn't fly off.
+    const chartLeft  = LABEL_W;
+    const chartRight = rect.width;
+    const chartX = Math.max(chartLeft, Math.min(chartRight, xRel));
+    const t = tMin + ((chartX - chartLeft) / (chartRight - chartLeft)) * span;
+    // Find the block covering this moment.
+    const hit = blocks.find(b => b.ts <= t && b.end >= t);
+    const stage = hit ? hit.stage : null;
+    const label = stage != null ? stageLabel[stage] : '—';
+    cursor.style.opacity = '1';
+    cursor.style.transform = `translateX(${(chartX - chartLeft).toFixed(1)}px)`;
+    tip.style.opacity = '1';
+    tip.style.left = chartX + 'px';
+    tip.textContent = `${label} · ${fmt(t)}`;
+  }
+  function hideCursor() {
+    cursor.style.opacity = '0';
+    tip.style.opacity = '0';
+  }
+  host.addEventListener('pointerdown', e => { host.setPointerCapture(e.pointerId); showAt(e.clientX); });
+  host.addEventListener('pointermove', e => { if (e.buttons || e.pointerType === 'touch') showAt(e.clientX); });
+  host.addEventListener('pointerup',     hideCursor);
+  host.addEventListener('pointercancel', hideCursor);
+  host.addEventListener('pointerleave',  hideCursor);
 
   // Totals — prefer the session row's authoritative seconds for the
   // sleep stages when present (deep/light/rem), but ALWAYS derive
@@ -567,18 +636,15 @@ function renderHypnogram(container, sleepSamples, sessionSamples) {
   }
   // Carve device-log-derived awake out of light. The R11M firmware
   // re-classifies brief wakes as "light" in its session meta — when
-  // we then add awake from the device log on top, light double-counts.
-  // Subtract awake from light so deep + light + rem + awake equals
-  // the actual sleep window (e.g. 7h 30m bed time, not 9h 31m total).
-  // Floor at 0 so a misclassified day with awake > light doesn't go
-  // negative.
+  // we then add awake on top, light double-counts. Subtract so the
+  // four numbers reconcile to the bed window.
   if (totals.awake > 0 && totals.light > 0) {
     totals.light = Math.max(0, totals.light - totals.awake);
   }
-  // `total` is asleep time: deep + light + rem, excluding awake.
-  // Time in bed = total + awake.
-  totals.total       = totals.deep + totals.light + totals.rem;
-  totals.timeInBed   = totals.total + totals.awake;
+  // Total sleep includes awake (Patrick: "the awake needs to be
+  // tallied in the total sleep"). It's the time-in-bed window.
+  //   deep + (light − awake) + rem + awake = bed window
+  totals.total = totals.deep + totals.light + totals.rem + totals.awake;
   totals.startTs = tMin;
   totals.endTs = tMax;
   return totals;

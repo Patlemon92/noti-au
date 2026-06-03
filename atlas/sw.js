@@ -4,7 +4,7 @@
    All paths are relative so it works under any sub-path
    (e.g. https://noti.au/atlas/). Bump CACHE to ship updates.
    ============================================================ */
-const CACHE = "atlas-v10";
+const CACHE = "atlas-v11";
 
 /* App shell + data, precached on install. Relative to the SW's
    own location, which is the app's scope root. */
@@ -100,19 +100,27 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  /* Same-origin assets: cache-first, then fill the cache on miss. */
+  /* Same-origin assets: stale-while-revalidate. Hit the cache for
+     a fast paint, then always fire a background fetch that updates
+     the cache for the next navigation. The previous cache-first
+     impl trapped users on stale app.js whenever we shipped — the
+     new HTML would land (navigations are network-first) but its
+     <script src="app.js"> kept resolving to the cached copy, so
+     UI updates never reached them without a manual cache clear.
+     SWR fixes that without sacrificing offline use. */
   if (url.origin === self.location.origin) {
     event.respondWith(
-      caches.match(req).then((hit) => {
-        if (hit) return hit;
-        return fetch(req).then((res) => {
-          if (res && res.status === 200 && res.type === "basic") {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy));
-          }
-          return res;
-        });
-      })
+      caches.open(CACHE).then((c) =>
+        c.match(req).then((hit) => {
+          const net = fetch(req).then((res) => {
+            if (res && res.status === 200 && res.type === "basic") {
+              c.put(req, res.clone());
+            }
+            return res;
+          }).catch(() => hit);
+          return hit || net;
+        })
+      )
     );
   }
 });

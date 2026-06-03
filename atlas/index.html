@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Auth gate: redirect to the atlas login page when no Noti SMS
+     token is stored. Stops anyone bookmarking the index direct
+     from getting the contents before they auth. Mirrors /health's
+     pattern, pointed back at /atlas after a successful verify.
+     Runs synchronously at the very top of <head> so no atlas markup
+     ever paints on a no-token visit. -->
+<script>
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('noti_token'); } catch (e) {}
+    if (!t) {
+      var here = encodeURIComponent(location.pathname + location.search + location.hash);
+      location.replace('/atlas/login.html?next=' + here);
+    }
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Wellness Atlas</title>
+<meta name="description" content="A living, searchable wellness reference — acupressure points, essential oils and more — what they're good for, where to find them, and how they touch body, mind and spirit.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Newsreader:ital,opsz@0,6..72;1,6..72&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+
+<!-- PWA: installable + offline. All paths relative so it works under any sub-path. -->
+<meta name="theme-color" content="#f4ece0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Atlas">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="kicker">A Living Wellness Reference · Body &amp; Spirit</p>
+    <h1 class="title">The Wellness Atlas</h1>
+    <p class="subtitle">Acupressure points, a cabinet of essential oils — and room to grow, as the collection expands. What each is traditionally good for, where to find it, and how it touches body, mind and spirit.</p>
+    <div class="rule"></div>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="points">Acupressure Points</button>
+      <button class="tab" data-tab="oils">Essential Oils</button>
+      <button class="tab" data-tab="map">Body Map</button>
+    </nav>
+
+    <button id="installBtn" class="install hidden" type="button">⤓ Install app</button>
+  </header>
+
+  <div class="controls">
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="search" type="search" autocomplete="off" placeholder="Search points and oils — try 'headache', 'sleep', 'grief', 'lavender'…">
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="count" id="count"></div>
+    <button id="addOil" class="addbtn hidden" type="button">＋ Add an oil</button>
+  </div>
+
+  <main>
+    <div class="grid" id="grid"></div>
+    <div class="empty hidden" id="empty">Nothing matches that search. Try a symptom, a name, or clear the filters.</div>
+
+    <!-- Body map -->
+    <section class="mapwrap tabpanel hidden" data-for="map" id="mapSection">
+      <p class="maplead">Switch between Front and Back, then tap a region (Head, Chest, Arm &amp; hand…) to zoom in and reveal point labels. Tap any dot to read what it's for, where to find it, and how it touches body, mind and spirit. Most points are bilateral — work both sides.</p>
+      <div class="mapview" id="mapView"></div>
+      <div class="mapdetail" id="mapDetail">
+        <p class="maphint">Tap a point on the body to read about it.</p>
+      </div>
+    </section>
+
+    <!-- Acupressure guidance -->
+    <section class="panel tabpanel" data-for="points">
+      <span class="lab">How to read a location · the cun</span>
+      <h2>Measuring with the body's own ruler</h2>
+      <p>Traditional locations are given in <strong>cun</strong> (pronounced "tsoon") — body-inches measured on the <em>person being treated</em>, not a fixed length. The width of their thumb at the knuckle is <strong>1 cun</strong>; the four fingers held together at the second knuckle is <strong>3 cun</strong>. So a point "3 cun above the inner ankle" sits four finger-widths up, whatever the body size.</p>
+      <p>Press with a fingertip or thumb on a tender, slightly hollow spot, building to firm, steady pressure that feels strong but not sharp. Hold or make small circles for around one to two minutes, breathing slowly. Stop if it ever feels sharp, electric or genuinely painful.</p>
+    </section>
+
+    <section class="panel tabpanel" data-for="points">
+      <span class="lab">Please read · safety</span>
+      <h2>A few sensible cautions</h2>
+      <p>This is a reference for traditional wellness practice and general interest — it is <strong>not medical advice</strong>, and it does not diagnose or treat disease. See a qualified practitioner or doctor for anything persistent or serious.</p>
+      <p>Several points are traditionally <strong>avoided during pregnancy</strong> (notably LI 4, SP 6, BL 60, BL 67 and GB 21) as they strongly move energy in the body. Points near the eyes, throat, arteries and the perineum are best left to a trained practitioner; press these only very gently, if at all. Never apply pressure over broken skin, varicose veins, recent injuries or wounds.</p>
+    </section>
+
+    <!-- Oils guidance -->
+    <section class="panel tabpanel hidden" data-for="oils">
+      <span class="lab">Using the oils · safety</span>
+      <h2>Working with essential oils safely</h2>
+      <p>Essential oils are highly concentrated. <strong>Dilute before any skin contact</strong> — generally a few drops per tablespoon of carrier oil (around 1–3%) — and never swallow them. Patch-test first, keep them away from eyes, and store them out of reach of children and pets.</p>
+      <p>Some need extra care: <strong>citrus oils</strong> (bergamot, lemon, lime, grapefruit) can be <strong>phototoxic</strong>, so keep treated skin out of strong sun. <strong>Cinnamon, clove, oregano</strong> and similar "hot" oils are strong irritants and need heavy dilution. <strong>Wintergreen</strong> needs particular caution. If pregnant, breastfeeding, epileptic, or on medication, check with a qualified aromatherapist or doctor first. The chakra associations are offered in the energetic tradition of aromatherapy, not as clinical claims.</p>
+    </section>
+  </main>
+
+  <footer>
+    The Wellness Atlas · a traditional wellness reference ·
+    built for curiosity and care
+  </footer>
+
+</div>
+
+<div id="oilModal" class="omodal hidden"></div>
+
+<div id="iosHint" class="ioshint hidden">
+  <span>To keep this on your phone: tap the <strong>Share</strong> icon, then <strong>Add to Home Screen</strong>.</span>
+  <button id="iosHintClose" type="button" aria-label="Dismiss">×</button>
+</div>
+
+<script src="data/acupressure.js"></script>
+<script src="data/oils.js"></script>
+<script src="app.js"></script>
+
+<!-- PWA: register the service worker + handle install prompts -->
+<script>
+(function () {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+
+  // Android / desktop Chrome: show our own Install button
+  var deferred = null, btn = document.getElementById("installBtn");
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault(); deferred = e;
+    if (btn) btn.classList.remove("hidden");
+  });
+  if (btn) btn.addEventListener("click", function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function () {
+      deferred = null; btn.classList.add("hidden");
+    });
+  });
+  window.addEventListener("appinstalled", function () {
+    if (btn) btn.classList.add("hidden");
+  });
+
+  // iOS Safari has no install prompt — show a one-time hint instead
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  var hint = document.getElementById("iosHint");
+  if (isIOS && !standalone && hint) {
+    var dismissed = false;
+    try { dismissed = localStorage.getItem("iosHintDismissed") === "1"; } catch (e) {}
+    if (!dismissed) {
+      hint.classList.remove("hidden");
+      var close = document.getElementById("iosHintClose");
+      if (close) close.addEventListener("click", function () {
+        hint.classList.add("hidden");
+        try { localStorage.setItem("iosHintDismissed", "1"); } catch (e) {}
+      });
+    }
+  }
+})();
+</script>
+</body>
+</html>

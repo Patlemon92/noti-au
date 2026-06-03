@@ -1,0 +1,257 @@
+/* ============================================================
+   The Wellness Atlas — apothecary theme
+   ============================================================ */
+:root{
+  --paper:#f4ece0; --ink:#2b2317; --ink-soft:#5b513f;
+  --jade:#3f6b54; --cinnabar:#a8392a; --gold:#b08436;
+  --card:#fbf6ec; --line:#e0d4bf; --shade:#efe5d3;
+  /* chakra colours */
+  --root:#b0413e; --sacral:#d97a34; --solar:#c79a3c; --heart:#4a8a5a;
+  --throat:#3f7fa0; --thirdeye:#4b4f9b; --crown:#7d6a98;
+  --shadow:0 1px 2px rgba(43,35,23,.06), 0 6px 18px rgba(43,35,23,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Newsreader",Georgia,"Times New Roman",serif;
+  font-size:17px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  position:relative; min-height:100vh;
+}
+/* paper grain */
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+.wrap{position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:0 22px 80px}
+
+/* ---------- header ---------- */
+header.masthead{text-align:center; padding:46px 0 22px}
+.kicker{font-family:"JetBrains Mono",ui-monospace,monospace; font-size:11.5px; letter-spacing:.32em;
+  text-transform:uppercase; color:var(--cinnabar); margin:0 0 12px}
+h1.title{font-family:"Fraunces","Playfair Display",Georgia,serif; font-weight:600;
+  font-size:clamp(38px,7vw,68px); line-height:.98; margin:0; letter-spacing:-.01em}
+.subtitle{max-width:660px; margin:16px auto 0; color:var(--ink-soft); font-size:18px}
+.rule{width:62px; height:2px; background:var(--gold); margin:24px auto 0; border-radius:2px}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex; justify-content:center; gap:10px; margin:30px 0 4px; flex-wrap:wrap}
+.tab{font-family:"JetBrains Mono",monospace; font-size:13px; letter-spacing:.08em; text-transform:uppercase;
+  background:transparent; color:var(--ink-soft); border:1.5px solid var(--line); border-radius:999px;
+  padding:11px 22px; cursor:pointer; transition:all .15s}
+.tab:hover{border-color:var(--gold); color:var(--ink)}
+.tab.active{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+
+/* ---------- controls ---------- */
+.controls{position:sticky; top:0; z-index:5; background:var(--paper); padding:18px 0 14px; margin-bottom:8px;
+  border-bottom:1px solid var(--line)}
+.search{position:relative; max-width:680px; margin:0 auto}
+.search input{width:100%; font-family:inherit; font-size:17px; color:var(--ink);
+  background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:14px 16px 14px 44px;
+  box-shadow:var(--shadow); transition:border-color .15s}
+.search input:focus{outline:none; border-color:var(--jade)}
+.search svg{position:absolute; left:15px; top:50%; transform:translateY(-50%); width:18px; height:18px;
+  stroke:var(--ink-soft); fill:none; stroke-width:2}
+.chips{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin:14px auto 0; max-width:1000px}
+.chip{font-family:"JetBrains Mono",monospace; font-size:11.5px; letter-spacing:.04em;
+  border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft);
+  border-radius:999px; padding:6px 13px; cursor:pointer; transition:all .13s; white-space:nowrap}
+.chip:hover{color:var(--ink); border-color:var(--gold)}
+.chip.active{color:#fff; border-color:transparent}
+.chip .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:baseline}
+.count{text-align:center; font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--ink-soft);
+  letter-spacing:.05em; margin:16px 0 6px}
+
+/* ---------- card grid ---------- */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:16px; margin-top:8px}
+.card{position:relative; background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:20px 22px 20px 26px; box-shadow:var(--shadow); overflow:hidden}
+.card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:6px; background:var(--accent,var(--gold))}
+.card .code{font-family:"JetBrains Mono",monospace; font-size:12px; letter-spacing:.06em;
+  color:#fff; background:var(--accent,var(--gold)); padding:3px 9px; border-radius:6px; display:inline-block}
+.card .pin{font-family:"JetBrains Mono",monospace; font-size:11px; color:var(--ink-soft); letter-spacing:.05em;
+  float:right; margin-top:4px}
+.card h3{font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:23px; line-height:1.1;
+  margin:13px 0 2px}
+.card .meridian{font-size:13.5px; color:var(--accent,var(--gold)); font-style:italic; margin-bottom:12px}
+.tagrow{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px}
+.tag{font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.04em; text-transform:uppercase;
+  background:var(--shade); color:var(--ink-soft); padding:3px 8px; border-radius:5px}
+.loc{background:var(--shade); border-left:3px solid var(--jade); border-radius:0 8px 8px 0;
+  padding:10px 13px; margin:0 0 12px; font-size:15px}
+.loc .lab{font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--jade); display:block; margin-bottom:3px}
+.loc .findcue{display:block; margin-top:6px; color:var(--ink-soft); font-style:italic; font-size:14px}
+.block{margin:0 0 9px; font-size:15.5px}
+.block .lab{font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase;
+  margin-right:7px}
+.lab.uses{color:var(--cinnabar)} .lab.emo{color:var(--crown)} .lab.spirit{color:var(--jade)}
+.lab.good{color:var(--cinnabar)} .lab.benefit{color:var(--crown)} .lab.scent{color:var(--gold)}
+.warn{display:flex; gap:8px; align-items:flex-start; background:#f6e4df; border:1px solid #e3b6ac;
+  border-radius:8px; padding:9px 12px; margin-top:10px; font-size:14px; color:#7d2c20}
+.warn svg{flex:none; width:15px; height:15px; margin-top:2px; stroke:#a8392a; fill:none; stroke-width:2}
+
+/* ---------- oil-specific ---------- */
+.chakras{display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 12px}
+.chakras .cdot{font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.03em; text-transform:capitalize;
+  color:#fff; padding:3px 9px 3px 8px; border-radius:999px; display:inline-flex; align-items:center; gap:5px}
+.chakras .cdot::before{content:""; width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.85)}
+.noteline{font-size:12.5px; color:var(--ink-soft); margin-bottom:10px; font-style:italic}
+
+/* ---------- guide / notes panels ---------- */
+.panel{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px 26px;
+  margin:34px 0 0; box-shadow:var(--shadow)}
+.panel h2{font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:24px; margin:0 0 10px}
+.panel p{margin:0 0 10px; color:var(--ink-soft); font-size:16px}
+.panel .lab{font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--cinnabar); display:block; margin-bottom:10px}
+.panel strong{color:var(--ink)}
+.empty{text-align:center; color:var(--ink-soft); font-style:italic; padding:60px 20px}
+footer{text-align:center; color:var(--ink-soft); font-size:13px; margin-top:46px; padding-top:24px;
+  border-top:1px solid var(--line)}
+.hidden{display:none !important}
+@media(max-width:520px){
+  body{font-size:16px}
+  .wrap{padding:0 14px 60px}
+  .grid{grid-template-columns:1fr}
+  .card .pin{float:none; display:block; margin-top:6px}
+  /* body map on phones: use the screen, keep controls reachable */
+  .mapbar{justify-content:center}
+  .zoomctl{margin-left:0}
+  .zbtn{width:44px; height:44px}
+  .mapstage{height:clamp(380px, 74vh, 660px); border-radius:14px}
+  .tabs{gap:8px}
+  .tab{padding:10px 16px; font-size:12px}
+}
+
+/* ---------- PWA install affordances ---------- */
+.install{display:inline-flex; align-items:center; gap:8px; margin:22px auto 0;
+  font-family:"JetBrains Mono",monospace; font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+  background:var(--jade); color:var(--paper); border:none; border-radius:999px;
+  padding:11px 22px; cursor:pointer; box-shadow:var(--shadow); transition:filter .15s}
+.install:hover{filter:brightness(1.08)}
+.ioshint{position:fixed; left:14px; right:14px; bottom:calc(14px + env(safe-area-inset-bottom));
+  z-index:50; max-width:520px; margin:0 auto; display:flex; align-items:flex-start; gap:10px;
+  background:var(--ink); color:var(--paper); border-radius:12px; padding:14px 16px;
+  font-size:14px; line-height:1.4; box-shadow:0 8px 30px rgba(43,35,23,.30)}
+.ioshint strong{color:#fff}
+.ioshint button{flex:none; background:none; border:none; color:var(--paper); font-size:22px;
+  line-height:1; cursor:pointer; padding:0 2px; margin:-2px -4px 0 0}
+
+/* ---------- combined-search section headers ---------- */
+.sectionhead{grid-column:1/-1; display:flex; align-items:center; gap:12px; margin:14px 2px 0;
+  font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:19px; color:var(--ink-soft)}
+.sectionhead span{font-family:"JetBrains Mono",monospace; font-size:12px; color:#fff;
+  background:var(--jade); border-radius:999px; padding:2px 9px}
+.sectionhead::after{content:""; flex:1; height:1px; background:var(--line)}
+
+/* ---------- cross-links between points & oils ---------- */
+.links{display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:11px; padding-top:11px;
+  border-top:1px dashed var(--line)}
+.links .lab{font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+  margin-right:3px}
+.lab.linkoil{color:var(--gold)} .lab.linkpt{color:var(--jade)}
+.xlink{font-family:"JetBrains Mono",monospace; font-size:11px; background:var(--shade); color:var(--ink);
+  border:1px solid var(--line); border-radius:999px; padding:4px 11px; cursor:pointer; transition:all .13s}
+.xlink:hover{border-color:var(--jade); color:var(--jade); background:var(--card)}
+
+/* ---------- body map ---------- */
+.mapwrap{margin-top:14px}
+.maplead{max-width:640px; margin:0 auto 12px; text-align:center; color:var(--ink-soft);
+  font-size:15.5px; line-height:1.5}
+.mapview{position:relative; margin-top:8px}
+.mapbar{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px}
+.mapToggle{display:flex; gap:8px}
+.mtg{font-family:"JetBrains Mono",monospace; font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+  background:transparent; color:var(--ink-soft); border:1.5px solid var(--line); border-radius:999px;
+  padding:8px 16px; cursor:pointer; transition:all .14s}
+.mtg:hover{border-color:var(--gold); color:var(--ink)}
+.mtg.on{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+.zoomctl{display:flex; gap:6px; align-items:center; margin-left:auto}
+.zbtn{width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:22px;
+  line-height:1; background:var(--card); color:var(--ink); border:1.5px solid var(--line); border-radius:50%;
+  cursor:pointer; transition:all .13s; -webkit-user-select:none; user-select:none}
+.zbtn:hover{border-color:var(--jade); color:var(--jade)}
+.zbtn:active{background:var(--shade)}
+.mapstage{position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  aspect-ratio:200 / 470; height:clamp(440px, 78vh, 800px); width:auto; max-width:100%; margin:0 auto;
+  border:1px solid var(--line); border-radius:18px;
+  background:radial-gradient(120% 80% at 50% 18%, var(--card), var(--paper))}
+.bodysvg{display:block; width:100%; height:100%;
+  touch-action:none; -webkit-user-select:none; user-select:none; cursor:grab}
+.bodysvg:active{cursor:grabbing}
+.figure{fill:#e7dcc7; stroke:#c9b89a; stroke-width:1.4; stroke-linejoin:round; stroke-linecap:round}
+.spine{stroke:#c9b89a; stroke-width:1.2; stroke-dasharray:3 3; fill:none}
+.hint{fill:none; stroke:#c9b89a; stroke-width:1; opacity:.5}
+.mkg{cursor:pointer}
+.mkhit{fill:transparent}
+.mk{stroke:#fff; stroke-width:1; transition:r .1s, stroke-width .1s}
+.mkg:hover .mk{stroke:var(--ink); stroke-width:1.3}
+.mkg.on .mk{r:4.4; stroke:var(--cinnabar); stroke-width:1.6}
+.mlabel{font-family:"JetBrains Mono",monospace; font-size:5px; fill:var(--ink); opacity:0; pointer-events:none;
+  paint-order:stroke; stroke:#f4ece0; stroke-width:1.5px; stroke-linejoin:round; transition:opacity .15s}
+.bodysvg.zoom .mlabel{opacity:1}
+.maptip{text-align:center; color:var(--ink-soft); font-size:12.5px; font-style:italic; margin:9px 0 0}
+.legend{display:flex; flex-wrap:wrap; gap:7px 12px; justify-content:center; max-width:600px; margin:12px auto 0}
+.lgi{display:inline-flex; align-items:center; gap:5px; font-family:"JetBrains Mono",monospace;
+  font-size:10.5px; color:var(--ink-soft)}
+.lgi i{width:9px; height:9px; border-radius:50%; display:inline-block}
+/* point info — centered modal with dimmed backdrop */
+.mappop{position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center;
+  padding:22px; background:rgba(43,35,23,.45); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px)}
+.popwrap{position:relative; width:min(92vw, 420px); max-height:86vh}
+.popcard{max-height:86vh; overflow:auto; border-radius:16px; box-shadow:0 18px 50px rgba(43,35,23,.42);
+  -webkit-overflow-scrolling:touch}
+.popcard .card{box-shadow:none; border:0; border-radius:16px; margin:0}
+.popclose{position:absolute; top:-13px; right:-13px; z-index:2; width:34px; height:34px; border-radius:50%;
+  border:1px solid var(--line); background:var(--paper); color:var(--ink); font-size:15px; line-height:1;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(43,35,23,.25)}
+.popclose:hover{color:var(--cinnabar); border-color:var(--cinnabar)}
+.mapdetail{max-width:680px; margin:18px auto 0}
+.maphint{text-align:center; color:var(--ink-soft); font-style:italic; padding:10px 16px}
+
+/* ---------- add-an-oil authoring ---------- */
+.addbtn{display:block; margin:14px auto 0; font-family:"JetBrains Mono",monospace; font-size:12px;
+  letter-spacing:.06em; text-transform:uppercase; background:var(--jade); color:var(--paper); border:0;
+  border-radius:999px; padding:10px 20px; cursor:pointer; box-shadow:var(--shadow); transition:filter .15s}
+.addbtn:hover{filter:brightness(1.08)}
+.omodal{position:fixed; inset:0; z-index:120; display:flex; align-items:flex-start; justify-content:center;
+  padding:28px 18px; overflow:auto; background:rgba(43,35,23,.5);
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px)}
+.opanel{position:relative; width:min(94vw,480px); margin:auto; background:var(--card); border:1px solid var(--line);
+  border-radius:18px; padding:24px 22px; box-shadow:0 20px 60px rgba(43,35,23,.45)}
+.otitle{font-family:"Fraunces",Georgia,serif; font-weight:600; font-size:24px; margin:0 0 4px}
+.ohelp{color:var(--ink-soft); font-size:14px; margin:0 0 16px; line-height:1.45}
+.ofield{margin-bottom:13px}
+.ofield > label{display:block; font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--cinnabar); margin-bottom:6px}
+.ofield input[type=text], .ofield select, .ofield textarea{width:100%; font-family:inherit; font-size:15px;
+  color:var(--ink); background:var(--paper); border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
+  outline:none; transition:border-color .15s; -webkit-appearance:none; appearance:none}
+.ofield input:focus, .ofield select:focus, .ofield textarea:focus{border-color:var(--jade)}
+.ofield textarea{resize:vertical; line-height:1.45}
+.genrow{display:flex; gap:8px}
+.genrow input{flex:1}
+.genbtn{flex:none; font-family:"JetBrains Mono",monospace; font-size:12px; background:var(--ink); color:var(--paper);
+  border:0; border-radius:10px; padding:0 14px; cursor:pointer; white-space:nowrap}
+.genbtn:disabled{opacity:.5; cursor:wait}
+.omsg{min-height:16px; font-size:13px; color:var(--ink-soft); margin:-4px 0 12px; font-style:italic}
+.ogrid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.ckboxes{display:flex; flex-wrap:wrap; gap:8px}
+.ckbox{display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft);
+  border:1.3px solid var(--line); border-radius:999px; padding:5px 11px 5px 9px; cursor:pointer}
+.ckbox input{accent-color:var(--jade)}
+.ckbox i{width:9px; height:9px; border-radius:50%; display:inline-block}
+.oactions{display:flex; justify-content:flex-end; gap:10px; margin-top:18px}
+.obtn{font-family:"JetBrains Mono",monospace; font-size:12px; letter-spacing:.05em; text-transform:uppercase;
+  background:var(--jade); color:var(--paper); border:0; border-radius:999px; padding:11px 20px; cursor:pointer}
+.obtn.ghost{background:transparent; color:var(--ink-soft); border:1.5px solid var(--line)}
+.obtn:hover{filter:brightness(1.06)}
+.customrow{display:flex; align-items:center; gap:10px; margin-top:11px; padding-top:11px; border-top:1px dashed var(--line)}
+.custombadge{font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--jade); background:rgba(63,107,84,.12); border:1px solid rgba(63,107,84,.3);
+  border-radius:999px; padding:3px 9px}
+.oilrm{margin-left:auto; font-family:"JetBrains Mono",monospace; font-size:11px; background:transparent;
+  color:var(--ink-soft); border:1px solid var(--line); border-radius:999px; padding:4px 11px; cursor:pointer}
+.oilrm:hover{color:var(--cinnabar); border-color:var(--cinnabar)}
+@media(max-width:520px){ .ogrid2{grid-template-columns:1fr} }

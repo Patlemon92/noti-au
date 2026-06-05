@@ -7,80 +7,97 @@
 <meta name="robots" content="noindex">
 <!-- Live render of research-foundations.md (the markdown is the single source of
      truth). To update the published doc: replace research-foundations.md and
-     redeploy — never hand-edit this file's content. -->
+     redeploy — never hand-edit this file's content. Styled to match the Neeve v2
+     app (see /health/v2/styles.css): Apricosa/Fraunces serif + Hanken Grotesk,
+     soft sand gradient, clay accent, cream cards. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
+  @font-face{
+    font-family:'Apricosa';
+    src:url('/health/v2/fonts/Apricosa-Regular.woff') format('woff'),
+        url('/health/v2/fonts/Apricosa-Regular.ttf') format('truetype');
+    font-weight:400; font-style:normal; font-display:swap;
+  }
   :root{
-    --ink:#4A1B0C; --muted:#712B13; --accent:#993C1D; --cta:#4A1B0C; --cta-text:#FFE4D0;
-    --bg:linear-gradient(160deg,#FFE8C7 0%,#FFCBA4 25%,#F5A887 55%,#EC7E5C 85%,#D85A30 100%);
-    --card:#FFFDF9; --line:#ECDFCF; --quote:#FAF3E9; --max:48rem;
+    --ink:#2B2018; --ink-soft:#5C4F45; --taupe:#9A8369;
+    --cream:#F8F1E7; --card:#FFFDF9; --hair:#E5DCCE;
+    --clay:#BF5A3C; --sage-deep:#7E927A; --gold:#C8A23F;
+    --serif:'Apricosa','Fraunces',Georgia,serif;
+    --sans:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+    --max:47rem;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
   body{
-    margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-    -webkit-font-smoothing:antialiased; color:var(--ink);
-    background:var(--bg); background-attachment:fixed; min-height:100vh;
+    margin:0; font-family:var(--sans); color:var(--ink);
+    -webkit-font-smoothing:antialiased; line-height:1.7;
+    background:linear-gradient(180deg,#f6e6d6 0%,#f6efe4 30%,#f6efe4 100%);
+    background-attachment:fixed; min-height:100vh;
   }
-  /* ---- sticky glass toolbar (app chrome) ---- */
+  /* ---- calm translucent header (v2 feel) ---- */
   #bar{
-    position:sticky; top:0; z-index:10; display:flex; gap:.75rem; align-items:center;
-    padding:.7rem 1.1rem; font-size:.85rem; color:var(--ink);
-    background:rgba(255,255,255,.45);
-    -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
-    border-bottom:1px solid rgba(255,255,255,.7);
+    position:sticky; top:0; z-index:10; display:flex; gap:.8rem; align-items:center;
+    padding:.75rem 1.2rem; font-family:var(--sans); font-size:.85rem; color:var(--ink-soft);
+    background:rgba(248,241,231,.78);
+    -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--hair);
   }
-  #bar .brand{font-weight:700; letter-spacing:-.2px}
-  #bar .meta{color:var(--muted); opacity:.85; font-weight:400}
+  #bar .brand{font-family:var(--serif); font-size:1.15rem; color:var(--ink); letter-spacing:.2px}
+  #bar .meta{color:var(--taupe)}
   #bar button{
-    margin-left:auto; cursor:pointer; border:0; background:var(--cta); color:var(--cta-text);
-    border-radius:14px; padding:.5rem 1.05rem; font:inherit; font-weight:600;
+    margin-left:auto; cursor:pointer; border:0; background:var(--clay); color:#fff7f0;
+    border-radius:999px; padding:.5rem 1.1rem; font:inherit; font-weight:600;
+    box-shadow:0 8px 22px -16px rgba(70,45,25,.5);
   }
-  #bar button:hover{filter:brightness(1.12)}
-  /* ---- reading card on the gradient ---- */
+  #bar button:active{transform:scale(.97)}
+  /* ---- reading card on the sand gradient ---- */
   main{
-    max-width:var(--max); margin:2.2rem auto 5rem; background:var(--card);
-    border:1px solid rgba(255,255,255,.85); border-radius:22px;
-    box-shadow:0 24px 60px -28px rgba(74,27,12,.45);
-    padding:3rem 3.2rem;
+    max-width:var(--max); margin:2.4rem auto 6rem; background:var(--card);
+    border:1px solid var(--hair); border-radius:24px;
+    box-shadow:0 22px 60px -34px rgba(70,45,25,.45);
+    padding:3.2rem 3.4rem;
   }
-  /* ---- typography ---- */
-  h1,h2,h3,h4{line-height:1.22; letter-spacing:-.3px}
-  h1{font-size:2.1rem; font-weight:700; margin:0 0 .2em}
-  h2{font-size:1.5rem; font-weight:600; margin:2.5em 0 .5em; padding-top:.7em; border-top:1px solid var(--line)}
-  h3{font-size:1.2rem; font-weight:600; margin:1.9em 0 .4em}
-  h4{font-size:.78rem; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:var(--accent); margin:1.7em 0 .4em}
-  p,li{font-size:1rem; line-height:1.68}
-  a{color:var(--accent); text-underline-offset:2px}
-  strong{font-weight:600}
-  hr{border:0; border-top:1px solid var(--line); margin:2.2em 0}
-  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.86em; background:#F2E7D8; padding:.12em .38em; border-radius:5px}
+  /* ---- typography: serif display, grotesk body ---- */
+  h1,h2,h3{font-family:var(--serif); color:var(--ink); font-weight:500; line-height:1.2}
+  h1{font-size:2.3rem; margin:0 0 .15em; letter-spacing:.2px}
+  h2{font-size:1.55rem; margin:2.6em 0 .5em; padding-top:.75em; border-top:1px solid var(--hair)}
+  h3{font-size:1.22rem; margin:1.9em 0 .35em}
+  h4{font-family:var(--sans); font-size:.74rem; font-weight:600; letter-spacing:1.4px;
+     text-transform:uppercase; color:var(--clay); margin:1.7em 0 .4em}
+  p,li{font-size:1rem; color:var(--ink-soft)}
+  strong{color:var(--ink); font-weight:600}
+  a{color:var(--clay); text-underline-offset:2px}
+  hr{border:0; border-top:1px solid var(--hair); margin:2.2em 0}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.85em;
+       background:#F1E8DA; padding:.12em .4em; border-radius:5px; color:var(--ink)}
   blockquote{
-    margin:1.3em 0; padding:.9em 1.2em; background:var(--quote);
-    border-left:4px solid var(--accent); border-radius:0 12px 12px 0;
+    margin:1.4em 0; padding:.95em 1.25em; background:rgba(126,146,122,.10);
+    border-left:4px solid var(--clay); border-radius:0 14px 14px 0;
   }
   blockquote p{margin:.4em 0; font-size:.95rem}
-  table{border-collapse:collapse; width:100%; margin:1.3em 0; font-size:.88rem}
-  th,td{border:1px solid var(--line); padding:.55em .65em; text-align:left; vertical-align:top}
-  th{background:#F6ECDD; font-weight:600}
+  table{border-collapse:collapse; width:100%; margin:1.4em 0; font-size:.88rem}
+  th,td{border:1px solid var(--hair); padding:.55em .65em; text-align:left; vertical-align:top}
+  th{background:var(--cream); font-weight:600; color:var(--ink)}
   tbody tr:nth-child(even){background:#FBF5EC}
-  /* ---- TOC ---- */
-  #toc{background:#FBF5EC; border:1px solid var(--line); border-radius:14px; padding:1.1rem 1.4rem; margin:1.6rem 0 2.2rem}
-  #toc .lbl{font-size:.72rem; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:var(--accent); margin-bottom:.55rem}
-  #toc ul{list-style:none; margin:0; padding:0; columns:2; column-gap:2rem; font-size:.9rem}
-  #toc li{margin:.18rem 0; break-inside:avoid}
-  #toc a{text-decoration:none; color:var(--ink)}
-  #toc a:hover{color:var(--accent)}
-  #status{max-width:var(--max); margin:3rem auto; background:var(--card); border-radius:18px; padding:2rem 2.4rem; color:var(--muted); line-height:1.6}
-  /* ---- print: drop the app chrome, go clean clinical b/w ---- */
+  /* ---- table of contents ---- */
+  #toc{background:var(--cream); border:1px solid var(--hair); border-radius:16px; padding:1.2rem 1.5rem; margin:1.8rem 0 2.4rem}
+  #toc .lbl{font-family:var(--sans); font-size:.72rem; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:var(--clay); margin-bottom:.6rem}
+  #toc ul{list-style:none; margin:0; padding:0; columns:2; column-gap:2rem; font-size:.92rem}
+  #toc li{margin:.2rem 0; break-inside:avoid}
+  #toc a{text-decoration:none; color:var(--ink-soft)}
+  #toc a:hover{color:var(--clay)}
+  #status{max-width:var(--max); margin:3rem auto; background:var(--card); border:1px solid var(--hair);
+          border-radius:20px; padding:2rem 2.4rem; color:var(--taupe)}
+  /* ---- print: clean clinical b/w, keep the serif headings ---- */
   @page{ margin:18mm 16mm; }
   @media print{
-    html,body{background:#fff !important; color:#000}
+    html,body{background:#fff !important; color:#000; line-height:1.5}
     #bar{display:none}
     main{max-width:none; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; background:#fff}
+    p,li{color:#111}
     a{color:#000; text-decoration:none}
     h2{page-break-before:always; border-top:none}
     h1,h2.first-section{page-break-before:avoid}
@@ -92,13 +109,13 @@
     tbody tr:nth-child(even){background:#f7f7f7 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact}
     #toc{break-inside:avoid; page-break-after:always; background:#f7f7f7 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact}
   }
-  @media (max-width:640px){ main{padding:1.8rem 1.3rem; margin:1.2rem; border-radius:16px} #toc ul{columns:1} }
+  @media (max-width:640px){ main{padding:1.9rem 1.35rem; margin:1.2rem; border-radius:18px} #toc ul{columns:1} }
 </style>
 </head>
 <body>
   <div id="bar">
     <span class="brand">Neeve</span>
-    <span class="meta" id="srcmeta">Research Foundations · live</span>
+    <span class="meta" id="srcmeta">Research Foundations</span>
     <button onclick="window.print()">Print / Save as PDF</button>
   </div>
 
@@ -106,8 +123,8 @@
   <main id="doc" hidden></main>
 
 <script>
-  const MD_FILE = "research-foundations.md";           // sits next to this file
-  const url = MD_FILE + "?t=" + Date.now();            // cache-bust so edits always show
+  const MD_FILE = "research-foundations.md";
+  const url = MD_FILE + "?t=" + Date.now();
   marked.setOptions({ gfm:true, breaks:false, headerIds:true, mangle:false });
   const slug = s => s.toLowerCase().replace(/[^\w]+/g,"-").replace(/^-+|-+$/g,"");
 
@@ -137,7 +154,7 @@
     })
     .catch(err => {
       document.getElementById("status").innerHTML =
-        "<strong>Couldn't load the document.</strong><br>research-foundations.md must sit next to this page and be served over http(s) (not file://). ("+err.message+")";
+        "<strong>Couldn't load the document.</strong><br>research-foundations.md must sit next to this page and be served over http(s). ("+err.message+")";
     });
 </script>
 </body>

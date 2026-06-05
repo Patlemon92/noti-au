@@ -35,7 +35,7 @@
     margin:0; font-family:var(--sans); color:var(--ink);
     -webkit-font-smoothing:antialiased; line-height:1.7;
     background:linear-gradient(180deg,#f6e6d6 0%,#f6efe4 30%,#f6efe4 100%);
-    background-attachment:fixed; min-height:100vh;
+    background-attachment:fixed; min-height:100vh; overflow-x:hidden;
   }
   /* ---- calm translucent header (v2 feel) ---- */
   #bar{
@@ -67,7 +67,7 @@
   h3{font-size:1.22rem; margin:1.9em 0 .35em}
   h4{font-family:var(--sans); font-size:.74rem; font-weight:600; letter-spacing:1.4px;
      text-transform:uppercase; color:var(--clay); margin:1.7em 0 .4em}
-  p,li{font-size:1rem; color:var(--ink-soft)}
+  p,li{font-size:1rem; color:var(--ink-soft); overflow-wrap:break-word}
   strong{color:var(--ink); font-weight:600}
   a{color:var(--clay); text-underline-offset:2px}
   hr{border:0; border-top:1px solid var(--hair); margin:2.2em 0}
@@ -78,8 +78,10 @@
     border-left:4px solid var(--clay); border-radius:0 14px 14px 0;
   }
   blockquote p{margin:.4em 0; font-size:.95rem}
-  table{border-collapse:collapse; width:100%; margin:1.4em 0; font-size:.88rem}
-  th,td{border:1px solid var(--hair); padding:.55em .65em; text-align:left; vertical-align:top}
+  /* tables scroll inside their own box so the PAGE never scrolls sideways on mobile */
+  .twrap{overflow-x:auto; -webkit-overflow-scrolling:touch; margin:1.4em 0}
+  table{border-collapse:collapse; width:100%; min-width:34rem; margin:0; font-size:.88rem}
+  th,td{border:1px solid var(--hair); padding:.55em .65em; text-align:left; vertical-align:top; overflow-wrap:break-word}
   th{background:var(--cream); font-weight:600; color:var(--ink)}
   tbody tr:nth-child(even){background:#FBF5EC}
   /* ---- table of contents ---- */
@@ -97,6 +99,7 @@
     html,body{background:#fff !important; color:#000; line-height:1.5}
     #bar{display:none}
     main{max-width:none; margin:0; padding:0; border:0; border-radius:0; box-shadow:none; background:#fff}
+    .twrap{overflow:visible} table{min-width:0}
     p,li{color:#111}
     a{color:#000; text-decoration:none}
     h2{page-break-before:always; border-top:none}
@@ -138,6 +141,12 @@
     .then(md => {
       const doc = document.getElementById("doc");
       doc.innerHTML = marked.parse(md);
+      // wrap every table so wide ones (e.g. the Claim Library) scroll inside
+      // their own box instead of forcing horizontal scroll on the whole page
+      doc.querySelectorAll("table").forEach(t=>{
+        const w=document.createElement("div"); w.className="twrap";
+        t.parentNode.insertBefore(w,t); w.appendChild(t);
+      });
       const tocItems=[]; let first=true;
       doc.querySelectorAll("h2,h3").forEach(h=>{
         if(!h.id) h.id = slug(h.textContent);

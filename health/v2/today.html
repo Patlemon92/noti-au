@@ -153,9 +153,11 @@
     font-family: 'Hanken Grotesk', system-ui, sans-serif;
     font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
     font-weight: 600;
-    background: rgba(191, 90, 60, .08);
-    border: 1px solid rgba(191, 90, 60, .18);
-    color: var(--clay-2);
+    /* Neutral by default — it's a calm "last updated" freshness note now,
+       not a wear alert. */
+    background: rgba(154, 131, 105, .10);
+    border: 1px solid rgba(154, 131, 105, .20);
+    color: var(--taupe-2);
   }
   .wear-chip .glyph { font-size: 11px; opacity: .8; }
   .wear-chip.charging {
@@ -843,7 +845,7 @@ function greetFromHour(h) {
   document.getElementById('greeting-text').textContent = g;
   document.getElementById('greeting-name').textContent = name || 'you';
   document.getElementById('pill-clock').textContent = new Date()
-    .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 })();
 
 // Self-relative framing — PRODUCT_BRIEF.md "Advanced Baseline System"
@@ -1018,29 +1020,35 @@ async function load() {
 // the tile when a fresh reading arrives.
 const _lastSeen = {};
 
-// Off-finger detection is now data-time based, not sensor based. Patrick:
-// "we can just use the off finger as an algorithm — based on the last
-// data time." The ring's wear_state sensor is unreliable (gold + black
-// both observed reporting 0 while clearly worn). The arrival of HR data
-// is the real signal.
-//
-// Rule:
-//   - HR sample in last 3 min → worn → chip hidden
-//   - No HR in last 3 min     → off-finger or ring offline → chip shows
-//                                "Off finger · <ago>"
+// "Last reading" freshness indicator. Replaces the old "Off finger" chip
+// (2026-06-06): that keyed on stale HR, but HR is now sparse by design (we
+// stopped streaming it continuously — it starved the monitor), so the chip
+// false-fired "off finger" constantly. The honest signal is simply WHEN the
+// most recent vital landed — if the ring stops, the time goes stale and you
+// see it yourself. No wear guessing. Uses any vital (HR/HRV/SpO2/resp), since
+// they all land together every ~5 min when worn.
 // wearSamples kept in the signature for backwards compat; ignored now.
 function renderWearChip(_wearSamples, allSamples) {
   const el = document.getElementById('vitals-wear');
   if (!el) return;
-  const FRESH_MS = 3 * 60 * 1000;
-  if (hasRecentHr(allSamples, FRESH_MS)) {
-    el.style.display = 'none'; return;
-  }
-  const last = lastHrSample(allSamples);
+  const last = lastVitalSample(allSamples);
   if (!last) { el.style.display = 'none'; return; }  // no data at all yet
   el.className = 'wear-chip';
-  el.innerHTML = `<span class="glyph">○</span><span>Off finger · ${escapeHtml(formatAgo(last.ts))}</span>`;
+  el.innerHTML = `<span class="glyph">◷</span><span>Updated ${escapeHtml(formatAgo(last.ts))}</span>`;
   el.style.display = 'inline-flex';
+}
+
+// Most recent sample across the vitals that share the 5-min monitor cadence.
+function lastVitalSample(allSamples) {
+  if (!allSamples || !allSamples.length) return null;
+  const VITALS = new Set(['hr', 'hrv_rmssd', 'spo2', 'respiration_rate']);
+  let best = null, bestTs = -Infinity;
+  for (const s of allSamples) {
+    if (!VITALS.has(s.metric)) continue;
+    const t = Date.parse(s.ts);
+    if (Number.isFinite(t) && t > bestTs) { bestTs = t; best = s; }
+  }
+  return best;
 }
 
 function lastHrSample(allSamples) {
@@ -1358,10 +1366,10 @@ function formatFlagWhen(iso) {
   const d = new Date(iso);
   const now = new Date();
   if (d.toDateString() === now.toDateString()) {
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
   }
   return d.toLocaleDateString([], { weekday: 'short' }) + ' ' +
-         d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+         d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
 }
 
 function renderVitals(device, samples) {

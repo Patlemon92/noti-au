@@ -672,7 +672,7 @@ function renderCharts() {
       const latest = cachedLatest[m] || samples[samples.length - 1];
       const value  = latest ? Math.round(latest.value) : '—';
       const sub    = range || '';
-      const href   = `/health/v2/metric.html?metric=${encodeURIComponent(m)}&days=${currentRange}`;
+      const href   = `/health/v2/metric.html?metric=${encodeURIComponent(m)}&days=1`;
       return `
         <a class="metric-card-link" href="${href}">
           <div class="card">
@@ -728,7 +728,7 @@ function renderCharts() {
       const avg = (samples.reduce((a, s) => a + s.value, 0) / samples.length);
       const min = Math.min(...lows);
       const max = Math.max(...highs);
-      const detailUrl = `/health/v2/metric.html?metric=${encodeURIComponent(m)}&days=${currentRange}`;
+      const detailUrl = `/health/v2/metric.html?metric=${encodeURIComponent(m)}&days=1`;
       // Only render the ⓘ explainer button for metrics we have a
       // calculation note for — avoids the empty-sheet dead-end.
       const hasExplainer = !!METRIC_EXPLAINERS[m];
@@ -801,7 +801,7 @@ function renderBpCard(sysS, diaS) {
     : (sysLatest != null ? `${Math.round(sysLatest)}/—` : `—/${Math.round(diaLatest)}`);
   const avgStr = sysAvg != null && diaAvg != null ? `${sysAvg}/${diaAvg}` : '—';
   // 'Blood pressure' card opens the combined sys+dia detail page.
-  const detailUrl = `/health/v2/metric.html?metric=bp&days=${currentRange}`;
+  const detailUrl = `/health/v2/metric.html?metric=bp&days=1`;
   return `
     <a class="metric-card-link" href="${detailUrl}">
       <div class="card">

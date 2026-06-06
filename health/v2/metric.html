@@ -203,8 +203,8 @@ document.getElementById('nav-mount').innerHTML = renderNav('ring');
 // ── URL params ────────────────────────────────────────────
 const params = new URLSearchParams(location.search);
 const metric = (params.get('metric') || '').toLowerCase();
-let days = Number(params.get('days') || 7);
-if (![1, 7, 30].includes(days)) days = 7;
+let days = Number(params.get('days') || 1);
+if (![1, 7, 30].includes(days)) days = 1;
 
 const LABELS = {
   hr:                   { title: 'Heart rate',     unit: 'bpm',     cat: 'Vital' },
@@ -417,6 +417,25 @@ function renderBuckets(srvBuckets, bucketSecs, latest) {
     return `<rect class="rbar" data-i="${i}" x="${(cx - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bw, bot - top).toFixed(1)}" rx="${(bw / 2).toFixed(1)}" fill="var(--terra)" opacity="${op}"/>`;
   }).join('');
 
+  // Trend line through the per-bucket averages + a dashed overall-average
+  // line, drawn over the range bars (Patrick: bars + a trend line).
+  const trendPts = buckets.map(b => ({ x: x(b.t + bucketMs / 2), y: y(b.mean) }));
+  const smooth = p => {
+    if (p.length < 2) return p.length ? `M ${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}` : '';
+    let d = `M ${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;
+    for (let i = 0; i < p.length - 1; i++) {
+      const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
+      const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
+  };
+  const trendPath = trendPts.length > 1
+    ? `<path d="${smooth(trendPts)}" fill="none" stroke="var(--ink)" stroke-opacity="0.5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>` : '';
+  const trendDots = trendPts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.5" fill="var(--ink)" fill-opacity="0.5"/>`).join('');
+  const avgLine = `<line x1="${pad.l}" y1="${y(mean).toFixed(1)}" x2="${W - pad.r}" y2="${y(mean).toFixed(1)}" stroke="var(--ink-mute)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>`;
+
   const fmtT = ms => {
     const dt = new Date(ms);
     if (dataSpan <= 36 * HOUR) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
@@ -427,7 +446,10 @@ function renderBuckets(srvBuckets, bucketSecs, latest) {
   host.innerHTML = `
     <svg id="metric-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
       ${grid}
+      ${avgLine}
       ${bars}
+      ${trendPath}
+      ${trendDots}
       <text x="${pad.l}" y="${H - 6}" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMin)}</text>
       <text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMid)}</text>
       <text x="${W - pad.r}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMax)}</text>

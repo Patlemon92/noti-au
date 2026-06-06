@@ -72,6 +72,10 @@
   font-family: 'Inter Tight', system-ui, sans-serif;
   font-size: 11px; color: var(--ink-mute); margin-top: 2px; letter-spacing: .02em;
 }
+.stat-tile .stat-time {
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-size: 10.5px; color: var(--ink-mute); margin-top: 4px; opacity: .85;
+}
 
 /* How / Why transparency cards */
 .explain h3 {
@@ -157,7 +161,7 @@
     <div id="chart"></div>
     <div class="filtered-note" id="filtered-note" style="display:none"></div>
     <div class="stats-grid" id="stats">
-      <div class="stat-tile"><div class="stat-label">Latest</div><div class="stat-value" id="s-latest">—</div><div class="stat-unit" id="u-latest"></div></div>
+      <div class="stat-tile"><div class="stat-label">Latest</div><div class="stat-value" id="s-latest">—</div><div class="stat-unit" id="u-latest"></div><div class="stat-time" id="t-latest"></div></div>
       <div class="stat-tile"><div class="stat-label">Average</div><div class="stat-value" id="s-mean">—</div><div class="stat-unit" id="u-mean"></div></div>
       <div class="stat-tile"><div class="stat-label">Low</div><div class="stat-value" id="s-min">—</div><div class="stat-unit" id="u-min"></div></div>
       <div class="stat-tile"><div class="stat-label">High</div><div class="stat-value" id="s-max">—</div><div class="stat-unit" id="u-max"></div></div>
@@ -324,15 +328,17 @@ async function load() {
       let q = `/ring/samples-bucketed?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&bucket_secs=${bucketSecs}`;
       if (band) q += `&vmin=${band[0]}&vmax=${band[1]}`;
       const { buckets } = await api(q);
-      // Most-recent in-band raw reading for the "Latest" tile (1 tiny query).
-      let latest = null;
+      // Most-recent in-band raw reading + its time for the "Latest" tile.
+      let latest = null, latestTs = null;
       try {
         const r = await api(`/ring/samples?metric=${encodeURIComponent(metric)}&limit=10`);
         for (const s of (r.samples || [])) {
           const v = Number(s.value);
-          if (isFinite(v) && (!band || (v >= band[0] && v <= band[1]))) { latest = v; break; }
+          if (isFinite(v) && (!band || (v >= band[0] && v <= band[1]))) { latest = v; latestTs = s.ts; break; }
         }
       } catch (_) {}
+      const tEl = document.getElementById('t-latest');
+      if (tEl) tEl.textContent = latestTs ? formatClock(latestTs) : '';
       renderBuckets(buckets || [], bucketSecs, latest);
     }
   } catch (e) {
@@ -351,6 +357,17 @@ function fmt(v) {
   return v.toFixed(1);
 }
 function unitTxt() { return LABELS[metric]?.unit || ''; }
+
+// 12-hour am/pm time for the "Latest" tile. Time-only if today, else "6 Jun, 8:15 pm".
+function formatClock(ts) {
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '';
+  const time = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const dDay = new Date(d); dDay.setHours(0, 0, 0, 0);
+  if (dDay.getTime() === today.getTime()) return time;
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) + ', ' + time;
+}
 
 // ── Range-bar chart ──────────────────────────────────────
 // Buckets samples (hour for Today, day otherwise), artifact-filters, and
@@ -439,7 +456,7 @@ function renderBuckets(srvBuckets, bucketSecs, latest) {
 
   const fmtT = ms => {
     const dt = new Date(ms);
-    if (dataSpan <= 36 * HOUR) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
+    if (dataSpan <= 36 * HOUR) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true });
     return dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
   };
   const tMid = (tMin + tMax) / 2;
@@ -585,7 +602,7 @@ function renderBpChart(sysSamples, diaSamples) {
   const grid = [vMin, yMid, vMax].map(v => `
     <line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="var(--hair)" stroke-width="0.5"/>
     <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${Math.round(v)}</text>`).join('');
-  const fmtT = ms => { const dt = new Date(ms); return days <= 1 ? dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false }) : dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }); };
+  const fmtT = ms => { const dt = new Date(ms); return days <= 1 ? dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }) : dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }); };
   const tMid = (tMin + tMax) / 2;
   host.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">

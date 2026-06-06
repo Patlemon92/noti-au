@@ -31,6 +31,7 @@
 }
 .last-chip .lc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rose); flex: 0 0 auto; }
 .last-chip b { font-weight: 600; color: var(--ink); }
+.zoom-hint { text-align: center; font-size: 11.5px; color: var(--ink-mute); margin-top: 8px; opacity: .7; }
 .range-head .rh-label {
   font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--ink-mute);
@@ -142,6 +143,12 @@
 .range-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .range-row .pill { cursor: pointer; }
 .range-row .pill-active { background: var(--rose); color: white; }
+.zoom-out-pill {
+  margin-left: auto; /* push to the right edge */
+  background: rgba(74, 90, 64, .10);
+  border-color: rgba(74, 90, 64, .28) !important;
+  color: #4A5A40 !important; font-weight: 600;
+}
 </style>
 </head>
 <body>
@@ -156,6 +163,7 @@
     <button class="pill" data-days="1">Today</button>
     <button class="pill pill-active" data-days="7">7d</button>
     <button class="pill" data-days="30">30d</button>
+    <button class="pill zoom-out-pill" id="zoom-out" style="display:none" onclick="zoomOut()">⤢ Zoom out</button>
   </div>
 
   <!-- RANGE headline + chart -->
@@ -171,6 +179,7 @@
       <span class="what" id="scrub-what"></span>
     </div>
     <div id="chart"></div>
+    <div class="zoom-hint" id="zoom-hint"></div>
     <div class="filtered-note" id="filtered-note" style="display:none"></div>
     <div class="stats-grid" id="stats">
       <div class="stat-tile"><div class="stat-label">Latest</div><div class="stat-value" id="s-latest">—</div><div class="stat-unit" id="u-latest"></div><div class="stat-time" id="t-latest"></div></div>
@@ -221,6 +230,10 @@ const params = new URLSearchParams(location.search);
 const metric = (params.get('metric') || '').toLowerCase();
 let days = Number(params.get('days') || 1);
 if (![1, 7, 30].includes(days)) days = 1;
+// Zoom window {start,end} in ms (null = full range). Set by tapping a bar to
+// drill into that bucket's window with fine sub-buckets; cleared by "zoom out"
+// or changing the range pills.
+let zoom = null;
 
 const LABELS = {
   hr:                   { title: 'Heart rate',     unit: 'bpm',     cat: 'Vital' },
@@ -303,8 +316,9 @@ if (!metric || !LABELS[metric]) {
 document.querySelectorAll('.range-row .pill').forEach(b => {
   b.addEventListener('click', () => {
     const d = Number(b.dataset.days);
-    if (d === days) return;
+    if (d === days && !zoom) return;
     days = d;
+    zoom = null; // changing range exits any zoom
     document.querySelectorAll('.range-row .pill').forEach(x => x.classList.remove('pill-active'));
     b.classList.add('pill-active');
     history.replaceState(null, '', `?metric=${metric}&days=${days}`);
@@ -321,6 +335,8 @@ async function load() {
   if (!metric || !LABELS[metric]) return;
   document.getElementById('chart').innerHTML = '<div class="empty" style="padding:32px 0">Loading…</div>';
   { const _lc = document.getElementById('last-chip'); if (_lc) _lc.style.display = 'none'; }
+  { const _zo = document.getElementById('zoom-out'); if (_zo) _zo.style.display = zoom ? 'inline-flex' : 'none'; }
+  { const _zh = document.getElementById('zoom-hint'); if (_zh) _zh.textContent = zoom ? 'Showing a zoomed window — tap “Zoom out” to go back' : 'Tap a bar to zoom into that window'; }
   try {
     const since = new Date(Date.now() - days * 86400 * 1000).toISOString();
     // HR/SpO2/etc are sampled densely (~hundreds/hour) — fetch the WHOLE window
@@ -337,10 +353,23 @@ async function load() {
       setHeadline(null);
     } else {
       const band = bandFor(metric);
-      const bucketSecs = days <= 1 ? 3600 : days <= 7 ? 21600 : 86400; // hour / 6h / day
-      let q = `/ring/samples-bucketed?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&bucket_secs=${bucketSecs}`;
+      let winSince = since, bucketSecs;
+      if (zoom) {
+        winSince = new Date(zoom.start).toISOString();
+        const spanSec = Math.max(60, Math.round((zoom.end - zoom.start) / 1000));
+        bucketSecs = Math.max(120, Math.round(spanSec / 30)); // ~30 fine bars across the zoom
+      } else {
+        bucketSecs = days <= 1 ? 3600 : days <= 7 ? 21600 : 86400; // hour / 6h / day
+      }
+      let q = `/ring/samples-bucketed?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(winSince)}&bucket_secs=${bucketSecs}`;
       if (band) q += `&vmin=${band[0]}&vmax=${band[1]}`;
-      const { buckets } = await api(q);
+      let { buckets } = await api(q);
+      // Zoomed: the endpoint returns buckets from winSince → now; keep only
+      // those inside the tapped window.
+      if (zoom) buckets = (buckets || []).filter(b => {
+        const t = new Date(b.bucket_ts).getTime();
+        return t >= zoom.start && t < zoom.end;
+      });
       // Most-recent in-band raw reading + its time for the "Latest" tile.
       let latest = null, latestTs = null;
       try {
@@ -410,6 +439,7 @@ function renderBuckets(srvBuckets, bucketSecs, latest) {
     host.innerHTML = '<div class="empty" style="padding:32px 0">No readings in this window yet.</div>';
     setHeadline(null);
     ['s-latest','s-mean','s-min','s-max'].forEach(id => document.getElementById(id).textContent = '—');
+    { const _zh = document.getElementById('zoom-hint'); if (_zh) _zh.textContent = ''; }
     return;
   }
 
@@ -510,17 +540,35 @@ function renderBuckets(srvBuckets, bucketSecs, latest) {
     svg.querySelectorAll('.rbar').forEach(r => r.setAttribute('opacity', buckets[r.dataset.i].n < sparseN ? 0.4 : 1));
     wEl.textContent = ''; vEl.textContent = '';
   }
-  svg.addEventListener('pointerdown', e => {
+  function barAt(clientX) {
     const r = svg.getBoundingClientRect();
-    const vx = ((e.clientX - r.left) / r.width) * W;
+    const vx = ((clientX - r.left) / r.width) * W;
     let bi = 0, bd = Infinity;
     buckets.forEach((b, i) => { const d = Math.abs(x(b.t + bucketMs / 2) - vx); if (d < bd) { bd = d; bi = i; } });
-    showBar(bi);
+    return bi;
+  }
+  let _downAt = 0, _downX = 0, _downBi = -1;
+  svg.addEventListener('pointerdown', e => {
+    _downAt = Date.now(); _downX = e.clientX; _downBi = barAt(e.clientX);
+    showBar(_downBi);
   });
-  svg.addEventListener('pointerup', clearBar);
+  svg.addEventListener('pointerup', e => {
+    clearBar();
+    // Quick tap (not a hold/drag-scrub) on a still-coarse bar → zoom into that
+    // window. Hold-to-scrub still works for reading a bar's value.
+    const quick = Date.now() - _downAt < 350 && Math.abs(e.clientX - _downX) < 8;
+    if (quick && bucketMs > 5 * 60 * 1000) {
+      const b = buckets[_downBi];
+      if (b) zoomInto(b.t, b.t + bucketMs);
+    }
+  });
   svg.addEventListener('pointercancel', clearBar);
   svg.addEventListener('pointerleave', clearBar);
 }
+
+// Drill into a tapped bucket's [start,end] window with fine sub-buckets.
+function zoomInto(start, end) { zoom = { start, end }; load(); }
+function zoomOut() { zoom = null; load(); }
 
 function setHeadline(r) {
   const valEl = document.getElementById('rh-val');

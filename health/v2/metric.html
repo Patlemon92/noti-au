@@ -319,9 +319,21 @@ async function load() {
       renderBpStats(sys, dia);
       setHeadline(null);
     } else {
-      const q = `/ring/samples?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&limit=${fetchLimit}`;
-      const { samples } = await api(q);
-      renderRangeChart(samples || []);
+      const band = bandFor(metric);
+      const bucketSecs = days <= 1 ? 3600 : days <= 7 ? 21600 : 86400; // hour / 6h / day
+      let q = `/ring/samples-bucketed?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&bucket_secs=${bucketSecs}`;
+      if (band) q += `&vmin=${band[0]}&vmax=${band[1]}`;
+      const { buckets } = await api(q);
+      // Most-recent in-band raw reading for the "Latest" tile (1 tiny query).
+      let latest = null;
+      try {
+        const r = await api(`/ring/samples?metric=${encodeURIComponent(metric)}&limit=10`);
+        for (const s of (r.samples || [])) {
+          const v = Number(s.value);
+          if (isFinite(v) && (!band || (v >= band[0] && v <= band[1]))) { latest = v; break; }
+        }
+      } catch (_) {}
+      renderBuckets(buckets || [], bucketSecs, latest);
     }
   } catch (e) {
     document.getElementById('chart').innerHTML =
@@ -343,69 +355,33 @@ function unitTxt() { return LABELS[metric]?.unit || ''; }
 // ── Range-bar chart ──────────────────────────────────────
 // Buckets samples (hour for Today, day otherwise), artifact-filters, and
 // draws one min–max bar per bucket. Faint bars = low-sample windows.
-function renderRangeChart(samplesRaw) {
+function renderBuckets(srvBuckets, bucketSecs, latest) {
   const host = document.getElementById('chart');
-  const noteEl = document.getElementById('filtered-note');
-  noteEl.style.display = 'none';
+  document.getElementById('filtered-note').style.display = 'none';
 
-  const all = (samplesRaw || [])
-    .map(s => ({ t: new Date(s.ts).getTime(), v: Number(s.value) }))
-    .filter(p => isFinite(p.t) && isFinite(p.v))
+  const HOUR = 3600 * 1000, DAY = 86400 * 1000;
+  const bucketMs = bucketSecs * 1000;
+  const buckets = (srvBuckets || [])
+    .map(b => ({ t: new Date(b.bucket_ts).getTime(), lo: +b.lo, hi: +b.hi, n: +b.n, mean: +b.mean }))
+    .filter(b => isFinite(b.t) && isFinite(b.lo))
     .sort((a, b) => a.t - b.t);
 
-  if (!all.length) {
+  if (!buckets.length) {
     host.innerHTML = '<div class="empty" style="padding:32px 0">No readings in this window yet.</div>';
-    setHeadline(null); renderStats([]);
+    setHeadline(null);
+    ['s-latest','s-mean','s-min','s-max'].forEach(id => document.getElementById(id).textContent = '—');
     return;
   }
 
-  // Artifact filter.
-  const band = bandFor(metric);
-  let filtered = 0;
-  const pts = band ? all.filter(p => {
-    const ok = p.v >= band[0] && p.v <= band[1];
-    if (!ok) filtered++;
-    return ok;
-  }) : all;
-
-  if (!pts.length) {
-    host.innerHTML = '<div class="empty" style="padding:32px 0">No valid readings.</div>';
-    setHeadline(null); renderStats([]);
-    return;
-  }
-
-  // Bucket. Adaptive bucket size from the ACTUAL data span (not the
-  // requested window) so sparse data (e.g. a ring with only 2 days of
-  // history) still fills the chart with detail instead of collapsing to
-  // 1–2 huge day-bars. Targets ≤ ~48 bars.
-  const HOUR = 3600 * 1000, DAY = 86400 * 1000;
-  const dataSpan = (pts[pts.length - 1].t - pts[0].t) || HOUR;
-  // Bucket size by WINDOW so the pills actually differ: Today = hourly,
-  // 7d = 6-hourly, 30d = daily. (Sizing off data-span instead made all
-  // three render identically when only a couple of days of data exist.)
-  const bucketMs = days <= 1 ? HOUR : days <= 7 ? 6 * HOUR : DAY;
-  const map = new Map();
-  for (const p of pts) {
-    const key = Math.floor(p.t / bucketMs) * bucketMs;
-    let b = map.get(key);
-    if (!b) { b = { t: key, lo: p.v, hi: p.v, n: 0, sum: 0, last: p.v }; map.set(key, b); }
-    b.lo = Math.min(b.lo, p.v); b.hi = Math.max(b.hi, p.v);
-    b.n++; b.sum += p.v; b.last = p.v;
-  }
-  const buckets = [...map.values()].sort((a, b) => a.t - b.t);
-
-  // Overall cleaned range for the headline + stats.
+  // Overall range for the headline + stats (server already band-filtered).
   const lo = Math.min(...buckets.map(b => b.lo));
   const hi = Math.max(...buckets.map(b => b.hi));
-  const latest = pts[pts.length - 1].v;
-  const mean = pts.reduce((a, p) => a + p.v, 0) / pts.length;
-  setHeadline({ lo, hi, tFrom: pts[0].t, tTo: pts[pts.length - 1].t });
-  setStatTiles({ latest, mean, lo, hi });
+  const totalN = buckets.reduce((a, b) => a + b.n, 0);
+  const mean = buckets.reduce((a, b) => a + b.mean * b.n, 0) / Math.max(1, totalN);
+  setHeadline({ lo, hi, tFrom: buckets[0].t, tTo: buckets[buckets.length - 1].t + bucketMs });
+  setStatTiles({ latest: latest != null ? latest : buckets[buckets.length - 1].mean, mean, lo, hi });
 
-  if (filtered > 0) {
-    noteEl.style.display = '';
-    noteEl.innerHTML = `all readings shown · <b>${filtered} filtered</b> as sensor noise — never real readings`;
-  }
+  const dataSpan = (buckets[buckets.length - 1].t - buckets[0].t) || HOUR;
 
   // Geometry. Bars span their bucket window across a continuous time axis so
   // gaps (unworn hours/days) show as blank space, not a squashed line.

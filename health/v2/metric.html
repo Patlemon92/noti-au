@@ -431,9 +431,10 @@ function renderBuckets(srvBuckets, bucketSecs, latest) {
     }
     return d;
   };
+  const moss = '#4A5A40'; // oakmoss / forest green — pairs with terracotta
   const trendPath = trendPts.length > 1
-    ? `<path d="${smooth(trendPts)}" fill="none" stroke="var(--ink)" stroke-opacity="0.5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>` : '';
-  const trendDots = trendPts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.5" fill="var(--ink)" fill-opacity="0.5"/>`).join('');
+    ? `<path d="${smooth(trendPts)}" fill="none" stroke="${moss}" stroke-opacity="0.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>` : '';
+  const trendDots = trendPts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.6" fill="${moss}" fill-opacity="0.9"/>`).join('');
   const avgLine = `<line x1="${pad.l}" y1="${y(mean).toFixed(1)}" x2="${W - pad.r}" y2="${y(mean).toFixed(1)}" stroke="var(--ink-mute)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>`;
 
   const fmtT = ms => {

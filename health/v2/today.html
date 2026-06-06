@@ -212,6 +212,61 @@
     35%      { transform: scale(1.5); box-shadow: 0 0 0 5px rgba(191, 90, 60, 0); }
     70%      { transform: scale(1);   box-shadow: 0 0 0 0   rgba(191, 90, 60, 0); }
   }
+
+  /* "Live" button on the HR tile — bounded on-demand live reading. */
+  .live-hr-btn {
+    position: absolute; bottom: 10px; right: 10px;
+    display: inline-flex; align-items: center; gap: 4px;
+    font: 600 11px/1 -apple-system, system-ui, sans-serif;
+    letter-spacing: .02em;
+    color: var(--clay-2);
+    background: rgba(191, 90, 60, .08);
+    border: 1px solid rgba(191, 90, 60, .22);
+    border-radius: 999px; padding: 5px 10px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .live-hr-btn:active { transform: scale(.96); }
+
+  /* Full-screen live-HR overlay — warm paper, terracotta beating heart. */
+  .live-hr-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: linear-gradient(180deg, #f6e6d6 0%, #f6efe4 60%);
+    -webkit-backdrop-filter: blur(2px);
+    text-align: center; padding: 32px;
+  }
+  .live-hr-overlay.show { display: flex; }
+  .live-hr-heart {
+    font-size: 64px; line-height: 1; color: var(--clay-2);
+    filter: drop-shadow(0 4px 10px rgba(191, 90, 60, .25));
+  }
+  .live-hr-heart.beating { animation: live-hr-pump .9s ease-in-out infinite; }
+  @keyframes live-hr-pump {
+    0%, 100% { transform: scale(1); }
+    30%      { transform: scale(1.18); }
+    60%      { transform: scale(1); }
+  }
+  .live-hr-num {
+    font-family: 'Apricosa', Georgia, serif;
+    font-size: 88px; line-height: 1; color: var(--ink-2);
+    margin: 14px 0 0; font-variant-numeric: tabular-nums;
+  }
+  .live-hr-num .u { font-size: 22px; color: var(--taupe-2); margin-left: 6px; }
+  .live-hr-label { color: var(--taupe-2); font-size: 14px; margin-top: 10px; }
+  .live-hr-count { color: var(--taupe-2); font-size: 13px; margin-top: 4px; opacity: .8; }
+  .live-hr-stop {
+    margin-top: 34px;
+    font: 600 15px/1 -apple-system, system-ui, sans-serif;
+    color: #fffdf9; background: var(--clay-2);
+    border: none; border-radius: 999px; padding: 14px 34px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .live-hr-stop:active { transform: scale(.97); }
+  .live-hr-hint {
+    color: var(--taupe-2); font-size: 12.5px; margin-top: 18px;
+    max-width: 280px; line-height: 1.5;
+  }
   .vital .value {
     margin-top: 3px; margin-bottom: 2px;
     line-height: 1;
@@ -1366,9 +1421,19 @@ function renderVitals(device, samples) {
     const explainer = (typeof explainerButton === 'function')
       ? explainerButton(m.key)
       : '';
+    // HR tile gets a "Live" button — a bounded on-demand live reading
+    // (the ring no longer streams HR continuously; this arms it for ~40s
+    // then hands the sensor back to the monitor). Good for a quick
+    // self-check / stand-test.
+    // Only show when the native build advertises the liveHr capability —
+    // avoids a dead button on older app versions (web auto-deploys ahead
+    // of the app rebuild).
+    const liveBtn = (m.key === 'hr' && window.NEEVE_CAPS && window.NEEVE_CAPS.liveHr)
+      ? `<button class="live-hr-btn" type="button" onclick="startLiveHr(event)">● Live</button>`
+      : '';
     return `
       <div class="vital" data-key="${escapeHtml(m.key)}" style="position:relative">
-        ${explainer}
+        ${explainer}${liveBtn}
         <div class="label">${escapeHtml(m.label)}${labelExtra}</div>
         <div class="value">
           <span class="num">${value}</span>
@@ -1713,6 +1778,119 @@ function callNative(method) {
   }
   return false;
 }
+
+// Like callNative but carries extra fields (e.g. {action:'start'}).
+function callNativeArgs(method, args) {
+  if (window.neeve && window.neeve.postMessage) {
+    window.neeve.postMessage(JSON.stringify(Object.assign({ method }, args || {})));
+    return true;
+  }
+  return false;
+}
+
+// ── Live HR — bounded on-demand reading ────────────────────────────
+// The ring no longer streams HR continuously (that starved HRV/SpO₂).
+// This arms a live session for ~40s: the native side forwards each beat
+// as a `neeve:live-hr` event, then auto-stops and hands the sensor back
+// to the monitor. A quick way to watch your HR — e.g. a sit→stand test.
+let _liveHrState = { open: false, last: 0, timer: null, remaining: 0 };
+
+function ensureLiveHrOverlay() {
+  let el = document.getElementById('live-hr-overlay');
+  if (el) return el;
+  el = document.createElement('div');
+  el.id = 'live-hr-overlay';
+  el.className = 'live-hr-overlay';
+  el.innerHTML = `
+    <div class="live-hr-heart" id="live-hr-heart">♥</div>
+    <div class="live-hr-num"><span id="live-hr-bpm">—</span><span class="u">bpm</span></div>
+    <div class="live-hr-label" id="live-hr-label">Warming up the sensor…</div>
+    <div class="live-hr-count" id="live-hr-count"></div>
+    <button class="live-hr-stop" type="button" onclick="stopLiveHr()">Done</button>
+    <div class="live-hr-hint">Hold still and keep the ring snug. This runs for 40 seconds, then the sensor goes back to measuring your HRV and oxygen.</div>`;
+  document.body.appendChild(el);
+  return el;
+}
+
+function startLiveHr(ev) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  // Fire the native session first — if we're not in the app, bail early.
+  if (!callNativeArgs('liveHr', { action: 'start' })) {
+    alert('Live HR works only in the Neeve app.');
+    return;
+  }
+  const el = ensureLiveHrOverlay();
+  _liveHrState.open = true;
+  _liveHrState.last = 0;
+  document.getElementById('live-hr-bpm').textContent = '—';
+  document.getElementById('live-hr-label').textContent = 'Warming up the sensor…';
+  document.getElementById('live-hr-count').textContent = '';
+  document.getElementById('live-hr-heart').classList.remove('beating');
+  el.classList.add('show');
+}
+
+function stopLiveHr() {
+  callNativeArgs('liveHr', { action: 'stop' });
+  closeLiveHr();
+}
+
+function closeLiveHr() {
+  _liveHrState.open = false;
+  if (_liveHrState.timer) { clearInterval(_liveHrState.timer); _liveHrState.timer = null; }
+  const el = document.getElementById('live-hr-overlay');
+  if (el) el.classList.remove('show');
+}
+
+// Native → web events.
+window.addEventListener('neeve:live-hr-start', (e) => {
+  if (!_liveHrState.open) return;
+  const secs = (e.detail && e.detail.seconds) || 40;
+  _liveHrState.remaining = secs;
+  const countEl = document.getElementById('live-hr-count');
+  const labelEl = document.getElementById('live-hr-label');
+  if (labelEl) labelEl.textContent = 'Reading your heart rate…';
+  if (_liveHrState.timer) clearInterval(_liveHrState.timer);
+  _liveHrState.timer = setInterval(() => {
+    _liveHrState.remaining -= 1;
+    if (countEl) countEl.textContent = _liveHrState.remaining > 0
+      ? `${_liveHrState.remaining}s left` : '';
+    if (_liveHrState.remaining <= 0) { clearInterval(_liveHrState.timer); _liveHrState.timer = null; }
+  }, 1000);
+});
+
+window.addEventListener('neeve:live-hr', (e) => {
+  if (!_liveHrState.open) return;
+  const bpm = e.detail && e.detail.bpm;
+  if (!bpm || bpm <= 0) return;
+  _liveHrState.last = bpm;
+  const numEl = document.getElementById('live-hr-bpm');
+  const heart = document.getElementById('live-hr-heart');
+  if (numEl) numEl.textContent = Math.round(bpm);
+  if (heart) {
+    // Beat the heart at the measured rate (clamped 0.34–2.0s/beat).
+    const secPerBeat = Math.max(0.34, Math.min(2.0, 60 / bpm));
+    heart.style.animationDuration = secPerBeat + 's';
+    heart.classList.add('beating');
+  }
+});
+
+window.addEventListener('neeve:live-hr-done', (e) => {
+  if (!_liveHrState.open) return;
+  const ok = e.detail && e.detail.ok;
+  const labelEl = document.getElementById('live-hr-label');
+  const heart = document.getElementById('live-hr-heart');
+  if (heart) heart.classList.remove('beating');
+  if (!ok && _liveHrState.last === 0) {
+    if (labelEl) labelEl.textContent = 'Couldn\'t reach the ring — is it connected and worn?';
+    return; // leave overlay open so the user sees why; Done closes it
+  }
+  if (labelEl) labelEl.textContent = _liveHrState.last
+    ? `Finished — last reading ${Math.round(_liveHrState.last)} bpm`
+    : 'Finished';
+  const countEl = document.getElementById('live-hr-count');
+  if (countEl) countEl.textContent = '';
+  if (_liveHrState.timer) { clearInterval(_liveHrState.timer); _liveHrState.timer = null; }
+});
 
 // Tap-to-sync — fires a fresh HR measurement + buffer drain on the
 // ring side, then re-polls vitals for the new readings. Visible spin

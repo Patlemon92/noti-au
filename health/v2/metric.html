@@ -206,7 +206,7 @@ const LABELS = {
 // not better) + the how/why transparency copy. Metrics not listed get no
 // band (no filtering) and generic copy. Australian spelling, TGA-safe.
 const META = {
-  hr: { band:[40,180],
+  hr: { band:[40,170],
     how:"Your Neeve Ring reads your pulse with an optical sensor while you wear it. Each bar is the lowest-to-highest beat in that window, so you see how much your heart rate moved — not just one number. Faint, narrow bars are windows with fewer readings; gaps are when the ring wasn't worn or syncing.",
     why:"Heart rate rises and settles with rest, movement, stress and standing up. For ongoing illness, the pattern over days — and how your heart responds to standing or exertion — usually says more than any single reading." },
   rhr_derived: { band:[35,120],
@@ -329,9 +329,15 @@ function renderRangeChart(samplesRaw) {
     return;
   }
 
-  // Bucket.
+  // Bucket. Adaptive bucket size from the ACTUAL data span (not the
+  // requested window) so sparse data (e.g. a ring with only 2 days of
+  // history) still fills the chart with detail instead of collapsing to
+  // 1–2 huge day-bars. Targets ≤ ~48 bars.
   const HOUR = 3600 * 1000, DAY = 86400 * 1000;
-  const bucketMs = days <= 1 ? HOUR : DAY;
+  const dataSpan = (pts[pts.length - 1].t - pts[0].t) || HOUR;
+  const UNITS = [1, 2, 3, 6, 12, 24].map(h => h * HOUR);
+  let bucketMs = UNITS[UNITS.length - 1];
+  for (const u of UNITS) { if (dataSpan / u <= 48) { bucketMs = u; break; } }
   const map = new Map();
   for (const p of pts) {
     const key = Math.floor(p.t / bucketMs) * bucketMs;
@@ -347,7 +353,7 @@ function renderRangeChart(samplesRaw) {
   const hi = Math.max(...buckets.map(b => b.hi));
   const latest = pts[pts.length - 1].v;
   const mean = pts.reduce((a, p) => a + p.v, 0) / pts.length;
-  setHeadline({ lo, hi });
+  setHeadline({ lo, hi, tFrom: pts[0].t, tTo: pts[pts.length - 1].t });
   setStatTiles({ latest, mean, lo, hi });
 
   if (filtered > 0) {
@@ -391,7 +397,7 @@ function renderRangeChart(samplesRaw) {
 
   const fmtT = ms => {
     const dt = new Date(ms);
-    if (days <= 1) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
+    if (dataSpan <= 36 * HOUR) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
     return dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
   };
   const tMid = (tMin + tMax) / 2;
@@ -438,13 +444,13 @@ function setHeadline(r) {
   if (!r) { valEl.textContent = '—'; unitEl.textContent = ''; subEl.textContent = ''; return; }
   valEl.textContent = r.lo === r.hi ? fmt(r.lo) : `${fmt(r.lo)}–${fmt(r.hi)}`;
   unitEl.textContent = unitTxt();
-  const now = new Date();
-  if (days <= 1) {
-    subEl.textContent = 'Last 24 hours';
+  // Reflect the ACTUAL data span (matches the x-axis) rather than the
+  // requested window — avoids "7 May – 6 Jun" when only 2 days exist.
+  const f = ms => new Date(ms).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  if (r.tFrom && r.tTo) {
+    subEl.textContent = f(r.tFrom) === f(r.tTo) ? f(r.tTo) : `${f(r.tFrom)} – ${f(r.tTo)}`;
   } else {
-    const from = new Date(Date.now() - days * 86400 * 1000);
-    const f = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-    subEl.textContent = `${f(from)} – ${f(now)}`;
+    subEl.textContent = '';
   }
 }
 

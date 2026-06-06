@@ -83,6 +83,37 @@
 .explain p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink); }
 .explain .ex-care { font-size: 12px; color: var(--ink-mute); margin-top: 10px; font-style: italic; }
 
+/* (i) info button — top corner — opens the "How this is measured" sheet */
+.page { position: relative; }
+.info-btn {
+  position: absolute; top: 13px; right: 0;
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--hair); background: var(--bone-deep);
+  color: var(--ink-mute); font-size: 14px; font-style: italic;
+  font-family: 'Apricosa', 'Fraunces', serif; line-height: 1;
+  display: grid; place-items: center; cursor: pointer; padding: 0;
+}
+.info-btn:active { background: var(--hair); }
+.how-modal {
+  position: fixed; inset: 0; background: rgba(26,20,15,.42);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; z-index: 100;
+}
+.how-modal[hidden] { display: none; }
+.how-card {
+  background: #fff; border-radius: 18px; padding: 22px 20px 18px;
+  max-width: 380px; width: 100%; box-shadow: 0 14px 44px rgba(0,0,0,.22);
+}
+.how-card h3 {
+  margin: 0 0 10px; font-family: 'Apricosa', 'Fraunces', serif;
+  font-weight: 500; font-size: 18px; color: var(--ink);
+}
+.how-card p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink); }
+.how-card button {
+  margin-top: 18px; width: 100%; padding: 11px; border: none; border-radius: 12px;
+  background: var(--terra); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+
 .alys-card { background: var(--bone-deep); }
 .alys-card .alys-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .alys-card .alys-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rose); display: inline-block; }
@@ -102,6 +133,7 @@
 
 <main class="page">
   <a class="detail-back" href="javascript:history.back()">‹ Back</a>
+  <button class="info-btn" id="info-btn" aria-label="How this is measured" title="How this is measured">i</button>
   <p class="label" id="m-cat">Metric</p>
   <h1 class="title" id="m-title">Loading…</h1>
 
@@ -132,9 +164,6 @@
     </div>
   </section>
 
-  <!-- How this is measured + Why it matters (transparency) -->
-  <section class="section" id="explain-mount"></section>
-
   <!-- Alys analysis -->
   <section class="section">
     <div class="card alys-card" id="alys-card">
@@ -151,7 +180,19 @@
       </div>
     </div>
   </section>
+
+  <!-- Why it matters (under Alys) -->
+  <section class="section" id="why-mount"></section>
 </main>
+
+<!-- How this is measured — opened from the (i) button -->
+<div class="how-modal" id="how-modal" hidden>
+  <div class="how-card">
+    <h3>How this is measured</h3>
+    <p id="how-text"></p>
+    <button id="how-close">Got it</button>
+  </div>
+</div>
 
 <div id="nav-mount"></div>
 
@@ -474,17 +515,25 @@ function renderExplain() {
   const m = META[metric];
   const how = (m && m.how) || "Measured by your Neeve Ring while you wear it. Each bar shows the range of readings in that window; gaps are when the ring wasn't worn or syncing.";
   const why = (m && m.why) || "Patterns over days usually tell you more than any single reading.";
-  document.getElementById('explain-mount').innerHTML = `
-    <div class="card explain">
-      <h3><span class="ex-dot"></span>How this is measured</h3>
-      <p>${how}</p>
-    </div>
+  const howEl = document.getElementById('how-text');
+  if (howEl) howEl.textContent = how;
+  document.getElementById('why-mount').innerHTML = `
     <div class="card explain">
       <h3><span class="ex-dot"></span>Why it matters</h3>
       <p>${why}</p>
       <div class="ex-care">Neeve describes what it sees — it doesn't diagnose. Bring anything that worries you to your doctor.</div>
     </div>`;
 }
+
+// How-modal wiring (independent of metric validity).
+(function wireHowModal() {
+  const btn = document.getElementById('info-btn');
+  const modal = document.getElementById('how-modal');
+  const close = document.getElementById('how-close');
+  if (btn && modal) btn.addEventListener('click', () => { modal.hidden = false; });
+  if (close && modal) close.addEventListener('click', () => { modal.hidden = true; });
+  if (modal) modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
+})();
 
 // ── BP (kept as paired line chart) ───────────────────────
 function renderBpStats(sys, dia) {

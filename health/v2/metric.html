@@ -17,15 +17,48 @@
   color: var(--ink-mute); text-decoration: none; font-size: 14px;
 }
 .detail-back:hover { color: var(--ink); }
+
+/* Range headline (Apple-Health-style RANGE x–y unit) */
+.range-head { margin: 6px 0 2px; }
+.range-head .rh-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-mute);
+}
+.range-head .rh-big {
+  font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500;
+  font-size: 40px; line-height: 1.04; letter-spacing: -1px; color: var(--ink);
+  margin-top: 2px;
+}
+.range-head .rh-big .rh-unit {
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-size: 16px; font-weight: 500; color: var(--ink-mute); margin-left: 7px;
+}
+.range-head .rh-sub { font-size: 13.5px; color: var(--ink-mute); margin-top: 3px; }
+
+/* bar-tap readout */
+.scrub-readout {
+  display: flex; justify-content: space-between; align-items: center;
+  min-height: 22px; margin: 4px 0 6px; font-size: 13px;
+}
+.scrub-readout .when { color: var(--ink-mute); }
+.scrub-readout .what { font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500; color: var(--ink); font-size: 16px; }
+
+.chart-card svg { display: block; width: 100%; touch-action: pan-y; }
+
+.filtered-note {
+  font-size: 12px; color: var(--ink-mute); text-align: center;
+  margin: 12px 4px 2px; line-height: 1.45;
+}
+.filtered-note b { color: var(--terra); font-weight: 600; }
+
 .stats-grid {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
   margin-top: 14px;
 }
 .stat-tile {
   background: var(--bone-deep); border-radius: 12px; padding: 12px 10px 14px;
-  text-align: center;
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  min-height: 78px;
+  text-align: center; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-start; min-height: 78px;
 }
 .stat-tile .stat-label {
   font-size: 10.5px; color: var(--ink-mute); text-transform: uppercase;
@@ -35,21 +68,24 @@
   font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500; font-size: 26px;
   color: var(--ink); margin-top: 6px; line-height: 1; letter-spacing: -.5px;
 }
-/* The unit sits on its OWN line under the value — so 86.5 and 81 both
-   show "bpm" centered below, instead of inline-wrapping when the number
-   is wider. Quieter typographically — Patrick: "the whole thing is
-   very clinical." */
 .stat-tile .stat-unit {
   font-family: 'Inter Tight', system-ui, sans-serif;
-  font-size: 11px; color: var(--ink-mute); margin-top: 2px;
-  letter-spacing: .02em;
+  font-size: 11px; color: var(--ink-mute); margin-top: 2px; letter-spacing: .02em;
 }
+
+/* How / Why transparency cards */
+.explain h3 {
+  margin: 0 0 8px; font-size: 16px; font-weight: 500;
+  font-family: 'Apricosa', 'Fraunces', serif;
+  display: flex; align-items: center; gap: 9px; color: var(--ink);
+}
+.explain .ex-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--terra); flex: none; }
+.explain p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink); }
+.explain .ex-care { font-size: 12px; color: var(--ink-mute); margin-top: 10px; font-style: italic; }
+
 .alys-card { background: var(--bone-deep); }
 .alys-card .alys-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.alys-card .alys-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--rose); display: inline-block;
-}
+.alys-card .alys-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rose); display: inline-block; }
 .alys-card .alys-name { font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500; font-size: 16px; color: var(--ink); }
 .alys-card .alys-meta { font-size: 11px; color: var(--ink-mute); margin-left: auto; }
 .alys-card .alys-body { font-size: 15px; line-height: 1.55; color: var(--ink); white-space: pre-wrap; }
@@ -60,13 +96,6 @@
 .range-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .range-row .pill { cursor: pointer; }
 .range-row .pill-active { background: var(--rose); color: white; }
-.chart-card svg { display: block; width: 100%; touch-action: pan-y; }
-.scrub-readout {
-  display: flex; justify-content: space-between; align-items: center;
-  min-height: 22px; margin-bottom: 6px; font-size: 13px;
-}
-.scrub-readout .when { color: var(--ink-mute); }
-.scrub-readout .what { font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500; color: var(--ink); font-size: 16px; }
 </style>
 </head>
 <body>
@@ -82,13 +111,19 @@
     <button class="pill" data-days="30">30d</button>
   </div>
 
-  <!-- Big chart -->
+  <!-- RANGE headline + chart -->
   <section class="card chart-card">
+    <div class="range-head">
+      <div class="rh-label">Range</div>
+      <div class="rh-big"><span id="rh-val">—</span><span class="rh-unit" id="rh-unit"></span></div>
+      <div class="rh-sub" id="rh-sub"></div>
+    </div>
     <div class="scrub-readout" id="scrub">
-      <span class="when" id="scrub-when">Touch the chart to scrub</span>
+      <span class="when" id="scrub-when"></span>
       <span class="what" id="scrub-what"></span>
     </div>
     <div id="chart"></div>
+    <div class="filtered-note" id="filtered-note" style="display:none"></div>
     <div class="stats-grid" id="stats">
       <div class="stat-tile"><div class="stat-label">Latest</div><div class="stat-value" id="s-latest">—</div><div class="stat-unit" id="u-latest"></div></div>
       <div class="stat-tile"><div class="stat-label">Average</div><div class="stat-value" id="s-mean">—</div><div class="stat-unit" id="u-mean"></div></div>
@@ -96,6 +131,9 @@
       <div class="stat-tile"><div class="stat-label">High</div><div class="stat-value" id="s-max">—</div><div class="stat-unit" id="u-max"></div></div>
     </div>
   </section>
+
+  <!-- How this is measured + Why it matters (transparency) -->
+  <section class="section" id="explain-mount"></section>
 
   <!-- Alys analysis -->
   <section class="section">
@@ -145,8 +183,6 @@ const LABELS = {
   body_index:           { title: 'Body index',     unit: '',        cat: 'Recovery' },
   pressure_index:       { title: 'Pressure',       unit: '',        cat: 'Recovery' },
   sympathetic_activity: { title: 'Sympathetic',    unit: '',        cat: 'Recovery' },
-  // Derived (engines.js) — strain, recovery, behaviour bursts,
-  // sleep-derived events. Each tap from a Ring card opens here.
   strain_score:         { title: 'Strain',         unit: '',        cat: 'Daily' },
   recovery_score:       { title: 'Recovery',       unit: '',        cat: 'Daily' },
   burst_event:          { title: 'Activity bursts', unit: 'steps',   cat: 'Activity' },
@@ -158,13 +194,43 @@ const LABELS = {
   waso:                 { title: 'Wake after sleep', unit: 'min',   cat: 'Sleep' },
   sleep_session:        { title: 'Sleep',          unit: 'h',       cat: 'Sleep' },
   pots_orthostatic_delta: { title: 'POTS delta',   unit: 'bpm',     cat: 'Pattern' },
-  // Derived-from-raw — sleep-window medians beat R11's pre-computed numbers.
   rhr_derived:          { title: 'Resting HR',     unit: 'bpm',     cat: 'Recovery' },
   hrv_sleep_median:     { title: 'Overnight HRV',  unit: 'ms',      cat: 'Recovery' },
   wear_state:           { title: 'Ring wear',      unit: '',        cat: 'Ring' },
   sleep_marker:         { title: 'Sleep marker',   unit: '',        cat: 'Sleep' },
   wake_marker:          { title: 'Wake marker',    unit: '',        cat: 'Sleep' },
 };
+
+// Per-metric physiological band (filter sensor artifacts BEFORE bucketing —
+// without this, range bars stretch to junk like HR=1..238 and look worse,
+// not better) + the how/why transparency copy. Metrics not listed get no
+// band (no filtering) and generic copy. Australian spelling, TGA-safe.
+const META = {
+  hr: { band:[40,180],
+    how:"Your Neeve Ring reads your pulse with an optical sensor while you wear it. Each bar is the lowest-to-highest beat in that window, so you see how much your heart rate moved — not just one number. Faint, narrow bars are windows with fewer readings; gaps are when the ring wasn't worn or syncing.",
+    why:"Heart rate rises and settles with rest, movement, stress and standing up. For ongoing illness, the pattern over days — and how your heart responds to standing or exertion — usually says more than any single reading." },
+  rhr_derived: { band:[35,120],
+    how:"Taken from your steadiest overnight windows, where movement is lowest, so it reflects your true resting heart rate rather than a daytime moment.",
+    why:"Resting heart rate trending up over days can track poorer recovery, illness or strain — the trend matters more than any one night." },
+  hrv_rmssd: { band:[5,200],
+    how:"Calculated from the tiny beat-to-beat timing differences your ring's pulse sensor picks up. Each bar shows the range across that window. HRV is naturally noisy, so read the trend, not single bars.",
+    why:"HRV reflects how your nervous system is balancing rest and stress. Lower stretches often line up with poorer recovery, exertion or a rough night — useful as a pattern alongside how you feel." },
+  hrv_sleep_median: { band:[5,200],
+    how:"The median HRV across your overnight window, where readings are cleanest — a steadier number than daytime HRV.",
+    why:"Overnight HRV is one of the more stable recovery signals; watch how it moves across days rather than night to night." },
+  spo2: { band:[80,100],
+    how:"Estimated from how your ring's red and infrared light pass through your blood. Each bar is the range in that window. Note: this ring reads about 1-2% lower than a clinical fingertip oximeter and tops out near 98% — so watch the dips and the trend, not the exact figure.",
+    why:"Blood-oxygen dips — especially repeated ones overnight — can be worth noting. Because the ring isn't a precise clinical reading, treat a single low as a prompt to check with a fingertip oximeter, not a verdict." },
+  respiration_rate: { band:[6,40],
+    how:"Derived from the subtle rise and fall your pulse sensor detects as you breathe. Each bar is the range in that window; it's most reliable when you're still.",
+    why:"Breathing rate shifts with rest, activity, stress and illness. A sustained change across days is more meaningful than moment-to-moment movement." },
+  temp_skin: { band:[28,43],
+    how:"Skin temperature from the ring (where supported). Each bar is the range in that window. Skin temp drifts with your environment, so trends over nights read better than single points.",
+    why:"Relative shifts in overnight skin temperature can track your cycle, the onset of illness, or recovery — the change from your own baseline is what matters." },
+  bp_sys: { band:[70,200], how:"", why:"" },
+  bp_dia: { band:[40,130], how:"", why:"" },
+};
+function bandFor(m){ return META[m] && META[m].band ? META[m].band : null; }
 
 if (!metric || !LABELS[metric]) {
   document.getElementById('m-title').textContent = 'Metric not found';
@@ -173,6 +239,7 @@ if (!metric || !LABELS[metric]) {
   document.getElementById('m-title').textContent = LABELS[metric].title;
   document.getElementById('m-cat').textContent = LABELS[metric].cat;
   document.title = `${LABELS[metric].title} · Neeve`;
+  renderExplain();
 }
 
 // ── Range buttons ────────────────────────────────────────
@@ -186,6 +253,10 @@ document.querySelectorAll('.range-row .pill').forEach(b => {
     history.replaceState(null, '', `?metric=${metric}&days=${days}`);
     load();
   });
+});
+// Reflect the active pill from the URL on first paint.
+document.querySelectorAll('.range-row .pill').forEach(x => {
+  x.classList.toggle('pill-active', Number(x.dataset.days) === days);
 });
 
 // ── Load + render ────────────────────────────────────────
@@ -201,17 +272,16 @@ async function load() {
       const dia = (samples || []).filter(s => s.metric === 'bp_dia');
       renderBpChart(sys, dia);
       renderBpStats(sys, dia);
+      setHeadline(null);
     } else {
       const q = `/ring/samples?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&limit=2000`;
       const { samples } = await api(q);
-      renderChart(samples || []);
-      renderStats(samples || []);
+      renderRangeChart(samples || []);
     }
   } catch (e) {
     document.getElementById('chart').innerHTML =
       `<div class="empty">Couldn't load: ${e.message}</div>`;
   }
-  // Alys is a separate call so it can take longer without blocking the chart.
   loadAnalysis();
 }
 
@@ -223,37 +293,196 @@ function fmt(v) {
   if (Math.abs(v - Math.round(v)) < 0.05) return Math.round(v).toString();
   return v.toFixed(1);
 }
-
 function unitTxt() { return LABELS[metric]?.unit || ''; }
 
-function renderStats(samples) {
-  if (!samples.length) {
-    ['s-latest','s-mean','s-min','s-max'].forEach(id =>
-      document.getElementById(id).textContent = '—');
+// ── Range-bar chart ──────────────────────────────────────
+// Buckets samples (hour for Today, day otherwise), artifact-filters, and
+// draws one min–max bar per bucket. Faint bars = low-sample windows.
+function renderRangeChart(samplesRaw) {
+  const host = document.getElementById('chart');
+  const noteEl = document.getElementById('filtered-note');
+  noteEl.style.display = 'none';
+
+  const all = (samplesRaw || [])
+    .map(s => ({ t: new Date(s.ts).getTime(), v: Number(s.value) }))
+    .filter(p => isFinite(p.t) && isFinite(p.v))
+    .sort((a, b) => a.t - b.t);
+
+  if (!all.length) {
+    host.innerHTML = '<div class="empty" style="padding:32px 0">No readings in this window yet.</div>';
+    setHeadline(null); renderStats([]);
     return;
   }
-  const values = samples.map(s => Number(s.value)).filter(v => isFinite(v));
-  if (!values.length) return;
-  const sum = values.reduce((a, b) => a + b, 0);
-  const mean = sum / values.length;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const latest = samples[samples.length - 1].value;
-  const u = unitTxt();
-  document.getElementById('s-latest').textContent = fmt(latest);
-  document.getElementById('s-mean').textContent   = fmt(mean);
-  document.getElementById('s-min').textContent    = fmt(min);
-  document.getElementById('s-max').textContent    = fmt(max);
-  ['u-latest','u-mean','u-min','u-max'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = u;
+
+  // Artifact filter.
+  const band = bandFor(metric);
+  let filtered = 0;
+  const pts = band ? all.filter(p => {
+    const ok = p.v >= band[0] && p.v <= band[1];
+    if (!ok) filtered++;
+    return ok;
+  }) : all;
+
+  if (!pts.length) {
+    host.innerHTML = '<div class="empty" style="padding:32px 0">No valid readings.</div>';
+    setHeadline(null); renderStats([]);
+    return;
+  }
+
+  // Bucket.
+  const HOUR = 3600 * 1000, DAY = 86400 * 1000;
+  const bucketMs = days <= 1 ? HOUR : DAY;
+  const map = new Map();
+  for (const p of pts) {
+    const key = Math.floor(p.t / bucketMs) * bucketMs;
+    let b = map.get(key);
+    if (!b) { b = { t: key, lo: p.v, hi: p.v, n: 0, sum: 0, last: p.v }; map.set(key, b); }
+    b.lo = Math.min(b.lo, p.v); b.hi = Math.max(b.hi, p.v);
+    b.n++; b.sum += p.v; b.last = p.v;
+  }
+  const buckets = [...map.values()].sort((a, b) => a.t - b.t);
+
+  // Overall cleaned range for the headline + stats.
+  const lo = Math.min(...buckets.map(b => b.lo));
+  const hi = Math.max(...buckets.map(b => b.hi));
+  const latest = pts[pts.length - 1].v;
+  const mean = pts.reduce((a, p) => a + p.v, 0) / pts.length;
+  setHeadline({ lo, hi });
+  setStatTiles({ latest, mean, lo, hi });
+
+  if (filtered > 0) {
+    noteEl.style.display = '';
+    noteEl.innerHTML = `all readings shown · <b>${filtered} filtered</b> as sensor noise — never real readings`;
+  }
+
+  // Geometry. Bars span their bucket window across a continuous time axis so
+  // gaps (unworn hours/days) show as blank space, not a squashed line.
+  const W = host.clientWidth || 340;
+  const H = 220;
+  const pad = { l: 34, r: 12, t: 12, b: 26 };
+  const innerW = W - pad.l - pad.r;
+  const innerH = H - pad.t - pad.b;
+  const tMin = buckets[0].t;
+  const tMax = buckets[buckets.length - 1].t + bucketMs;
+  let vMin = lo, vMax = hi;
+  if (vMin === vMax) { vMin -= 1; vMax += 1; }
+  const span = vMax - vMin; vMin -= span * 0.10; vMax += span * 0.10;
+
+  const x = t => pad.l + ((t - tMin) / Math.max(1, tMax - tMin)) * innerW;
+  const y = v => pad.t + innerH - ((v - vMin) / (vMax - vMin)) * innerH;
+
+  const slotW = innerW / buckets.length;
+  const bw = Math.max(3, Math.min(11, slotW * 0.55));
+  const sparseN = days <= 1 ? 10 : 30;
+
+  const yMid = (vMin + vMax) / 2;
+  const axisFmt = v => metric === 'temp_skin' ? Number(v).toFixed(1) : Math.round(v).toString();
+  const grid = [vMin, yMid, vMax].map(v => `
+    <line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="var(--hair)" stroke-width="0.5"/>
+    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${axisFmt(v)}</text>
+  `).join('');
+
+  const bars = buckets.map((b, i) => {
+    const cx = x(b.t + bucketMs / 2);
+    const top = y(b.hi), bot = y(b.lo);
+    const op = b.n < sparseN ? 0.4 : 1;
+    return `<rect class="rbar" data-i="${i}" x="${(cx - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bw, bot - top).toFixed(1)}" rx="${(bw / 2).toFixed(1)}" fill="var(--terra)" opacity="${op}"/>`;
+  }).join('');
+
+  const fmtT = ms => {
+    const dt = new Date(ms);
+    if (days <= 1) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
+    return dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+  };
+  const tMid = (tMin + tMax) / 2;
+
+  host.innerHTML = `
+    <svg id="metric-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+      ${grid}
+      ${bars}
+      <text x="${pad.l}" y="${H - 6}" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMin)}</text>
+      <text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMid)}</text>
+      <text x="${W - pad.r}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMax)}</text>
+    </svg>`;
+
+  // Tap a bar → show that window's range in the readout.
+  const svg = document.getElementById('metric-svg');
+  const wEl = document.getElementById('scrub-when');
+  const vEl = document.getElementById('scrub-what');
+  function showBar(i) {
+    const b = buckets[i]; if (!b) return;
+    svg.querySelectorAll('.rbar').forEach(r => r.setAttribute('opacity', r.dataset.i == i ? '1' : (buckets[r.dataset.i].n < sparseN ? 0.25 : 0.55)));
+    wEl.textContent = fmtT(b.t);
+    vEl.innerHTML = `${fmt(b.lo)}–${fmt(b.hi)}<span style="font-size:12px;color:var(--ink-mute)"> ${unitTxt()}</span>`;
+  }
+  function clearBar() {
+    svg.querySelectorAll('.rbar').forEach(r => r.setAttribute('opacity', buckets[r.dataset.i].n < sparseN ? 0.4 : 1));
+    wEl.textContent = ''; vEl.textContent = '';
+  }
+  svg.addEventListener('pointerdown', e => {
+    const r = svg.getBoundingClientRect();
+    const vx = ((e.clientX - r.left) / r.width) * W;
+    let bi = 0, bd = Infinity;
+    buckets.forEach((b, i) => { const d = Math.abs(x(b.t + bucketMs / 2) - vx); if (d < bd) { bd = d; bi = i; } });
+    showBar(bi);
   });
+  svg.addEventListener('pointerup', clearBar);
+  svg.addEventListener('pointercancel', clearBar);
+  svg.addEventListener('pointerleave', clearBar);
 }
 
+function setHeadline(r) {
+  const valEl = document.getElementById('rh-val');
+  const unitEl = document.getElementById('rh-unit');
+  const subEl = document.getElementById('rh-sub');
+  if (!r) { valEl.textContent = '—'; unitEl.textContent = ''; subEl.textContent = ''; return; }
+  valEl.textContent = r.lo === r.hi ? fmt(r.lo) : `${fmt(r.lo)}–${fmt(r.hi)}`;
+  unitEl.textContent = unitTxt();
+  const now = new Date();
+  if (days <= 1) {
+    subEl.textContent = 'Last 24 hours';
+  } else {
+    const from = new Date(Date.now() - days * 86400 * 1000);
+    const f = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+    subEl.textContent = `${f(from)} – ${f(now)}`;
+  }
+}
+
+function setStatTiles({ latest, mean, lo, hi }) {
+  document.getElementById('s-latest').textContent = fmt(latest);
+  document.getElementById('s-mean').textContent   = fmt(mean);
+  document.getElementById('s-min').textContent    = fmt(lo);
+  document.getElementById('s-max').textContent    = fmt(hi);
+  const u = unitTxt();
+  ['u-latest','u-mean','u-min','u-max'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = u; });
+}
+function renderStats(samples) {
+  if (!samples.length) {
+    ['s-latest','s-mean','s-min','s-max'].forEach(id => document.getElementById(id).textContent = '—');
+  }
+}
+
+// ── How / Why transparency ───────────────────────────────
+function renderExplain() {
+  const m = META[metric];
+  const how = (m && m.how) || "Measured by your Neeve Ring while you wear it. Each bar shows the range of readings in that window; gaps are when the ring wasn't worn or syncing.";
+  const why = (m && m.why) || "Patterns over days usually tell you more than any single reading.";
+  document.getElementById('explain-mount').innerHTML = `
+    <div class="card explain">
+      <h3><span class="ex-dot"></span>How this is measured</h3>
+      <p>${how}</p>
+    </div>
+    <div class="card explain">
+      <h3><span class="ex-dot"></span>Why it matters</h3>
+      <p>${why}</p>
+      <div class="ex-care">Neeve describes what it sees — it doesn't diagnose. Bring anything that worries you to your doctor.</div>
+    </div>`;
+}
+
+// ── BP (kept as paired line chart) ───────────────────────
 function renderBpStats(sys, dia) {
   if (!sys.length && !dia.length) {
-    ['s-latest','s-mean','s-min','s-max'].forEach(id =>
-      document.getElementById(id).textContent = '—');
+    ['s-latest','s-mean','s-min','s-max'].forEach(id => document.getElementById(id).textContent = '—');
     return;
   }
   const sysLast = sys.length ? sys[sys.length - 1].value : null;
@@ -269,60 +498,36 @@ function renderBpStats(sys, dia) {
   document.getElementById('s-mean').textContent   = pair(sysAvg, diaAvg);
   document.getElementById('s-min').textContent    = pair(sysLow, diaLow);
   document.getElementById('s-max').textContent    = pair(sysHigh, diaHigh);
-  ['u-latest','u-mean','u-min','u-max'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = 'mmHg';
-  });
+  ['u-latest','u-mean','u-min','u-max'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = 'mmHg'; });
 }
-
 function renderBpChart(sysSamples, diaSamples) {
   const host = document.getElementById('chart');
+  document.getElementById('filtered-note').style.display = 'none';
   if (!sysSamples.length && !diaSamples.length) {
     host.innerHTML = '<div class="empty" style="padding:32px 0">No readings in this window yet.</div>';
     return;
   }
-  const W = host.clientWidth || 340;
-  const H = 220;
+  const W = host.clientWidth || 340, H = 220;
   const pad = { l: 36, r: 12, t: 14, b: 38 };
-  const innerW = W - pad.l - pad.r;
-  const innerH = H - pad.t - pad.b;
-
-  const toPts = arr => arr
-    .map(s => ({ t: new Date(s.ts).getTime(), v: Number(s.value) }))
-    .filter(p => isFinite(p.t) && isFinite(p.v))
-    .sort((a, b) => a.t - b.t);
-  const sysPts = toPts(sysSamples);
-  const diaPts = toPts(diaSamples);
+  const innerW = W - pad.l - pad.r, innerH = H - pad.t - pad.b;
+  const toPts = arr => arr.map(s => ({ t: new Date(s.ts).getTime(), v: Number(s.value) }))
+    .filter(p => isFinite(p.t) && isFinite(p.v)).sort((a, b) => a.t - b.t);
+  const sysPts = toPts(sysSamples), diaPts = toPts(diaSamples);
   const allPts = sysPts.concat(diaPts);
-  if (!allPts.length) {
-    host.innerHTML = '<div class="empty" style="padding:32px 0">No valid readings.</div>';
-    return;
-  }
-  const tMin = Math.min(...allPts.map(p => p.t));
-  const tMax = Math.max(...allPts.map(p => p.t));
-  let vMin = Math.min(...allPts.map(p => p.v));
-  let vMax = Math.max(...allPts.map(p => p.v));
+  if (!allPts.length) { host.innerHTML = '<div class="empty" style="padding:32px 0">No valid readings.</div>'; return; }
+  const tMin = Math.min(...allPts.map(p => p.t)), tMax = Math.max(...allPts.map(p => p.t));
+  let vMin = Math.min(...allPts.map(p => p.v)), vMax = Math.max(...allPts.map(p => p.v));
   if (vMin === vMax) { vMin -= 1; vMax += 1; }
   const span = vMax - vMin; vMin -= span * 0.08; vMax += span * 0.08;
-
   const x = t => pad.l + ((t - tMin) / Math.max(1, tMax - tMin)) * innerW;
   const y = v => pad.t + innerH - ((v - vMin) / (vMax - vMin)) * innerH;
   const pathFor = pts => pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
-
   const yMid = (vMin + vMax) / 2;
-  // Whole-number y-axis labels — BP is always integers.
   const grid = [vMin, yMid, vMax].map(v => `
     <line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="var(--hair)" stroke-width="0.5"/>
-    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${Math.round(v).toString()}</text>
-  `).join('');
-
-  const fmtT = ms => {
-    const dt = new Date(ms);
-    if (days <= 1) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
-    return dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-  };
+    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${Math.round(v)}</text>`).join('');
+  const fmtT = ms => { const dt = new Date(ms); return days <= 1 ? dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false }) : dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }); };
   const tMid = (tMin + tMax) / 2;
-
   host.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
       ${grid}
@@ -338,126 +543,7 @@ function renderBpChart(sysSamples, diaSamples) {
         <text x="${pad.l + 64}" y="${H - 10}">dia</text>
       </g>
     </svg>`;
-}
-
-function renderChart(samples) {
-  const host = document.getElementById('chart');
-  if (!samples.length) {
-    host.innerHTML = '<div class="empty" style="padding:32px 0">No readings in this window yet.</div>';
-    return;
-  }
-  // Inline SVG line chart — sized to container width, fixed height.
-  const W = host.clientWidth || 340;
-  const H = 200;
-  const pad = { l: 36, r: 12, t: 14, b: 26 };
-  const innerW = W - pad.l - pad.r;
-  const innerH = H - pad.t - pad.b;
-
-  const pts = samples
-    .map(s => ({ t: new Date(s.ts).getTime(), v: Number(s.value) }))
-    .filter(p => isFinite(p.t) && isFinite(p.v))
-    .sort((a, b) => a.t - b.t);
-
-  if (!pts.length) {
-    host.innerHTML = '<div class="empty" style="padding:32px 0">No valid readings.</div>';
-    return;
-  }
-
-  const tMin = pts[0].t, tMax = pts[pts.length - 1].t || tMin + 1;
-  const vs = pts.map(p => p.v);
-  let vMin = Math.min(...vs), vMax = Math.max(...vs);
-  if (vMin === vMax) { vMin -= 1; vMax += 1; }
-  const span = vMax - vMin;
-  vMin -= span * 0.08;
-  vMax += span * 0.08;
-
-  const x = t => pad.l + ((t - tMin) / Math.max(1, tMax - tMin)) * innerW;
-  const y = v => pad.t + innerH - ((v - vMin) / (vMax - vMin)) * innerH;
-
-  const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
-
-  // Y-axis: 3 grid lines (min / mid / max). Skin temp keeps its 0.1°C
-  // resolution; everything else rounds to whole numbers — "220.3 bpm"
-  // reads as clinical noise; "220" reads as the human number we mean.
-  const yMid = (vMin + vMax) / 2;
-  const axisFmt = v => metric === 'temp_skin'
-    ? Number(v).toFixed(1)
-    : Math.round(v).toString();
-  const grid = [vMin, yMid, vMax].map(v => `
-    <line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="var(--hair)" stroke-width="0.5"/>
-    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${axisFmt(v)}</text>
-  `).join('');
-
-  // X-axis: first / mid / last timestamp.
-  const fmtT = ms => {
-    const dt = new Date(ms);
-    if (days <= 1) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
-    return dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-  };
-  const tMid = (tMin + tMax) / 2;
-
-  host.innerHTML = `
-    <svg id="metric-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
-      ${grid}
-      <path d="${path}" stroke="var(--terra)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <line   id="scrub-line"   x1="0" y1="${pad.t}" x2="0" y2="${pad.t + innerH}" stroke="var(--ink-mute)" stroke-width="0.8" opacity="0"/>
-      <circle id="scrub-marker" r="3.5" fill="var(--terra)" stroke="var(--bone)" stroke-width="1.2" opacity="0"/>
-      <text x="${pad.l}" y="${H - 6}" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMin)}</text>
-      <text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMid)}</text>
-      <text x="${W - pad.r}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMax)}</text>
-      <rect id="scrub-hit" x="${pad.l}" y="${pad.t}" width="${innerW}" height="${innerH}" fill="transparent"/>
-    </svg>`;
-  attachScrub({ pts, xFor: x, yFor: y, W, pad, innerW, fmtT, color: 'var(--terra)' });
-}
-
-function attachScrub({ pts, xFor, yFor, W, pad, innerW, fmtT, color }) {
-  const svg    = document.getElementById('metric-svg');
-  const hit    = document.getElementById('scrub-hit');
-  const line   = document.getElementById('scrub-line');
-  const marker = document.getElementById('scrub-marker');
-  const wEl    = document.getElementById('scrub-when');
-  const vEl    = document.getElementById('scrub-what');
-  if (!svg || !hit || !pts || !pts.length) return;
-  if (color) marker.setAttribute('fill', color);
-
-  const tFirst = pts[0].t, tLast = pts[pts.length - 1].t;
-
-  function vbX(ev) {
-    const r = svg.getBoundingClientRect();
-    return ((ev.clientX - r.left) / r.width) * W;
-  }
-  function nearest(vbx) {
-    const t = (vbx - pad.l) / Math.max(1, innerW) * (tLast - tFirst) + tFirst;
-    let best = pts[0], bestD = Math.abs(pts[0].t - t);
-    for (const p of pts) {
-      const d = Math.abs(p.t - t);
-      if (d < bestD) { bestD = d; best = p; }
-    }
-    return best;
-  }
-  function show(ev) {
-    ev.preventDefault();
-    const p  = nearest(vbX(ev));
-    const px = xFor(p.t), py = yFor(p.v);
-    line.setAttribute('x1', px); line.setAttribute('x2', px); line.setAttribute('opacity', '0.45');
-    marker.setAttribute('cx', px); marker.setAttribute('cy', py); marker.setAttribute('opacity', '1');
-    const dt = new Date(p.t);
-    const date = dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-    const time = dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: false });
-    wEl.textContent = `${date} · ${time}`;
-    vEl.innerHTML   = `${fmt(p.v)}<span style="font-size:12px;color:var(--ink-mute)"> ${unitTxt()}</span>`;
-  }
-  function clear() {
-    line.setAttribute('opacity', '0');
-    marker.setAttribute('opacity', '0');
-    wEl.textContent = 'Touch the chart to scrub';
-    vEl.textContent = '';
-  }
-  hit.addEventListener('pointerdown',   e => { hit.setPointerCapture(e.pointerId); show(e); });
-  hit.addEventListener('pointermove',   e => { if (e.buttons) show(e); });
-  hit.addEventListener('pointerup',     clear);
-  hit.addEventListener('pointercancel', clear);
-  hit.addEventListener('pointerleave',  clear);
+  setHeadline(null);
 }
 
 async function loadAnalysis() {
@@ -469,11 +555,8 @@ async function loadAnalysis() {
   try {
     const r = await api(`/me/metric-analysis?metric=${encodeURIComponent(metric)}&days=${days}`);
     body.textContent = r.summary || 'Not enough data yet.';
-    if (r.cached && r.generated_at) {
-      meta.textContent = `updated ${formatAgo(r.generated_at)}`;
-    } else if (r.generated_at) {
-      meta.textContent = 'just now';
-    }
+    if (r.cached && r.generated_at) meta.textContent = `updated ${formatAgo(r.generated_at)}`;
+    else if (r.generated_at) meta.textContent = 'just now';
   } catch (e) {
     body.textContent = `Couldn't load Alys's read: ${e.message}`;
     meta.textContent = '';

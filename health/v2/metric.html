@@ -19,7 +19,18 @@
 .detail-back:hover { color: var(--ink); }
 
 /* Range headline (Apple-Health-style RANGE x–y unit) */
-.range-head { margin: 6px 0 2px; }
+.range-head { margin: 6px 0 2px; position: relative; }
+/* Quick-glance "last reading" chip, top-right of the card. */
+.last-chip {
+  position: absolute; top: 0; right: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(154,131,105,.10); border: 1px solid rgba(154,131,105,.22);
+  color: var(--ink-mute); border-radius: 99px; padding: 5px 11px;
+  font-family: 'Inter Tight', system-ui, sans-serif; font-size: 12px;
+  letter-spacing: .01em; white-space: nowrap;
+}
+.last-chip .lc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rose); flex: 0 0 auto; }
+.last-chip b { font-weight: 600; color: var(--ink); }
 .range-head .rh-label {
   font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--ink-mute);
@@ -150,6 +161,7 @@
   <!-- RANGE headline + chart -->
   <section class="card chart-card">
     <div class="range-head">
+      <div class="last-chip" id="last-chip" style="display:none"></div>
       <div class="rh-label">Range</div>
       <div class="rh-big"><span id="rh-val">—</span><span class="rh-unit" id="rh-unit"></span></div>
       <div class="rh-sub" id="rh-sub"></div>
@@ -308,6 +320,7 @@ document.querySelectorAll('.range-row .pill').forEach(x => {
 async function load() {
   if (!metric || !LABELS[metric]) return;
   document.getElementById('chart').innerHTML = '<div class="empty" style="padding:32px 0">Loading…</div>';
+  { const _lc = document.getElementById('last-chip'); if (_lc) _lc.style.display = 'none'; }
   try {
     const since = new Date(Date.now() - days * 86400 * 1000).toISOString();
     // HR/SpO2/etc are sampled densely (~hundreds/hour) — fetch the WHOLE window
@@ -339,6 +352,16 @@ async function load() {
       } catch (_) {}
       const tEl = document.getElementById('t-latest');
       if (tEl) tEl.textContent = latestTs ? formatClock(latestTs) : '';
+      // Quick-glance "last reading" chip, top-right of the card.
+      const lc = document.getElementById('last-chip');
+      if (lc) {
+        if (latest != null && latestTs) {
+          lc.innerHTML = `<span class="lc-dot"></span><span>Last <b>${fmt(latest)} ${unitTxt()}</b> · ${formatClock(latestTs)}</span>`;
+          lc.style.display = 'inline-flex';
+        } else {
+          lc.style.display = 'none';
+        }
+      }
       renderBuckets(buckets || [], bucketSecs, latest);
     }
   } catch (e) {

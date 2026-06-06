@@ -306,8 +306,12 @@ async function load() {
   document.getElementById('chart').innerHTML = '<div class="empty" style="padding:32px 0">Loading…</div>';
   try {
     const since = new Date(Date.now() - days * 86400 * 1000).toISOString();
+    // HR/SpO2/etc are sampled densely (~hundreds/hour) — fetch the WHOLE window
+    // (API cap raised to 50k, DB Range allows ~100k) so the chart reflects all
+    // the data, not just the last few hours. limit=2000 = empty-looking chart.
+    const fetchLimit = days <= 1 ? 15000 : 50000;
     if (metric === 'bp') {
-      const q = `/ring/samples?metric=bp_sys,bp_dia&since=${encodeURIComponent(since)}&limit=2000`;
+      const q = `/ring/samples?metric=bp_sys,bp_dia&since=${encodeURIComponent(since)}&limit=${fetchLimit}`;
       const { samples } = await api(q);
       const sys = (samples || []).filter(s => s.metric === 'bp_sys');
       const dia = (samples || []).filter(s => s.metric === 'bp_dia');
@@ -315,7 +319,7 @@ async function load() {
       renderBpStats(sys, dia);
       setHeadline(null);
     } else {
-      const q = `/ring/samples?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&limit=2000`;
+      const q = `/ring/samples?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&limit=${fetchLimit}`;
       const { samples } = await api(q);
       renderRangeChart(samples || []);
     }

@@ -335,9 +335,10 @@ function renderRangeChart(samplesRaw) {
   // 1–2 huge day-bars. Targets ≤ ~48 bars.
   const HOUR = 3600 * 1000, DAY = 86400 * 1000;
   const dataSpan = (pts[pts.length - 1].t - pts[0].t) || HOUR;
-  const UNITS = [1, 2, 3, 6, 12, 24].map(h => h * HOUR);
-  let bucketMs = UNITS[UNITS.length - 1];
-  for (const u of UNITS) { if (dataSpan / u <= 48) { bucketMs = u; break; } }
+  // Bucket size by WINDOW so the pills actually differ: Today = hourly,
+  // 7d = 6-hourly, 30d = daily. (Sizing off data-span instead made all
+  // three render identically when only a couple of days of data exist.)
+  const bucketMs = days <= 1 ? HOUR : days <= 7 ? 6 * HOUR : DAY;
   const map = new Map();
   for (const p of pts) {
     const key = Math.floor(p.t / bucketMs) * bucketMs;
@@ -378,7 +379,7 @@ function renderRangeChart(samplesRaw) {
   const y = v => pad.t + innerH - ((v - vMin) / (vMax - vMin)) * innerH;
 
   const slotW = innerW / buckets.length;
-  const bw = Math.max(3, Math.min(11, slotW * 0.55));
+  const bw = Math.max(4, Math.min(13, slotW * 0.62));
   const sparseN = days <= 1 ? 10 : 30;
 
   const yMid = (vMin + vMax) / 2;

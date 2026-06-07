@@ -592,7 +592,9 @@ function attachHandlers(q) {
 
   document.getElementById('btn-back').onclick = () => {
     if (step === 0) { location.href = '/health/home'; return; }
-    step--; render();
+    step--;
+    while (step > 0 && shouldSkip(questions[step])) step--;
+    render();
   };
 }
 
@@ -610,8 +612,27 @@ async function advance(q, value, skipped) {
   }).catch(() => {});
 
   step++;
+  while (step < questions.length && shouldSkip(questions[step])) step++;
   if (step >= questions.length) return complete();
   render();
+}
+
+// ── BASELINE GATING ──────────────────────────────────────
+// Detail questions (tagged gated_by / gate_baseline / gate_direction by
+// the server) are skipped when their headline scale came in at or better
+// than the user's own baseline. Missing answer or missing baseline → show
+// (we never hide a question we're unsure about).
+function shouldSkip(q) {
+  if (!q || !q.gated_by) return false;
+  const hv = answers[q.gated_by];
+  if (hv === undefined || hv === null || hv === '') return false; // headline unanswered/skipped → show
+  const base = q.gate_baseline;
+  if (base === null || base === undefined) return false;          // no baseline yet → show
+  const val = Number(hv);
+  if (!isFinite(val)) return false;
+  // worse-than-baseline opens the detail; not-worse skips it
+  if (q.gate_direction === 'higher_is_better') return !(val < base);
+  return !(val > base);
 }
 
 async function complete() {

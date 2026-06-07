@@ -322,6 +322,25 @@
   .cigroup .q:last-child { border-bottom:none; }
   .cigroup .q.gated[hidden], .q.gated[style*="display: none"] { display:none; }
 
+
+  /* ── Tap-dot scales (v3, mock look) ────────────────── */
+  .scale-head { display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
+  .scale-head .scale-num { font-family:'Apricosa','Fraunces',serif; font-weight:500;
+        font-size:30px; line-height:1; color:var(--clay-2,#bf5a3c); min-width:30px; }
+  .usual { font-size:11px; letter-spacing:.03em; color:var(--taupe-2,#9a8369); font-weight:500; }
+  .dotbar { position:relative; display:flex; gap:4px; margin-top:4px; }
+  .dotbar .dot { flex:1; height:32px; border-radius:9px; border:none;
+        background:rgba(43,32,24,.06); color:var(--taupe-2,#9a8369);
+        font-size:10px; font-family:inherit; cursor:pointer;
+        transition:background .14s, color .14s; -webkit-tap-highlight-color:transparent; }
+  .dotbar .dot.on  { background:#e0998b; color:#fff7f0; }
+  .dotbar .dot.cur { background:#bf5a3c; color:#fff7f0; }
+  .dotbar .dot:active { transform:scale(.92); }
+  .basemark { position:absolute; top:-5px; bottom:-5px; width:2px; z-index:2;
+        background:rgba(43,32,24,.42); border-radius:2px; transform:translateX(-1px); pointer-events:none; }
+  .basemark::after { content:'usual'; position:absolute; top:-12px; left:50%; transform:translateX(-50%);
+        font-size:7.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--taupe-2,#9a8369); white-space:nowrap; }
+
 </style>
 </head>
 <body>
@@ -572,13 +591,19 @@
   const scaleWords = ['rough','rough','tough','tough','okay','okay','pretty good','pretty good','bright','bright','bright'];
 
   function renderScale(q, initial) {
-    const v = (initial == null) ? 5 : Math.max(0, Math.min(10, Number(initial) || 0));
+    const v = (initial == null) ? null : Math.max(0, Math.min(10, Math.round(Number(initial))));
+    const base = (q.baseline != null) ? Math.max(0, Math.min(10, Math.round(Number(q.baseline)))) : null;
+    let dots = '';
+    for (let n = 0; n <= 10; n++) {
+      const on  = (v != null && n <= v) ? ' on' : '';
+      const cur = (v != null && n === v) ? ' cur' : '';
+      dots += `<button type="button" class="dot${on}${cur}" data-q="${escapeHtml(q.key)}" data-n="${n}">${n}</button>`;
+    }
+    const usual = base != null ? `<span class="usual">usual ${base}</span>` : '';
+    const mark  = base != null ? `<span class="basemark" style="left:${(base/10*100).toFixed(1)}%"></span>` : '';
     return `
-      <div class="scale-row">
-        <span class="scale-num" id="val-${q.key}">${v}</span>
-        <span class="scale-word" id="word-${q.key}">${scaleWords[v]}</span>
-      </div>
-      <input type="range" class="scale-slider" data-q="${escapeHtml(q.key)}" min="0" max="10" step="1" value="${v}" />
+      <div class="scale-head"><span class="scale-num" id="val-${escapeHtml(q.key)}">${v == null ? '–' : v}</span>${usual}</div>
+      <div class="dotbar" data-q="${escapeHtml(q.key)}">${mark}${dots}</div>
       <div class="scale-ends"><span>rough</span><span>bright</span></div>`;
   }
 
@@ -611,22 +636,27 @@
 
   // ── Handlers ───────────────────────────────────────
   function attachAllHandlers(s) {
-    // Scales
-    document.querySelectorAll('input.scale-slider').forEach(el => {
-      const k = el.dataset.q;
-      el.addEventListener('input', () => {
-        const v = Number(el.value);
-        document.getElementById(`val-${k}`).textContent = v;
-        document.getElementById(`word-${k}`).textContent = scaleWords[v];
-        inflight[k] = v;
-        applyGates();
+    // Scales (tap-dot bars)
+    document.querySelectorAll('.dotbar').forEach(bar => {
+      const k = bar.dataset.q;
+      const cur = bar.querySelector('.dot.cur');
+      // capture carried/saved value so it persists even if never tapped
+      if (cur) inflight[k] = Number(cur.dataset.n);
+      bar.querySelectorAll('.dot').forEach(d => {
+        d.addEventListener('click', () => {
+          const v = Number(d.dataset.n);
+          bar.querySelectorAll('.dot').forEach(x => {
+            const n = Number(x.dataset.n);
+            x.classList.toggle('on', n <= v);
+            x.classList.toggle('cur', n === v);
+          });
+          const valEl = document.getElementById('val-' + k);
+          if (valEl) valEl.textContent = v;
+          inflight[k] = v;
+          saveAnswer(k, v);
+          applyGates();
+        });
       });
-      el.addEventListener('change', () => {
-        saveAnswer(k, Number(el.value));
-      });
-      // Capture initial value into inflight so a never-touched but
-      // visible scale (carried-forward) saves with its current value.
-      inflight[k] = Number(el.value);
     });
     // Choices
     document.querySelectorAll('.chip[data-q]').forEach(el => {

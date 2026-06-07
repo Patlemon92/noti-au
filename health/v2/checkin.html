@@ -474,7 +474,10 @@
     html += `<div class="section-accent ${s.accent}"></div>`;
 
     for (const q of s.questions) {
-      html += '<div class="q" data-q="' + escapeHtml(q.key) + '">';
+      const gAttr = q.gated_by
+        ? ` data-gated-by="${escapeHtml(q.gated_by)}" data-gate-baseline="${q.gate_baseline == null ? '' : q.gate_baseline}" data-gate-direction="${escapeHtml(q.gate_direction || 'higher_is_worse')}"`
+        : '';
+      html += '<div class="q' + (q.gated_by ? ' gated' : '') + '" data-q="' + escapeHtml(q.key) + '"' + gAttr + '>';
       html += `<p class="qtext">${escapeHtml(q.question)}</p>`;
       const saved = (q.key in answers) ? answers[q.key] : null;
       const carry = (saved == null && CARRY_FORWARD.has(q.key) && yesterdayAnswers[q.key] != null)
@@ -511,6 +514,33 @@
     html += '</div>';
     document.getElementById('main').innerHTML = html;
     attachAllHandlers(s);
+    applyGates();
+  }
+
+  // ── Baseline gating ────────────────────────────────
+  // Detail questions tagged by the server (gated_by / gate_baseline /
+  // gate_direction) show only when their headline scale comes in worse
+  // than the user's own baseline. Missing value or baseline → show.
+  // Re-evaluated live as the headline slider moves.
+  function gateCurrentVal(key) {
+    if (key in inflight && inflight[key] != null) return inflight[key];
+    if (key in answers && answers[key] != null)   return answers[key];
+    return null;
+  }
+  function gateShouldShow(gatedBy, baseStr, direction) {
+    const hv = gateCurrentVal(gatedBy);
+    if (hv == null || hv === '') return true;
+    const base = (baseStr === '' || baseStr == null) ? null : Number(baseStr);
+    if (base == null || !isFinite(base)) return true;
+    const val = Number(hv);
+    if (!isFinite(val)) return true;
+    return direction === 'higher_is_better' ? (val < base) : (val > base);
+  }
+  function applyGates() {
+    document.querySelectorAll('.q.gated').forEach(el => {
+      const show = gateShouldShow(el.dataset.gatedBy, el.dataset.gateBaseline, el.dataset.gateDirection);
+      el.style.display = show ? '' : 'none';
+    });
   }
 
   function renderProgress() {
@@ -576,6 +606,7 @@
         document.getElementById(`val-${k}`).textContent = v;
         document.getElementById(`word-${k}`).textContent = scaleWords[v];
         inflight[k] = v;
+        applyGates();
       });
       el.addEventListener('change', () => {
         saveAnswer(k, Number(el.value));

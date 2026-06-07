@@ -584,12 +584,12 @@
     return null;
   }
   function gateShouldShow(gatedBy, baseStr, direction) {
-    const hv = gateCurrentVal(gatedBy);
-    if (hv == null || hv === '') return true;
     const base = (baseStr === '' || baseStr == null) ? null : Number(baseStr);
-    if (base == null || !isFinite(base)) return true;
+    if (base === null || !isFinite(base)) return true;   // no baseline → can't gate, show
+    const hv = gateCurrentVal(gatedBy);
+    if (hv == null || hv === '') return false;           // headline not set yet → hide; reveal when set above usual
     const val = Number(hv);
-    if (!isFinite(val)) return true;
+    if (!isFinite(val)) return false;
     return direction === 'higher_is_better' ? (val < base) : (val > base);
   }
   function applyGates() {

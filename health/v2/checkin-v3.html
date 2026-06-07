@@ -369,6 +369,12 @@
   .actions { margin-top:24px; }
   .actions .next.submit { border-radius:99px; padding:16px; font-size:15px; }
 
+
+  /* short label + sublabel (mock) */
+  .qtext .qsub { display:block; font-family:'Hanken Grotesk',sans-serif; font-weight:600;
+    font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--taupe-2,#9a8369); margin-top:4px; }
+
 </style>
 </head>
 <body>
@@ -555,7 +561,8 @@
           ? ` data-gated-by="${escapeHtml(q.gated_by)}" data-gate-baseline="${q.gate_baseline == null ? '' : q.gate_baseline}" data-gate-direction="${escapeHtml(q.gate_direction || 'higher_is_worse')}"`
           : '';
         html += '<div class="q' + (q.gated_by ? ' gated' : '') + '" data-q="' + escapeHtml(q.key) + '"' + gAttr + '>';
-        html += `<p class="qtext">${escapeHtml(q.question)}</p>`;
+        const lbl = LABELS[q.key];
+        html += `<p class="qtext">${lbl ? escapeHtml(lbl[0]) + '<small class="qsub">' + escapeHtml(lbl[1]) + '</small>' : escapeHtml(q.question)}</p>`;
         const initial = (saved != null) ? saved
                       : (carry != null) ? carry
                       : (ring  != null) ? ring : null;
@@ -630,6 +637,28 @@
   // ── Question renderers ─────────────────────────────
   const scaleWords = ['rough','rough','tough','tough','okay','okay','pretty good','pretty good','bright','bright','bright'];
 
+  // Short labels + sublabels (mock look). Maps the DB question to a clean
+  // headline + small context line. Keys not listed keep their full question.
+  const LABELS = {
+    sleep:                 ['Sleep', 'last night'],
+    morning_energy:        ['Energy', 'this morning'],
+    morning_mood:          ['Mood', 'this morning'],
+    morning_clarity:       ['Head', 'how clear, right now'],
+    morning_anxiety_level: ['Anxiety', 'right now'],
+    morning_fatigue_level: ['Fatigue', 'this morning'],
+    pem:                   ['Yesterday', 'did it catch up with you?'],
+    fatigue_level:         ['Fatigue', 'today overall'],
+    pain_level:            ['Pain', 'today, at its worst'],
+    fog_level:             ['Brain fog', 'right now'],
+    mood:                  ['Mood', 'right now'],
+    anxiety_level:         ['Anxiety', 'right now'],
+    overall:               ['Overall', 'how your body felt today'],
+    gut_discomfort:        ['Gut', 'today'],
+    energy:                ['Energy', 'today'],
+    stress:                ['Stress', 'today'],
+    heart_rate:            ['Heart', 'racing or pounding, today'],
+    period_pain:           ['Period pain', 'today'],
+  };
   function scaleColour(key) {
     const k = String(key || '');
     if (k.includes('sleep')) return '#9bb088';                                                  // sage

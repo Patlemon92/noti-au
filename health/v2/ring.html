@@ -197,7 +197,6 @@
 
   <!-- HERO: the pacing read in plain language -->
   <div class="hero fade" id="hero">
-    <div class="date" id="hero-date">—</div>
     <h2 id="hero-headline">Reading your day…</h2>
     <p id="hero-body">Pulling your overnight numbers together.</p>
     <div class="states" id="hero-states">
@@ -536,9 +535,6 @@ function readLine(kind, value, b) {
 // ── pacing hero ─────────────────────────────────────────────
 function renderHero() {
   const now = new Date();
-  document.getElementById('hero-date').textContent =
-    now.toLocaleDateString('en-AU', { weekday: 'long' }) + ' · ' +
-    now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long' });
 
   const sleep = latestSleepSession();
   const sleepHrs = sleep ? Number(sleep.value) / 3600 : null;

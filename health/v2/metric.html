@@ -481,6 +481,11 @@
     btn.disabled=false;
   }
 
+  // The page script is an IIFE, so inline onclick="" can't see these —
+  // expose the cuff handlers on window for the buttons.
+  window.toggleBpForm = toggleBpForm;
+  window.saveBpReading = saveBpReading;
+
   async function loadAlys(){
     try{
       const r=await api(`/me/metric-analysis?metric=${encodeURIComponent(bmetric)}&days=${Math.max(7,days)}`);

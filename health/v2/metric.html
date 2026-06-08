@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Neeve · Heart rate</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,7 +51,7 @@
   /* HERO ------------------------------------------------ */
   .hero{
     position:relative;
-    padding:18px 26px 30px;
+    padding:calc(env(safe-area-inset-top, 0px) + 16px) 26px 30px;
     background:
       radial-gradient(120% 80% at 50% 18%, rgba(233,205,162,.0) 0%, rgba(233,205,162,.0) 40%, transparent 70%),
       linear-gradient(180deg,#f0d3ac 0%, #e3a982 34%, #c5826f 60%, #8d6675 82%, #6b4f63 100%);

@@ -129,11 +129,6 @@
     <a class="more" href="/health/v2/more.html" aria-label="More">⋯</a>
   </div>
 
-  <!-- Alys's quiet observation, in the header -->
-  <div class="hdr-alys" id="hdr-alys" style="display:none">
-    <span class="ic">✦</span><span id="alys-text"></span>
-  </div>
-
   <div class="hero" id="hero" data-mood="steady">
     <div class="sky s-tender"></div><div class="sky s-quiet"></div><div class="sky s-steady"></div>
     <div class="sky s-open"></div><div class="sky s-strong"></div>
@@ -302,7 +297,10 @@ async function load(){
     const state=t.state||'steady';
     document.getElementById('hero').dataset.mood=state;
     document.getElementById('day').textContent=t.day_word||DAY_FALLBACK[state]||'Today.';
-    document.getElementById('why').textContent=t.why||'';
+    // The box's body is Alys's personal read of today (her observation),
+    // falling back to the deterministic readiness "why" if she has none.
+    const obsLine = obs && (obs.text||obs.summary||obs.observation);
+    document.getElementById('why').textContent = obsLine || t.why || '';
     if(t.weather){ document.getElementById('wx-temp').textContent=t.weather.temperature!=null?Math.round(t.weather.temperature)+'°':'—'; document.getElementById('wx-cond').textContent=wmo(t.weather.weather_code); }
     let next='';
     if(t.checkin&&t.checkin.due){ const slot=t.checkin.slot==='evening'?'Evening':'Morning';
@@ -311,8 +309,6 @@ async function load(){
     if(ev.length){ next+=`<a class="ncard noticed" href="/health/v2/today.html"><span class="ic">◔</span><div><div class="t">Noticed</div><div class="s">${ev.length} thing${ev.length>1?'s':''} worth a look</div></div><span class="go">›</span></a>`; }
     document.getElementById('next').innerHTML=next;
   }
-  const line=obs&&(obs.text||obs.summary||obs.observation);
-  if(line){ document.getElementById('alys-text').textContent=line; document.getElementById('hdr-alys').style.display='flex'; }
 }
 
 // ── quick-log ──

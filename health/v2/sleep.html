@@ -253,9 +253,13 @@ function renderHistory(sessions) {
     const dPct = (deep  / sum) * 100;
     const lPct = (light / sum) * 100;
     const rPct = (rem   / sum) * 100;
-    const start = new Date(s.ts);
-    const d = start.getDate();
-    const dow = start.toLocaleDateString('en-AU', { weekday: 'short' });
+    // Label a night by the day you WOKE (end_ts), not bedtime — the "night of"
+    // convention every sleep tracker uses. Labelling by bedtime put two nights
+    // on the same day when one had a past-midnight bedtime (e.g. bed 00:46 Mon
+    // and bed 23:58 Mon both read "8 Mon").
+    const night = new Date(s.meta?.end_ts || s.ts);
+    const d = night.getDate();
+    const dow = night.toLocaleDateString('en-AU', { weekday: 'short' });
     const h = Math.floor(total / 3600);
     const m = Math.round((total % 3600) / 60);
     return `

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f1e4d2" />
+<title>Today · preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+<style>
+  :root{
+    --paper:#f1e4d2; --card:#fcf8f1; --ink:#3f3128; --ink-soft:#7c6759;
+    --muted:#a08a78; --clay:#bb6147; --clay-deep:#a3472f; --sage:#8d8a6a; --hair:#eaddc9;
+  }
+  body{font-family:"Hanken Grotesk",system-ui,sans-serif;background:var(--paper);background-attachment:fixed;color:var(--ink);}
+  .page{max-width:412px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 14px) 20px calc(120px + env(safe-area-inset-bottom));}
+
+  /* ── colour read hero — calm, content-sized, lots of breathing room ── */
+  .hero{position:relative;border-radius:30px;overflow:hidden;isolation:isolate;
+    box-shadow:0 18px 44px rgba(150,100,70,.22);}
+  .sky{position:absolute;inset:0;z-index:-2;opacity:0;transition:opacity 1s ease;}
+  .s-tender{background:linear-gradient(165deg,#e6d3d4 0%,#d2b6bc 42%,#b89aa6 100%);}
+  .s-quiet {background:linear-gradient(165deg,#efdcc6 0%,#ddc4ab 44%,#c6a996 100%);}
+  .s-steady{background:linear-gradient(160deg,#f7dfbd 0%,#eec19b 42%,#d59f82 100%);}
+  .s-open  {background:linear-gradient(155deg,#fce9c8 0%,#f4cd9a 40%,#e6a87c 100%);}
+  .s-strong{background:linear-gradient(150deg,#ffefca 0%,#f8d090 38%,#eeaa66 100%);}
+  .hero[data-mood=tender] .s-tender,.hero[data-mood=quiet] .s-quiet,.hero[data-mood=steady] .s-steady,
+  .hero[data-mood=open] .s-open,.hero[data-mood=strong] .s-strong{opacity:1;}
+  .orbs{position:absolute;inset:0;z-index:-1;}
+  .orb{position:absolute;border-radius:50%;filter:blur(7px);
+    background:radial-gradient(circle,rgba(255,248,235,.8),rgba(255,240,220,.2) 46%,transparent 70%);}
+  .orb.a{width:230px;height:230px;left:74%;top:8%;animation:drift 15s ease-in-out infinite;}
+  .orb.b{width:160px;height:160px;left:6%;top:74%;animation:drift 19s ease-in-out infinite reverse;}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-14px,12px) scale(1.08)}}
+
+  .fg{position:relative;padding:22px 24px 26px;color:#41271d;}
+  .wpill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,250,243,.5);backdrop-filter:blur(4px);
+    border:1px solid rgba(255,255,255,.4);padding:9px 15px;border-radius:30px;font-size:13.5px;font-weight:500;color:#5c3a2b;}
+  .wpill b{color:#41271d;font-weight:600;}
+  .kicker{font-size:16px;font-weight:500;margin-top:26px;color:#5c3a2b;}
+  .kicker em{font-style:italic;}
+  .day{font-family:"Fraunces",serif;font-weight:500;font-size:46px;line-height:1.04;letter-spacing:-.015em;color:#41271d;margin-top:8px;transition:opacity .4s;}
+  .why{font-size:17px;line-height:1.55;margin-top:14px;max-width:32ch;color:#56372a;transition:opacity .4s;}
+  .seedata{margin-top:22px;font-size:14px;font-weight:600;color:#7a4a35;text-decoration:none;display:inline-flex;gap:6px;align-items:center;}
+
+  /* ── light vitals glance — one row, tappable, no grid/sparklines ── */
+  .glance{display:grid;grid-template-columns:repeat(4,1fr);margin-top:20px;background:var(--card);
+    border-radius:22px;padding:16px 6px;box-shadow:0 8px 24px rgba(120,90,60,.06);}
+  .gstat{text-align:center;text-decoration:none;color:inherit;padding:2px 4px;}
+  .gstat + .gstat{border-left:1px solid var(--hair);}
+  .gstat .l{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .gstat .v{font-family:"Fraunces",serif;font-weight:500;font-size:23px;margin-top:7px;color:var(--ink);line-height:1;}
+  .gstat .v small{font-size:11px;color:var(--muted);font-weight:400;}
+
+  /* ── what's next — only rendered when there's something ── */
+  .next{margin-top:14px;}
+  .ncard{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:20px;padding:15px 18px;
+    box-shadow:0 8px 24px rgba(120,90,60,.06);text-decoration:none;color:inherit;margin-bottom:10px;}
+  .ncard .ic{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;}
+  .ncard.checkin .ic{background:var(--clay);}
+  .ncard.noticed .ic{background:var(--sage);}
+  .ncard .t{font-family:"Fraunces",serif;font-weight:500;font-size:16.5px;color:var(--ink);}
+  .ncard .s{font-size:13px;color:var(--muted);margin-top:2px;}
+  .ncard .go{margin-left:auto;color:var(--muted);font-size:20px;}
+
+  /* ── way in ── */
+  .note{margin-top:14px;border:1.5px dashed #d8c6ad;border-radius:22px;padding:17px 20px;width:100%;text-align:left;
+    display:flex;align-items:flex-start;gap:13px;cursor:pointer;background:rgba(252,248,241,.4);}
+  .note .plus{width:25px;height:25px;border-radius:50%;background:var(--clay);color:#fff;flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:17px;margin-top:1px;}
+  .note p{font-family:"Fraunces",serif;font-style:italic;font-weight:500;font-size:17px;line-height:1.35;color:var(--ink-soft);}
+
+  .pvtag{position:fixed;top:8px;left:50%;transform:translateX(-50%);background:var(--ink);color:#f6ecdd;
+    font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:99px;z-index:50;opacity:.85;}
+</style>
+</head>
+<body>
+<div class="pvtag">preview</div>
+<main class="page">
+  <div class="hero" id="hero" data-mood="steady">
+    <div class="sky s-tender"></div><div class="sky s-quiet"></div><div class="sky s-steady"></div>
+    <div class="sky s-open"></div><div class="sky s-strong"></div>
+    <div class="orbs"><div class="orb a"></div><div class="orb b"></div></div>
+    <div class="fg">
+      <div class="wpill"><span id="wx-clock">—</span>&nbsp;·&nbsp;<b id="wx-temp">—</b>&nbsp;<span id="wx-cond"></span></div>
+      <div class="kicker" id="kicker">Good day</div>
+      <div class="day" id="day">Reading your day…</div>
+      <div class="why" id="why"></div>
+      <a class="seedata" href="/health/v2/ring.html">see your data →</a>
+    </div>
+  </div>
+
+  <!-- light glance -->
+  <div class="glance" id="glance">
+    <a class="gstat" href="/health/v2/metric.html?metric=hr&days=1"><div class="l">HR</div><div class="v" id="g-hr">—</div></a>
+    <a class="gstat" href="/health/v2/metric.html?metric=hrv_rmssd&days=1"><div class="l">HRV</div><div class="v" id="g-hrv">—</div></a>
+    <a class="gstat" href="/health/v2/metric.html?metric=spo2&days=1"><div class="l">O₂</div><div class="v" id="g-o2">—</div></a>
+    <a class="gstat" href="/health/v2/sleep.html"><div class="l">Sleep</div><div class="v" id="g-sleep">—</div></a>
+  </div>
+
+  <!-- what's next (only when there's something) -->
+  <div class="next" id="next"></div>
+
+  <!-- way in -->
+  <button class="note" type="button" onclick="alert('In the real app this opens the quick-log.')">
+    <span class="plus">+</span>
+    <p>Note something — a thought, a symptom, a moment.</p>
+  </button>
+</main>
+
+<div id="nav-mount"></div>
+<script src="/health/v2/lib.js"></script>
+<script>
+document.getElementById('nav-mount').innerHTML = renderNav('today');
+const DAY_FALLBACK = {tender:'A tender day.',quiet:'A quiet day.',steady:'A steady day.',open:'An open day.',strong:'A strong day.'};
+function greet(h){ return h<12?'Good morning':h<17?'Good afternoon':'Good evening'; }
+function wmo(c){ if(c==null)return''; if(c===0)return'clear'; if(c<=2)return'mostly clear'; if(c===3)return'cloudy'; if(c<=48)return'fog'; if(c<=67)return'rain'; if(c<=77)return'snow'; if(c<=82)return'showers'; if(c<=99)return'storms'; return''; }
+function fmtSleep(s){ if(!s||s<=0)return'—'; const h=Math.floor(s/3600),m=Math.round((s%3600)/60); return `${h}<small>h</small>${m}<small>m</small>`; }
+
+async function load(){
+  document.getElementById('wx-clock').textContent = new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}).toLowerCase();
+  const [me, t, flags] = await Promise.all([
+    api('/me').catch(()=>null),
+    api('/me/today').catch(()=>null),
+    api('/me/flagged-events?only_open=1&days=7').catch(()=>({events:[]})),
+  ]);
+  const name = me?.name ? me.name.split(' ')[0] : 'there';
+  document.getElementById('kicker').innerHTML = `${greet(new Date().getHours())}, <em>${name}</em>`;
+  if(!t) return;
+
+  const state = t.state || 'steady';
+  document.getElementById('hero').dataset.mood = state;
+  document.getElementById('day').textContent = t.day_word || DAY_FALLBACK[state] || 'Today.';
+  document.getElementById('why').textContent = t.why || '';
+  if(t.weather){
+    document.getElementById('wx-temp').textContent = t.weather.temperature!=null ? Math.round(t.weather.temperature)+'°' : '—';
+    document.getElementById('wx-cond').textContent = wmo(t.weather.weather_code);
+  }
+  const i = t.inputs||{};
+  document.getElementById('g-hr').innerHTML = (i.hr??'—')+'<small> bpm</small>';
+  document.getElementById('g-hrv').innerHTML = (i.hrv??'—')+'<small> ms</small>';
+  document.getElementById('g-o2').innerHTML = (i.spo2??'—')+'<small> %</small>';
+  document.getElementById('g-sleep').innerHTML = fmtSleep(i.sleep_s);
+
+  // what's next — check-in due + any open flags. Empty otherwise (calm).
+  let next = '';
+  if(t.checkin && t.checkin.due){
+    const slot = t.checkin.slot==='evening'?'Evening':'Morning';
+    next += `<a class="ncard checkin" href="/health/v2/checkin.html?slot=${t.checkin.slot}">
+      <span class="ic">✎</span><div><div class="t">${slot} check-in</div><div class="s">a couple of minutes, when you're ready</div></div><span class="go">›</span></a>`;
+  }
+  const ev = (flags && flags.events) || [];
+  if(ev.length){
+    next += `<a class="ncard noticed" href="/health/v2/today.html">
+      <span class="ic">◔</span><div><div class="t">Noticed</div><div class="s">${ev.length} thing${ev.length>1?'s':''} worth a look</div></div><span class="go">›</span></a>`;
+  }
+  document.getElementById('next').innerHTML = next;
+}
+load();
+onResume(load);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) load(); });
+</script>
+</body>
+</html>

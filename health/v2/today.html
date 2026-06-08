@@ -199,13 +199,17 @@ function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===
 function renderWeek(samples){
   const byDay={};
   for(const s of (samples||[])){ const d=new Date(s.ts); byDay[dayKey(d)]=Math.round(Number(s.value)); }
+  // Always recompute "today" from the phone's clock each render. selectedKey
+  // stays null while the user is on live-today, so the highlight follows the
+  // real day (it used to be pinned to whatever day the strip first built on,
+  // so a WebView left open overnight stayed stuck on yesterday).
   const cells=[]; const now=new Date(); const todayKey=dayKey(now);
-  if(selectedKey==null) selectedKey=todayKey;
+  const selKey = selectedKey || todayKey;
   for(let i=6;i>=0;i--){
     const d=new Date(now); d.setDate(now.getDate()-i);
     const k=dayKey(d);
     const ord=byDay[k]; const state=ord?STATE_BY_ORD[ord]:null;
-    cells.push(`<button class="wd ${state?('m-'+state):''} ${k===todayKey?'today':''} ${k===selectedKey?'sel':''}" data-date="${k}">
+    cells.push(`<button class="wd ${state?('m-'+state):''} ${k===todayKey?'today':''} ${k===selKey?'sel':''}" data-date="${k}">
       <div class="wlab">${d.toLocaleDateString('en-AU',{weekday:'short'})}</div><div class="wnum">${d.getDate()}</div></button>`);
   }
   document.getElementById('week').innerHTML=cells.join('');

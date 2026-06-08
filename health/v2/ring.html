@@ -115,12 +115,14 @@
   .spark{min-width:78px;}
   .spark svg{display:block;}
 
-  /* self-report "how you're feeling" table */
-  .frow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:14px;padding:15px 2px;}
-  .frow + .frow{border-top:1px solid var(--hair);}
-  .frow .fname{font-family:"Fraunces",serif;font-weight:500;font-size:18px;color:var(--ink);}
-  .frow .fval{font-family:"Fraunces",serif;font-weight:500;font-size:23px;color:var(--ink);text-align:right;}
-  .frow .fusual{font-size:11.5px;color:var(--muted);text-align:right;min-width:118px;white-space:nowrap;}
+  /* self-report "how you're feeling" — 2-up grid of tappable tiles */
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .ftile{background:var(--card);border-radius:18px;padding:15px 16px;box-shadow:0 8px 24px rgba(120,90,60,.06);
+    text-decoration:none;color:inherit;display:block;}
+  .ftile:active{opacity:.7;}
+  .ftname{font-family:"Fraunces",serif;font-weight:500;font-size:16.5px;color:var(--ink);}
+  .ftval{font-family:"Fraunces",serif;font-weight:500;font-size:30px;color:var(--ink);line-height:1;margin-top:8px;}
+  .ftmeta{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.3;}
 
   .empty{background:var(--card);border-radius:24px;padding:28px 22px;text-align:center;
     color:var(--muted);font-size:14.5px;line-height:1.5;box-shadow:0 8px 24px rgba(120,90,60,.06);}
@@ -777,7 +779,7 @@ function feltSitting(cur, base) {
   return d > 0 ? 'higher than usual' : 'lower than usual';
 }
 function renderFelt() {
-  const rowsHtml = FELT_ROWS.map(r => {
+  const tiles = FELT_ROWS.map(r => {
     let cur = latestAnswer(r.key);
     if (cur == null) cur = latestAnswer(r.alt);
     if (cur == null) return '';
@@ -785,10 +787,13 @@ function renderFelt() {
     const base = b ? (b.healthy ?? b.p30 ?? b.lifetime ?? null) : null;
     const meta = [base != null ? `usual ${Math.round(base)}` : '', feltSitting(cur, base)]
       .filter(Boolean).join(' · ');
-    return `<div class="frow"><span class="fname">${r.name}</span><span class="fval">${Math.round(cur)}</span><span class="fusual">${meta}</span></div>`;
+    return `<a class="ftile" href="/health/v2/metric.html?metric=${r.key}&days=30">
+      <div class="ftname">${r.name}</div>
+      <div class="ftval">${Math.round(cur)}</div>
+      <div class="ftmeta">${meta}</div></a>`;
   }).join('');
-  const wrapped = rowsHtml.trim()
-    ? `<div class="group"><div class="glabel">How you're feeling</div><div class="gcard">${rowsHtml}</div></div>`
+  const wrapped = tiles.trim()
+    ? `<div class="group"><div class="glabel">How you're feeling</div><div class="fgrid">${tiles}</div></div>`
     : '';
   if (wrapped !== _lastFeltHtml) {
     _lastFeltHtml = wrapped;

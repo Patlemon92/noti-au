@@ -280,11 +280,21 @@
     steps:            {title:'Steps', unit:'', icon:'◇', archetype:'deviation'},
     bp_sys:           {title:'Blood pressure', unit:'mmHg', icon:'▴', archetype:'deviation', bp:true},
     bp:               {title:'Blood pressure', unit:'mmHg', icon:'▴', archetype:'deviation', bp:true, fetchAs:'bp_sys'},
+    // Self-reported (from check-ins, not the ring) — see the felt branch in load().
+    anxiety_level:    {title:'Anxiety',   unit:'', icon:'~', archetype:'deviation', felt:true},
+    mood:             {title:'Mood',      unit:'', icon:'~', archetype:'deviation', felt:true},
+    energy:           {title:'Energy',    unit:'', icon:'~', archetype:'deviation', felt:true},
+    fatigue_level:    {title:'Fatigue',   unit:'', icon:'~', archetype:'deviation', felt:true},
+    fog_level:        {title:'Brain fog', unit:'', icon:'~', archetype:'deviation', felt:true},
+    pain_level:       {title:'Pain',      unit:'', icon:'~', archetype:'deviation', felt:true},
+    stress:           {title:'Stress',    unit:'', icon:'~', archetype:'deviation', felt:true},
   };
   const m = META[metric] || {title:metric, unit:'', archetype:'deviation'};
   const bmetric = m.fetchAs || metric;
   // The combined BP page shows BOTH numbers (systolic + diastolic).
   const isBP = !!m.bp && metric === 'bp';
+  // Self-reported metrics come from check-in answers, not ring samples.
+  const isFelt = !!m.felt;
   document.title = 'Neeve · ' + m.title;
   $('m-label').textContent = m.title;
 
@@ -302,6 +312,27 @@
     const since = new Date(Date.now() - days*86400*1000).toISOString();
     const bucketSecs = days<=1 ? 3600 : days<=7 ? 21600 : 86400;
     try{
+      // Self-reported metric: build the series from check-in answers and
+      // reuse the same render/chart by shaping each point as a bucket.
+      if (isFelt){
+        const winDays = Math.max(days, 14);
+        const [ci, baseRes] = await Promise.all([
+          api(`/me/checkins?days=${winDays}`).catch(()=>({checkins:[]})),
+          baseline ? Promise.resolve(null) : api('/me/baselines').catch(()=>null),
+        ]);
+        if (!baseline && baseRes) baseline = (baseRes.baselines||{})[metric] || null;
+        const pts = [];
+        for (const c of (ci.checkins||[])){
+          const v = Number((c.answers||{})[metric]);
+          if (isFinite(v) && c.completed_at) pts.push({ t:new Date(c.completed_at).getTime(), value:v });
+        }
+        pts.sort((a,b)=>a.t-b.t);
+        const fb = pts.map(p=>({ t:p.t, lo:p.value, hi:p.value, mean:p.value, n:1 }));
+        const fLatest = pts.length ? pts[pts.length-1].value : undefined;
+        const fLatestTs = pts.length ? pts[pts.length-1].t : null;
+        render(fb, fLatest, fLatestTs);
+        return;
+      }
       const [bk, baseRes, latestRes, bkD, latestResD] = await Promise.all([
         api(`/ring/samples-bucketed?metric=${encodeURIComponent(bmetric)}&since=${encodeURIComponent(since)}&bucket_secs=${bucketSecs}`).catch(()=>({buckets:[]})),
         baseline ? Promise.resolve(null) : api('/me/baselines').catch(()=>null),
@@ -487,11 +518,13 @@
   window.saveBpReading = saveBpReading;
 
   async function loadAlys(){
+    const card = $('m-alys').closest('.card');
     try{
       const r=await api(`/me/metric-analysis?metric=${encodeURIComponent(bmetric)}&days=${Math.max(7,days)}`);
       if(r && r.summary){ $('m-alys').textContent=r.summary; $('m-when').textContent=r.cached?'updated recently':'just now'; }
       else $('m-alys').textContent='Not enough to read into yet — a few more days and the pattern will speak.';
-    }catch(e){ $('m-alys').textContent=''; }
+      if(card) card.style.display='';
+    }catch(e){ if(card) card.style.display='none'; }  // hide rather than show an empty card
   }
   load();
 })();

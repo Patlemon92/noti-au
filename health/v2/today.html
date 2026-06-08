@@ -219,6 +219,22 @@ async function load(){
   const name=me?.name?me.name.split(' ')[0]:'there';
   document.getElementById('av').textContent=(name[0]||'•').toUpperCase();
   document.getElementById('hello').textContent='Hello, '+name;
+
+  // Notifications: the local check-in reminders only get scheduled when
+  // the app is told to — and permission is only requested then. Trigger
+  // it here so iOS actually asks + schedules at the user's real times
+  // (no paid Apple account / app rebuild needed — local notifications).
+  try{
+    if(window.neeve?.postMessage && me){
+      const mt=(me.morning_time||'07:30').slice(0,5), et=(me.evening_time||'20:00').slice(0,5);
+      if(!localStorage.getItem('neeve_notif_setup')){
+        window.neeve.postMessage(JSON.stringify({method:'enableNotifications', morningTime:mt, eveningTime:et}));
+        localStorage.setItem('neeve_notif_setup','1');
+      } else {
+        window.neeve.postMessage(JSON.stringify({method:'updateReminderTimes', morningTime:mt, eveningTime:et}));
+      }
+    }
+  }catch(_){}
   renderWeek(week.samples||[]);
 
   if(t){

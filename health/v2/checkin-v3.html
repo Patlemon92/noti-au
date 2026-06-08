@@ -375,6 +375,19 @@
     font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
     color:var(--taupe-2,#9a8369); margin-top:4px; }
 
+
+  /* per-item "+ note" + global note (v3) */
+  .addnote { display:inline-block; font-size:12px; color:var(--clay-2,#bf5a3c); font-weight:600; cursor:pointer; margin-top:10px; -webkit-tap-highlight-color:transparent; }
+  .inlinenote { margin-top:8px; }
+  .inlinenote[hidden] { display:none; }
+  .notefield { width:100%; box-sizing:border-box; background:var(--warm-card,#fffdf9);
+    border:1px solid rgba(43,32,24,.12); border-radius:12px; padding:12px 14px;
+    font-family:'Fraunces',serif; font-style:italic; font-size:15px; line-height:1.5;
+    color:var(--ink); resize:vertical; min-height:54px; outline:none; }
+  .notefield::placeholder { color:var(--taupe-2,#9a8369); font-style:italic; }
+  .notegroup .cigroup-head { color:var(--ink); font-family:'Apricosa','Fraunces',serif;
+    font-size:16px; font-weight:500; text-transform:none; letter-spacing:0; padding:18px 0 10px; }
+
 </style>
 </head>
 <body>
@@ -572,6 +585,13 @@
         else if (q.type === 'numeric') html += renderNumeric(q, initial);
         else                           html += renderText(q, initial);
 
+        // per-item "+ note" (scales) — optional, attaches to this item
+        if (q.type === 'scale') {
+          const nk = q.key + '__note';
+          const nv = answers[nk] != null ? String(answers[nk]) : '';
+          html += `<a class="addnote">＋ note</a><div class="inlinenote"${nv ? '' : ' hidden'}><textarea class="notefield" data-notekey="${escapeHtml(nk)}" rows="2" placeholder="anything to add about this…">${escapeHtml(nv)}</textarea></div>`;
+        }
+
         if (saved == null && carry != null) {
           html += `<div class="hint">Carried forward from yesterday — <a onclick="clearCarry('${escapeHtml(q.key)}')">change ↺</a></div>`;
         }
@@ -580,6 +600,9 @@
       html += '</div>';
     }
 
+    // Global "anything you want to add?" note
+    html += `<div class="cigroup notegroup"><div class="cigroup-head">Anything you want to add?</div>
+      <textarea class="notefield notefield-big" data-notekey="anything_new" rows="3" placeholder="Skip if nothing — that's fine.">${escapeHtml(answers['anything_new'] != null ? String(answers['anything_new']) : '')}</textarea></div>`;
     html += '<div class="actions"><button class="next submit" type="button" onclick="submitAll()">Save check-in</button></div>';
     html += '</div>';
     document.getElementById('main').innerHTML = html;
@@ -767,6 +790,22 @@
       el.addEventListener('input',  () => { inflight[k] = el.value || null; });
       el.addEventListener('blur',   () => { saveAnswer(k, el.value || null); });
       if (el.value) inflight[k] = el.value;
+    });
+    // "+ note" toggles + note fields (per-item and the global note)
+    document.querySelectorAll('.addnote').forEach(a => {
+      a.addEventListener('click', () => {
+        const n = a.nextElementSibling;
+        if (n && n.classList.contains('inlinenote')) {
+          n.hidden = !n.hidden;
+          if (!n.hidden) { const t = n.querySelector('textarea'); if (t) t.focus(); }
+        }
+      });
+    });
+    document.querySelectorAll('textarea.notefield').forEach(el => {
+      const k = el.dataset.notekey;
+      if (el.value) inflight[k] = el.value;
+      el.addEventListener('input', () => { inflight[k] = el.value || null; });
+      el.addEventListener('blur',  () => { saveAnswer(k, el.value || null); });
     });
   }
 

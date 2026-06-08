@@ -105,7 +105,7 @@
   .seebtn button:hover{background:rgba(255,255,255,.26);}
 
   /* CARDS ----------------------------------------------- */
-  .body{padding:22px 18px 30px;}
+  .body{padding:22px 18px calc(112px + env(safe-area-inset-bottom));}
   .card{
     background:var(--card);border-radius:26px;padding:22px 20px;
     margin-bottom:16px;box-shadow:0 1px 0 rgba(0,0,0,.02), 0 10px 30px rgba(120,90,60,.06);
@@ -140,6 +140,20 @@
   .fade{opacity:0;transform:translateY(14px);animation:up .8s cubic-bezier(.2,.7,.2,1) forwards;}
   .d1{animation-delay:.05s;} .d2{animation-delay:.18s;} .d3{animation-delay:.32s;} .d4{animation-delay:.46s;}
   @keyframes up{to{opacity:1;transform:translateY(0);}}
+
+  /* bottom nav (inlined from styles.css, adapted) */
+  .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom));
+    background:rgba(251,246,238,.94);-webkit-backdrop-filter:blur(18px) saturate(1.05);backdrop-filter:blur(18px) saturate(1.05);
+    border:1px solid rgba(44,32,23,.07);border-radius:999px;padding:8px 14px;display:flex;align-items:center;gap:4px;z-index:20;
+    box-shadow:0 18px 38px -22px rgba(70,45,25,.35),0 4px 14px -8px rgba(70,45,25,.18);max-width:calc(100% - 32px);}
+  .nav-item{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:56px;padding:8px 6px 6px;
+    font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:10.5px;letter-spacing:.04em;color:var(--muted);text-decoration:none;
+    font-weight:500;border-radius:999px;position:relative;transition:color .18s ease;}
+  .nav-item svg{width:20px;height:20px;stroke-width:1.5;transition:transform .18s ease;}
+  .nav-item.active{color:var(--ink);}
+  .nav-item.active svg{transform:translateY(-1px);}
+  .nav-item.active::after{content:"";position:absolute;bottom:2px;width:4px;height:4px;border-radius:50%;background:#7E927A;}
+
 </style>
 </head>
 <body>
@@ -194,6 +208,7 @@
   </div>
 </div>
 
+<div id="nav-mount"></div>
 <script src="/health/v2/lib.js"></script>
 <script>
 (async function(){
@@ -201,6 +216,7 @@
   const metric = (params.get('metric') || 'hr').toLowerCase();
   let days = Number(params.get('days') || 1);
   const $ = id => document.getElementById(id);
+  try{ const nm=$('nav-mount'); if(nm && window.renderNav) nm.innerHTML=renderNav('ring'); }catch(e){}
 
   // archetype: 'resting' | 'deviation'  (signal/shape pages handled separately)
   const META = {

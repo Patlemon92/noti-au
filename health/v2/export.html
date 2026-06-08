@@ -102,8 +102,9 @@ document.getElementById('nav-mount').innerHTML = renderNav('more');
 // worker /me/export expects in body.sections (array form).
 const SECTIONS = [
   { key: 'cover_findings', title: 'Cover & key findings',        sub: 'Always included · 2 pages',                                pages: 2, locked: true, on: true },
-  { key: 'vitals',         title: 'Vitals (ring)',                sub: 'HR, HRV, SpO₂, BP, respiration vs your healthy · 1 page',  pages: 1, on: true },
-  { key: 'sleep',          title: 'Sleep (ring)',                 sub: 'Duration, wake events, naps, stages · 1 page',             pages: 1, on: true },
+  { key: 'vitals',         title: 'Vitals (ring)',                sub: 'HR, HRV, SpO₂, respiration vs your healthy · 1 page',      pages: 1, on: true },
+  { key: 'bp',             title: 'Blood pressure (cuff)',        sub: 'Your logged cuff readings · 1 page',                       pages: 1, on: true },
+  { key: 'sleep',          title: 'Sleep (ring)',                 sub: 'Duration (HR-corrected), wake events, naps, stages · 1 page', pages: 1, on: true },
   { key: 'activity',       title: 'Activity & pacing',            sub: 'Bursts, PEM candidates, strain, recovery · 1 page',        pages: 1, on: true },
   { key: 'mood',           title: 'Mood',                         sub: 'Daily averages, weekly trend · 1 page',                    pages: 1, on: true },
   { key: 'anxiety',        title: 'Anxiety',                      sub: 'Daily averages, patterns · 1 page',                        pages: 1, on: true },
@@ -118,6 +119,7 @@ const SECTIONS = [
   { key: 'weight',         title: 'Weight',                       sub: 'Trend over period · 1 page',                               pages: 1, on: true },
   { key: 'medications',    title: 'Medications',                  sub: 'Log of medications taken · 1 page',                        pages: 1, on: true },
   { key: 'lifestyle',      title: 'Sleep, hydration & lifestyle', sub: 'Averages, distribution · 1 page',                          pages: 1, on: true },
+  { key: 'environment',    title: 'Environmental context',        sub: 'Weather/air/pollen ↔ symptom associations · 1 page',       pages: 1, on: true },
   { key: 'daily_log',      title: 'Daily log',                    sub: 'Scannable table, one row per day · 1 page',                pages: 1, on: true },
   { key: 'own_words',      title: 'Notes & reflections',          sub: 'Free-text entries, grouped by theme · 1 page',             pages: 1, on: true },
   { key: 'methodology',    title: 'Methodology',                  sub: 'How baselines + the day classifier work · 1 page',         pages: 1, on: true },

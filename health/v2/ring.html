@@ -103,8 +103,10 @@
   .row .read i{width:7px;height:7px;border-radius:50%;flex:none;}
   .row .read i.ok{background:var(--sage);}
   .row .read i.soft{background:var(--clay);}
+  .valwrap{display:flex;flex-direction:column;align-items:flex-end;}
   .row .val{font-family:"Fraunces",serif;font-weight:500;font-size:25px;color:var(--ink);white-space:nowrap;text-align:right;}
   .row .val small{font-size:13px;color:var(--muted);font-weight:400;margin-left:2px;}
+  .row .usual{font-size:10.5px;color:var(--muted);margin-top:3px;white-space:nowrap;letter-spacing:.02em;}
   .row .chev{color:var(--muted);font-size:20px;text-align:center;}
   .row.exp{opacity:.82;}
   .spark{min-width:78px;}
@@ -260,15 +262,13 @@ const TREND_METRICS = [
 // Row config → real metric keys. Each row: which series + baseline to
 // read, where the chevron leads, and how to phrase its read-line.
 const GROUPS = [
-  { label: 'Overnight', rows: [
-    { key:'sleep', name:'Sleep',              metric:'sleep_session', href:'/health/v2/sleep.html', kind:'sleep' },
+  { label: null, rows: [
+    { key:'hr',    name:'Heart rate',         metric:'hr',          unit:'bpm',  kind:'hr' },
     { key:'rhr',   name:'Resting heart rate', metric:'rhr_derived', baseFallback:'hr', unit:'bpm', kind:'rhr', href:'/health/v2/metric.html?metric=hr&days=1' },
     { key:'hrv',   name:'HRV',                metric:'hrv_rmssd',   unit:'ms',   kind:'hrv' },
-    { key:'resp',  name:'Respiration',        metric:'respiration_rate', unit:'br/min', kind:'resp' },
     { key:'spo2',  name:'Blood oxygen',       metric:'spo2',        unit:'%',    kind:'spo2' },
-  ]},
-  { label: 'Today', rows: [
-    { key:'hr',    name:'Heart rate',         metric:'hr',          unit:'bpm',  kind:'hr' },
+    { key:'resp',  name:'Respiration',        metric:'respiration_rate', unit:'br/min', kind:'resp' },
+    { key:'sleep', name:'Sleep',              metric:'sleep_session', href:'/health/v2/sleep.html', kind:'sleep' },
     { key:'steps', name:'Steps',              metric:'steps',       unit:'',     kind:'steps' },
   ]},
   { label: 'Experimental',
@@ -629,50 +629,108 @@ function valHtml(row, value) {
   return row.unit ? `${num}<small>${row.unit}</small>` : `${num}`;
 }
 
+// Render is split build vs update so the every-few-seconds refresh
+// updates values IN PLACE instead of rebuilding the DOM + replaying the
+// fade — that wholesale rebuild was the "blinking". We only rebuild when
+// the SET of visible rows actually changes.
+let _structKey = '';
+let _everBuilt = false;
+let _sparksAnimated = false;
+const _lastSeries = {};
+
+function rowBaseline(row) {
+  return row.kind === 'rhr'
+    ? (cachedBaselines['rhr_derived'] || cachedBaselines[row.baseFallback])
+    : cachedBaselines[row.metric];
+}
+// The person's own "usual" for the row — surfaced inline so baselines are
+// easy to see. Skips metrics with no meaningful usual (bp, steps).
+function usualText(row, baseline) {
+  if (row.kind === 'bp' || row.kind === 'steps') return '';
+  const base = baseRef(baseline);
+  if (base == null) return '';
+  if (row.kind === 'sleep') {
+    const h = Math.floor(base / 3600), m = Math.round((base % 3600) / 60);
+    return `usual ${h}h ${m}m`;
+  }
+  return `usual ${Math.round(base)}`;
+}
+
 function renderGroups() {
+  const vis = [];
+  for (const g of GROUPS) for (const row of g.rows) if (rowValue(row) != null) vis.push(row.key);
+  const structKey = vis.join(',');
+  if (structKey !== _structKey) { buildGroups(); _structKey = structKey; }
+  else updateGroups();
+}
+
+function buildGroups() {
   const html = GROUPS.map(g => {
     const rowsHtml = g.rows.map(row => {
       const value = rowValue(row);
       if (value == null) return '';
-
-      const baseline = row.kind === 'rhr'
-        ? (cachedBaselines['rhr_derived'] || cachedBaselines[row.baseFallback])
-        : cachedBaselines[row.metric];
-
+      const baseline = rowBaseline(row);
       const read = readLine(row.kind, value, baseline);
+      const usual = usualText(row, baseline);
       const href = row.href || `/health/v2/metric.html?metric=${encodeURIComponent(row.metric)}&days=1`;
-
       return `
         <a class="row${row.exp ? ' exp' : ''}" href="${href}">
           <div>
             <div class="name">${row.name}</div>
-            <div class="read"><i class="${read.cls}"></i>${read.text}</div>
+            <div class="read" id="read-${row.key}"><i class="${read.cls}"></i>${read.text}</div>
           </div>
-          <div class="val">${valHtml(row, value)}</div>
+          <div class="valwrap">
+            <div class="val" id="val-${row.key}">${valHtml(row, value)}</div>
+            <div class="usual" id="usual-${row.key}">${usual}</div>
+          </div>
           <div class="spark" id="spark-${row.key}"></div>
           <div class="chev">›</div>
         </a>`;
     }).join('');
-
     if (!rowsHtml.trim()) return '';
     return `
-      <div class="group fade">
-        <div class="glabel">${g.label}</div>
+      <div class="group${_everBuilt ? '' : ' fade'}">
+        ${g.label ? `<div class="glabel">${g.label}</div>` : ''}
         ${g.note ? `<div class="gnote">${g.note}</div>` : ''}
         <div class="gcard">${rowsHtml}</div>
       </div>`;
   }).join('');
 
-  const groupsEl = document.getElementById('groups');
-  groupsEl.innerHTML = html.trim() ||
+  document.getElementById('groups').innerHTML = html.trim() ||
     `<div class="empty">No ring readings in this range yet.<br>Wear your ring and they'll appear here.</div>`;
+  _everBuilt = true;
 
-  // Draw sparklines after the rows are in the DOM.
-  GROUPS.forEach(g => g.rows.forEach(row => {
-    if (rowValue(row) == null) return;
+  const animate = !_sparksAnimated; _sparksAnimated = true;
+  for (const g of GROUPS) for (const row of g.rows) {
+    if (rowValue(row) == null) continue;
     const el = document.getElementById(`spark-${row.key}`);
-    if (el) drawSpark(el, sampleEvenly(rowSeries(row), 7));
-  }));
+    const series = sampleEvenly(rowSeries(row), 7);
+    _lastSeries[row.key] = JSON.stringify(series);
+    if (el) drawSpark(el, series, animate);
+  }
+}
+
+function updateGroups() {
+  for (const g of GROUPS) for (const row of g.rows) {
+    const value = rowValue(row);
+    if (value == null) continue;
+    const baseline = rowBaseline(row);
+    const read = readLine(row.kind, value, baseline);
+    const readEl = document.getElementById(`read-${row.key}`);
+    const valEl = document.getElementById(`val-${row.key}`);
+    const usualEl = document.getElementById(`usual-${row.key}`);
+    if (readEl) readEl.innerHTML = `<i class="${read.cls}"></i>${read.text}`;
+    if (valEl) valEl.innerHTML = valHtml(row, value);
+    if (usualEl) usualEl.textContent = usualText(row, baseline);
+    // Only redraw a sparkline when its series actually changed (no animation).
+    const series = sampleEvenly(rowSeries(row), 7);
+    const sig = JSON.stringify(series);
+    if (sig !== _lastSeries[row.key]) {
+      _lastSeries[row.key] = sig;
+      const el = document.getElementById(`spark-${row.key}`);
+      if (el) drawSpark(el, series, false);
+    }
+  }
 }
 
 // ── mini sparkline (smoothed trend, clay stroke, last dot) ──
@@ -698,7 +756,7 @@ function smoothPath(pts) {
   return d;
 }
 
-function drawSpark(el, data) {
+function drawSpark(el, data, animate = true) {
   el.innerHTML = '';
   if (!data || data.length < 2) return;
   const W = 78, H = 30, pad = 4;
@@ -725,6 +783,7 @@ function drawSpark(el, data) {
   dot.setAttribute('r', '2.4'); dot.setAttribute('fill', '#a3472f');
   svg.appendChild(dot);
   el.appendChild(svg);
+  if (!animate) return;                 // in-place refresh: no draw-on replay (was part of the blink)
   const len = path.getTotalLength();
   path.style.strokeDasharray = len; path.style.strokeDashoffset = len;
   path.style.transition = 'stroke-dashoffset 1.1s ease';

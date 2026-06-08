@@ -92,6 +92,8 @@
   .herobody .big small{font-size:40px;font-weight:400;opacity:.9;}
   .herobody .sub{font-size:18px;margin-top:18px;opacity:.94;font-weight:450;}
   .herobody .sub .dot{opacity:.6;margin:0 8px;}
+  .herobody .subline{font-weight:450;}
+  .herobody .subtime{font-size:14px;opacity:.78;margin-top:6px;font-weight:450;}
   .seebtn{
     margin:30px auto 0;display:flex;justify-content:center;
   }
@@ -257,15 +259,18 @@
         baseline = (baseRes.baselines || {})[bmetric] || null;
       }
       const buckets = (bk.buckets||[]).map(b=>({t:new Date(b.bucket_ts).getTime(), lo:+b.lo, hi:+b.hi, mean:+b.mean, n:+b.n})).filter(b=>isFinite(b.t)&&isFinite(b.mean));
-      const latest = (latestRes.samples||[]).map(s=>+s.value).find(v=>isFinite(v));
-      render(buckets, latest);
+      const latestObj = (latestRes.samples||[]).find(s=>isFinite(+s.value));
+      const latest = latestObj ? +latestObj.value : undefined;
+      const latestTs = latestObj && latestObj.ts ? new Date(latestObj.ts).getTime() : null;
+      render(buckets, latest, latestTs);
     }catch(e){ console.error('metric load', e); $('m-caption').textContent='Could not load this metric right now.'; }
   }
 
-  function render(buckets, latest){
+  function render(buckets, latest, latestTs){
     const cur = latest != null ? latest : (buckets.length? buckets[buckets.length-1].mean : null);
     $('m-big').innerHTML = cur != null ? `${Math.round(cur)}<small> ${m.unit}</small>` : '–';
-    $('m-sub').innerHTML = baselineLine(cur) + (latest!=null ? `<span class="dot">·</span>just now` : '');
+    const timeStr = latestTs ? new Date(latestTs).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}) : '';
+    $('m-sub').innerHTML = `<div class="subline">${baselineLine(cur)}</div>` + (timeStr ? `<div class="subtime">last reading · ${timeStr}</div>` : '');
     if (buckets.length){
       const lo=Math.min(...buckets.map(b=>b.lo)), hi=Math.max(...buckets.map(b=>b.hi));
       const totalN=buckets.reduce((a,b)=>a+(b.n||1),0);

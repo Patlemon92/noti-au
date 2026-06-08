@@ -309,6 +309,85 @@
 
   @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
   .page-anim { animation: fade .22s ease; }
+
+  /* ── Single-scroll groups (v3) ─────────────────────── */
+  .cigroup { background: var(--warm-card,#fffdf9); border:1px solid rgba(43,32,24,.06);
+             border-radius:18px; padding:4px 16px 14px; margin-bottom:16px; }
+  .cigroup-head { display:flex; align-items:center; gap:8px;
+             font-family:'Hanken Grotesk',sans-serif; font-size:11px; letter-spacing:.09em;
+             text-transform:uppercase; color:var(--taupe-2,#9a8369); font-weight:600;
+             padding:14px 0 2px; }
+  .cigroup-head .section-accent { width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
+  .cigroup .q { padding:14px 0; border-bottom:1px solid rgba(43,32,24,.05); }
+  .cigroup .q:last-child { border-bottom:none; }
+  .cigroup .q.gated[hidden], .q.gated[style*="display: none"] { display:none; }
+
+
+  /* ── Tap-dot scales (v3, mock look) ────────────────── */
+  .scale-head { display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
+  .scale-head .scale-num { font-family:'Apricosa','Fraunces',serif; font-weight:500;
+        font-size:30px; line-height:1; color:var(--clay-2,#bf5a3c); min-width:30px; }
+  .usual { font-size:11px; letter-spacing:.03em; color:var(--taupe-2,#9a8369); font-weight:500; }
+  .dotbar { position:relative; display:flex; gap:4px; margin-top:4px; }
+  .dotbar .dot { flex:1; height:32px; border-radius:9px; border:none;
+        background:rgba(43,32,24,.06); color:var(--taupe-2,#9a8369);
+        font-size:10px; font-family:inherit; cursor:pointer;
+        transition:background .14s, color .14s; -webkit-tap-highlight-color:transparent; }
+  .dotbar .dot.on  { background:#e0998b; color:#fff7f0; }
+  .dotbar .dot.cur { background:#bf5a3c; color:#fff7f0; }
+  .dotbar .dot:active { transform:scale(.92); }
+  .basemark { position:absolute; top:-5px; bottom:-5px; width:2px; z-index:2;
+        background:rgba(43,32,24,.42); border-radius:2px; transform:translateX(-1px); pointer-events:none; }
+  .basemark::after { content:'usual'; position:absolute; top:-12px; left:50%; transform:translateX(-50%);
+        font-size:7.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--taupe-2,#9a8369); white-space:nowrap; }
+
+
+  /* per-category scale colour + ring-filled (v3) */
+  .dotbar .dot.on  { background: var(--fill,#e0998b); color:#fff7f0; }
+  .dotbar .dot.cur { background: var(--fill,#bf5a3c); filter:brightness(.82); color:#fff7f0; }
+  .ring-filled { padding:14px 0; border-bottom:1px solid rgba(43,32,24,.05); }
+  .cigroup .ring-filled:last-child { border-bottom:none; }
+  .ring-line { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .ring-q { font-family:'Apricosa','Fraunces',serif; font-weight:500; font-size:15.5px; color:var(--ink); }
+  .ring-val { font-size:14px; color:var(--clay-2,#bf5a3c); font-weight:600; }
+  .ring-val em { font-style:normal; color:var(--taupe-2,#9a8369); font-weight:500; font-size:11.5px; }
+  .ring-change { font-size:12px; color:var(--taupe-2,#9a8369); cursor:pointer; margin-left:auto; text-decoration:underline; }
+
+
+  /* ── Match the mock: flat airy rows on cream, no cards ───────── */
+  .cigroup { background:transparent; border:none; border-radius:0; padding:0; margin-bottom:2px; box-shadow:none; }
+  .cigroup-head { padding:20px 0 0; font-size:10px; letter-spacing:.1em; color:var(--taupe-2,#9a8369); }
+  .cigroup-head .section-accent { width:7px; height:7px; }
+  .q { background:transparent; border:none; border-radius:0; box-shadow:none; padding:20px 0 16px; margin:0; }
+  .cigroup .q { border-bottom:1px solid rgba(43,32,24,.08); }
+  .cigroup .q:last-child { border-bottom:none; }
+  .qtext { font-size:21px; line-height:1.2; margin:0 0 16px; }
+  .scale-ends { margin-top:8px; }
+  .scale-head .scale-num { font-size:26px; }
+  .dotbar .dot { height:34px; border-radius:9px; }
+  /* bottom save pill — match the mock */
+  .actions { margin-top:24px; }
+  .actions .next.submit { border-radius:99px; padding:16px; font-size:15px; }
+
+
+  /* short label + sublabel (mock) */
+  .qtext .qsub { display:block; font-family:'Hanken Grotesk',sans-serif; font-weight:600;
+    font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--taupe-2,#9a8369); margin-top:4px; }
+
+
+  /* per-item "+ note" + global note (v3) */
+  .addnote { display:inline-block; font-size:12px; color:var(--clay-2,#bf5a3c); font-weight:600; cursor:pointer; margin-top:10px; -webkit-tap-highlight-color:transparent; }
+  .inlinenote { margin-top:8px; }
+  .inlinenote[hidden] { display:none; }
+  .notefield { width:100%; box-sizing:border-box; background:var(--warm-card,#fffdf9);
+    border:1px solid rgba(43,32,24,.12); border-radius:12px; padding:12px 14px;
+    font-family:'Fraunces',serif; font-style:italic; font-size:15px; line-height:1.5;
+    color:var(--ink); resize:vertical; min-height:54px; outline:none; }
+  .notefield::placeholder { color:var(--taupe-2,#9a8369); font-style:italic; }
+  .notegroup .cigroup-head { color:var(--ink); font-family:'Apricosa','Fraunces',serif;
+    font-size:16px; font-weight:500; text-transform:none; letter-spacing:0; padding:18px 0 10px; }
+
 </style>
 </head>
 <body>
@@ -459,63 +538,86 @@
     return 'baseline';
   }
 
-  // ── Render: template-per-page ──────────────────────
+  // ── Render: single-scroll — every section stacked on one page ──
   function renderCurrentSection() {
-    renderProgress();
-    const s = sections[sectionIdx];
-    if (!s) return submitEnvelope();
     inflight = {};
-
     const slotName = session.slot === 'morning' ? 'Morning check-in' : 'Evening check-in';
+    const title = session.slot === 'morning'
+      ? 'How did last night go, and how are you now?'
+      : 'How did today go?';
 
     let html = '<div class="page-anim">';
-    html += `<div class="slot-label">${slotName} · ${sectionIdx + 1} of ${sections.length}</div>`;
-    html += `<h1 class="section-title">${escapeHtml(s.name)}</h1>`;
-    html += `<div class="section-accent ${s.accent}"></div>`;
+    html += `<div class="slot-label">${slotName}</div>`;
+    html += `<h1 class="section-title">${title}</h1>`;
 
-    for (const q of s.questions) {
-      const gAttr = q.gated_by
-        ? ` data-gated-by="${escapeHtml(q.gated_by)}" data-gate-baseline="${q.gate_baseline == null ? '' : q.gate_baseline}" data-gate-direction="${escapeHtml(q.gate_direction || 'higher_is_worse')}"`
-        : '';
-      html += '<div class="q' + (q.gated_by ? ' gated' : '') + '" data-q="' + escapeHtml(q.key) + '"' + gAttr + '>';
-      html += `<p class="qtext">${escapeHtml(q.question)}</p>`;
-      const saved = (q.key in answers) ? answers[q.key] : null;
-      const carry = (saved == null && CARRY_FORWARD.has(q.key) && yesterdayAnswers[q.key] != null)
-        ? yesterdayAnswers[q.key] : null;
-      const ring  = q.ring_suggestion && q.ring_suggestion.value != null
-        ? q.ring_suggestion.value : null;
+    for (const s of sections) {
+      html += `<div class="cigroup"><div class="cigroup-head"><span class="section-accent ${s.accent}"></span>${escapeHtml(s.name)}</div>`;
+      for (const q of s.questions) {
+        const saved = (q.key in answers) ? answers[q.key] : null;
+        const carry = (saved == null && CARRY_FORWARD.has(q.key) && yesterdayAnswers[q.key] != null)
+          ? yesterdayAnswers[q.key] : null;
+        const ring  = q.ring_suggestion && q.ring_suggestion.value != null
+          ? q.ring_suggestion.value : null;
 
-      const initial = (saved != null) ? saved
-                    : (carry != null) ? carry
-                    : (ring  != null) ? ring : null;
+        // The ring already knows this (e.g. sleep) — don't ask it. Show it
+        // confirmed + auto-save; "change" expands it to a manual entry.
+        if (ring != null && saved == null && !ringExpanded.has(q.key)) {
+          const unit = q.key === 'sleep' ? 'h' : '';
+          html += `<div class="ring-filled" data-q="${escapeHtml(q.key)}" data-ringval="${ring}">
+            <div class="ring-line"><span class="ring-q">${escapeHtml(q.question)}</span>
+            <span class="ring-val">${ring}${unit} <em>from your ring</em></span>
+            <a class="ring-change" onclick="expandRing('${escapeHtml(q.key)}')">change</a></div></div>`;
+          continue;
+        }
 
-      if (q.type === 'scale')       html += renderScale(q, initial);
-      else if (q.type === 'choice') html += renderChoice(q, initial);
-      else if (q.type === 'numeric') html += renderNumeric(q, initial);
-      else                           html += renderText(q, initial);
+        const gAttr = q.gated_by
+          ? ` data-gated-by="${escapeHtml(q.gated_by)}" data-gate-baseline="${q.gate_baseline == null ? '' : q.gate_baseline}" data-gate-direction="${escapeHtml(q.gate_direction || 'higher_is_worse')}"`
+          : '';
+        html += '<div class="q' + (q.gated_by ? ' gated' : '') + '" data-q="' + escapeHtml(q.key) + '"' + gAttr + '>';
+        const lbl = LABELS[q.key];
+        html += `<p class="qtext">${lbl ? escapeHtml(lbl[0]) + '<small class="qsub">' + escapeHtml(lbl[1]) + '</small>' : escapeHtml(q.question)}</p>`;
+        const initial = (saved != null) ? saved
+                      : (carry != null) ? carry
+                      : (ring  != null) ? ring : null;
 
-      if (saved == null && carry != null) {
-        html += `<div class="hint">Carried forward from yesterday — <a onclick="clearCarry('${escapeHtml(q.key)}')">change ↺</a></div>`;
-      } else if (saved == null && ring != null) {
-        const unit = q.key === 'sleep' ? 'h' : '';
-        html += `<div class="hint">From your Neeve Ring: <strong>${ring}${unit}</strong> — looks right? Tap to change.</div>`;
+        if (q.type === 'scale')       html += renderScale(q, initial);
+        else if (q.type === 'choice') html += renderChoice(q, initial);
+        else if (q.type === 'numeric') html += renderNumeric(q, initial);
+        else                           html += renderText(q, initial);
+
+        // per-item "+ note" (scales) — optional, attaches to this item
+        if (q.type === 'scale') {
+          const nk = q.key + '__note';
+          const nv = answers[nk] != null ? String(answers[nk]) : '';
+          html += `<a class="addnote">＋ note</a><div class="inlinenote"${nv ? '' : ' hidden'}><textarea class="notefield" data-notekey="${escapeHtml(nk)}" rows="2" placeholder="anything to add about this…">${escapeHtml(nv)}</textarea></div>`;
+        }
+
+        if (saved == null && carry != null) {
+          html += `<div class="hint">Carried forward from yesterday — <a onclick="clearCarry('${escapeHtml(q.key)}')">change ↺</a></div>`;
+        }
+        html += '</div>';
       }
       html += '</div>';
     }
 
-    const isLast = sectionIdx === sections.length - 1;
-    html += '<div class="actions">';
-    html += `<button class="skip" type="button" onclick="skipSection()">Skip section</button>`;
-    html += `<button class="next ${isLast ? 'submit' : ''}" type="button" onclick="goNext()">
-              ${isLast ? 'Submit check-in' : 'Next →'}
-             </button>`;
-    html += '</div>';
-
+    // Global "anything you want to add?" note
+    html += `<div class="cigroup notegroup"><div class="cigroup-head">Anything you want to add?</div>
+      <textarea class="notefield notefield-big" data-notekey="anything_new" rows="3" placeholder="Skip if nothing — that's fine.">${escapeHtml(answers['anything_new'] != null ? String(answers['anything_new']) : '')}</textarea></div>`;
+    html += '<div class="actions"><button class="next submit" type="button" onclick="submitAll()">Save check-in</button></div>';
     html += '</div>';
     document.getElementById('main').innerHTML = html;
-    attachAllHandlers(s);
+    attachAllHandlers(sections[0] || null);
     applyGates();
   }
+
+  async function submitAll() {
+    flushInflight();
+    await submitEnvelope();
+  }
+  window.submitAll = submitAll;
+
+  let ringExpanded = new Set();
+  window.expandRing = function(k) { ringExpanded.add(k); renderCurrentSection(); };
 
   // ── Baseline gating ────────────────────────────────
   // Detail questions tagged by the server (gated_by / gate_baseline /
@@ -528,12 +630,12 @@
     return null;
   }
   function gateShouldShow(gatedBy, baseStr, direction) {
-    const hv = gateCurrentVal(gatedBy);
-    if (hv == null || hv === '') return true;
     const base = (baseStr === '' || baseStr == null) ? null : Number(baseStr);
-    if (base == null || !isFinite(base)) return true;
+    if (base === null || !isFinite(base)) return true;   // no baseline → can't gate, show
+    const hv = gateCurrentVal(gatedBy);
+    if (hv == null || hv === '') return false;           // headline not set yet → hide; reveal when set above usual
     const val = Number(hv);
-    if (!isFinite(val)) return true;
+    if (!isFinite(val)) return false;
     return direction === 'higher_is_better' ? (val < base) : (val > base);
   }
   function applyGates() {
@@ -558,14 +660,50 @@
   // ── Question renderers ─────────────────────────────
   const scaleWords = ['rough','rough','tough','tough','okay','okay','pretty good','pretty good','bright','bright','bright'];
 
+  // Short labels + sublabels (mock look). Maps the DB question to a clean
+  // headline + small context line. Keys not listed keep their full question.
+  const LABELS = {
+    sleep:                 ['Sleep', 'last night'],
+    morning_energy:        ['Energy', 'this morning'],
+    morning_mood:          ['Mood', 'this morning'],
+    morning_clarity:       ['Head', 'how clear, right now'],
+    morning_anxiety_level: ['Anxiety', 'right now'],
+    morning_fatigue_level: ['Fatigue', 'this morning'],
+    pem:                   ['Yesterday', 'did it catch up with you?'],
+    fatigue_level:         ['Fatigue', 'today overall'],
+    pain_level:            ['Pain', 'today, at its worst'],
+    fog_level:             ['Brain fog', 'right now'],
+    mood:                  ['Mood', 'right now'],
+    anxiety_level:         ['Anxiety', 'right now'],
+    overall:               ['Overall', 'how your body felt today'],
+    gut_discomfort:        ['Gut', 'today'],
+    energy:                ['Energy', 'today'],
+    stress:                ['Stress', 'today'],
+    heart_rate:            ['Heart', 'racing or pounding, today'],
+    period_pain:           ['Period pain', 'today'],
+  };
+  function scaleColour(key) {
+    const k = String(key || '');
+    if (k.includes('sleep')) return '#9bb088';                                                  // sage
+    if (k.includes('mood') || k.includes('energy') || k.includes('clarity')) return '#d4a64a';  // butter
+    if (k.includes('gut') || k.includes('dizz') || k.includes('heart') || k.includes('pots') || k.includes('orthostatic')) return '#97718c'; // plum
+    return '#cf7350';                                                                            // clay (pain/fatigue/fog/anxiety/overall)
+  }
   function renderScale(q, initial) {
-    const v = (initial == null) ? 5 : Math.max(0, Math.min(10, Number(initial) || 0));
+    const v = (initial == null) ? null : Math.max(0, Math.min(10, Math.round(Number(initial))));
+    const base = (q.baseline != null) ? Math.max(0, Math.min(10, Math.round(Number(q.baseline)))) : null;
+    const colour = scaleColour(q.key);
+    let dots = '';
+    for (let n = 0; n <= 10; n++) {
+      const on  = (v != null && n <= v) ? ' on' : '';
+      const cur = (v != null && n === v) ? ' cur' : '';
+      dots += `<button type="button" class="dot${on}${cur}" data-q="${escapeHtml(q.key)}" data-n="${n}">${n}</button>`;
+    }
+    const usual = base != null ? `<span class="usual">usual ${base}</span>` : '';
+    const mark  = base != null ? `<span class="basemark" style="left:${(base/10*100).toFixed(1)}%"></span>` : '';
     return `
-      <div class="scale-row">
-        <span class="scale-num" id="val-${q.key}">${v}</span>
-        <span class="scale-word" id="word-${q.key}">${scaleWords[v]}</span>
-      </div>
-      <input type="range" class="scale-slider" data-q="${escapeHtml(q.key)}" min="0" max="10" step="1" value="${v}" />
+      <div class="scale-head"><span class="scale-num" id="val-${escapeHtml(q.key)}" style="color:${colour}">${v == null ? '–' : v}</span>${usual}</div>
+      <div class="dotbar" data-q="${escapeHtml(q.key)}" style="--fill:${colour}">${mark}${dots}</div>
       <div class="scale-ends"><span>rough</span><span>bright</span></div>`;
   }
 
@@ -598,22 +736,32 @@
 
   // ── Handlers ───────────────────────────────────────
   function attachAllHandlers(s) {
-    // Scales
-    document.querySelectorAll('input.scale-slider').forEach(el => {
-      const k = el.dataset.q;
-      el.addEventListener('input', () => {
-        const v = Number(el.value);
-        document.getElementById(`val-${k}`).textContent = v;
-        document.getElementById(`word-${k}`).textContent = scaleWords[v];
-        inflight[k] = v;
-        applyGates();
+    // Ring-filled values (e.g. sleep) — auto-capture so they save without asking
+    document.querySelectorAll('.ring-filled[data-ringval]').forEach(el => {
+      const k = el.dataset.q; const v = Number(el.dataset.ringval);
+      if (!Number.isNaN(v)) inflight[k] = v;
+    });
+    // Scales (tap-dot bars)
+    document.querySelectorAll('.dotbar').forEach(bar => {
+      const k = bar.dataset.q;
+      const cur = bar.querySelector('.dot.cur');
+      // capture carried/saved value so it persists even if never tapped
+      if (cur) inflight[k] = Number(cur.dataset.n);
+      bar.querySelectorAll('.dot').forEach(d => {
+        d.addEventListener('click', () => {
+          const v = Number(d.dataset.n);
+          bar.querySelectorAll('.dot').forEach(x => {
+            const n = Number(x.dataset.n);
+            x.classList.toggle('on', n <= v);
+            x.classList.toggle('cur', n === v);
+          });
+          const valEl = document.getElementById('val-' + k);
+          if (valEl) valEl.textContent = v;
+          inflight[k] = v;
+          saveAnswer(k, v);
+          applyGates();
+        });
       });
-      el.addEventListener('change', () => {
-        saveAnswer(k, Number(el.value));
-      });
-      // Capture initial value into inflight so a never-touched but
-      // visible scale (carried-forward) saves with its current value.
-      inflight[k] = Number(el.value);
     });
     // Choices
     document.querySelectorAll('.chip[data-q]').forEach(el => {
@@ -642,6 +790,22 @@
       el.addEventListener('input',  () => { inflight[k] = el.value || null; });
       el.addEventListener('blur',   () => { saveAnswer(k, el.value || null); });
       if (el.value) inflight[k] = el.value;
+    });
+    // "+ note" toggles + note fields (per-item and the global note)
+    document.querySelectorAll('.addnote').forEach(a => {
+      a.addEventListener('click', () => {
+        const n = a.nextElementSibling;
+        if (n && n.classList.contains('inlinenote')) {
+          n.hidden = !n.hidden;
+          if (!n.hidden) { const t = n.querySelector('textarea'); if (t) t.focus(); }
+        }
+      });
+    });
+    document.querySelectorAll('textarea.notefield').forEach(el => {
+      const k = el.dataset.notekey;
+      if (el.value) inflight[k] = el.value;
+      el.addEventListener('input', () => { inflight[k] = el.value || null; });
+      el.addEventListener('blur',  () => { saveAnswer(k, el.value || null); });
     });
   }
 

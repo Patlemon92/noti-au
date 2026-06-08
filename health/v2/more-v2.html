@@ -145,7 +145,7 @@
   <!-- YOU -->
   <div class="slabel">You</div>
   <div class="group">
-    <a class="row" href="javascript:editField('name')">
+    <a class="row" href="javascript:openNameSheet()">
       <span class="label">Name</span>
       <span><span class="value" id="f-name">—</span><span class="chev">›</span></span>
     </a>
@@ -162,10 +162,10 @@
   <!-- WHAT YOU TRACK -->
   <div class="slabel">What you track</div>
   <div class="group">
-    <a class="row" href="javascript:editField('conditions')">
+    <div class="row" style="cursor:default">
       <span class="label">Conditions you track</span>
-      <span><span class="value" id="f-conditions">—</span><span class="chev">›</span></span>
-    </a>
+      <span class="value" id="f-conditions">—</span>
+    </div>
     <a class="row" href="javascript:openTplSheet()">
       <span class="label">Templates</span>
       <span><span class="value" id="f-templates">—</span><span class="chev">›</span></span>
@@ -391,12 +391,24 @@
 </div>
 
 <!-- What Alys remembers (bio) -->
+<div class="sheet-backdrop" id="name-sheet-bd" onclick="closeSheet('name-sheet')"></div>
+<div class="sheet" id="name-sheet" role="dialog" aria-modal="true">
+  <div class="sheet-grip"></div>
+  <h2>Your name</h2>
+  <input id="name-input" type="text" class="field-input" placeholder="Your name">
+  <div class="sheet-actions">
+    <span class="stat" id="name-stat"></span>
+    <button class="btn" type="button" onclick="closeSheet('name-sheet')">Cancel</button>
+    <button class="btn btn-primary" type="button" onclick="saveName()">Save</button>
+  </div>
+</div>
+
 <div class="sheet-backdrop" id="bio-sheet-bd" onclick="closeSheet('bio-sheet')"></div>
 <div class="sheet" id="bio-sheet" role="dialog" aria-modal="true">
   <div class="sheet-grip"></div>
   <h2>What Alys remembers</h2>
   <p class="sub">Anything you want her to know about you. Diagnoses, family, things she should keep in mind.</p>
-  <textarea id="bio" rows="4" class="field-input"
+  <textarea id="bio" rows="10" class="field-input" style="min-height:200px;line-height:1.5"
     placeholder="e.g. POTS diagnosis since 2019, partner also has ME/CFS, dog at the vet a lot…"></textarea>
   <div class="sheet-actions">
     <span class="stat"></span>
@@ -662,6 +674,24 @@ async function saveSchedule() {
 }
 
 // ── What Alys remembers (bio) ────────────────────
+function openNameSheet() {
+  openSheet('name-sheet');
+  document.getElementById('name-input').value = (_user && _user.name) || '';
+  setTimeout(() => document.getElementById('name-input').focus(), 200);
+}
+async function saveName() {
+  const v = document.getElementById('name-input').value.trim();
+  if (!v) return;
+  try {
+    await api('/me/name', { method: 'POST', body: JSON.stringify({ name: v }) });
+    if (_user) _user.name = v;
+    document.getElementById('f-name').textContent = v;
+    closeSheet('name-sheet');
+  } catch (e) {
+    document.getElementById('name-stat').textContent = "Couldn't save.";
+  }
+}
+
 function openBioSheet() {
   openSheet('bio-sheet');
   document.getElementById('bio').value = (_user && _user.bio) || '';

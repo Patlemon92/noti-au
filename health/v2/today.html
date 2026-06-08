@@ -53,7 +53,8 @@
 
   /* week strip — each day coloured by its readiness */
   .week{display:flex;gap:7px;margin:16px 1px 4px;}
-  .wd{flex:1;border-radius:16px;padding:10px 2px 9px;text-align:center;background:var(--card);border:1px solid var(--hair);}
+  .wd{flex:1;border-radius:16px;padding:10px 2px 9px;text-align:center;background:var(--card);border:1px solid var(--hair);font-family:inherit;cursor:pointer;}
+  .wd:active{transform:scale(.96);}
   .wd .wlab{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
   .wd .wnum{font-family:"Fraunces",serif;font-weight:500;font-size:16px;color:var(--ink);margin-top:4px;}
   .wd.m-tender{background:#e7d4d6;border-color:#dcc4c8;}
@@ -61,8 +62,8 @@
   .wd.m-steady{background:#f8e1c0;border-color:#eed1aa;}
   .wd.m-open  {background:#fdeaca;border-color:#f3d9af;}
   .wd.m-strong{background:#ffeec9;border-color:#f6dca6;}
-  .wd.today{box-shadow:0 0 0 2px var(--ink);}
   .wd.today .wnum{font-weight:600;}
+  .wd.sel{box-shadow:0 0 0 2px var(--ink);}   /* the selected day */
 
   /* sections */
   .sec{font-family:"Fraunces",serif;font-weight:500;font-size:21px;color:var(--ink);margin:24px 2px 12px;}
@@ -138,7 +139,7 @@
 
   <div class="week" id="week"></div>
 
-  <div class="sec">Today</div>
+  <div class="sec" id="today-sec">Today</div>
   <div class="glance" id="glance">
     <a class="gstat" href="/health/v2/metric.html?metric=hr&days=1"><div class="l">HR</div><div class="v" id="g-hr">—</div></a>
     <a class="gstat" href="/health/v2/metric.html?metric=hrv_rmssd&days=1"><div class="l">HRV</div><div class="v" id="g-hrv">—</div></a>
@@ -193,17 +194,69 @@ function greet(h){return h<12?'Good morning':h<17?'Good afternoon':'Good evening
 function wmo(c){if(c==null)return'';if(c===0)return'clear';if(c<=2)return'mostly clear';if(c===3)return'cloudy';if(c<=48)return'fog';if(c<=67)return'rain';if(c<=77)return'snow';if(c<=82)return'showers';if(c<=99)return'storms';return'';}
 function fmtSleep(s){if(!s||s<=0)return'—';const h=Math.floor(s/3600),m=Math.round((s%3600)/60);return `${h}<small>h</small>${m}<small>m</small>`;}
 
+function dayKey(d){ return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
+function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+
 function renderWeek(samples){
   const byDay={};
-  for(const s of (samples||[])){ const d=new Date(s.ts); const k=`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; byDay[k]=Math.round(Number(s.value)); }
-  const cells=[]; const now=new Date();
+  for(const s of (samples||[])){ const d=new Date(s.ts); byDay[dayKey(d)]=Math.round(Number(s.value)); }
+  const cells=[]; const now=new Date(); const todayKey=dayKey(now);
+  if(selectedKey==null) selectedKey=todayKey;
   for(let i=6;i>=0;i--){
     const d=new Date(now); d.setDate(now.getDate()-i);
-    const k=`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    const k=dayKey(d);
     const ord=byDay[k]; const state=ord?STATE_BY_ORD[ord]:null;
-    cells.push(`<div class="wd ${state?('m-'+state):''} ${i===0?'today':''}"><div class="wlab">${d.toLocaleDateString('en-AU',{weekday:'short'})}</div><div class="wnum">${d.getDate()}</div></div>`);
+    cells.push(`<button class="wd ${state?('m-'+state):''} ${k===todayKey?'today':''} ${k===selectedKey?'sel':''}" data-date="${k}">
+      <div class="wlab">${d.toLocaleDateString('en-AU',{weekday:'short'})}</div><div class="wnum">${d.getDate()}</div></button>`);
   }
   document.getElementById('week').innerHTML=cells.join('');
+}
+
+// Tap a day → the section below shows that day's averages.
+let selectedKey=null;                 // null/today = live "Today"
+let cachedToday=null;                 // last /me/today
+const cachedSeries={hr:[],hrv:[],spo2:[],sleep:[]};
+let _seriesLoaded=false;
+
+document.getElementById('week').addEventListener('click',e=>{
+  const b=e.target.closest('.wd'); if(!b) return;
+  selectedKey=b.dataset.date;
+  document.querySelectorAll('#week .wd').forEach(x=>x.classList.toggle('sel', x.dataset.date===selectedKey));
+  updateGlance();
+});
+
+async function loadSeries(){
+  const since=encodeURIComponent(new Date(Date.now()-8*86400000).toISOString());
+  const [hr,hrv,o2,sl]=await Promise.all([
+    api('/ring/trend?metric=hr&days=7').catch(()=>({samples:[]})),
+    api('/ring/trend?metric=hrv_rmssd&days=7').catch(()=>({samples:[]})),
+    api('/ring/trend?metric=spo2&days=7').catch(()=>({samples:[]})),
+    api(`/ring/samples?metric=sleep_session&limit=40&since=${since}`).catch(()=>({samples:[]})),
+  ]);
+  cachedSeries.hr=hr.samples||[]; cachedSeries.hrv=hrv.samples||[];
+  cachedSeries.spo2=o2.samples||[]; cachedSeries.sleep=sl.samples||[];
+}
+
+function setGlance(hr,hrv,o2,sleep_s,label){
+  document.getElementById('g-hr').innerHTML=(hr??'—')+'<small> bpm</small>';
+  document.getElementById('g-hrv').innerHTML=(hrv??'—')+'<small> ms</small>';
+  document.getElementById('g-o2').innerHTML=(o2??'—')+'<small> %</small>';
+  document.getElementById('g-sleep').innerHTML=fmtSleep(sleep_s);
+  document.getElementById('today-sec').textContent=label;
+}
+
+function updateGlance(){
+  const todayKey=dayKey(new Date());
+  if(selectedKey==null || selectedKey===todayKey){
+    const i=cachedToday?.inputs||{};
+    setGlance(i.hr,i.hrv,i.spo2,i.sleep_s,'Today');
+    return;
+  }
+  const [y,mo,da]=selectedKey.split('-').map(Number); const sel=new Date(y,mo,da);
+  const avg=arr=>{ const v=(arr||[]).filter(s=>sameDay(new Date(s.ts),sel)).map(s=>Number(s.value)).filter(isFinite); return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null; };
+  const sl=(cachedSeries.sleep||[]).find(s=>sameDay(new Date(s.ts),sel)||(s.meta?.end_ts&&sameDay(new Date(s.meta.end_ts),sel)));
+  setGlance(avg(cachedSeries.hr),avg(cachedSeries.hrv),avg(cachedSeries.spo2), sl?Number(sl.value):null,
+    sel.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})+' · averages');
 }
 
 async function load(){
@@ -235,7 +288,10 @@ async function load(){
       }
     }
   }catch(_){}
+  cachedToday=t;
   renderWeek(week.samples||[]);
+  if(!_seriesLoaded){ _seriesLoaded=true; loadSeries().then(updateGlance); }
+  updateGlance();
 
   if(t){
     const state=t.state||'steady';
@@ -243,11 +299,6 @@ async function load(){
     document.getElementById('day').textContent=t.day_word||DAY_FALLBACK[state]||'Today.';
     document.getElementById('why').textContent=t.why||'';
     if(t.weather){ document.getElementById('wx-temp').textContent=t.weather.temperature!=null?Math.round(t.weather.temperature)+'°':'—'; document.getElementById('wx-cond').textContent=wmo(t.weather.weather_code); }
-    const i=t.inputs||{};
-    document.getElementById('g-hr').innerHTML=(i.hr??'—')+'<small> bpm</small>';
-    document.getElementById('g-hrv').innerHTML=(i.hrv??'—')+'<small> ms</small>';
-    document.getElementById('g-o2').innerHTML=(i.spo2??'—')+'<small> %</small>';
-    document.getElementById('g-sleep').innerHTML=fmtSleep(i.sleep_s);
     let next='';
     if(t.checkin&&t.checkin.due){ const slot=t.checkin.slot==='evening'?'Evening':'Morning';
       next+=`<a class="ncard checkin" href="/health/v2/checkin.html?slot=${t.checkin.slot}"><span class="ic">✎</span><div><div class="t">${slot} check-in</div><div class="s">a couple of minutes, when you're ready</div></div><span class="go">›</span></a>`; }

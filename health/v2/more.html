@@ -217,7 +217,7 @@
       <span class="value">only when she has something</span>
     </div>
     <a class="row" href="javascript:openBioSheet()">
-      <span class="label">What Alys remembers</span>
+      <span class="label">Your story</span>
       <span><span class="value" id="f-bio">—</span><span class="chev">›</span></span>
     </a>
   </div>
@@ -390,7 +390,7 @@
   </div>
 </div>
 
-<!-- What Alys remembers (bio) -->
+<!-- Your story (bio) -->
 <div class="sheet-backdrop" id="name-sheet-bd" onclick="closeSheet('name-sheet')"></div>
 <div class="sheet" id="name-sheet" role="dialog" aria-modal="true">
   <div class="sheet-grip"></div>
@@ -406,8 +406,8 @@
 <div class="sheet-backdrop" id="bio-sheet-bd" onclick="closeSheet('bio-sheet')"></div>
 <div class="sheet" id="bio-sheet" role="dialog" aria-modal="true">
   <div class="sheet-grip"></div>
-  <h2>What Alys remembers</h2>
-  <p class="sub">What she's picked up about you from your check-ins and chats. It builds on its own over time.</p>
+  <h2>Your story</h2>
+  <p class="sub">The story Alys has come to understand — built quietly from your check-ins and chats over time.</p>
   <div id="bio-text" style="font-size:15px;line-height:1.65;color:var(--ink-2);white-space:pre-wrap;max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:4px"></div>
   <div class="sheet-actions">
     <span class="stat"></span>
@@ -671,7 +671,7 @@ async function saveSchedule() {
   }
 }
 
-// ── What Alys remembers (bio) ────────────────────
+// ── Your story (bio) ────────────────────
 function openNameSheet() {
   openSheet('name-sheet');
   document.getElementById('name-input').value = (_user && _user.name) || '';

@@ -669,6 +669,50 @@
   .btn-primary { background: var(--ink-2); color: #fff7f0; border-color: var(--ink-2); font-weight: 500; }
   .btn-primary:disabled { opacity: .4; }
   .hidden { display: none !important; }
+
+  /* ── Readiness colour hero — background shifts with /me/today state ── */
+  .today-hero{position:relative;border-radius:32px;overflow:hidden;isolation:isolate;margin-top:4px;min-height:354px;
+    box-shadow:0 18px 44px rgba(150,100,70,.24);}
+  .today-hero .sky{position:absolute;inset:0;z-index:-2;opacity:0;transition:opacity 1s ease;}
+  .s-tender{background:linear-gradient(165deg,#e3cdd0 0%,#cdaeb6 40%,#b394a3 74%,#8f7689 100%);}
+  .s-quiet {background:linear-gradient(165deg,#eed9c1 0%,#dcc0a7 42%,#c4a695 74%,#a18a87 100%);}
+  .s-steady{background:linear-gradient(160deg,#f6dcb6 0%,#ecbf97 40%,#db9e80 74%,#c0876f 100%);}
+  .s-open  {background:linear-gradient(155deg,#fce7c2 0%,#f4c993 38%,#eea677 72%,#df8d6c 100%);}
+  .s-strong{background:linear-gradient(150deg,#ffeec6 0%,#f9cd86 34%,#f1a85f 66%,#df8a52 100%);}
+  .today-hero[data-mood=tender] .s-tender,.today-hero[data-mood=quiet] .s-quiet,
+  .today-hero[data-mood=steady] .s-steady,.today-hero[data-mood=open] .s-open,
+  .today-hero[data-mood=strong] .s-strong{opacity:1;}
+  .today-hero .orbs{position:absolute;inset:0;z-index:-1;transition:opacity 1s ease;}
+  .today-hero .orb{position:absolute;border-radius:50%;filter:blur(6px);
+    background:radial-gradient(circle,rgba(255,248,235,.85),rgba(255,240,220,.25) 46%,transparent 70%);}
+  .today-hero .orb.a{width:240px;height:240px;left:76%;top:10%;animation:drift1 13s ease-in-out infinite;}
+  .today-hero .orb.b{width:180px;height:180px;left:8%;top:70%;animation:drift2 17s ease-in-out infinite;}
+  .today-hero .orb.c{width:120px;height:120px;left:46%;top:42%;opacity:.7;animation:drift1 21s ease-in-out infinite reverse;}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-16px,12px) scale(1.08)}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(14px,-14px) scale(1.1)}}
+  .today-hero[data-mood=tender] .orbs{opacity:.5;}.today-hero[data-mood=quiet] .orbs{opacity:.72;}
+  .today-hero[data-mood=strong] .orbs{opacity:1;}
+  .hero-fg{position:relative;padding:18px 22px 24px;display:flex;flex-direction:column;min-height:354px;color:#41271d;}
+  .today-hero .pill{background:rgba(255,250,243,.5);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.4);
+    box-shadow:none;color:#5c3a2b;align-self:flex-start;}
+  .today-hero .pill .dot,.today-hero .pill .wx{color:#5c3a2b;}
+  .hero-kicker{font-family:'Apricosa','Fraunces',Georgia,serif;font-weight:400;font-size:clamp(26px,7vw,32px);
+    line-height:1.1;letter-spacing:-.3px;color:#4a2f24;margin-top:16px;}
+  .hero-kicker em{color:var(--clay-2);font-style:italic;}
+  .hero-spacer{flex:1;min-height:14px;}
+  .hero-day{font-family:'Apricosa','Fraunces',Georgia,serif;font-weight:500;font-size:44px;line-height:1.02;
+    letter-spacing:-.015em;color:#41271d;transition:opacity .45s;margin-top:6px;}
+  .hero-why{font-size:17px;line-height:1.5;margin-top:12px;max-width:32ch;color:#56372a;transition:opacity .45s;}
+  .hero-confirm{margin-top:16px;display:flex;flex-direction:column;gap:8px;transition:opacity .35s;}
+  .hero-confirm .q{font-size:13.5px;font-weight:600;color:#6e4636;}
+  .hero-confirm .row{display:flex;gap:7px;}
+  .hero-confirm button{flex:1;font-family:inherit;font-size:13px;font-weight:600;padding:9px 4px;border-radius:16px;cursor:pointer;
+    background:rgba(255,250,243,.45);border:1px solid rgba(255,255,255,.4);color:#5c3a2b;transition:.15s;}
+  .hero-confirm button:active{transform:scale(.97);}
+  .hero-confirm button.on{background:#fbf4ea;color:#41271d;box-shadow:0 2px 8px rgba(120,70,50,.18);}
+  .hero-confirm .thanks{font-size:13.5px;color:#5c3a2b;font-style:italic;}
+  .hero-seedata{margin-top:15px;font-size:14px;font-weight:600;color:#7a4a35;text-decoration:none;
+    display:inline-flex;gap:6px;align-items:center;align-self:flex-start;}
 </style>
 </head>
 <body>
@@ -687,17 +731,38 @@
     </svg>
   </button>
 
-  <!-- Clock + weather pill -->
-  <div class="pill te-card">
-    <span id="pill-clock">—</span>
-    <span class="dot">·</span>
-    <span class="wx" id="pill-weather">—</span>
+  <!-- Readiness colour hero — background shifts with /me/today state.
+       Wraps the weather pill + greeting; the sync wheel floats top-right. -->
+  <div class="today-hero te-card" id="today-hero" data-mood="steady">
+    <div class="sky s-tender"></div><div class="sky s-quiet"></div><div class="sky s-steady"></div>
+    <div class="sky s-open"></div><div class="sky s-strong"></div>
+    <div class="orbs"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
+    <div class="hero-fg">
+      <div class="pill">
+        <span id="pill-clock">—</span><span class="dot">·</span><span class="wx" id="pill-weather">—</span>
+      </div>
+      <div class="hero-kicker">
+        <span id="greeting-text">Hey</span>, <em id="greeting-name">there</em>.
+      </div>
+      <div class="hero-spacer"></div>
+      <div class="hero-day" id="today-day">Reading your day…</div>
+      <div class="hero-why" id="today-why"></div>
+      <div class="hero-confirm" id="today-confirm" style="display:none">
+        <div class="q">Sound right?</div>
+        <div class="row" id="today-confirm-row">
+          <button data-felt="better">I feel better</button>
+          <button data-felt="match">that's about right</button>
+          <button data-felt="worse">I feel worse</button>
+        </div>
+      </div>
+      <a class="hero-seedata" href="/health/v2/ring.html">see the data behind this →</a>
+      <span id="alys-line" style="display:none"></span>
+    </div>
   </div>
 
   <!-- Check-in pop-in — only appears around the scheduled morning/evening
        slot. Outside the window OR if today's slot is already complete,
-       this whole card is display:none and the layout closes up. Tapping
-       Later hides it for the rest of the slot. -->
+       this whole card is display:none and the layout closes up. -->
   <button class="checkin-pop te-card" id="checkin-pop" type="button"
           style="display:none;animation-delay:.02s"
           onclick="goToCheckin()">
@@ -708,14 +773,6 @@
       <span class="checkin-pop-later" onclick="event.stopPropagation();dismissCheckinPop()">Later</span>
     </div>
   </button>
-
-  <!-- Greeting -->
-  <div class="greeting-wrap te-card" style="animation-delay:.04s">
-    <div class="greeting">
-      <span id="greeting-text">Hey</span>, <em id="greeting-name">there</em>.
-    </div>
-    <div class="alys-line" id="alys-line">the shape of a quiet morning.</div>
-  </div>
 
   <!-- Stats glance — three small cards. The vitals grid keeps its
        existing JS hooks; the section header / wear chip / "all your data"
@@ -946,6 +1003,7 @@ function wmoLabel(c) {
 let _baselines = {};
 
 async function load() {
+  paintHero();
   let devices = [], samples = [], strainSamples = [], notes = [];
   try {
     // Strain is stamped at midnight UTC = 10am Sydney — the OLDEST sample
@@ -2160,6 +2218,49 @@ document.addEventListener('visibilitychange', () => {
 });
 if (!document.hidden) _startRefresh();
 onResume(fullRefresh);
+
+// ── Readiness colour hero + confirm loop (wired to /me/today) ──
+let _readinessTs = null;
+const _DAY_FALLBACK = { tender:'A tender day.', quiet:'A quiet day.', steady:'A steady day.', open:'An open day.', strong:'A strong day.' };
+async function paintHero() {
+  const t = await api('/me/today').catch(() => null);
+  if (!t) return;
+  const state = t.state || 'steady';
+  const hero = document.getElementById('today-hero');
+  const dayEl = document.getElementById('today-day');
+  const whyEl = document.getElementById('today-why');
+  if (hero && hero.dataset.mood !== state) {
+    if (dayEl) dayEl.style.opacity = 0;
+    if (whyEl) whyEl.style.opacity = 0;
+    setTimeout(() => {
+      hero.dataset.mood = state;
+      if (dayEl) dayEl.style.opacity = 1;
+      if (whyEl) whyEl.style.opacity = 1;
+    }, 220);
+  } else if (hero) {
+    hero.dataset.mood = state;
+  }
+  if (dayEl) dayEl.textContent = t.day_word || _DAY_FALLBACK[state] || 'Today.';
+  if (whyEl) whyEl.textContent = t.why || '';
+  _readinessTs = t.computed_at || null;
+  const c = document.getElementById('today-confirm');
+  if (c && c.dataset.done !== '1') {
+    const seen = _readinessTs && localStorage.getItem('rconfirm_' + _readinessTs);
+    c.style.display = (t.state && !seen) ? 'flex' : 'none';
+  }
+}
+document.getElementById('today-confirm-row')?.addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  [...document.querySelectorAll('#today-confirm-row button')].forEach(x => x.classList.toggle('on', x === b));
+  try {
+    await api('/me/readiness-feedback', { method: 'POST', body: JSON.stringify({ felt: b.dataset.felt, readiness_ts: _readinessTs }) });
+    if (_readinessTs) localStorage.setItem('rconfirm_' + _readinessTs, b.dataset.felt);
+    const c = document.getElementById('today-confirm');
+    c.dataset.done = '1';
+    c.innerHTML = '<div class="thanks">thanks — that helps me read you better.</div>';
+    setTimeout(() => { c.style.opacity = 0; }, 1600);
+  } catch (_) { b.classList.remove('on'); }
+});
 </script>
 </body>
 </html>

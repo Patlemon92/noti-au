@@ -81,8 +81,17 @@
     background:rgba(255,255,255,.22);color:#6e4636;border:1px solid rgba(255,255,255,.28);}
   .states span.on{background:#fbf4ea;color:#4a2f24;font-weight:600;box-shadow:0 2px 8px rgba(120,70,50,.18);}
 
+  /* slim tie back to Today's readiness read */
+  .fromtoday{display:flex;align-items:center;gap:10px;background:#fcf7ef;border:1px solid var(--hair);border-radius:20px;
+    padding:12px 16px;margin:0 2px;font-size:14.5px;color:var(--ink-soft);text-decoration:none;}
+  .fromtoday .dot{width:9px;height:9px;border-radius:50%;background:#e0a07e;flex:none;}
+  .fromtoday b{color:var(--ink);font-weight:600;}
+  .fromtoday .go{margin-left:auto;color:var(--muted);font-size:18px;}
+
   /* period toggle */
-  .period{display:flex;justify-content:flex-end;gap:8px;margin:20px 4px 8px;}
+  .period{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:20px 4px 8px;}
+  .period .plabel{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+  .period .pseg{display:flex;gap:8px;}
   .period button{font-family:inherit;font-size:14px;font-weight:600;padding:7px 16px;border-radius:20px;border:none;cursor:pointer;}
   .period button.on{background:var(--ink);color:#f6ecdd;}
   .period button.off{background:#fff;color:var(--muted);border:1px solid var(--hair);}
@@ -186,21 +195,17 @@
     </div>
   </div>
 
-  <!-- HERO: the pacing read in plain language -->
-  <div class="hero fade" id="hero">
-    <div class="date" id="hero-date">—</div>
-    <h2 id="hero-headline">Reading your day…</h2>
-    <p id="hero-body">Pulling your overnight numbers together.</p>
-    <div class="states" id="hero-states">
-      <span data-state="gentle">go gently</span>
-      <span data-state="steady" class="on">steady</span>
-      <span data-state="push">room to push</span>
-    </div>
-  </div>
+  <!-- Slim tie back to Today's readiness read (the hero lives on Today now) -->
+  <a class="fromtoday fade" id="fromtoday" href="/health/v2/today.html">
+    <span class="dot"></span><span>Today: <b id="ft-state">…</b></span><span class="go">›</span>
+  </a>
 
   <div class="period">
-    <button id="range-7"  class="on"  onclick="setRange(7)">7d</button>
-    <button id="range-30" class="off" onclick="setRange(30)">30d</button>
+    <span class="plabel">Trends</span>
+    <div class="pseg">
+      <button id="range-7"  class="on"  onclick="setRange(7)">7 days</button>
+      <button id="range-30" class="off" onclick="setRange(30)">30 days</button>
+    </div>
   </div>
 
   <!-- grouped metric list -->
@@ -267,7 +272,7 @@ const GROUPS = [
     { key:'resp',  name:'Respiration',        metric:'respiration_rate', unit:'br/min', kind:'resp' },
     { key:'spo2',  name:'Blood oxygen',       metric:'spo2',        unit:'%',    kind:'spo2' },
   ]},
-  { label: 'Today', rows: [
+  { label: 'Through the day', rows: [
     { key:'hr',    name:'Heart rate',         metric:'hr',          unit:'bpm',  kind:'hr' },
     { key:'steps', name:'Steps',              metric:'steps',       unit:'',     kind:'steps' },
   ]},
@@ -341,7 +346,7 @@ async function load() {
     cachedBaselines = baseRes.baselines || {};
 
     renderHeadPill();
-    renderHero();
+    renderFromToday();
     renderGroups();
     firstLoad = false;
   } catch (e) {
@@ -519,74 +524,17 @@ function readLine(kind, value, b) {
 }
 
 // ── pacing hero ─────────────────────────────────────────────
-function renderHero() {
-  const now = new Date();
-  document.getElementById('hero-date').textContent =
-    now.toLocaleDateString('en-AU', { weekday: 'long' }) + ' · ' +
-    now.toLocaleDateString('en-AU', { day: 'numeric', month: 'long' });
-
-  const sleep = latestSleepSession();
-  const sleepHrs = sleep ? Number(sleep.value) / 3600 : null;
-
-  // Only trust the recovery score if it's fresh (within ~40h). The
-  // engine output is currently stale, so this almost always falls
-  // through to the sleep + resting-HR heuristic below.
-  let recovery = null;
-  const recRow = cachedLatest['recovery_score'];
-  if (recRow && recRow.ts && (Date.now() - new Date(recRow.ts)) < 40 * 3600 * 1000) {
-    recovery = Number(recRow.value);
+// The readiness read lives on Today now; Ring just ties back to it,
+// reading the same engine token via /me/today.
+async function renderFromToday() {
+  const WORD = { tender: 'a tender day', quiet: 'a quiet day', steady: 'a steady day',
+                 open: 'an open day', strong: 'a strong day' };
+  try {
+    const t = await api('/me/today');
+    document.getElementById('ft-state').textContent = t && t.state ? WORD[t.state] : 'today';
+  } catch (_) {
+    document.getElementById('ft-state').textContent = 'today';
   }
-
-  const restHr = restingLatest();
-  const rhrRef = baseRef(cachedBaselines['rhr_derived'] || cachedBaselines['hr']);
-  const rhrDelta = (restHr != null && rhrRef != null) ? restHr - rhrRef : null;
-
-  // State (internal score feeds this; the number itself is never shown).
-  let state = 'steady';
-  if (recovery != null) {
-    state = recovery < 40 ? 'gentle' : recovery > 66 ? 'push' : 'steady';
-  } else if (sleepHrs != null && sleepHrs < 5.5) {
-    state = 'gentle';
-  } else if (rhrDelta != null && rhrDelta > 6) {
-    state = 'gentle';
-  } else if (sleepHrs != null && sleepHrs >= 7 && (rhrDelta == null || Math.abs(rhrDelta) <= 4)) {
-    state = 'steady';
-  }
-
-  const sleepPhrase = sleepHrs == null ? 'rested'
-    : sleepHrs >= 7.5 ? 'close to eight hours'
-    : sleepHrs >= 6.5 ? 'a decent stretch'
-    : sleepHrs >= 5.5 ? 'a little short'
-    : 'only a short night';
-
-  const copy = {
-    gentle: {
-      h: 'Today asks for a gentler pace.',
-      p: `You slept ${sleepPhrase} and a few of your overnight numbers sat outside their usual range. Go easy where you can — let today be lighter than you'd planned.`,
-    },
-    steady: {
-      h: 'Today looks steady.',
-      p: `You slept ${sleepPhrase} and your overnight numbers all sat in their usual range. There's room to do what you'd planned — just check in with yourself as you go.`,
-    },
-    push: {
-      h: 'There may be a little more in the tank.',
-      p: `You slept ${sleepPhrase} and your overnight numbers look strong. If you feel up to it, today could hold a bit more — still, let how you feel lead.`,
-    },
-  };
-
-  // No ring data at all → keep it neutral and honest.
-  if (!sleep && restHr == null) {
-    document.getElementById('hero-headline').textContent = 'Nothing to read just yet.';
-    document.getElementById('hero-body').textContent =
-      'Wear your ring overnight and your pacing read will appear here in the morning.';
-  } else {
-    document.getElementById('hero-headline').textContent = copy[state].h;
-    document.getElementById('hero-body').textContent = copy[state].p;
-  }
-
-  document.querySelectorAll('#hero-states span').forEach(el => {
-    el.className = el.dataset.state === state ? 'on' : '';
-  });
 }
 
 // ── grouped rows ────────────────────────────────────────────

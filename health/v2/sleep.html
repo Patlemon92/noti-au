@@ -185,10 +185,13 @@ async function loadLastNight() {
     // real overnight. We always want the latest session row visible,
     // even if it's a few days stale.
     const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-    const q = `/ring/samples?metric=sleep_stage,sleep_session&limit=2000&since=${encodeURIComponent(since)}`;
+    const q = `/ring/samples?metric=sleep_stage,sleep_consolidated,sleep_session&limit=2000&since=${encodeURIComponent(since)}`;
     const { samples } = await api(q);
     const stages   = (samples || []).filter(s => s.metric === 'sleep_stage');
-    const sessions = (samples || []).filter(s => s.metric === 'sleep_session');
+    // Duration/summary use the engine's consolidated sleep (merged + HR-
+    // corrected); the hypnogram still uses the raw per-sample stages.
+    const _cons    = (samples || []).filter(s => s.metric === 'sleep_consolidated');
+    const sessions = _cons.length ? _cons : (samples || []).filter(s => s.metric === 'sleep_session');
     const totals = renderHypnogram(
       document.getElementById('hypnogram-card'), stages, sessions);
     if (totals && totals.total > 0) renderTotals(totals);
@@ -224,9 +227,11 @@ async function loadLastNight() {
 async function loadHistory() {
   try {
     const since = new Date(Date.now() - histDays * 86400 * 1000).toISOString();
-    const q = `/ring/samples?metric=sleep_session&limit=200&since=${encodeURIComponent(since)}`;
+    const q = `/ring/samples?metric=sleep_consolidated,sleep_session&limit=200&since=${encodeURIComponent(since)}`;
     const { samples } = await api(q);
-    renderHistory((samples || []).slice().sort((a, b) => new Date(b.ts) - new Date(a.ts)));
+    const _c = (samples || []).filter(s => s.metric === 'sleep_consolidated');
+    const list = _c.length ? _c : (samples || []).filter(s => s.metric === 'sleep_session');
+    renderHistory(list.slice().sort((a, b) => new Date(b.ts) - new Date(a.ts)));
   } catch (e) {
     document.getElementById('hist-list').innerHTML =
       `<div class="empty">Couldn't load: ${e.message}</div>`;

@@ -231,10 +231,11 @@ async function loadSeries(){
     api('/ring/trend?metric=hr&days=7').catch(()=>({samples:[]})),
     api('/ring/trend?metric=hrv_rmssd&days=7').catch(()=>({samples:[]})),
     api('/ring/trend?metric=spo2&days=7').catch(()=>({samples:[]})),
-    api(`/ring/samples?metric=sleep_session&limit=40&since=${since}`).catch(()=>({samples:[]})),
+    api(`/ring/samples?metric=sleep_consolidated,sleep_session&limit=60&since=${since}`).catch(()=>({samples:[]})),
   ]);
-  cachedSeries.hr=hr.samples||[]; cachedSeries.hrv=hrv.samples||[];
-  cachedSeries.spo2=o2.samples||[]; cachedSeries.sleep=sl.samples||[];
+  cachedSeries.hr=hr.samples||[]; cachedSeries.hrv=hrv.samples||[]; cachedSeries.spo2=o2.samples||[];
+  const _sl=sl.samples||[]; const _c=_sl.filter(s=>s.metric==='sleep_consolidated');
+  cachedSeries.sleep=_c.length?_c:_sl.filter(s=>s.metric==='sleep_session');
 }
 
 function setGlance(hr,hrv,o2,sleep_s,label){

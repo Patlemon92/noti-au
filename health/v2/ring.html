@@ -331,7 +331,7 @@ async function load() {
   syncStart();
   try {
     const sleepSince = new Date(Date.now() - 30 * 86400 * 1000).toISOString();
-    const sleepQ = `/ring/samples?metric=sleep_session&limit=2000&since=${encodeURIComponent(sleepSince)}`;
+    const sleepQ = `/ring/samples?metric=sleep_consolidated,sleep_session&limit=2000&since=${encodeURIComponent(sleepSince)}`;
 
     const trendPromises = TREND_METRICS.map(m =>
       api(`/ring/trend?metric=${m}&days=${currentRange}`)
@@ -353,7 +353,11 @@ async function load() {
       cachedSamplesByMetric[r.metric] = r.samples;
       if (r.latest) cachedLatest[r.metric] = r.latest;
     }
-    cachedSleep.sessions = (sleepRes.samples || []).filter(s => s.metric === 'sleep_session');
+    // Prefer the engine's consolidated sleep (merged + HR-corrected over
+    // the ring's fragmented under-counted sessions); fall back to raw.
+    const _sl = sleepRes.samples || [];
+    const _cons = _sl.filter(s => s.metric === 'sleep_consolidated');
+    cachedSleep.sessions = _cons.length ? _cons : _sl.filter(s => s.metric === 'sleep_session');
     cachedBaselines = baseRes.baselines || {};
     cachedCheckins = (ciRes.checkins || []).slice()
       .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));

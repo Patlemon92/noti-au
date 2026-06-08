@@ -407,13 +407,11 @@
 <div class="sheet" id="bio-sheet" role="dialog" aria-modal="true">
   <div class="sheet-grip"></div>
   <h2>What Alys remembers</h2>
-  <p class="sub">Anything you want her to know about you. Diagnoses, family, things she should keep in mind.</p>
-  <textarea id="bio" rows="10" class="field-input" style="min-height:200px;line-height:1.5"
-    placeholder="e.g. POTS diagnosis since 2019, partner also has ME/CFS, dog at the vet a lot…"></textarea>
+  <p class="sub">What she's picked up about you from your check-ins and chats. It builds on its own over time.</p>
+  <div id="bio-text" style="font-size:15px;line-height:1.65;color:var(--ink-2);white-space:pre-wrap;max-height:55vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:4px"></div>
   <div class="sheet-actions">
     <span class="stat"></span>
-    <button class="btn" type="button" onclick="closeSheet('bio-sheet')">Cancel</button>
-    <button class="btn btn-primary" type="button" onclick="saveBio()">Save</button>
+    <button class="btn btn-primary" type="button" onclick="closeSheet('bio-sheet')">Done</button>
   </div>
 </div>
 
@@ -510,7 +508,7 @@ function renderProfile(u) {
   document.getElementById('f-morning').textContent = u.morningTime || '8:00 am';
   document.getElementById('f-evening').textContent = u.eveningTime || '8:00 pm';
   document.getElementById('f-bio').textContent =
-    (u.bio && u.bio.trim()) ? 'set' : 'add a note';
+    (u.bio && u.bio.trim()) ? 'view' : 'nothing yet';
 
   // Rings list (multi-ring aware)
   api('/ring/status').then(r => paintRings(r.devices || []))
@@ -694,17 +692,9 @@ async function saveName() {
 
 function openBioSheet() {
   openSheet('bio-sheet');
-  document.getElementById('bio').value = (_user && _user.bio) || '';
-  setTimeout(() => document.getElementById('bio').focus(), 200);
-}
-async function saveBio() {
-  const bio = document.getElementById('bio').value.trim();
-  try {
-    await api('/me/bio', { method: 'POST', body: JSON.stringify({ bio }) });
-    if (_user) _user.bio = bio;
-    document.getElementById('f-bio').textContent = bio ? 'set' : 'add a note';
-    closeSheet('bio-sheet');
-  } catch (e) { alert("Couldn't save: " + e.message); }
+  const t = (_user && _user.bio && _user.bio.trim()) || '';
+  document.getElementById('bio-text').textContent =
+    t || 'Nothing yet — Alys fills this in as you check in and talk with her.';
 }
 
 // ── Ring profile ─────────────────────────────────
@@ -860,7 +850,7 @@ function urlB64ToUint8Array(b64) {
 function showDoctorView() {
   const html = `
 <div class="page" style="max-width:412px;margin:0 auto">
-  <a href="/health/v2/more-v2.html" style="color:var(--clay);text-decoration:none;font-size:14px;display:inline-block;margin-bottom:18px">← Back to More</a>
+  <a href="/health/v2/more.html" style="color:var(--clay);text-decoration:none;font-size:14px;display:inline-block;margin-bottom:18px">← Back to More</a>
   <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:32px;letter-spacing:-.6px;color:var(--ink);margin-bottom:18px">What your doctor sees</h1>
   <p style="font-size:14.5px;line-height:1.6;color:var(--ink-soft);margin-bottom:24px">When you build a doctor-visit document in Record → Prepare, this is what's in it. Nothing else is shared.</p>
 
@@ -898,7 +888,7 @@ function showDoctorView() {
 function showAbout() {
   const html = `
 <div class="page" style="max-width:412px;margin:0 auto">
-  <a href="/health/v2/more-v2.html" style="color:var(--clay);text-decoration:none;font-size:14px;display:inline-block;margin-bottom:18px">← Back to More</a>
+  <a href="/health/v2/more.html" style="color:var(--clay);text-decoration:none;font-size:14px;display:inline-block;margin-bottom:18px">← Back to More</a>
   <h1 style="font-family:'Fraunces',serif;font-weight:500;font-size:36px;letter-spacing:-.7px;color:var(--ink);margin-bottom:14px">About Neeve</h1>
   <p style="font-family:'Fraunces',serif;font-style:italic;font-size:18px;line-height:1.55;color:var(--clay);margin-bottom:24px;letter-spacing:-.2px">Proof, not a tracker.</p>
   <p style="font-size:15px;line-height:1.7;color:var(--ink);margin-bottom:18px">People with chronic illness don't fail at logging — they fail to be believed. Neeve exists to make them undeniable in a doctor's office.</p>

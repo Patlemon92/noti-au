@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f1e4d2" />
+<title>Today · Neeve</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+
+<style>
+  :root{
+    --paper:#f1e4d2; --card:#fcf8f1; --ink:#3f3128; --ink-soft:#7c6759;
+    --muted:#a08a78; --clay:#bb6147; --clay-deep:#a3472f; --sage:#8d8a6a; --hair:#eaddc9;
+  }
+  body{
+    font-family:"Hanken Grotesk",system-ui,sans-serif;
+    background:var(--paper); background-attachment:fixed; color:var(--ink);
+  }
+  .page{ max-width:412px; margin:0 auto;
+    padding:calc(env(safe-area-inset-top,0px) + 10px) 18px calc(120px + env(safe-area-inset-bottom)); }
+
+  /* ── body-weather hero — colour shifts with the readiness state ── */
+  .hero{position:relative;border-radius:32px;overflow:hidden;isolation:isolate;margin-top:6px;min-height:360px;
+    box-shadow:0 18px 44px rgba(150,100,70,.24);}
+  .sky{position:absolute;inset:0;z-index:-2;opacity:0;transition:opacity 1s ease;}
+  .s-tender{background:linear-gradient(165deg,#e3cdd0 0%, #cdaeb6 40%, #b394a3 74%, #8f7689 100%);}
+  .s-quiet {background:linear-gradient(165deg,#eed9c1 0%, #dcc0a7 42%, #c4a695 74%, #a18a87 100%);}
+  .s-steady{background:linear-gradient(160deg,#f6dcb6 0%, #ecbf97 40%, #db9e80 74%, #c0876f 100%);}
+  .s-open  {background:linear-gradient(155deg,#fce7c2 0%, #f4c993 38%, #eea677 72%, #df8d6c 100%);}
+  .s-strong{background:linear-gradient(150deg,#ffeec6 0%, #f9cd86 34%, #f1a85f 66%, #df8a52 100%);}
+  .hero[data-mood=tender] .s-tender,.hero[data-mood=quiet] .s-quiet,.hero[data-mood=steady] .s-steady,
+  .hero[data-mood=open] .s-open,.hero[data-mood=strong] .s-strong{opacity:1;}
+
+  .orbs{position:absolute;inset:0;z-index:-1;transition:opacity 1s ease;}
+  .orb{position:absolute;border-radius:50%;filter:blur(6px);
+    background:radial-gradient(circle,rgba(255,248,235,.85),rgba(255,240,220,.25) 46%,transparent 70%);}
+  .orb.a{width:240px;height:240px;left:76%;top:10%;animation:drift1 13s ease-in-out infinite;}
+  .orb.b{width:180px;height:180px;left:8%;top:70%;animation:drift2 17s ease-in-out infinite;}
+  .orb.c{width:120px;height:120px;left:46%;top:42%;opacity:.7;animation:drift1 21s ease-in-out infinite reverse;}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-16px,12px) scale(1.08)}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(14px,-14px) scale(1.1)}}
+  .hero[data-mood=tender] .orbs{opacity:.5;}.hero[data-mood=quiet] .orbs{opacity:.72;}.hero[data-mood=strong] .orbs{opacity:1;}
+
+  .fg{position:relative;padding:18px 22px 24px;display:flex;flex-direction:column;min-height:360px;color:#41271d;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .wpill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,250,243,.5);backdrop-filter:blur(4px);
+    border:1px solid rgba(255,255,255,.4);padding:9px 15px;border-radius:30px;font-size:13.5px;font-weight:500;color:#5c3a2b;}
+  .wpill b{color:#41271d;font-weight:600;}
+  .refresh{width:44px;height:44px;border-radius:50%;background:rgba(255,250,243,.5);backdrop-filter:blur(4px);
+    border:1px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;color:var(--clay-deep);cursor:pointer;}
+  .refresh svg{width:18px;height:18px;transition:transform .3s ease;}
+  .refresh.spinning svg{animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .kicker{font-size:16px;font-weight:500;margin-top:20px;color:#5c3a2b;opacity:.95;}
+  .spacer{flex:1;}
+  .day{font-family:"Fraunces",serif;font-weight:500;font-size:46px;line-height:1.02;letter-spacing:-.015em;transition:opacity .45s;}
+  .why{font-size:17px;line-height:1.5;margin-top:13px;max-width:32ch;color:#56372a;transition:opacity .45s;}
+
+  /* confirm — "sound right?" feeds the learning loop */
+  .confirm{margin-top:18px;display:flex;flex-direction:column;gap:9px;transition:opacity .35s;}
+  .confirm .q{font-size:13.5px;font-weight:600;color:#6e4636;}
+  .confirm .row{display:flex;gap:7px;}
+  .confirm button{flex:1;font-family:inherit;font-size:13px;font-weight:600;padding:9px 4px;border-radius:16px;cursor:pointer;
+    background:rgba(255,250,243,.45);border:1px solid rgba(255,255,255,.4);color:#5c3a2b;transition:.15s;}
+  .confirm button:active{transform:scale(.97);}
+  .confirm button.on{background:#fbf4ea;color:#41271d;box-shadow:0 2px 8px rgba(120,70,50,.18);}
+  .confirm .thanks{font-size:13.5px;color:#5c3a2b;font-style:italic;}
+
+  .seedata{margin-top:16px;font-size:14px;font-weight:600;color:#7a4a35;text-decoration:none;display:inline-flex;gap:6px;align-items:center;width:max-content;}
+
+  /* stat strip — tappable to each metric page */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);margin-top:18px;}
+  .stat{text-align:center;padding:6px 4px;text-decoration:none;color:inherit;}
+  .stat + .stat{border-left:1px solid rgba(255,255,255,.35);}
+  .stat .l{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(92,58,43,.7);}
+  .stat .v{font-family:"Fraunces",serif;font-weight:600;font-size:24px;margin-top:6px;color:#41271d;line-height:1;}
+  .stat .v small{font-size:11px;color:rgba(92,58,43,.6);font-weight:400;margin-left:1px;}
+
+  /* check-in CTA */
+  .checkin{display:flex;align-items:center;gap:14px;background:var(--card);border-radius:22px;padding:16px 18px;
+    margin-top:14px;box-shadow:0 8px 24px rgba(120,90,60,.06);cursor:pointer;text-decoration:none;color:inherit;}
+  .checkin .ic{width:34px;height:34px;border-radius:50%;background:var(--clay);color:#fff;flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .checkin .t{font-family:"Fraunces",serif;font-weight:500;font-size:17px;color:var(--ink);}
+  .checkin .s{font-size:13px;color:var(--muted);margin-top:2px;}
+  .checkin .go{margin-left:auto;color:var(--muted);font-size:20px;}
+
+  /* note-soft */
+  .note{margin-top:14px;border:1.5px dashed #d8c6ad;border-radius:22px;padding:17px 20px;
+    display:flex;align-items:flex-start;gap:13px;cursor:pointer;background:rgba(252,248,241,.45);width:100%;text-align:left;}
+  .note .plus{width:25px;height:25px;border-radius:50%;background:var(--clay);color:#fff;flex:none;
+    display:flex;align-items:center;justify-content:center;font-size:17px;line-height:1;margin-top:1px;}
+  .note p{font-family:"Fraunces",serif;font-style:italic;font-weight:500;font-size:17px;line-height:1.35;color:var(--ink-soft);}
+
+  /* quick-log sheet */
+  .ql-backdrop{position:fixed;inset:0;background:rgba(43,34,28,.45);z-index:1000;opacity:0;pointer-events:none;transition:opacity .2s ease;}
+  .ql-backdrop.open{opacity:1;pointer-events:auto;}
+  .ql-sheet{position:fixed;left:0;right:0;bottom:0;z-index:1001;background:var(--card);border-radius:22px 22px 0 0;
+    padding:18px 20px max(22px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .25s ease;max-height:88vh;overflow-y:auto;}
+  .ql-sheet.open{transform:translateY(0);box-shadow:0 -10px 30px rgba(43,34,28,.18);}
+  .ql-grip{width:36px;height:4px;background:var(--hair);border-radius:2px;margin:0 auto 12px;}
+  .ql-sheet h2{font-family:"Fraunces",serif;font-weight:500;font-size:21px;color:var(--ink);margin:0 0 4px;}
+  .ql-sheet .sub{font-size:13.5px;color:var(--muted);margin-bottom:14px;line-height:1.45;}
+  .ql-sheet textarea{width:100%;min-height:96px;border:1px solid var(--hair);border-radius:14px;padding:12px;
+    font-family:inherit;font-size:15px;color:var(--ink);background:#fffdf9;resize:vertical;}
+  .ql-cap{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:14px 0 6px;}
+  .ql-row{display:flex;flex-wrap:wrap;gap:6px;}
+  .ql-chip{font-family:inherit;font-size:12.5px;font-weight:500;padding:8px 13px;border-radius:15px;border:1px solid var(--hair);
+    background:#fcf8f1;color:var(--muted);cursor:pointer;}
+  .ql-chip.on{background:var(--ink);color:#f6ecdd;border-color:var(--ink);}
+  .ql-actions{display:flex;align-items:center;gap:10px;margin-top:16px;}
+  .ql-status{font-size:13px;color:var(--muted);flex:1;}
+</style>
+</head>
+<body>
+
+<main class="page">
+
+  <div class="hero" id="hero" data-mood="steady">
+    <div class="sky s-tender"></div><div class="sky s-quiet"></div><div class="sky s-steady"></div>
+    <div class="sky s-open"></div><div class="sky s-strong"></div>
+    <div class="orbs"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
+    <div class="fg">
+      <div class="topbar">
+        <div class="wpill"><span id="wx-clock">—</span>&nbsp;·&nbsp;<b id="wx-temp">—</b>&nbsp;<span id="wx-cond"></span></div>
+        <button class="refresh" id="refresh" onclick="manualSync()" aria-label="Refresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+            <polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/>
+          </svg>
+        </button>
+      </div>
+      <div class="kicker" id="kicker">Good day</div>
+      <div class="spacer"></div>
+      <div class="day" id="day">Reading your day…</div>
+      <div class="why" id="why">Pulling your overnight numbers together.</div>
+
+      <div class="confirm" id="confirm" style="display:none">
+        <div class="q">Sound right?</div>
+        <div class="row" id="confirm-row">
+          <button data-felt="better">I feel better</button>
+          <button data-felt="match">that's about right</button>
+          <button data-felt="worse">I feel worse</button>
+        </div>
+      </div>
+
+      <a class="seedata" href="/health/v2/ring.html">see the data behind this →</a>
+
+      <div class="stats" id="stats"></div>
+    </div>
+  </div>
+
+  <!-- check-in CTA — only when a slot is due -->
+  <a class="checkin" id="checkin" href="#" style="display:none">
+    <span class="ic">✎</span>
+    <div>
+      <div class="t" id="checkin-title">Check-in</div>
+      <div class="s">a quick one, when you're ready.</div>
+    </div>
+    <span class="go">›</span>
+  </a>
+
+  <!-- note something -->
+  <button class="note" type="button" onclick="openLogSheet()">
+    <span class="plus">+</span>
+    <p>Note something — a thought, a symptom, a moment.</p>
+  </button>
+
+</main>
+
+<!-- Quick-log sheet -->
+<div class="ql-backdrop" id="ql-backdrop" onclick="closeLogSheet()"></div>
+<div class="ql-sheet" id="ql-sheet" role="dialog" aria-modal="true">
+  <div class="ql-grip"></div>
+  <h2>What's on your mind?</h2>
+  <div class="sub">Anything you want noted. Alys reads it; past you might thank you.</div>
+  <textarea id="ql-body" placeholder="A symptom, an appointment, something that helped, a thought to remember…"></textarea>
+  <div class="ql-cap">Tag it (optional)</div>
+  <div class="ql-row" id="ql-kinds">
+    <button class="ql-chip" data-kind="symptom"     onclick="selectKind('symptom')">Symptom</button>
+    <button class="ql-chip" data-kind="appointment" onclick="selectKind('appointment')">Appointment</button>
+    <button class="ql-chip" data-kind="medication"  onclick="selectKind('medication')">Medication</button>
+    <button class="ql-chip" data-kind="trigger"     onclick="selectKind('trigger')">Trigger</button>
+    <button class="ql-chip" data-kind="event"       onclick="selectKind('event')">Event</button>
+    <button class="ql-chip" data-kind="thought"     onclick="selectKind('thought')">Thought</button>
+  </div>
+  <div class="ql-actions">
+    <span class="ql-status" id="ql-status"></span>
+    <button class="btn" onclick="closeLogSheet()">Cancel</button>
+    <button class="btn btn-primary" id="ql-submit" onclick="submitQuickLog()" disabled>Log it</button>
+  </div>
+</div>
+
+<div id="nav-mount"></div>
+
+<script src="/health/v2/lib.js"></script>
+<script>
+document.getElementById('nav-mount').innerHTML = renderNav('today');
+
+// Brand-new users land on /welcome before Today.
+(async function gateUnonboarded(){
+  try { const u = await api('/me'); if (u && u.id && !u.onboarded) location.replace('/health/v2/welcome.html'); } catch(_){}
+})();
+
+const DAY_FALLBACK = {
+  tender:'A tender day.', quiet:'A quiet day.', steady:'A steady day.',
+  open:'An open day.', strong:'A strong day.',
+};
+let _todayState = null;     // current readiness state
+let _readinessTs = null;    // the read the confirm is about
+let _profile = null;
+
+function greetFromHour(h){ return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
+
+function wmoLabel(c){
+  if (c == null) return '';
+  if (c === 0) return 'clear'; if (c <= 2) return 'mostly clear'; if (c === 3) return 'cloudy';
+  if (c <= 48) return 'fog'; if (c <= 67) return 'rain'; if (c <= 77) return 'snow';
+  if (c <= 82) return 'showers'; if (c <= 99) return 'storms'; return '';
+}
+function fmtSleep(s){ if(!s||s<=0) return '—'; const h=Math.floor(s/3600), m=Math.round((s%3600)/60); return `${h}<small>h</small>${m}<small>m</small>`; }
+
+async function load(){
+  // Greeting (name + hour)
+  try {
+    if (!_profile) _profile = await api('/me').catch(()=>null);
+    const h = new Date().getHours();
+    const name = _profile?.name ? _profile.name.split(' ')[0] : 'there';
+    document.getElementById('kicker').textContent = `${greetFromHour(h)}, ${name}`;
+  } catch(_){}
+
+  document.getElementById('wx-clock').textContent =
+    new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}).toLowerCase();
+
+  let t;
+  try { t = await api('/me/today'); } catch(e){ return; }
+
+  // Hero state → theme
+  const state = t.state || 'steady';
+  _todayState = state;
+  _readinessTs = t.computed_at || null;
+  const hero = document.getElementById('hero');
+  const day = document.getElementById('day'), why = document.getElementById('why');
+  if (hero.dataset.mood !== state) {
+    day.style.opacity = 0; why.style.opacity = 0;
+    setTimeout(()=>{ hero.dataset.mood = state; day.style.opacity=1; why.style.opacity=1; }, 220);
+  }
+  hero.dataset.mood = state;
+  day.textContent = t.day_word || DAY_FALLBACK[state] || 'Today.';
+  why.textContent = t.why || '';
+
+  // Weather pill
+  if (t.weather) {
+    document.getElementById('wx-temp').textContent =
+      t.weather.temperature != null ? Math.round(t.weather.temperature) + '°' : '—';
+    document.getElementById('wx-cond').textContent = wmoLabel(t.weather.weather_code);
+  }
+
+  // Stat strip — tappable to each metric page
+  const i = t.inputs || {};
+  document.getElementById('stats').innerHTML = `
+    <a class="stat" href="/health/v2/metric.html?metric=hr&days=1"><div class="l">HR</div><div class="v">${i.hr ?? '—'}<small>bpm</small></div></a>
+    <a class="stat" href="/health/v2/metric.html?metric=hrv_rmssd&days=1"><div class="l">HRV</div><div class="v">${i.hrv ?? '—'}<small>ms</small></div></a>
+    <a class="stat" href="/health/v2/metric.html?metric=spo2&days=1"><div class="l">O₂</div><div class="v">${i.spo2 ?? '—'}<small>%</small></div></a>
+    <a class="stat" href="/health/v2/sleep.html"><div class="l">Sleep</div><div class="v">${fmtSleep(i.sleep_s)}</div></a>`;
+
+  // Confirm row — show unless already confirmed for this read
+  const confirm = document.getElementById('confirm');
+  if (state && _readinessTs && localStorage.getItem('rconfirm_' + _readinessTs)) {
+    confirm.style.display = 'none';
+  } else if (state) {
+    confirm.style.display = 'flex';
+  }
+
+  // Check-in CTA
+  const ci = document.getElementById('checkin');
+  if (t.checkin && t.checkin.due) {
+    document.getElementById('checkin-title').textContent =
+      (t.checkin.slot === 'evening' ? 'Evening' : 'Morning') + ' check-in';
+    ci.href = `/health/v2/checkin.html?slot=${t.checkin.slot}`;
+    ci.style.display = 'flex';
+  } else {
+    ci.style.display = 'none';
+  }
+}
+
+// ── confirm loop → feeds the readiness calibration ──
+document.getElementById('confirm-row').addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const felt = b.dataset.felt;
+  [...document.querySelectorAll('#confirm-row button')].forEach(x => x.classList.toggle('on', x === b));
+  try {
+    await api('/me/readiness-feedback', {
+      method: 'POST',
+      body: JSON.stringify({ felt, readiness_ts: _readinessTs }),
+    });
+    if (_readinessTs) localStorage.setItem('rconfirm_' + _readinessTs, felt);
+    const confirm = document.getElementById('confirm');
+    confirm.innerHTML = '<div class="thanks">thanks — that helps me read you better.</div>';
+    setTimeout(() => { confirm.style.opacity = 0; }, 1600);
+  } catch (_) {
+    b.classList.remove('on');
+  }
+});
+
+// ── quick-log sheet ──
+let _qlKind = null;
+function openLogSheet(){ document.getElementById('ql-backdrop').classList.add('open'); document.getElementById('ql-sheet').classList.add('open'); setTimeout(()=>document.getElementById('ql-body').focus(),200); }
+function closeLogSheet(){ document.getElementById('ql-backdrop').classList.remove('open'); document.getElementById('ql-sheet').classList.remove('open'); }
+function selectKind(k){ _qlKind = _qlKind===k?null:k; document.querySelectorAll('#ql-kinds .ql-chip').forEach(b=>b.classList.toggle('on', b.dataset.kind===_qlKind)); refreshQlSubmit(); }
+function refreshQlSubmit(){ document.getElementById('ql-submit').disabled = !(document.getElementById('ql-body').value||'').trim(); }
+document.getElementById('ql-body').addEventListener('input', refreshQlSubmit);
+async function submitQuickLog(){
+  const status=document.getElementById('ql-status'), btn=document.getElementById('ql-submit');
+  const text=document.getElementById('ql-body').value.trim(); if(!text) return;
+  status.textContent='Logging…'; btn.disabled=true;
+  try{
+    await api('/me/note',{method:'POST',body:JSON.stringify({kind:_qlKind,body:text})});
+    status.textContent='Logged.';
+    document.getElementById('ql-body').value=''; _qlKind=null;
+    document.querySelectorAll('.ql-chip').forEach(b=>b.classList.remove('on'));
+    setTimeout(()=>{ closeLogSheet(); status.textContent=''; }, 1100);
+  }catch(e){ status.textContent=`Couldn't log: ${e.message}`; btn.disabled=false; }
+}
+
+// ── native bridge + sync ──
+function callNative(method, args={}){ if(window.neeve?.postMessage){ window.neeve.postMessage(JSON.stringify({method,args})); return true; } return false; }
+async function manualSync(){
+  const el=document.getElementById('refresh'); el.classList.add('spinning');
+  callNative('freshRefresh');
+  try{ await load(); await new Promise(r=>setTimeout(r,16000)); await load(); }
+  finally{ el.classList.remove('spinning'); }
+}
+
+// ── refresh while visible ──
+load();
+let _timer=null;
+function _start(){ if(_timer) return; _timer=setInterval(load,30000); }
+function _stop(){ if(_timer){ clearInterval(_timer); _timer=null; } }
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) _stop(); else { load(); _start(); } });
+window.addEventListener('neeve:ring-tick', load);
+if(!document.hidden) _start();
+onResume(load);
+</script>
+</body>
+</html>

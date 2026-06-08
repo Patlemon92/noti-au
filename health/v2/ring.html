@@ -112,6 +112,13 @@
   .spark{min-width:78px;}
   .spark svg{display:block;}
 
+  /* self-report "how you're feeling" table */
+  .frow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:14px;padding:15px 2px;}
+  .frow + .frow{border-top:1px solid var(--hair);}
+  .frow .fname{font-family:"Fraunces",serif;font-weight:500;font-size:18px;color:var(--ink);}
+  .frow .fval{font-family:"Fraunces",serif;font-weight:500;font-size:23px;color:var(--ink);text-align:right;}
+  .frow .fusual{font-size:11.5px;color:var(--muted);text-align:right;min-width:118px;white-space:nowrap;}
+
   .empty{background:var(--card);border-radius:24px;padding:28px 22px;text-align:center;
     color:var(--muted);font-size:14.5px;line-height:1.5;box-shadow:0 8px 24px rgba(120,90,60,.06);}
 
@@ -208,6 +215,9 @@
   <!-- grouped metric list -->
   <div id="groups"></div>
 
+  <!-- self-reported: how the felt stuff is sitting vs your usual -->
+  <div id="felt-section"></div>
+
 </main>
 
 <!-- Bottom-sheet modal: device info + actions -->
@@ -243,6 +253,7 @@ let cachedLatest = {};                 // metric → {ts, value, unit}
 let cachedSamplesByMetric = {};        // metric → [{ts,value,meta}]
 let cachedSleep = { sessions: [] };
 let cachedBaselines = {};              // metric → {healthy,p30,p90,lifetime,...}
+let cachedCheckins = [];               // recent check-ins (desc) for the self-report table
 let cachedDevice = null;
 
 // Only the metrics this hub actually surfaces (Overnight / Today /
@@ -323,11 +334,12 @@ async function load() {
         .then(r => ({ metric: m, samples: r.samples || [], latest: r.latest || null }))
         .catch(() => ({ metric: m, samples: [], latest: null })));
 
-    const [{ devices }, trendResults, sleepRes, baseRes] = await Promise.all([
+    const [{ devices }, trendResults, sleepRes, baseRes, ciRes] = await Promise.all([
       api('/ring/status'),
       Promise.all(trendPromises),
       api(sleepQ).catch(() => ({ samples: [] })),
       api('/me/baselines').catch(() => ({ baselines: {} })),
+      api('/me/checkins?days=7').catch(() => ({ checkins: [] })),
     ]);
 
     cachedDevice = devices[0];
@@ -339,10 +351,13 @@ async function load() {
     }
     cachedSleep.sessions = (sleepRes.samples || []).filter(s => s.metric === 'sleep_session');
     cachedBaselines = baseRes.baselines || {};
+    cachedCheckins = (ciRes.checkins || []).slice()
+      .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
 
     renderHeadPill();
     renderHero();
     renderGroups();
+    renderFelt();
     firstLoad = false;
   } catch (e) {
     if (firstLoad) {
@@ -730,6 +745,55 @@ function updateGroups() {
       const el = document.getElementById(`spark-${row.key}`);
       if (el) drawSpark(el, series, false);
     }
+  }
+}
+
+// ── self-report table — how the felt stuff is sitting vs the usual ──
+// Reads the latest value per question from recent check-ins and compares
+// it to that metric's own baseline, so people can see e.g. how their
+// anxiety is sitting today. Change-guarded so it never blinks.
+const FELT_ROWS = [
+  { key:'anxiety_level',  alt:'morning_anxiety_level',  name:'Anxiety' },
+  { key:'mood',           alt:'morning_mood',           name:'Mood' },
+  { key:'energy',         alt:'morning_energy',         name:'Energy' },
+  { key:'fatigue_level',  alt:'morning_fatigue_level',  name:'Fatigue' },
+  { key:'fog_level',                                    name:'Brain fog' },
+  { key:'pain_level',     alt:'morning_pain_level',     name:'Pain' },
+  { key:'stress',                                       name:'Stress' },
+];
+let _lastFeltHtml = '';
+
+function latestAnswer(key) {
+  if (!key) return null;
+  for (const c of cachedCheckins) {
+    const v = Number((c.answers || {})[key]);
+    if (isFinite(v)) return v;
+  }
+  return null;
+}
+function feltSitting(cur, base) {
+  if (base == null) return '';
+  const d = cur - base, tol = Math.max(1, base * 0.2);
+  if (Math.abs(d) <= tol) return 'around your usual';
+  return d > 0 ? 'higher than usual' : 'lower than usual';
+}
+function renderFelt() {
+  const rowsHtml = FELT_ROWS.map(r => {
+    let cur = latestAnswer(r.key);
+    if (cur == null) cur = latestAnswer(r.alt);
+    if (cur == null) return '';
+    const b = cachedBaselines[r.key] || (r.alt ? cachedBaselines[r.alt] : null);
+    const base = b ? (b.healthy ?? b.p30 ?? b.lifetime ?? null) : null;
+    const meta = [base != null ? `usual ${Math.round(base)}` : '', feltSitting(cur, base)]
+      .filter(Boolean).join(' · ');
+    return `<div class="frow"><span class="fname">${r.name}</span><span class="fval">${Math.round(cur)}</span><span class="fusual">${meta}</span></div>`;
+  }).join('');
+  const wrapped = rowsHtml.trim()
+    ? `<div class="group"><div class="glabel">How you're feeling</div><div class="gcard">${rowsHtml}</div></div>`
+    : '';
+  if (wrapped !== _lastFeltHtml) {
+    _lastFeltHtml = wrapped;
+    document.getElementById('felt-section').innerHTML = wrapped;
   }
 }
 

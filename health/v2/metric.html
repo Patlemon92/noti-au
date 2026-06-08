@@ -1,717 +1,332 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#FAF6F0" />
-<title>Detail · Neeve</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neeve · Heart rate</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400,50;9..144,500,50;9..144,600,50&family=Inter+Tight:wght@400;450;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/health/v2/styles.css">
-
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;450;500;600&display=swap" rel="stylesheet">
 <style>
-.detail-back {
-  display: inline-flex; align-items: center; gap: 6px;
-  color: var(--ink-mute); text-decoration: none; font-size: 14px;
-}
-.detail-back:hover { color: var(--ink); }
+  :root{
+    --paper:#f4eadc;
+    --card:#fbf6ee;
+    --ink:#42332b;
+    --ink-soft:#6b574a;
+    --muted:#9a8473;
+    --clay:#bb6147;
+    --clay-soft:#d29a82;
+    --trend:#6f7551;
+    --gold:#e9cda2;
+    --plum:#6b4f63;
+    --line:#e6d8c4;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:"Hanken Grotesk",system-ui,sans-serif;
+    background:var(--paper);
+    min-height:100vh;
+    color:var(--ink);
+  }
+  .phone{
+    width:100%;
+    max-width:480px;
+    margin:0 auto;
+    background:var(--paper);
+    overflow:hidden;
+    position:relative;
+    min-height:100vh;
+  }
+  .seebtn button:disabled{opacity:.5;}
+  /* status bar */
+  .status{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:14px 26px 6px;font-size:15px;font-weight:600;color:var(--ink);
+  }
+  .status .right{display:flex;gap:6px;align-items:center;}
+  .status .bar{width:4px;border-radius:2px;background:var(--ink);}
+  .status .batt{width:24px;height:12px;border:1.5px solid var(--ink);border-radius:3px;position:relative;}
+  .status .batt::after{content:"";position:absolute;left:1.5px;top:1.5px;bottom:1.5px;width:7px;background:var(--clay);border-radius:1px;}
 
-/* Range headline (Apple-Health-style RANGE x–y unit) */
-.range-head { margin: 6px 0 2px; position: relative; }
-/* Quick-glance "last reading" chip, top-right of the card. */
-.last-chip {
-  position: absolute; top: 0; right: 0;
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(154,131,105,.10); border: 1px solid rgba(154,131,105,.22);
-  color: var(--ink-mute); border-radius: 99px; padding: 5px 11px;
-  font-family: 'Inter Tight', system-ui, sans-serif; font-size: 12px;
-  letter-spacing: .01em; white-space: nowrap;
-}
-.last-chip .lc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rose); flex: 0 0 auto; }
-.last-chip b { font-weight: 600; color: var(--ink); }
-.zoom-hint { text-align: center; font-size: 11.5px; color: var(--ink-mute); margin-top: 8px; opacity: .7; }
-.range-head .rh-label {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--ink-mute);
-}
-.range-head .rh-big {
-  font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500;
-  font-size: 40px; line-height: 1.04; letter-spacing: -1px; color: var(--ink);
-  margin-top: 2px;
-}
-.range-head .rh-big .rh-unit {
-  font-family: 'Inter Tight', system-ui, sans-serif;
-  font-size: 16px; font-weight: 500; color: var(--ink-mute); margin-left: 7px;
-}
-.range-head .rh-sub { font-size: 13.5px; color: var(--ink-mute); margin-top: 3px; }
+  /* HERO ------------------------------------------------ */
+  .hero{
+    position:relative;
+    padding:18px 26px 30px;
+    background:
+      radial-gradient(120% 80% at 50% 18%, rgba(233,205,162,.0) 0%, rgba(233,205,162,.0) 40%, transparent 70%),
+      linear-gradient(180deg,#f0d3ac 0%, #e3a982 34%, #c5826f 60%, #8d6675 82%, #6b4f63 100%);
+    overflow:hidden;
+    isolation:isolate;
+  }
+  .hero::before{ /* glowing orb */
+    content:"";position:absolute;z-index:-1;
+    width:300px;height:300px;left:50%;top:46%;transform:translate(-50%,-50%);
+    background:radial-gradient(circle, rgba(255,236,210,.85) 0%, rgba(214,142,118,.35) 38%, rgba(140,90,110,0) 70%);
+    filter:blur(6px);
+    animation:breathe 7s ease-in-out infinite;
+  }
+  @keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.92;}50%{transform:translate(-50%,-50%) scale(1.09);opacity:1;}}
 
-/* bar-tap readout */
-.scrub-readout {
-  display: flex; justify-content: space-between; align-items: center;
-  min-height: 22px; margin: 4px 0 6px; font-size: 13px;
-}
-.scrub-readout .when { color: var(--ink-mute); }
-.scrub-readout .what { font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500; color: var(--ink); font-size: 16px; }
+  .backpill{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(67,51,43,.30);backdrop-filter:blur(4px);
+    color:#fbf3e8;font-size:14px;font-weight:500;
+    padding:9px 16px;border-radius:30px;border:1px solid rgba(255,255,255,.18);
+  }
+  .toppill{
+    display:flex;justify-content:center;margin-top:30px;
+  }
+  .toppill span{
+    display:inline-flex;align-items:center;gap:7px;
+    background:rgba(255,255,255,.16);backdrop-filter:blur(4px);
+    color:#fff5ea;font-size:15px;font-weight:500;
+    padding:10px 22px;border-radius:30px;border:1px solid rgba(255,255,255,.22);
+  }
+  .herobody{text-align:center;color:#fff6ec;padding-top:62px;}
+  .herobody .label{font-size:21px;font-weight:450;letter-spacing:.01em;opacity:.92;}
+  .herobody .big{
+    font-family:"Fraunces",serif;font-weight:500;
+    font-size:104px;line-height:.92;margin-top:10px;letter-spacing:-.01em;
+    text-shadow:0 2px 30px rgba(80,40,55,.35);
+  }
+  .herobody .big small{font-size:40px;font-weight:400;opacity:.9;}
+  .herobody .sub{font-size:18px;margin-top:18px;opacity:.94;font-weight:450;}
+  .herobody .sub .dot{opacity:.6;margin:0 8px;}
+  .seebtn{
+    margin:30px auto 0;display:flex;justify-content:center;
+  }
+  .seebtn button{
+    display:inline-flex;align-items:center;gap:10px;
+    background:rgba(255,255,255,.16);backdrop-filter:blur(4px);
+    color:#fff6ec;font-family:inherit;font-size:16px;font-weight:500;
+    padding:15px 30px;border-radius:34px;border:1px solid rgba(255,255,255,.26);
+    cursor:pointer;transition:background .25s;
+  }
+  .seebtn button:hover{background:rgba(255,255,255,.26);}
 
-.chart-card svg { display: block; width: 100%; touch-action: pan-y; }
+  /* CARDS ----------------------------------------------- */
+  .body{padding:22px 18px 30px;}
+  .card{
+    background:var(--card);border-radius:26px;padding:22px 20px;
+    margin-bottom:16px;box-shadow:0 1px 0 rgba(0,0,0,.02), 0 10px 30px rgba(120,90,60,.06);
+  }
+  .card .chead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .card .ctitle{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+  .card .cnote{font-size:13px;color:var(--muted);}
 
-.filtered-note {
-  font-size: 12px; color: var(--ink-mute); text-align: center;
-  margin: 12px 4px 2px; line-height: 1.45;
-}
-.filtered-note b { color: var(--terra); font-weight: 600; }
+  /* chart */
+  .chartwrap{margin-top:8px;}
+  svg .gridline{stroke:var(--line);stroke-width:1;}
+  svg .axis{fill:var(--muted);font-size:13px;font-family:"Hanken Grotesk",sans-serif;}
+  svg .restlabel{fill:var(--muted);font-size:12px;font-weight:500;}
+  .chartcaption{font-size:13.5px;line-height:1.5;color:var(--ink-soft);margin-top:12px;padding:0 2px;}
 
-.stats-grid {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
-  margin-top: 14px;
-}
-.stat-tile {
-  background: var(--bone-deep); border-radius: 12px; padding: 12px 10px 14px;
-  text-align: center; display: flex; flex-direction: column; align-items: center;
-  justify-content: flex-start; min-height: 78px;
-}
-.stat-tile .stat-label {
-  font-size: 10.5px; color: var(--ink-mute); text-transform: uppercase;
-  letter-spacing: 0.08em; font-weight: 600;
-}
-.stat-tile .stat-value {
-  font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500; font-size: 26px;
-  color: var(--ink); margin-top: 6px; line-height: 1; letter-spacing: -.5px;
-}
-.stat-tile .stat-unit {
-  font-family: 'Inter Tight', system-ui, sans-serif;
-  font-size: 11px; color: var(--ink-mute); margin-top: 2px; letter-spacing: .02em;
-}
-.stat-tile .stat-time {
-  font-family: 'Inter Tight', system-ui, sans-serif;
-  font-size: 10.5px; color: var(--ink-mute); margin-top: 4px; opacity: .85;
-}
+  /* breakdown */
+  .breakdown{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  .breakdown .b{text-align:center;padding:6px 4px;}
+  .breakdown .b .lab{display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;}
+  .breakdown .b .lab i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .breakdown .b .val{font-family:"Fraunces",serif;font-size:34px;font-weight:500;color:var(--ink);margin-top:8px;line-height:1;}
+  .breakdown .b .unit{font-size:14px;color:var(--muted);margin-top:3px;}
 
-/* How / Why transparency cards */
-.explain h3 {
-  margin: 0 0 8px; font-size: 16px; font-weight: 500;
-  font-family: 'Apricosa', 'Fraunces', serif;
-  display: flex; align-items: center; gap: 9px; color: var(--ink);
-}
-.explain .ex-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--terra); flex: none; }
-.explain p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink); }
-.explain .ex-care { font-size: 12px; color: var(--ink-mute); margin-top: 10px; font-style: italic; }
+  /* alys */
+  .alys .arow{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .alys .name{display:flex;align-items:center;gap:10px;font-family:"Fraunces",serif;font-size:21px;font-weight:500;color:var(--ink);}
+  .alys .name i{width:11px;height:11px;border-radius:50%;background:var(--clay);}
+  .alys .when{font-size:13px;color:var(--muted);}
+  .alys p{font-size:16.5px;line-height:1.62;color:var(--ink-soft);font-weight:450;}
 
-/* (i) info button — top corner — opens the "How this is measured" sheet */
-.page { position: relative; }
-.info-btn {
-  position: absolute; top: 13px; right: 0;
-  width: 30px; height: 30px; border-radius: 50%;
-  border: 1px solid var(--hair); background: var(--bone-deep);
-  color: var(--ink-mute); font-size: 14px; font-style: italic;
-  font-family: 'Apricosa', 'Fraunces', serif; line-height: 1;
-  display: grid; place-items: center; cursor: pointer; padding: 0;
-}
-.info-btn:active { background: var(--hair); }
-.how-modal {
-  position: fixed; inset: 0; background: rgba(26,20,15,.42);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px; z-index: 100;
-}
-.how-modal[hidden] { display: none; }
-.how-card {
-  background: #fff; border-radius: 18px; padding: 22px 20px 18px;
-  max-width: 380px; width: 100%; box-shadow: 0 14px 44px rgba(0,0,0,.22);
-}
-.how-card h3 {
-  margin: 0 0 10px; font-family: 'Apricosa', 'Fraunces', serif;
-  font-weight: 500; font-size: 18px; color: var(--ink);
-}
-.how-card p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink); }
-.how-card button {
-  margin-top: 18px; width: 100%; padding: 11px; border: none; border-radius: 12px;
-  background: var(--terra); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
-}
-
-.alys-card { background: var(--bone-deep); }
-.alys-card .alys-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.alys-card .alys-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rose); display: inline-block; }
-.alys-card .alys-name { font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500; font-size: 16px; color: var(--ink); }
-.alys-card .alys-meta { font-size: 11px; color: var(--ink-mute); margin-left: auto; }
-.alys-card .alys-body { font-size: 15px; line-height: 1.55; color: var(--ink); white-space: pre-wrap; }
-.alys-card .alys-tiny {
-  font-size: 11px; color: var(--ink-mute); margin-top: 12px; padding-top: 10px;
-  border-top: 1px solid var(--hair);
-}
-.range-row { display: flex; gap: 8px; margin-bottom: 12px; }
-.range-row .pill { cursor: pointer; }
-.range-row .pill-active { background: var(--rose); color: white; }
-.zoom-out-pill {
-  margin-left: auto; /* push to the right edge */
-  background: rgba(74, 90, 64, .10);
-  border-color: rgba(74, 90, 64, .28) !important;
-  color: #4A5A40 !important; font-weight: 600;
-}
+  /* load animation */
+  .fade{opacity:0;transform:translateY(14px);animation:up .8s cubic-bezier(.2,.7,.2,1) forwards;}
+  .d1{animation-delay:.05s;} .d2{animation-delay:.18s;} .d3{animation-delay:.32s;} .d4{animation-delay:.46s;}
+  @keyframes up{to{opacity:1;transform:translateY(0);}}
 </style>
 </head>
 <body>
+<div class="phone">
 
-<main class="page">
-  <a class="detail-back" href="javascript:history.back()">‹ Back</a>
-  <button class="info-btn" id="info-btn" aria-label="How this is measured" title="How this is measured">i</button>
-  <p class="label" id="m-cat">Metric</p>
-  <h1 class="title" id="m-title">Loading…</h1>
-
-  <div class="range-row" id="range-row">
-    <button class="pill" data-days="1">Today</button>
-    <button class="pill pill-active" data-days="7">7d</button>
-    <button class="pill" data-days="30">30d</button>
-    <button class="pill zoom-out-pill" id="zoom-out" style="display:none" onclick="zoomOut()">⤢ Zoom out</button>
+  <!-- HERO -->
+  <div class="hero" id="hero">
+    <div class="backpill" onclick="history.back()">‹ Your data</div>
+    <div class="toppill"><span id="m-pill">Today</span></div>
+    <div class="herobody">
+      <div class="label fade d1" id="m-label">…</div>
+      <div class="big fade d2" id="m-big">–</div>
+      <div class="sub fade d3" id="m-sub"></div>
+      <div class="seebtn fade d4" id="m-ranges"></div>
+    </div>
   </div>
 
-  <!-- RANGE headline + chart -->
-  <section class="card chart-card">
-    <div class="range-head">
-      <div class="last-chip" id="last-chip" style="display:none"></div>
-      <div class="rh-label">Range</div>
-      <div class="rh-big"><span id="rh-val">—</span><span class="rh-unit" id="rh-unit"></span></div>
-      <div class="rh-sub" id="rh-sub"></div>
-    </div>
-    <div class="scrub-readout" id="scrub">
-      <span class="when" id="scrub-when"></span>
-      <span class="what" id="scrub-what"></span>
-    </div>
-    <div id="chart"></div>
-    <div class="zoom-hint" id="zoom-hint"></div>
-    <div class="filtered-note" id="filtered-note" style="display:none"></div>
-    <div class="stats-grid" id="stats">
-      <div class="stat-tile"><div class="stat-label">Latest</div><div class="stat-value" id="s-latest">—</div><div class="stat-unit" id="u-latest"></div><div class="stat-time" id="t-latest"></div></div>
-      <div class="stat-tile"><div class="stat-label">Average</div><div class="stat-value" id="s-mean">—</div><div class="stat-unit" id="u-mean"></div></div>
-      <div class="stat-tile"><div class="stat-label">Low</div><div class="stat-value" id="s-min">—</div><div class="stat-unit" id="u-min"></div></div>
-      <div class="stat-tile"><div class="stat-label">High</div><div class="stat-value" id="s-max">—</div><div class="stat-unit" id="u-max"></div></div>
-    </div>
-  </section>
+  <!-- BODY -->
+  <div class="body">
 
-  <!-- Alys analysis -->
-  <section class="section">
-    <div class="card alys-card" id="alys-card">
-      <div class="alys-head">
-        <span class="alys-dot"></span>
-        <span class="alys-name">Alys</span>
-        <span class="alys-meta" id="alys-meta"></span>
+    <!-- CHART CARD -->
+    <div class="card">
+      <div class="chead">
+        <span class="ctitle" id="m-chart-title">Across today</span>
+        <span class="cnote" id="m-range"></span>
       </div>
-      <div class="alys-body" id="alys-body">Reading the patterns…</div>
-      <div class="alys-tiny">
-        Alys describes what the data shows. She doesn't diagnose. If
-        something here surprises you or concerns you, it's worth raising
-        with your GP.
+      <div class="chartwrap">
+        <svg id="chart" viewBox="0 0 680 300" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <p class="chartcaption" id="m-caption"></p>
+    </div>
+
+    <!-- BREAKDOWN CARD -->
+    <div class="card" id="m-breakdown-card">
+      <div class="chead"><span class="ctitle" id="m-breakdown-title">The day in three numbers</span></div>
+      <div class="breakdown">
+        <div class="b"><div class="lab"><i style="background:#8d8a6a"></i><span id="b1-lab">Low</span></div><div class="val" id="b1-val">–</div><div class="unit" id="b1-unit"></div></div>
+        <div class="b"><div class="lab"><i style="background:#c98a6f"></i>Average</div><div class="val" id="b2-val">–</div><div class="unit" id="b2-unit"></div></div>
+        <div class="b"><div class="lab"><i style="background:#b5573f"></i><span id="b3-lab">High</span></div><div class="val" id="b3-val">–</div><div class="unit" id="b3-unit"></div></div>
       </div>
     </div>
-  </section>
 
-  <!-- Why it matters (under Alys) -->
-  <section class="section" id="why-mount"></section>
-</main>
+    <!-- ALYS CARD -->
+    <div class="card alys">
+      <div class="arow">
+        <div class="name"><i></i>Alys</div>
+        <div class="when" id="m-when"></div>
+      </div>
+      <p id="m-alys">…</p>
+    </div>
 
-<!-- How this is measured — opened from the (i) button -->
-<div class="how-modal" id="how-modal" hidden>
-  <div class="how-card">
-    <h3>How this is measured</h3>
-    <p id="how-text"></p>
-    <button id="how-close">Got it</button>
   </div>
 </div>
 
-<div id="nav-mount"></div>
-
 <script src="/health/v2/lib.js"></script>
 <script>
-document.getElementById('nav-mount').innerHTML = renderNav('ring');
+(async function(){
+  const params = new URLSearchParams(location.search);
+  const metric = (params.get('metric') || 'hr').toLowerCase();
+  let days = Number(params.get('days') || 1);
+  const $ = id => document.getElementById(id);
 
-// ── URL params ────────────────────────────────────────────
-const params = new URLSearchParams(location.search);
-const metric = (params.get('metric') || '').toLowerCase();
-let days = Number(params.get('days') || 1);
-if (![1, 7, 30].includes(days)) days = 1;
-// Zoom window {start,end} in ms (null = full range). Set by tapping a bar to
-// drill into that bucket's window with fine sub-buckets; cleared by "zoom out"
-// or changing the range pills.
-let zoom = null;
-
-const LABELS = {
-  hr:                   { title: 'Heart rate',     unit: 'bpm',     cat: 'Vital' },
-  hrv_rmssd:            { title: 'HRV (RMSSD)',    unit: 'ms',      cat: 'Recovery' },
-  hrv_sdnn:             { title: 'HRV (SDNN)',     unit: 'ms',      cat: 'Recovery' },
-  hrv_index:            { title: 'HRV index',      unit: '',        cat: 'Recovery' },
-  spo2:                 { title: 'Blood oxygen',   unit: '%',       cat: 'Vital' },
-  respiration_rate:     { title: 'Respiration',    unit: 'br/min',  cat: 'Vital' },
-  temp_skin:            { title: 'Skin temp',      unit: '°C',      cat: 'Vital' },
-  steps:                { title: 'Steps',          unit: '',        cat: 'Activity' },
-  bp_sys:               { title: 'BP systolic',    unit: 'mmHg',    cat: 'Vital' },
-  bp_dia:               { title: 'BP diastolic',   unit: 'mmHg',    cat: 'Vital' },
-  bp:                   { title: 'Blood pressure', unit: 'mmHg',    cat: 'Vital' },
-  stress:               { title: 'Stress',         unit: '',        cat: 'Recovery' },
-  vo2max:               { title: 'VO₂ max',        unit: 'ml/kg/min', cat: 'Fitness' },
-  load_index:           { title: 'Cardiac load',   unit: '',        cat: 'Recovery' },
-  body_index:           { title: 'Body index',     unit: '',        cat: 'Recovery' },
-  pressure_index:       { title: 'Pressure',       unit: '',        cat: 'Recovery' },
-  sympathetic_activity: { title: 'Sympathetic',    unit: '',        cat: 'Recovery' },
-  strain_score:         { title: 'Strain',         unit: '',        cat: 'Daily' },
-  recovery_score:       { title: 'Recovery',       unit: '',        cat: 'Daily' },
-  burst_event:          { title: 'Activity bursts', unit: 'steps',   cat: 'Activity' },
-  pem_episode:          { title: 'PEM candidates', unit: '',        cat: 'Pattern' },
-  pacing_pattern:       { title: 'Pacing pattern', unit: '',        cat: 'Pattern' },
-  nap_session:          { title: 'Naps',           unit: 'min',     cat: 'Sleep' },
-  wake_event:           { title: 'Wake events',    unit: '',        cat: 'Sleep' },
-  sleep_onset:          { title: 'Sleep onset',    unit: 'min',     cat: 'Sleep' },
-  waso:                 { title: 'Wake after sleep', unit: 'min',   cat: 'Sleep' },
-  sleep_session:        { title: 'Sleep',          unit: 'h',       cat: 'Sleep' },
-  pots_orthostatic_delta: { title: 'POTS delta',   unit: 'bpm',     cat: 'Pattern' },
-  rhr_derived:          { title: 'Resting HR',     unit: 'bpm',     cat: 'Recovery' },
-  hrv_sleep_median:     { title: 'Overnight HRV',  unit: 'ms',      cat: 'Recovery' },
-  wear_state:           { title: 'Ring wear',      unit: '',        cat: 'Ring' },
-  sleep_marker:         { title: 'Sleep marker',   unit: '',        cat: 'Sleep' },
-  wake_marker:          { title: 'Wake marker',    unit: '',        cat: 'Sleep' },
-};
-
-// Per-metric physiological band (filter sensor artifacts BEFORE bucketing —
-// without this, range bars stretch to junk like HR=1..238 and look worse,
-// not better) + the how/why transparency copy. Metrics not listed get no
-// band (no filtering) and generic copy. Australian spelling, TGA-safe.
-const META = {
-  hr: { band:[40,170],
-    how:"Your Neeve Ring reads your pulse with an optical sensor while you wear it. Each bar is the lowest-to-highest beat in that window, so you see how much your heart rate moved — not just one number. Faint, narrow bars are windows with fewer readings; gaps are when the ring wasn't worn or syncing.",
-    why:"Heart rate rises and settles with rest, movement, stress and standing up. For ongoing illness, the pattern over days — and how your heart responds to standing or exertion — usually says more than any single reading." },
-  rhr_derived: { band:[35,120],
-    how:"Taken from your steadiest overnight windows, where movement is lowest, so it reflects your true resting heart rate rather than a daytime moment.",
-    why:"Resting heart rate trending up over days can track poorer recovery, illness or strain — the trend matters more than any one night." },
-  hrv_rmssd: { band:[5,200],
-    how:"Calculated from the tiny beat-to-beat timing differences your ring's pulse sensor picks up. Each bar shows the range across that window. HRV is naturally noisy, so read the trend, not single bars.",
-    why:"HRV reflects how your nervous system is balancing rest and stress. Lower stretches often line up with poorer recovery, exertion or a rough night — useful as a pattern alongside how you feel." },
-  hrv_sleep_median: { band:[5,200],
-    how:"The median HRV across your overnight window, where readings are cleanest — a steadier number than daytime HRV.",
-    why:"Overnight HRV is one of the more stable recovery signals; watch how it moves across days rather than night to night." },
-  spo2: { band:[80,100],
-    how:"Estimated from how your ring's red and infrared light pass through your blood. Each bar is the range in that window. Note: this ring reads about 1-2% lower than a clinical fingertip oximeter and tops out near 98% — so watch the dips and the trend, not the exact figure.",
-    why:"Blood-oxygen dips — especially repeated ones overnight — can be worth noting. Because the ring isn't a precise clinical reading, treat a single low as a prompt to check with a fingertip oximeter, not a verdict." },
-  respiration_rate: { band:[6,40],
-    how:"Derived from the subtle rise and fall your pulse sensor detects as you breathe. Each bar is the range in that window; it's most reliable when you're still.",
-    why:"Breathing rate shifts with rest, activity, stress and illness. A sustained change across days is more meaningful than moment-to-moment movement." },
-  temp_skin: { band:[28,43],
-    how:"Skin temperature from the ring (where supported). Each bar is the range in that window. Skin temp drifts with your environment, so trends over nights read better than single points.",
-    why:"Relative shifts in overnight skin temperature can track your cycle, the onset of illness, or recovery — the change from your own baseline is what matters." },
-  bp_sys: { band:[70,200], how:"", why:"" },
-  bp_dia: { band:[40,130], how:"", why:"" },
-};
-function bandFor(m){ return META[m] && META[m].band ? META[m].band : null; }
-
-if (!metric || !LABELS[metric]) {
-  document.getElementById('m-title').textContent = 'Metric not found';
-  document.getElementById('m-cat').textContent = 'Detail';
-} else {
-  document.getElementById('m-title').textContent = LABELS[metric].title;
-  document.getElementById('m-cat').textContent = LABELS[metric].cat;
-  document.title = `${LABELS[metric].title} · Neeve`;
-  renderExplain();
-}
-
-// ── Range buttons ────────────────────────────────────────
-document.querySelectorAll('.range-row .pill').forEach(b => {
-  b.addEventListener('click', () => {
-    const d = Number(b.dataset.days);
-    if (d === days && !zoom) return;
-    days = d;
-    zoom = null; // changing range exits any zoom
-    document.querySelectorAll('.range-row .pill').forEach(x => x.classList.remove('pill-active'));
-    b.classList.add('pill-active');
-    history.replaceState(null, '', `?metric=${metric}&days=${days}`);
-    load();
-  });
-});
-// Reflect the active pill from the URL on first paint.
-document.querySelectorAll('.range-row .pill').forEach(x => {
-  x.classList.toggle('pill-active', Number(x.dataset.days) === days);
-});
-
-// ── Load + render ────────────────────────────────────────
-async function load() {
-  if (!metric || !LABELS[metric]) return;
-  document.getElementById('chart').innerHTML = '<div class="empty" style="padding:32px 0">Loading…</div>';
-  { const _lc = document.getElementById('last-chip'); if (_lc) _lc.style.display = 'none'; }
-  { const _zo = document.getElementById('zoom-out'); if (_zo) _zo.style.display = zoom ? 'inline-flex' : 'none'; }
-  { const _zh = document.getElementById('zoom-hint'); if (_zh) _zh.textContent = zoom ? 'Showing a zoomed window — tap “Zoom out” to go back' : 'Tap a bar to zoom into that window'; }
-  try {
-    const since = new Date(Date.now() - days * 86400 * 1000).toISOString();
-    // HR/SpO2/etc are sampled densely (~hundreds/hour) — fetch the WHOLE window
-    // (API cap raised to 50k, DB Range allows ~100k) so the chart reflects all
-    // the data, not just the last few hours. limit=2000 = empty-looking chart.
-    const fetchLimit = days <= 1 ? 15000 : 50000;
-    if (metric === 'bp') {
-      const q = `/ring/samples?metric=bp_sys,bp_dia&since=${encodeURIComponent(since)}&limit=${fetchLimit}`;
-      const { samples } = await api(q);
-      const sys = (samples || []).filter(s => s.metric === 'bp_sys');
-      const dia = (samples || []).filter(s => s.metric === 'bp_dia');
-      renderBpChart(sys, dia);
-      renderBpStats(sys, dia);
-      setHeadline(null);
-    } else {
-      const band = bandFor(metric);
-      let winSince = since, bucketSecs;
-      if (zoom) {
-        winSince = new Date(zoom.start).toISOString();
-        const spanSec = Math.max(60, Math.round((zoom.end - zoom.start) / 1000));
-        bucketSecs = Math.max(120, Math.round(spanSec / 30)); // ~30 fine bars across the zoom
-      } else {
-        bucketSecs = days <= 1 ? 3600 : days <= 7 ? 21600 : 86400; // hour / 6h / day
-      }
-      let q = `/ring/samples-bucketed?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(winSince)}&bucket_secs=${bucketSecs}`;
-      if (band) q += `&vmin=${band[0]}&vmax=${band[1]}`;
-      let { buckets } = await api(q);
-      // Zoomed: the endpoint returns buckets from winSince → now; keep only
-      // those inside the tapped window.
-      if (zoom) buckets = (buckets || []).filter(b => {
-        const t = new Date(b.bucket_ts).getTime();
-        return t >= zoom.start && t < zoom.end;
-      });
-      // Most-recent in-band raw reading + its time for the "Latest" tile.
-      let latest = null, latestTs = null;
-      try {
-        const r = await api(`/ring/samples?metric=${encodeURIComponent(metric)}&limit=10`);
-        for (const s of (r.samples || [])) {
-          const v = Number(s.value);
-          if (isFinite(v) && (!band || (v >= band[0] && v <= band[1]))) { latest = v; latestTs = s.ts; break; }
-        }
-      } catch (_) {}
-      const tEl = document.getElementById('t-latest');
-      if (tEl) tEl.textContent = latestTs ? formatClock(latestTs) : '';
-      // Quick-glance "last reading" chip, top-right of the card.
-      const lc = document.getElementById('last-chip');
-      if (lc) {
-        if (latest != null && latestTs) {
-          lc.innerHTML = `<span class="lc-dot"></span><span>Last <b>${fmt(latest)} ${unitTxt()}</b> · ${formatClock(latestTs)}</span>`;
-          lc.style.display = 'inline-flex';
-        } else {
-          lc.style.display = 'none';
-        }
-      }
-      renderBuckets(buckets || [], bucketSecs, latest);
-    }
-  } catch (e) {
-    document.getElementById('chart').innerHTML =
-      `<div class="empty">Couldn't load: ${e.message}</div>`;
-  }
-  loadAnalysis();
-}
-
-function fmt(v) {
-  if (v == null || !isFinite(v)) return '—';
-  if (metric === 'temp_skin')   return v.toFixed(1);
-  if (metric === 'spo2')        return Math.round(v).toString();
-  if (metric === 'steps')       return Math.round(v).toLocaleString();
-  if (Math.abs(v - Math.round(v)) < 0.05) return Math.round(v).toString();
-  return v.toFixed(1);
-}
-function unitTxt() { return LABELS[metric]?.unit || ''; }
-
-// 12-hour am/pm time for the "Latest" tile. Time-only if today, else "6 Jun, 8:15 pm".
-function formatClock(ts) {
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return '';
-  const time = d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const dDay = new Date(d); dDay.setHours(0, 0, 0, 0);
-  if (dDay.getTime() === today.getTime()) return time;
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) + ', ' + time;
-}
-
-// ── Range-bar chart ──────────────────────────────────────
-// Buckets samples (hour for Today, day otherwise), artifact-filters, and
-// draws one min–max bar per bucket. Faint bars = low-sample windows.
-function renderBuckets(srvBuckets, bucketSecs, latest) {
-  const host = document.getElementById('chart');
-  document.getElementById('filtered-note').style.display = 'none';
-
-  const HOUR = 3600 * 1000, DAY = 86400 * 1000;
-  const bucketMs = bucketSecs * 1000;
-  const buckets = (srvBuckets || [])
-    .map(b => ({ t: new Date(b.bucket_ts).getTime(), lo: +b.lo, hi: +b.hi, n: +b.n, mean: +b.mean }))
-    .filter(b => isFinite(b.t) && isFinite(b.lo))
-    .sort((a, b) => a.t - b.t);
-
-  if (!buckets.length) {
-    host.innerHTML = '<div class="empty" style="padding:32px 0">No readings in this window yet.</div>';
-    setHeadline(null);
-    ['s-latest','s-mean','s-min','s-max'].forEach(id => document.getElementById(id).textContent = '—');
-    { const _zh = document.getElementById('zoom-hint'); if (_zh) _zh.textContent = ''; }
-    return;
-  }
-
-  // Overall range for the headline + stats (server already band-filtered).
-  const lo = Math.min(...buckets.map(b => b.lo));
-  const hi = Math.max(...buckets.map(b => b.hi));
-  const totalN = buckets.reduce((a, b) => a + b.n, 0);
-  const mean = buckets.reduce((a, b) => a + b.mean * b.n, 0) / Math.max(1, totalN);
-  setHeadline({ lo, hi, tFrom: buckets[0].t, tTo: buckets[buckets.length - 1].t + bucketMs });
-  setStatTiles({ latest: latest != null ? latest : buckets[buckets.length - 1].mean, mean, lo, hi });
-
-  const dataSpan = (buckets[buckets.length - 1].t - buckets[0].t) || HOUR;
-
-  // Geometry. Bars span their bucket window across a continuous time axis so
-  // gaps (unworn hours/days) show as blank space, not a squashed line.
-  const W = host.clientWidth || 340;
-  const H = 220;
-  const pad = { l: 34, r: 12, t: 12, b: 26 };
-  const innerW = W - pad.l - pad.r;
-  const innerH = H - pad.t - pad.b;
-  const tMin = buckets[0].t;
-  const tMax = buckets[buckets.length - 1].t + bucketMs;
-  let vMin = lo, vMax = hi;
-  if (vMin === vMax) { vMin -= 1; vMax += 1; }
-  const span = vMax - vMin; vMin -= span * 0.10; vMax += span * 0.10;
-
-  const x = t => pad.l + ((t - tMin) / Math.max(1, tMax - tMin)) * innerW;
-  const y = v => pad.t + innerH - ((v - vMin) / (vMax - vMin)) * innerH;
-
-  const slotW = innerW / buckets.length;
-  const bw = Math.max(4, Math.min(13, slotW * 0.62));
-  const sparseN = days <= 1 ? 10 : 30;
-
-  const yMid = (vMin + vMax) / 2;
-  const axisFmt = v => metric === 'temp_skin' ? Number(v).toFixed(1) : Math.round(v).toString();
-  const grid = [vMin, yMid, vMax].map(v => `
-    <line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="var(--hair)" stroke-width="0.5"/>
-    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${axisFmt(v)}</text>
-  `).join('');
-
-  const bars = buckets.map((b, i) => {
-    const cx = x(b.t + bucketMs / 2);
-    const top = y(b.hi), bot = y(b.lo);
-    const op = b.n < sparseN ? 0.4 : 1;
-    return `<rect class="rbar" data-i="${i}" x="${(cx - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(bw, bot - top).toFixed(1)}" rx="${(bw / 2).toFixed(1)}" fill="var(--terra)" opacity="${op}"/>`;
-  }).join('');
-
-  // Trend line through the per-bucket averages + a dashed overall-average
-  // line, drawn over the range bars (Patrick: bars + a trend line).
-  const trendPts = buckets.map(b => ({ x: x(b.t + bucketMs / 2), y: y(b.mean) }));
-  const smooth = p => {
-    if (p.length < 2) return p.length ? `M ${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}` : '';
-    let d = `M ${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;
-    for (let i = 0; i < p.length - 1; i++) {
-      const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
-      const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
-      const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
-      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
-    }
-    return d;
+  // archetype: 'resting' | 'deviation'  (signal/shape pages handled separately)
+  const META = {
+    hr:               {title:'Heart rate', unit:'bpm', icon:'♡', archetype:'resting'},
+    rhr_derived:      {title:'Resting heart rate', unit:'bpm', icon:'♡', archetype:'resting'},
+    hrv_rmssd:        {title:'HRV', unit:'ms', icon:'∿', archetype:'deviation'},
+    hrv_sleep_median: {title:'HRV (overnight)', unit:'ms', icon:'∿', archetype:'deviation'},
+    spo2:             {title:'Blood oxygen', unit:'%', icon:'◌', archetype:'deviation'},
+    respiration_rate: {title:'Respiration', unit:'br/min', icon:'≈', archetype:'deviation'},
+    bp_sys:           {title:'Blood pressure', unit:'mmHg', icon:'▴', archetype:'deviation', bp:true},
+    bp:               {title:'Blood pressure', unit:'mmHg', icon:'▴', archetype:'deviation', bp:true, fetchAs:'bp_sys'},
   };
-  const moss = '#4A5A40'; // oakmoss / forest green — pairs with terracotta
-  const trendPath = trendPts.length > 1
-    ? `<path d="${smooth(trendPts)}" fill="none" stroke="${moss}" stroke-opacity="0.9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>` : '';
-  const trendDots = trendPts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="1.6" fill="${moss}" fill-opacity="0.9"/>`).join('');
-  const avgLine = `<line x1="${pad.l}" y1="${y(mean).toFixed(1)}" x2="${W - pad.r}" y2="${y(mean).toFixed(1)}" stroke="var(--ink-mute)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>`;
+  const m = META[metric] || {title:metric, unit:'', archetype:'deviation'};
+  const bmetric = m.fetchAs || metric;
+  document.title = 'Neeve · ' + m.title;
+  $('m-label').textContent = m.title;
 
-  const fmtT = ms => {
-    const dt = new Date(ms);
-    if (dataSpan <= 36 * HOUR) return dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true });
-    return dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-  };
-  const tMid = (tMin + tMax) / 2;
+  const ranges = [[1,'Today'],[7,'7 days'],[30,'30 days']];
+  const rwrap = $('m-ranges'); rwrap.style.gap='8px'; rwrap.style.flexWrap='wrap';
+  rwrap.innerHTML = ranges.map(([d,lab]) => `<button data-d="${d}">${lab}</button>`).join('');
+  function markRange(){ rwrap.querySelectorAll('button').forEach(b=>{ b.style.background = Number(b.dataset.d)===days ? 'rgba(255,255,255,.34)' : ''; }); }
+  rwrap.querySelectorAll('button').forEach(b => b.onclick = () => { days=Number(b.dataset.d); history.replaceState(null,'',`?metric=${metric}&days=${days}`); markRange(); load(); });
 
-  host.innerHTML = `
-    <svg id="metric-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
-      ${grid}
-      ${avgLine}
-      ${bars}
-      ${trendPath}
-      ${trendDots}
-      <text x="${pad.l}" y="${H - 6}" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMin)}</text>
-      <text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMid)}</text>
-      <text x="${W - pad.r}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMax)}</text>
-    </svg>`;
+  let baseline = null;
 
-  // Tap a bar → show that window's range in the readout.
-  const svg = document.getElementById('metric-svg');
-  const wEl = document.getElementById('scrub-when');
-  const vEl = document.getElementById('scrub-what');
-  function showBar(i) {
-    const b = buckets[i]; if (!b) return;
-    svg.querySelectorAll('.rbar').forEach(r => r.setAttribute('opacity', r.dataset.i == i ? '1' : (buckets[r.dataset.i].n < sparseN ? 0.25 : 0.55)));
-    wEl.textContent = fmtT(b.t);
-    vEl.innerHTML = `${fmt(b.lo)}–${fmt(b.hi)}<span style="font-size:12px;color:var(--ink-mute)"> ${unitTxt()}</span>`;
+  async function load(){
+    $('m-pill').textContent = (m.icon?m.icon+' ':'') + (days<=1?'Today':days+'d');
+    markRange();
+    const since = new Date(Date.now() - days*86400*1000).toISOString();
+    const bucketSecs = days<=1 ? 3600 : days<=7 ? 21600 : 86400;
+    try{
+      const [bk, baseRes, latestRes] = await Promise.all([
+        api(`/ring/samples-bucketed?metric=${encodeURIComponent(bmetric)}&since=${encodeURIComponent(since)}&bucket_secs=${bucketSecs}`).catch(()=>({buckets:[]})),
+        baseline ? Promise.resolve(null) : api('/me/baselines').catch(()=>null),
+        api(`/ring/samples?metric=${encodeURIComponent(bmetric)}&limit=10`).catch(()=>({samples:[]})),
+      ]);
+      if (!baseline && baseRes){
+        baseline = (baseRes.baselines || {})[bmetric] || null;
+      }
+      const buckets = (bk.buckets||[]).map(b=>({t:new Date(b.bucket_ts).getTime(), lo:+b.lo, hi:+b.hi, mean:+b.mean, n:+b.n})).filter(b=>isFinite(b.t)&&isFinite(b.mean));
+      const latest = (latestRes.samples||[]).map(s=>+s.value).find(v=>isFinite(v));
+      render(buckets, latest);
+    }catch(e){ console.error('metric load', e); $('m-caption').textContent='Could not load this metric right now.'; }
   }
-  function clearBar() {
-    svg.querySelectorAll('.rbar').forEach(r => r.setAttribute('opacity', buckets[r.dataset.i].n < sparseN ? 0.4 : 1));
-    wEl.textContent = ''; vEl.textContent = '';
-  }
-  function barAt(clientX) {
-    const r = svg.getBoundingClientRect();
-    const vx = ((clientX - r.left) / r.width) * W;
-    let bi = 0, bd = Infinity;
-    buckets.forEach((b, i) => { const d = Math.abs(x(b.t + bucketMs / 2) - vx); if (d < bd) { bd = d; bi = i; } });
-    return bi;
-  }
-  let _downAt = 0, _downX = 0, _downBi = -1;
-  svg.addEventListener('pointerdown', e => {
-    _downAt = Date.now(); _downX = e.clientX; _downBi = barAt(e.clientX);
-    showBar(_downBi);
-  });
-  svg.addEventListener('pointerup', e => {
-    clearBar();
-    // Quick tap (not a hold/drag-scrub) on a still-coarse bar → zoom into that
-    // window. Hold-to-scrub still works for reading a bar's value.
-    const quick = Date.now() - _downAt < 350 && Math.abs(e.clientX - _downX) < 8;
-    if (quick && bucketMs > 5 * 60 * 1000) {
-      const b = buckets[_downBi];
-      if (b) zoomInto(b.t, b.t + bucketMs);
+
+  function render(buckets, latest){
+    const cur = latest != null ? latest : (buckets.length? buckets[buckets.length-1].mean : null);
+    $('m-big').innerHTML = cur != null ? `${Math.round(cur)}<small> ${m.unit}</small>` : '–';
+    $('m-sub').innerHTML = baselineLine(cur) + (latest!=null ? `<span class="dot">·</span>just now` : '');
+    if (buckets.length){
+      const lo=Math.min(...buckets.map(b=>b.lo)), hi=Math.max(...buckets.map(b=>b.hi));
+      const totalN=buckets.reduce((a,b)=>a+(b.n||1),0);
+      const mean=Math.round(buckets.reduce((a,b)=>a+b.mean*(b.n||1),0)/Math.max(1,totalN));
+      const restVal = baseline ? Math.round(baseline.healthy ?? baseline.p30 ?? lo) : Math.round(lo);
+      $('b1-lab').textContent = m.archetype==='resting' ? 'Resting' : 'Low';
+      $('b1-val').textContent = m.archetype==='resting' ? restVal : Math.round(lo);
+      $('b2-val').textContent = mean;
+      $('b3-lab').textContent = m.archetype==='resting' ? 'Peak' : 'High';
+      $('b3-val').textContent = Math.round(hi);
+      $('b1-unit').textContent=$('b2-unit').textContent=$('b3-unit').textContent=m.unit;
     }
-  });
-  svg.addEventListener('pointercancel', clearBar);
-  svg.addEventListener('pointerleave', clearBar);
-}
-
-// Drill into a tapped bucket's [start,end] window with fine sub-buckets.
-function zoomInto(start, end) { zoom = { start, end }; load(); }
-function zoomOut() { zoom = null; load(); }
-
-function setHeadline(r) {
-  const valEl = document.getElementById('rh-val');
-  const unitEl = document.getElementById('rh-unit');
-  const subEl = document.getElementById('rh-sub');
-  if (!r) { valEl.textContent = '—'; unitEl.textContent = ''; subEl.textContent = ''; return; }
-  valEl.textContent = r.lo === r.hi ? fmt(r.lo) : `${fmt(r.lo)}–${fmt(r.hi)}`;
-  unitEl.textContent = unitTxt();
-  // Reflect the ACTUAL data span (matches the x-axis) rather than the
-  // requested window — avoids "7 May – 6 Jun" when only 2 days exist.
-  const f = ms => new Date(ms).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-  if (r.tFrom && r.tTo) {
-    subEl.textContent = f(r.tFrom) === f(r.tTo) ? f(r.tTo) : `${f(r.tFrom)} – ${f(r.tTo)}`;
-  } else {
-    subEl.textContent = '';
+    drawChart(buckets);
+    loadAlys();
   }
-}
 
-function setStatTiles({ latest, mean, lo, hi }) {
-  document.getElementById('s-latest').textContent = fmt(latest);
-  document.getElementById('s-mean').textContent   = fmt(mean);
-  document.getElementById('s-min').textContent    = fmt(lo);
-  document.getElementById('s-max').textContent    = fmt(hi);
-  const u = unitTxt();
-  ['u-latest','u-mean','u-min','u-max'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = u; });
-}
-function renderStats(samples) {
-  if (!samples.length) {
-    ['s-latest','s-mean','s-min','s-max'].forEach(id => document.getElementById(id).textContent = '—');
+  function baselineLine(cur){
+    if (cur==null || !baseline) return 'tracking your pattern';
+    const ref = baseline.healthy ?? baseline.p30 ?? baseline.lifetime;
+    if (ref==null) return 'tracking your pattern';
+    const near = Math.abs(cur-ref) <= Math.max(2, ref*0.06);
+    if (m.archetype==='resting') return near ? 'resting right around your usual' : (cur<ref ? 'resting a touch lower than usual' : 'a little above your usual rest');
+    if (near) return 'sitting right inside your usual';
+    return cur>ref ? 'a little above your usual' : 'a little below your usual';
   }
-}
 
-// ── How / Why transparency ───────────────────────────────
-function renderExplain() {
-  const m = META[metric];
-  const how = (m && m.how) || "Measured by your Neeve Ring while you wear it. Each bar shows the range of readings in that window; gaps are when the ring wasn't worn or syncing.";
-  const why = (m && m.why) || "Patterns over days usually tell you more than any single reading.";
-  const howEl = document.getElementById('how-text');
-  if (howEl) howEl.textContent = how;
-  document.getElementById('why-mount').innerHTML = `
-    <div class="card explain">
-      <h3><span class="ex-dot"></span>Why it matters</h3>
-      <p>${why}</p>
-      <div class="ex-care">Neeve describes what it sees — it doesn't diagnose. Bring anything that worries you to your doctor.</div>
-    </div>`;
-}
-
-// How-modal wiring (independent of metric validity).
-(function wireHowModal() {
-  const btn = document.getElementById('info-btn');
-  const modal = document.getElementById('how-modal');
-  const close = document.getElementById('how-close');
-  if (btn && modal) btn.addEventListener('click', () => { modal.hidden = false; });
-  if (close && modal) close.addEventListener('click', () => { modal.hidden = true; });
-  if (modal) modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
+  function drawChart(buckets){
+    const svg=$('chart'); svg.innerHTML='';
+    if(!buckets.length){ $('m-caption').textContent='No readings in this window yet.'; $('m-range').textContent=''; return; }
+    const W=680,H=300,padL=44,padR=18,padT=18,padB=34,plotW=W-padL-padR,plotH=H-padT-padB;
+    const vals=buckets.flatMap(b=>[b.lo,b.hi]).filter(isFinite);
+    let yMin=Math.min(...vals), yMax=Math.max(...vals); const pd=(yMax-yMin)*0.12||4; yMin-=pd; yMax+=pd;
+    const tMin=buckets[0].t, tMax=buckets[buckets.length-1].t;
+    const X=t=>padL+((t-tMin)/Math.max(1,tMax-tMin))*plotW;
+    const Y=v=>padT+(1-(v-yMin)/Math.max(1,yMax-yMin))*plotH;
+    const ns='http://www.w3.org/2000/svg';
+    const mk=(t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+    function smooth(pts){ if(pts.length<2)return ''; let d=`M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`; for(let i=0;i<pts.length-1;i++){const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6,c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;d+=` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;} return d; }
+    if (baseline){
+      const ref=baseline.healthy ?? baseline.p30;
+      if(ref!=null){
+        let bLo,bHi,lab;
+        if(m.archetype==='resting'){ bLo=ref*0.96; bHi=ref*1.10; lab='your resting range'; }
+        else { const sd=(baseline.p90!=null&&baseline.p7!=null)?Math.abs(baseline.p90-baseline.p7)/2:ref*0.08; bLo=ref-sd; bHi=ref+sd; lab='your usual range'; }
+        const yT=Y(Math.min(bHi,yMax)), yB=Y(Math.max(bLo,yMin));
+        if(isFinite(yT)&&isFinite(yB)&&yB>yT){ svg.appendChild(mk('rect',{x:padL,y:yT,width:plotW,height:yB-yT,fill:'#8d8a6a',opacity:.10,rx:6})); svg.appendChild(mk('text',{x:padL+6,y:yT-7,class:'restlabel'})).textContent=lab; }
+      }
+    }
+    [...new Set([yMin+(yMax-yMin)*0.2,(yMin+yMax)/2,yMax-(yMax-yMin)*0.2].map(v=>Math.round(v)))].forEach(v=>{ svg.appendChild(mk('line',{x1:padL,y1:Y(v),x2:W-padR,y2:Y(v),class:'gridline',opacity:.7})); svg.appendChild(mk('text',{x:padL-10,y:Y(v)+4,class:'axis','text-anchor':'end'})).textContent=v; });
+    const fmt=t=>{const d=new Date(t); return days<=1?d.toLocaleTimeString('en-AU',{hour:'numeric'}):d.toLocaleDateString('en-AU',{day:'numeric',month:'short'});};
+    [tMin,(tMin+tMax)/2,tMax].forEach((t,i)=>{ svg.appendChild(mk('text',{x:X(t),y:H-12,class:'axis','text-anchor':i===0?'start':i===2?'end':'middle'})).textContent=fmt(t); });
+    const hiPts=buckets.map(b=>({x:X(b.t),y:Y(b.hi)})), loPts=buckets.map(b=>({x:X(b.t),y:Y(b.lo)}));
+    const band=smooth(hiPts)+' L '+loPts[loPts.length-1].x.toFixed(1)+' '+loPts[loPts.length-1].y.toFixed(1)+' '+smooth([...loPts].reverse()).replace(/^M[^C]*/,'')+' Z';
+    svg.appendChild(mk('path',{d:band,fill:'#c98a6f',opacity:.18}));
+    const meanPts=buckets.map(b=>({x:X(b.t),y:Y(b.mean)}));
+    const line=mk('path',{d:smooth(meanPts),fill:'none',stroke:'#6f7551','stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round'});
+    svg.appendChild(line);
+    try{ const len=line.getTotalLength(); if(len){ line.style.strokeDasharray=len; line.style.strokeDashoffset=len; line.style.transition='stroke-dashoffset 1.5s cubic-bezier(.3,.6,.2,1)'; requestAnimationFrame(()=>requestAnimationFrame(()=>line.style.strokeDashoffset=0)); } }catch(e){}
+    const last=meanPts[meanPts.length-1];
+    svg.appendChild(mk('circle',{cx:last.x,cy:last.y,r:5.5,fill:'#5c613f'}));
+    $('m-range').textContent=fmt(tMin)+' – '+fmt(tMax);
+    $('m-caption').textContent=caption();
+  }
+  function caption(){
+    if(m.archetype==='resting') return 'Your line settles into your resting range overnight and lifts through the active part of the day — which is exactly what it should do.';
+    if(m.bp) return 'Ring-estimated blood pressure — a rough indicator only. A cuff reading is what counts; bring patterns, not single numbers, to your GP.';
+    return 'The shaded band is your own usual range. Sitting inside it is steady; drifting out is what’s worth noticing over a run of days.';
+  }
+  async function loadAlys(){
+    try{
+      const r=await api(`/me/metric-analysis?metric=${encodeURIComponent(bmetric)}&days=${Math.max(7,days)}`);
+      if(r && r.summary){ $('m-alys').textContent=r.summary; $('m-when').textContent=r.cached?'updated recently':'just now'; }
+      else $('m-alys').textContent='Not enough to read into yet — a few more days and the pattern will speak.';
+    }catch(e){ $('m-alys').textContent=''; }
+  }
+  load();
 })();
-
-// ── BP (kept as paired line chart) ───────────────────────
-function renderBpStats(sys, dia) {
-  if (!sys.length && !dia.length) {
-    ['s-latest','s-mean','s-min','s-max'].forEach(id => document.getElementById(id).textContent = '—');
-    return;
-  }
-  const sysLast = sys.length ? sys[sys.length - 1].value : null;
-  const diaLast = dia.length ? dia[dia.length - 1].value : null;
-  const sysAvg  = sys.length ? sys.reduce((a, s) => a + s.value, 0) / sys.length : null;
-  const diaAvg  = dia.length ? dia.reduce((a, s) => a + s.value, 0) / dia.length : null;
-  const sysLow  = sys.length ? Math.min(...sys.map(s => s.value)) : null;
-  const diaLow  = dia.length ? Math.min(...dia.map(s => s.value)) : null;
-  const sysHigh = sys.length ? Math.max(...sys.map(s => s.value)) : null;
-  const diaHigh = dia.length ? Math.max(...dia.map(s => s.value)) : null;
-  const pair = (a, b) => `${a != null ? Math.round(a) : '—'}/${b != null ? Math.round(b) : '—'}`;
-  document.getElementById('s-latest').textContent = pair(sysLast, diaLast);
-  document.getElementById('s-mean').textContent   = pair(sysAvg, diaAvg);
-  document.getElementById('s-min').textContent    = pair(sysLow, diaLow);
-  document.getElementById('s-max').textContent    = pair(sysHigh, diaHigh);
-  ['u-latest','u-mean','u-min','u-max'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = 'mmHg'; });
-}
-function renderBpChart(sysSamples, diaSamples) {
-  const host = document.getElementById('chart');
-  document.getElementById('filtered-note').style.display = 'none';
-  if (!sysSamples.length && !diaSamples.length) {
-    host.innerHTML = '<div class="empty" style="padding:32px 0">No readings in this window yet.</div>';
-    return;
-  }
-  const W = host.clientWidth || 340, H = 220;
-  const pad = { l: 36, r: 12, t: 14, b: 38 };
-  const innerW = W - pad.l - pad.r, innerH = H - pad.t - pad.b;
-  const toPts = arr => arr.map(s => ({ t: new Date(s.ts).getTime(), v: Number(s.value) }))
-    .filter(p => isFinite(p.t) && isFinite(p.v)).sort((a, b) => a.t - b.t);
-  const sysPts = toPts(sysSamples), diaPts = toPts(diaSamples);
-  const allPts = sysPts.concat(diaPts);
-  if (!allPts.length) { host.innerHTML = '<div class="empty" style="padding:32px 0">No valid readings.</div>'; return; }
-  const tMin = Math.min(...allPts.map(p => p.t)), tMax = Math.max(...allPts.map(p => p.t));
-  let vMin = Math.min(...allPts.map(p => p.v)), vMax = Math.max(...allPts.map(p => p.v));
-  if (vMin === vMax) { vMin -= 1; vMax += 1; }
-  const span = vMax - vMin; vMin -= span * 0.08; vMax += span * 0.08;
-  const x = t => pad.l + ((t - tMin) / Math.max(1, tMax - tMin)) * innerW;
-  const y = v => pad.t + innerH - ((v - vMin) / (vMax - vMin)) * innerH;
-  const pathFor = pts => pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.t).toFixed(1)} ${y(p.v).toFixed(1)}`).join(' ');
-  const yMid = (vMin + vMax) / 2;
-  const grid = [vMin, yMid, vMax].map(v => `
-    <line x1="${pad.l}" y1="${y(v)}" x2="${W - pad.r}" y2="${y(v)}" stroke="var(--hair)" stroke-width="0.5"/>
-    <text x="${pad.l - 6}" y="${y(v) + 3}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${Math.round(v)}</text>`).join('');
-  const fmtT = ms => { const dt = new Date(ms); return days <= 1 ? dt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }) : dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }); };
-  const tMid = (tMin + tMax) / 2;
-  host.innerHTML = `
-    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
-      ${grid}
-      ${sysPts.length ? `<path d="${pathFor(sysPts)}" stroke="var(--terra)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
-      ${diaPts.length ? `<path d="${pathFor(diaPts)}" stroke="var(--rose)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
-      <text x="${pad.l}" y="${H - 22}" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMin)}</text>
-      <text x="${W / 2}" y="${H - 22}" text-anchor="middle" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMid)}</text>
-      <text x="${W - pad.r}" y="${H - 22}" text-anchor="end" font-size="10" fill="var(--ink-mute)" font-family="Inter Tight, sans-serif">${fmtT(tMax)}</text>
-      <g font-family="Inter Tight, sans-serif" font-size="11" fill="var(--ink-mute)">
-        <rect x="${pad.l}"     y="${H - 14}" width="10" height="4" rx="1" fill="var(--terra)"/>
-        <text x="${pad.l + 14}" y="${H - 10}">sys</text>
-        <rect x="${pad.l + 50}" y="${H - 14}" width="10" height="4" rx="1" fill="var(--rose)"/>
-        <text x="${pad.l + 64}" y="${H - 10}">dia</text>
-      </g>
-    </svg>`;
-  setHeadline(null);
-}
-
-async function loadAnalysis() {
-  if (!metric || !LABELS[metric]) return;
-  const body = document.getElementById('alys-body');
-  const meta = document.getElementById('alys-meta');
-  body.textContent = 'Reading the patterns…';
-  meta.textContent = '';
-  try {
-    const r = await api(`/me/metric-analysis?metric=${encodeURIComponent(metric)}&days=${days}`);
-    body.textContent = r.summary || 'Not enough data yet.';
-    if (r.cached && r.generated_at) meta.textContent = `updated ${formatAgo(r.generated_at)}`;
-    else if (r.generated_at) meta.textContent = 'just now';
-  } catch (e) {
-    body.textContent = `Couldn't load Alys's read: ${e.message}`;
-    meta.textContent = '';
-  }
-}
-
-load();
-onResume(load);
 </script>
 </body>
 </html>

@@ -211,8 +211,10 @@
     spo2:             {title:'Blood oxygen', unit:'%', icon:'◌', archetype:'deviation'},
     respiration_rate: {title:'Respiration', unit:'br/min', icon:'≈', archetype:'deviation'},
     bp_sys:           {title:'Blood pressure', unit:'mmHg', icon:'▴', archetype:'deviation', bp:true},
+    bp:               {title:'Blood pressure', unit:'mmHg', icon:'▴', archetype:'deviation', bp:true, fetchAs:'bp_sys'},
   };
   const m = META[metric] || {title:metric, unit:'', archetype:'deviation'};
+  const bmetric = m.fetchAs || metric;
   document.title = 'Neeve · ' + m.title;
   $('m-label').textContent = m.title;
 
@@ -231,13 +233,12 @@
     const bucketSecs = days<=1 ? 3600 : days<=7 ? 21600 : 86400;
     try{
       const [bk, baseRes, latestRes] = await Promise.all([
-        api(`/ring/samples-bucketed?metric=${encodeURIComponent(metric)}&since=${encodeURIComponent(since)}&bucket_secs=${bucketSecs}`).catch(()=>({buckets:[]})),
+        api(`/ring/samples-bucketed?metric=${encodeURIComponent(bmetric)}&since=${encodeURIComponent(since)}&bucket_secs=${bucketSecs}`).catch(()=>({buckets:[]})),
         baseline ? Promise.resolve(null) : api('/me/baselines').catch(()=>null),
-        api(`/ring/samples?metric=${encodeURIComponent(metric)}&limit=10`).catch(()=>({samples:[]})),
+        api(`/ring/samples?metric=${encodeURIComponent(bmetric)}&limit=10`).catch(()=>({samples:[]})),
       ]);
       if (!baseline && baseRes){
-        const rows = baseRes.baselines || baseRes;
-        baseline = (Array.isArray(rows)?rows:[]).find(r => r.metric===metric) || null;
+        baseline = (baseRes.baselines || {})[bmetric] || null;
       }
       const buckets = (bk.buckets||[]).map(b=>({t:new Date(b.bucket_ts).getTime(), lo:+b.lo, hi:+b.hi, mean:+b.mean, n:+b.n})).filter(b=>isFinite(b.t)&&isFinite(b.mean));
       const latest = (latestRes.samples||[]).map(s=>+s.value).find(v=>isFinite(v));
@@ -319,7 +320,7 @@
   }
   async function loadAlys(){
     try{
-      const r=await api(`/me/metric-analysis?metric=${encodeURIComponent(metric)}&days=${Math.max(7,days)}`);
+      const r=await api(`/me/metric-analysis?metric=${encodeURIComponent(bmetric)}&days=${Math.max(7,days)}`);
       if(r && r.summary){ $('m-alys').textContent=r.summary; $('m-when').textContent=r.cached?'updated recently':'just now'; }
       else $('m-alys').textContent='Not enough to read into yet — a few more days and the pattern will speak.';
     }catch(e){ $('m-alys').textContent=''; }

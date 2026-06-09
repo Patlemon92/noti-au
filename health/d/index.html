@@ -632,17 +632,22 @@
     box.innerHTML='<p class="qs">['+n+'] '+c+'</p>';
     p.after(box);
   };
+  // Each pattern jumps to the page that actually covers it (not the calendar).
+  const PATTERN_PAGE = { orthostatic:'ortho', daytime_rest:'sleep', respiratory:'vitals', autonomic_hrv:'vitals', blood_pressure:'vitals', pem:'symptoms', migraine:'migraine', pre_migraine:'migraine', symptom_overlap:'symptoms', cycle_symptom:'cycle', fibromyalgia_autonomic:'symptoms', anxiety_misattribution:'symptoms' };
+  const CAT_PAGE = { autonomic:'vitals', pacing:'sleep', energy:'symptoms', neuro:'migraine', pain:'symptoms', gynae:'cycle', sleep:'sleep', environment:'patterns', mood:'symptoms', multimorbidity:'symptoms', context:'symptoms', signal:'vitals' };
+  const PAGE_LABEL = { ortho:'Orthostatic', vitals:'Vitals', sleep:'Sleep', migraine:'Migraine', symptoms:'Symptoms', cycle:'Cycle', patterns:'Patterns', calendar:'the calendar' };
   function renderLiveInsights(data){
     LIVE_REFS = {}; (data.references||[]).forEach(r=>LIVE_REFS[r.n]=r.citation);
     const cards=(data.patterns||[]).map(p=>{
       const claims=(p.research||[]).map(c=>`<p>${c.claim} ${(c.refs||[]).map(n=>`<a class="ref" onclick="toggleCite(this,${n})">[${n}]</a>`).join(' ')}</p>`).join('');
+      const page = PATTERN_PAGE[p.key] || CAT_PAGE[p.category] || 'calendar';
       return `<div class="card il-card">
         <div class="il-h"><span class="il-cat">${p.category||''}</span><span class="il-count">seen ${p.count}×</span></div>
         <h2 class="it">${p.label}</h2>
         <p class="il-sig">${p.signal||''}</p>
         ${p.surfaced?`<p class="surfaced">${p.surfaced}</p>`:''}
         ${claims?`<div class="il-research">${claims}</div>`:''}
-        <div class="il-foot"><a onclick="go('calendar')">see it on the calendar →</a></div>
+        <div class="il-foot"><a onclick="go('${page}')">see ${PAGE_LABEL[page]||'more'} →</a> <a onclick="go('calendar')" style="margin-left:14px;color:var(--muted)">on the calendar →</a></div>
       </div>`;
     }).join('');
     document.getElementById('p-overview').innerHTML =

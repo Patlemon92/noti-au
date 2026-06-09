@@ -254,7 +254,6 @@
           <div class="ch-h"><h3>Nightly duration</h3><span class="note">hours</span></div>
           <svg id="ch-sleep2" width="100%" height="180" viewBox="0 0 720 180"></svg>
         </div>
-        <div class="callout">Duration is corrected against overnight heart rate, which recovers sleep the ring under-counts when contact is briefly lost.</div>
         <div class="card">
           <div class="ch-h"><h3>Recent nights</h3><span class="note">click a night to open that day</span></div>
           <div class="night" onclick="go('day')"><div class="nd"><div class="d">9</div><div class="w">Tue</div></div><div class="bar"><i class="b-deep" style="width:11%"></i><i class="b-light" style="width:61%"></i><i class="b-rem" style="width:28%"></i></div><div class="nh">8h 1m</div></div>
@@ -374,7 +373,7 @@
 <div class="nav-ov" id="nav-ov" onclick="closeNav()"></div>
 <script>
   const TITLES={overview:['Insights','what the data suggests · 30 days · describes, does not diagnose'],vitals:['Vitals','Continuously logged via the Neeve Ring'],
-    sleep:['Sleep','Ring-tracked, HR-corrected'],ortho:['Orthostatic signal','Ring · candidate events'],
+    sleep:['Sleep','Ring-tracked sleep'],ortho:['Orthostatic signal','Ring · candidate events'],
     symptoms:['Reported symptoms','Self-reported, 0–10'],patterns:['Environmental context','Co-occurrence, not cause'],
     days:['Days to discuss','Where the most markers moved together'],day:['Day detail','Monday 2 June'],
     questions:['Questions for this visit',''],notes:['Notes from this visit','']};

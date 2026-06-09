@@ -543,14 +543,24 @@
   })();
   // her wildly variable sleep
   const sleepH=[7.7,9.7,3.1,7.5,7.6,9.8,7.3,9.3,6.2,8.4,4.5,7.9,8.8,6.7,7.1,5.2,9.1,6.8,8.0,4.8,7.6,9.3,6.4,7.9,8.6,5.5,7.2,9.0,6.9,7.7];
-  barChart('ch-sv',sleepH,{max:10,color:'#d29a82'});
+  // insight sleep chart — the 12 recorded nights, actual range (swing visible)
+  (function(){ const s=document.getElementById('ch-sv'); if(!s)return; const W=480,H=100,pad={t:6,r:6,b:16,l:22},max=10;
+    const rec=[7.7,3.1,8.4,9.3,5.2,8.8,6.2,9.8,4.5,7.9,6.4,7.6];
+    const n=rec.length,gap=(W-pad.l-pad.r)/n,bw=gap*0.55,y=v=>pad.t+(1-v/max)*(H-pad.t-pad.b);
+    let g=''; [0,4,8].forEach(t=>{ g+=`<line x1="${pad.l}" y1="${y(t).toFixed(1)}" x2="${W-pad.r}" y2="${y(t).toFixed(1)}" stroke="#efe4d2"/>`
+      +`<text x="${pad.l-4}" y="${(y(t)+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#9a8473" font-family="Hanken Grotesk">${t}h</text>`;});
+    rec.forEach((h,i)=>{ const hh=(h/max)*(H-pad.t-pad.b),x=pad.l+i*gap+(gap-bw)/2,col=h<5?'#bb6147':(h>9?'#6b4f63':'#d29a82');
+      g+=`<rect x="${x.toFixed(1)}" y="${y(h).toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="${col}" opacity=".88"/>`;});
+    g+=`<text x="${pad.l}" y="${H-3}" font-size="8.5" fill="#9a8473" font-family="Hanken Grotesk">12 recorded nights · 3.1–9.8h · short nights flagged</text>`;
+    s.innerHTML=g;
+  })();
   // lower, flatter HRV (dysautonomia)
   const hrv=[33,30,35,28,32,34,29,31,27,33,30,28,34,31,29,32,30,33,28,31,30,32,29,33,31,30,34,29,32,31];
   // stacked nightly sleep — bar height = hours, split deep/light/REM
   (function(){ const s=document.getElementById('ch-sleep2'); if(!s)return; const W=720,H=170,pad={t:8,r:6,b:18,l:26},max=11;
     // Only nights with a complete start-to-wake reading. Gaps = no full record
     // (the ring missed it / she didn't wear it) — shown honestly, not invented.
-    const rec=[null,null,7.6,null,null,6.3,null,null,null,8.1,null,null,null,null,7.9,null,null,6.9,null,8.8,null,null,7.9,null,8.4,7.3,null,7.6,9.3,7.7];
+    const rec=[null,null,7.6,null,null,3.1,null,null,null,8.4,null,null,null,null,9.3,null,null,5.2,null,9.8,null,null,6.2,null,8.8,4.5,null,7.6,7.9,7.7];
     const n=rec.length,gap=(W-pad.l-pad.r)/n,bw=gap*0.62,y=v=>pad.t+(1-v/max)*(H-pad.t-pad.b),base=y(0);
     let g=''; [0,4,8].forEach(t=>{ g+=`<line x1="${pad.l}" y1="${y(t).toFixed(1)}" x2="${W-pad.r}" y2="${y(t).toFixed(1)}" stroke="#efe4d2"/>`
       +`<text x="${pad.l-5}" y="${(y(t)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${t}h</text>`;});

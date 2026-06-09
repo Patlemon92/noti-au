@@ -115,8 +115,36 @@
   .insight .raise{font-size:13.5px;color:var(--ink);background:rgba(111,117,81,.09);border-left:3px solid var(--sage);padding:11px 14px;border-radius:0 10px 10px 0;}
   .insight.valid{background:linear-gradient(150deg,#fbf6ee,#f5ebdd);}
   .ilink{font-family:inherit;font-size:13px;font-weight:600;color:var(--clay);background:none;border:0;cursor:pointer;padding:0;margin-top:12px;}
+  /* mobile menu drawer + on-page patient header */
+  .hamb{display:none;flex-direction:column;gap:4px;background:none;border:0;cursor:pointer;padding:7px 4px;flex:none;margin-right:2px;}
+  .hamb span{display:block;width:21px;height:2px;background:var(--ink);border-radius:2px;}
+  .mob-pt{display:none;}
+  .nav-ov{position:fixed;inset:0;background:rgba(40,30,24,.42);z-index:45;opacity:0;visibility:hidden;transition:.2s;}
+  .nav-ov.on{opacity:1;visibility:visible;}
+  /* migraine calendar */
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:4px;}
+  .cal-h{font-size:10px;font-weight:600;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.04em;}
+  .cal-d{aspect-ratio:1;border-radius:8px;background:var(--line-soft);font-size:12px;color:var(--ink-soft);padding:5px 6px;position:relative;}
+  .cal-d.hd{color:#fff;font-weight:600;}
+  .cal-d.pm{box-shadow:inset 0 0 0 2px var(--plum);}
+  .cal-drop{position:absolute;bottom:5px;left:6px;width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-top:5px solid var(--ink);opacity:.5;}
+  .cal-aura{position:absolute;bottom:5px;right:6px;width:6px;height:6px;border-radius:50%;border:1.5px solid var(--gold);}
+  .cal-leg{display:flex;flex-wrap:wrap;gap:14px;font-size:11.5px;color:var(--ink-soft);margin-top:13px;}
+  .cal-leg i{display:inline-block;vertical-align:middle;margin-right:5px;}
+  .lg-hd{width:11px;height:11px;border-radius:3px;background:var(--clay);}
+  .lg-pm{width:11px;height:11px;border-radius:3px;box-shadow:inset 0 0 0 2px var(--plum);}
+  .lg-dr{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid var(--ink);opacity:.6;}
+  .lg-au{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--gold);}
   @media(max-width:820px){
-    .sidebar{position:fixed;left:-240px;} .content{padding:18px;} .topbar{padding:14px 18px;}
+    .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:transform .28s cubic-bezier(.32,.72,0,1);z-index:50;box-shadow:3px 0 22px rgba(40,30,24,.2);}
+    .sidebar.open{transform:translateX(0);}
+    .hamb{display:flex;}
+    .content{padding:16px;} .topbar{padding:12px 16px;}
+    .topbar .right{display:none;} .topbar h1{font-size:19px;}
+    .mob-pt{display:block;margin:0 0 16px;padding:13px 15px;background:var(--card);border:1px solid var(--line);border-radius:14px;}
+    .mob-pt .nm{font-family:"Fraunces",serif;font-size:20px;font-weight:500;}
+    .mob-pt .cd{font-size:12.5px;color:var(--clay);font-weight:600;margin-top:1px;}
+    .mob-pt .pr{font-size:12px;color:var(--muted);margin-top:1px;}
     .g4{grid-template-columns:1fr 1fr;} .g3,.g2{grid-template-columns:1fr;}
     .insight .ev{flex-direction:column;align-items:stretch;} .insight .ev-c{width:100%;}
   }
@@ -154,6 +182,7 @@
   <!-- ── MAIN ── -->
   <div class="main">
     <div class="topbar">
+      <button class="hamb" onclick="toggleNav()" aria-label="Menu"><span></span><span></span><span></span></button>
       <div><h1 id="pt-title">Insights</h1><div class="sub" id="pt-sub">what the data suggests · 30 days · describes, does not diagnose</div></div>
       <div class="right">
         <span class="range" data-range><button>7d</button><button class="on">30d</button><button>90d</button></span>
@@ -161,6 +190,7 @@
       </div>
     </div>
     <div class="content">
+      <div class="mob-pt"><div class="nm">Francesca L</div><div class="cd">POTS · migraine · multi-system</div><div class="pr">9 May – 9 Jun 2026 · 30 days</div></div>
 
       <!-- INSIGHTS (insight-led overview) -->
       <section class="panel on" id="p-overview">
@@ -280,6 +310,16 @@
           <div class="card stat"><div class="k">Peak intensity</div><div class="n">8<span class="u">/10</span></div></div>
           <div class="card stat"><div class="k">Days with aura</div><div class="n">3</div></div>
         </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>Migraine calendar</h3><span class="note">9 May – 9 Jun · the clustering at a glance</span></div>
+          <div class="cal" id="mig-cal"></div>
+          <div class="cal-leg">
+            <span><i class="lg-hd"></i>headache (darker = stronger)</span>
+            <span><i class="lg-pm"></i>pre-menstrual window</span>
+            <span><i class="lg-dr"></i>pressure drop</span>
+            <span><i class="lg-au"></i>aura</span>
+          </div>
+        </div>
         <div class="callout"><b>Pattern:</b> headaches clustered both on falling-pressure days and in the pre-menstrual
           window — two recognised triggers appearing together. Triggers to watch, not an established cause.</div>
         <div class="card">
@@ -394,6 +434,7 @@
   </div>
 </div>
 
+<div class="nav-ov" id="nav-ov" onclick="closeNav()"></div>
 <script>
   const TITLES={overview:['Insights','what the data suggests · 30 days · describes, does not diagnose'],vitals:['Vitals','Continuously logged via the Neeve Ring'],
     sleep:['Sleep','Ring-tracked, HR-corrected'],ortho:['Orthostatic signal','Ring · candidate events'],
@@ -409,7 +450,10 @@
     document.getElementById('pt-sub').textContent=TITLES[p][1];
     document.querySelector('.content').scrollTo?.(0,0); window.scrollTo(0,0);
   }
-  document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>go(b.dataset.p)));
+  document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>{go(b.dataset.p);closeNav();}));
+  function toggleNav(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('nav-ov').classList.toggle('on');}
+  function closeNav(){document.querySelector('.sidebar').classList.remove('open');document.getElementById('nav-ov').classList.remove('on');}
+  if(location.hash.slice(1)) go(location.hash.slice(1));
   document.querySelectorAll('[data-range]').forEach(r=>r.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{r.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');})));
 
   // ── tiny chart helpers ──
@@ -479,6 +523,21 @@
   barChart('ch-ortho',[0,0,0,44,0,0,0,38,0,0,0,0,68,52,0,0,0,0,0,0,0,40,0,0,0,0,48,0,0,0],{max:80,color:'#bb6147',hot:i=>true});
   // dizziness levels (none / mild / moderate / rough — day counts)
   barChart('ch-anx',[8,6,5,3],{max:10,color:'#d29a82',hot:i=>i>=2,labels:['none','mild','mod','rough']});
+  // migraine calendar — 11 May (Mon) → 9 Jun, marked per day
+  (function(){ const cal=document.getElementById('mig-cal'); if(!cal)return;
+    const days=[]; for(let d=11;d<=31;d++)days.push('May-'+d); for(let d=1;d<=9;d++)days.push('Jun-'+d);
+    const head={'May-16':6,'May-17':7,'May-23':8,'May-24':7,'May-29':5,'Jun-4':6,'Jun-5':8,'Jun-6':7};
+    const drop=new Set(['May-16','May-23','May-29','Jun-4']);
+    const pm=new Set(['Jun-3','Jun-4','Jun-5','Jun-6']);
+    const aura=new Set(['May-23','Jun-5','Jun-6']);
+    let html=''; ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(w=>html+=`<div class="cal-h">${w}</div>`);
+    days.forEach(k=>{ const dnum=k.split('-')[1]; const sev=head[k]; let cls='cal-d',st='';
+      if(pm.has(k))cls+=' pm';
+      if(sev){cls+=' hd';st=`background:rgba(187,97,71,${(0.32+sev/15).toFixed(2)})`;}
+      html+=`<div class="${cls}" style="${st}">${dnum}${drop.has(k)?'<i class="cal-drop"></i>':''}${aura.has(k)?'<i class="cal-aura"></i>':''}</div>`;
+    });
+    cal.innerHTML=html;
+  })();
   // day HR timeline
   (function(){ const d=[68,66,112,82,70,118,86,72,70,69,124,88,74,70]; lineChart('ch-day',d,{min:60,max:135,color:'#bb6147'});
     const s=document.getElementById('ch-day'); [2,5,10].forEach(i=>{const v=d[i];

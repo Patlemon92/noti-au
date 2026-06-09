@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neeve — clinical dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;450;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4eadc; --card:#fbf6ee; --ink:#42332b; --ink-soft:#6b574a; --muted:#9a8473;
+    --clay:#bb6147; --clay-soft:#d29a82; --sage:#6f7551; --gold:#e9cda2; --plum:#6b4f63;
+    --line:#e6d8c4; --line-soft:#efe4d2; --good:#6f8a5e; --high:#bb6147;
+    --sidebar:#ece0cf;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Hanken Grotesk",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;font-size:14px;}
+  h1,h2,h3{font-family:"Fraunces",serif;font-weight:500;letter-spacing:-.01em;margin:0;}
+  .serif{font-family:"Fraunces",serif;} .num{font-family:"Fraunces",serif;font-weight:500;}
+  .muted{color:var(--muted);} .soft{color:var(--ink-soft);}
+  .pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:11px;border:1px solid;}
+  .pill.lo{color:#8a7a6e;border-color:#cdbfab;} .pill.md{color:#9a6a2a;border-color:#d8b27a;} .pill.hi{color:#5c7a52;border-color:#a6bf8e;}
+  .drift{font-size:12px;font-weight:600;} .up{color:var(--high);} .dn{color:var(--good);} .flat{color:var(--muted);}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* ── sidebar ── */
+  .sidebar{width:236px;flex:none;background:var(--sidebar);border-right:1px solid var(--line);
+    padding:20px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+  .brand{display:flex;align-items:center;gap:9px;padding:0 6px 16px;}
+  .mark{width:24px;height:24px;border-radius:50%;border:2px solid var(--clay);position:relative;flex:none;}
+  .mark::after{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:var(--gold);right:-1px;top:50%;transform:translateY(-50%);}
+  .brand b{font-family:"Fraunces",serif;font-size:18px;font-weight:500;}
+  .pt-card{background:rgba(255,255,255,.5);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:16px;}
+  .pt-card .nm{font-family:"Fraunces",serif;font-size:18px;}
+  .pt-card .mt{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  nav{display:flex;flex-direction:column;gap:2px;}
+  nav .lab{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 10px 5px;}
+  nav button{display:flex;align-items:center;gap:11px;font-family:inherit;font-size:14px;font-weight:500;
+    color:var(--ink-soft);background:none;border:0;border-radius:10px;padding:9px 11px;cursor:pointer;text-align:left;width:100%;transition:.12s;}
+  nav button:hover{background:rgba(255,255,255,.45);}
+  nav button.on{background:var(--ink);color:var(--paper);}
+  nav button .i{display:none;} /* no emojis/icon glyphs — text-only nav */
+  .side-foot{margin-top:auto;padding-top:14px;font-size:11.5px;color:var(--muted);line-height:1.5;}
+  .side-foot .acc{display:flex;align-items:center;gap:7px;color:var(--ink-soft);margin-bottom:9px;}
+  .gdot{width:7px;height:7px;border-radius:50%;background:var(--good);flex:none;}
+
+  /* ── main ── */
+  .main{flex:1;min-width:0;}
+  .topbar{position:sticky;top:0;z-index:10;background:rgba(244,234,220,.9);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);padding:16px 30px;display:flex;align-items:center;gap:14px;}
+  .topbar h1{font-size:23px;} .topbar .sub{font-size:12.5px;color:var(--muted);}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .tag{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--sage);background:rgba(111,117,81,.13);padding:4px 11px;border-radius:20px;text-transform:uppercase;}
+  .range{display:inline-flex;gap:4px;background:var(--line-soft);border-radius:20px;padding:3px;}
+  .range button{font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);background:transparent;border:0;border-radius:16px;padding:5px 13px;cursor:pointer;}
+  .range button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(66,51,43,.1);}
+
+  .content{padding:24px 30px 60px;max-width:1080px;}
+  .panel{display:none;} .panel.on{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .frame{padding:13px 16px;background:var(--card);border:1px solid var(--line);border-radius:13px;
+    font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:20px;}
+  .frame b{color:var(--ink);}
+
+  .grid{display:grid;gap:16px;}
+  .g4{grid-template-columns:repeat(4,1fr);} .g3{grid-template-columns:repeat(3,1fr);} .g2{grid-template-columns:1fr 1fr;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;}
+  .card.tap{cursor:pointer;transition:.12s;} .card.tap:hover{border-color:var(--clay-soft);}
+  .stat .k{font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .stat .n{font-family:"Fraunces",serif;font-size:32px;font-weight:500;line-height:1;margin:8px 0 4px;}
+  .stat .n .u{font-size:14px;color:var(--muted);}
+  .stat .b{font-size:12px;color:var(--muted);}
+  .ch-h{display:flex;align-items:baseline;margin-bottom:6px;} .ch-h h3{font-size:16px;} .ch-h .note{font-size:12px;color:var(--muted);margin-left:auto;}
+  .sect-h{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:26px 0 12px;}
+
+  .finding{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line);} .finding:last-child{border-bottom:0;}
+  .finding .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--clay);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px;}
+  .finding .t{font-size:15px;font-weight:600;margin:0 0 4px;} .finding .d{font-size:13px;color:var(--ink-soft);margin:0 0 7px;}
+
+  .callout{border-left:3px solid var(--clay-soft);background:rgba(187,97,71,.06);padding:11px 15px;border-radius:0 10px 10px 0;font-size:13px;color:var(--ink-soft);margin:14px 0;}
+  .callout b{color:var(--ink);}
+  table.kv{width:100%;border-collapse:collapse;} table.kv td{padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;} table.kv tr:last-child td{border-bottom:0;}
+  table.kv td:last-child{text-align:right;font-weight:600;} .hiv{color:var(--high);}
+
+  .night{display:flex;align-items:center;gap:13px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;} .night:last-child{border-bottom:0;} .night:hover{opacity:.7;}
+  .nd{flex:none;width:30px;text-align:center;} .nd .d{font-family:"Fraunces",serif;font-size:19px;line-height:1;} .nd .w{font-size:10.5px;color:var(--muted);}
+  .bar{flex:1;height:12px;border-radius:6px;overflow:hidden;display:flex;background:var(--line-soft);} .bar i{display:block;height:100%;}
+  .b-deep{background:var(--plum);} .b-light{background:var(--clay-soft);} .b-rem{background:var(--gold);}
+  .nh{flex:none;font-family:"Fraunces",serif;font-size:14px;width:52px;text-align:right;}
+  .key{display:flex;gap:16px;font-size:12px;color:var(--ink-soft);margin-top:12px;} .key i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;}
+
+  .env td:first-child{font-weight:600;width:150px;}
+  .q{padding:13px 0;border-bottom:1px solid var(--line);} .q:last-child{border-bottom:0;}
+  .q .ask{font-size:14.5px;font-weight:600;}
+  .q .ans{margin-top:8px;font-size:13.5px;color:var(--ink-soft);background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:9px 12px;font-style:italic;}
+  .q .ans.filled{font-style:normal;border-style:solid;background:#fff;} .q .by{font-size:11.5px;color:var(--muted);margin-top:6px;}
+  .notebox{background:var(--paper);border:1px dashed var(--line);border-radius:12px;padding:18px;font-size:13.5px;color:var(--muted);text-align:center;} .notebox b{color:var(--ink-soft);}
+  .seg{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0;} .seg .s{font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px;background:rgba(187,97,71,.13);color:var(--high);}
+  .backbtn{font-family:inherit;font-size:13px;font-weight:600;color:var(--clay);background:none;border:0;cursor:pointer;padding:0;margin-bottom:6px;}
+
+  /* ── insight cards ── */
+  .insight{margin-bottom:16px;}
+  .insight .ih{display:flex;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap;}
+  .insight .ib{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--clay);}
+  .insight .ib.val{color:var(--sage);}
+  .insight .it{font-size:20px;line-height:1.22;margin-bottom:7px;}
+  .insight .id{font-size:14px;color:var(--ink-soft);margin:0 0 15px;max-width:66ch;}
+  .insight .ev{display:flex;gap:22px;align-items:center;}
+  .insight .ev-c{flex:none;width:300px;}
+  .insight .ev-x{font-size:10.5px;color:var(--muted);text-align:center;margin-top:1px;}
+  .insight .ev-t{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;}
+  .insight .raise{font-size:13.5px;color:var(--ink);background:rgba(111,117,81,.09);border-left:3px solid var(--sage);padding:11px 14px;border-radius:0 10px 10px 0;}
+  .insight.valid{background:linear-gradient(150deg,#fbf6ee,#f5ebdd);}
+  .ilink{font-family:inherit;font-size:13px;font-weight:600;color:var(--clay);background:none;border:0;cursor:pointer;padding:0;margin-top:12px;}
+  @media(max-width:820px){
+    .sidebar{position:fixed;left:-240px;} .content{padding:18px;} .topbar{padding:14px 18px;}
+    .g4{grid-template-columns:1fr 1fr;} .g3,.g2{grid-template-columns:1fr;}
+    .insight .ev{flex-direction:column;align-items:stretch;} .insight .ev-c{width:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="brand"><span class="mark"></span><b>Neeve</b></div>
+    <div class="pt-card"><div class="nm">Francesca L</div><div class="mt" style="color:var(--clay);font-weight:600">POTS · migraine · multi-system</div><div class="mt">9 May – 9 Jun 2026 · 30 days</div></div>
+    <nav id="nav">
+      <button class="on" data-p="overview"><span class="i">✦</span> Insights</button>
+      <div class="lab">Objective</div>
+      <button data-p="vitals"><span class="i">❤</span> Vitals</button>
+      <button data-p="sleep"><span class="i">🌙</span> Sleep</button>
+      <button data-p="ortho"><span class="i">↑</span> Orthostatic</button>
+      <div class="lab">Reported</div>
+      <button data-p="migraine"><span class="i">◐</span> Migraine</button>
+      <button data-p="symptoms"><span class="i">◔</span> Symptoms</button>
+      <button data-p="cycle"><span class="i">○</span> Cycle</button>
+      <button data-p="patterns"><span class="i">≈</span> Patterns</button>
+      <div class="lab">Conversation</div>
+      <button data-p="days"><span class="i">◷</span> Days to discuss</button>
+      <button data-p="questions"><span class="i">?</span> Questions</button>
+      <button data-p="notes"><span class="i">✎</span> Notes</button>
+    </nav>
+    <div class="side-foot">
+      <div class="acc"><span class="gdot"></span> Shared · expires in 6 days</div>
+      Describes patterns to support this conversation. Does not diagnose.
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+    <div class="topbar">
+      <div><h1 id="pt-title">Insights</h1><div class="sub" id="pt-sub">what the data suggests · 30 days · describes, does not diagnose</div></div>
+      <div class="right">
+        <span class="range" data-range><button>7d</button><button class="on">30d</button><button>90d</button></span>
+        <span class="tag">shared view</span>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- INSIGHTS (insight-led overview) -->
+      <section class="panel on" id="p-overview">
+        <div class="frame">Synthesised from 30 days of self-reported and wearable data. Each is a <b>pattern, not
+          a conclusion</b> — shown with its evidence and confidence. Neeve describes; it does not diagnose.</div>
+
+        <!-- 1 — POTS: standing jumps + dizziness cluster (her headline) -->
+        <div class="card insight">
+          <div class="ih"><span class="ib">Pattern · highest relevance</span><span class="pill md">6 days · moderate confidence</span></div>
+          <h2 class="it">Standing brings on her dizziness — and the ring sees it at the same time</h2>
+          <p class="id">On 6 days the ring recorded sustained heart-rate jumps of ≥30 bpm within ~5 min of standing
+            (median +44 bpm, largest +68). Those same days are when she reported moderate-to-rough dizziness
+            (shown as dots below). The objective and reported signals line up.</p>
+          <div class="ev"><div class="ev-c"><svg id="ch-os" width="100%" height="100" viewBox="0 0 480 100"></svg>
+            <div class="ev-x">30 days · bars = standing jump · dots = dizziness reported</div></div>
+            <div class="ev-t"><div class="raise"><b>What this raises:</b> a consistent orthostatic pattern. An
+              active-stand or tilt test would confirm — these support a POTS assessment but are candidate events, not a stand test.</div>
+            <button class="ilink" onclick="go('ortho')">See the orthostatic data →</button></div></div>
+        </div>
+
+        <!-- 2 — migraine: pressure + cycle timing -->
+        <div class="card insight">
+          <div class="ih"><span class="ib">Pattern · reported</span><span class="pill md">8 headache days · moderate confidence</span></div>
+          <h2 class="it">Her migraines cluster on falling-pressure days and before her period</h2>
+          <p class="id">8 headache days this period (intensity up to 8/10). They lined up both with drops in barometric
+            pressure and with the days before her period — two recognised migraine triggers showing together.</p>
+          <div class="ev"><div class="ev-c"><svg id="ch-mig" width="100%" height="100" viewBox="0 0 480 100"></svg>
+            <div class="ev-x">headache intensity · marks = pressure drop · shaded = pre-menstrual window</div></div>
+            <div class="ev-t"><div class="raise"><b>What this raises:</b> a barometric and a hormonal (menstrual-migraine)
+              pattern worth distinguishing — they may need different management. Triggers to watch, not established cause.</div>
+            <button class="ilink" onclick="go('migraine')">See the migraine data →</button></div></div>
+        </div>
+
+        <!-- 3 — sleep fragmentation -->
+        <div class="card insight">
+          <div class="ih"><span class="ib">Pattern · objective</span><span class="pill md">12 nights · moderate confidence</span></div>
+          <h2 class="it">Her sleep swings wildly night to night — fragmentation, not simply short sleep</h2>
+          <p class="id">Nights ranged 3.1–9.8h. On one night the ring first logged just 2h44m, but overnight heart rate
+            showed ~7.7h of continuous low-HR sleep — the ring had lost contact, not she lost the sleep. The variability itself is the signal.</p>
+          <div class="ev"><div class="ev-c"><svg id="ch-sv" width="100%" height="100" viewBox="0 0 480 100"></svg>
+            <div class="ev-x">hours per night across the period</div></div>
+            <div class="ev-t"><div class="raise"><b>What this raises:</b> fragmented, highly variable sleep — common in
+              dysautonomia, and worth distinguishing from insomnia. The HR-corrected figure avoids over-calling short nights.</div>
+            <button class="ilink" onclick="go('sleep')">See the sleep data →</button></div></div>
+        </div>
+
+        <!-- 4 — validation: felt meets measured -->
+        <div class="card insight valid">
+          <div class="ih"><span class="ib val">What she felt · what the ring saw</span></div>
+          <h2 class="it">On her worst day, the data matched what she described</h2>
+          <p class="id">On 14 May she wrote <i>"the room spun every time I stood, heart pounding, had to lie down all afternoon"</i>
+            — and that day the ring recorded three standing jumps (up to +68 bpm) and she rated dizziness rough. What she
+            felt and what was measured line up.</p>
+          <button class="ilink" onclick="go('day')">Open that day →</button>
+        </div>
+      </section>
+
+      <!-- VITALS -->
+      <section class="panel" id="p-vitals">
+        <div class="grid g3">
+          <div class="card stat"><div class="k">HRV (overnight RMSSD)</div><div class="n">31<span class="u">ms</span></div><div class="b">usual 31 · <span class="drift flat">at baseline</span> · 14 days</div></div>
+          <div class="card stat"><div class="k">Resting heart rate</div><div class="n">72<span class="u">bpm</span></div><div class="b">usual 70 · <span class="drift up">↑ 3%</span> · 9 days</div></div>
+          <div class="card stat"><div class="k">Blood oxygen</div><div class="n">97<span class="u">%</span></div><div class="b">usual 97% · <span class="drift flat">at baseline</span> · 14 days</div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>Overnight HRV trend</h3><span class="note">band = usual range</span></div>
+          <svg id="ch-hrv2" width="100%" height="170" viewBox="0 0 1000 170" preserveAspectRatio="none" style="height:170px"></svg>
+        </div>
+        <div class="callout"><b>Blood pressure:</b> shown only from a calibrated cuff — the ring's optical estimate is excluded. None logged this period.</div>
+        <p class="muted" style="font-size:12px">Continuously logged · HR 31,400 samples · HRV 2,470 · SpO₂ 2,470</p>
+      </section>
+
+      <!-- SLEEP -->
+      <section class="panel" id="p-sleep">
+        <div class="grid g2">
+          <div class="card stat"><div class="k">Average duration</div><div class="n">7.4<span class="u">h</span></div><div class="b">range 3.1–9.8h · highly variable · 14 nights</div></div>
+          <div class="card stat"><div class="k">Stage mix</div><div class="n" style="font-size:24px">18% · 62% · 20%</div><div class="b">deep · light · REM</div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>Nightly duration</h3><span class="note">hours</span></div>
+          <svg id="ch-sleep2" width="100%" height="180" viewBox="0 0 720 180"></svg>
+        </div>
+        <div class="callout">Duration is corrected against overnight heart rate, which recovers sleep the ring under-counts when contact is briefly lost.</div>
+        <div class="card">
+          <div class="ch-h"><h3>Recent nights</h3><span class="note">click a night to open that day</span></div>
+          <div class="night" onclick="go('day')"><div class="nd"><div class="d">9</div><div class="w">Tue</div></div><div class="bar"><i class="b-deep" style="width:16%"></i><i class="b-light" style="width:64%"></i><i class="b-rem" style="width:20%"></i></div><div class="nh">7h 42m</div></div>
+          <div class="night" onclick="go('day')"><div class="nd"><div class="d">8</div><div class="w">Mon</div></div><div class="bar"><i class="b-deep" style="width:20%"></i><i class="b-light" style="width:58%"></i><i class="b-rem" style="width:22%"></i></div><div class="nh">9h 18m</div></div>
+          <div class="night" onclick="go('day')"><div class="nd"><div class="d">7</div><div class="w">Sun</div></div><div class="bar"><i class="b-deep" style="width:9%"></i><i class="b-light" style="width:71%"></i><i class="b-rem" style="width:20%"></i></div><div class="nh">4h 30m</div></div>
+          <div class="night" onclick="go('day')"><div class="nd"><div class="d">6</div><div class="w">Sat</div></div><div class="bar"><i class="b-deep" style="width:21%"></i><i class="b-light" style="width:59%"></i><i class="b-rem" style="width:20%"></i></div><div class="nh">9h 48m</div></div>
+          <div class="key"><span><i class="b-deep"></i>Deep</span><span><i class="b-light"></i>Light</span><span><i class="b-rem"></i>REM</span></div>
+        </div>
+      </section>
+
+      <!-- ORTHOSTATIC -->
+      <section class="panel" id="p-ortho">
+        <div class="card">
+          <p class="soft" style="margin:0 0 16px">Sustained heart-rate jumps of ≥30 bpm reached within ~5 min during waking hours — a likely sit-to-stand response. No posture sensor, so these are <b>candidate</b> events, not a confirmed stand test.</p>
+          <div class="grid g4">
+            <div class="stat"><div class="k">Jumps</div><div class="n">11</div><div class="b">+30 to +80 bpm</div></div>
+            <div class="stat"><div class="k">Days</div><div class="n">6</div></div>
+            <div class="stat"><div class="k">Median</div><div class="n">+44<span class="u">bpm</span></div></div>
+            <div class="stat"><div class="k">Largest</div><div class="n">+68<span class="u">bpm</span></div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>When the jumps happened</h3><span class="note">bpm rise by day</span></div>
+          <svg id="ch-ortho" width="100%" height="170" viewBox="0 0 720 170"></svg>
+        </div>
+        <p class="muted" style="font-size:11.5px">1 spike (&gt;+80 bpm) excluded as likely movement. A formal active-stand or tilt test remains the diagnostic standard — this is context for it.</p>
+      </section>
+
+      <!-- SYMPTOMS -->
+      <!-- MIGRAINE -->
+      <section class="panel" id="p-migraine">
+        <div class="grid g3">
+          <div class="card stat"><div class="k">Headache days</div><div class="n">8<span class="u">/30</span></div></div>
+          <div class="card stat"><div class="k">Peak intensity</div><div class="n">8<span class="u">/10</span></div></div>
+          <div class="card stat"><div class="k">Days with aura</div><div class="n">3</div></div>
+        </div>
+        <div class="callout"><b>Pattern:</b> headaches clustered both on falling-pressure days and in the pre-menstrual
+          window — two recognised triggers appearing together. Triggers to watch, not an established cause.</div>
+        <div class="card">
+          <table class="kv">
+            <tr><td>Most common reported trigger</td><td>weather change</td></tr>
+            <tr><td>Headaches in the pre-menstrual window</td><td class="hiv">4 of 8</td></tr>
+            <tr><td>Days needing to lie down</td><td>5</td></tr>
+            <tr><td>Relief medication used</td><td>6 days</td></tr>
+          </table>
+        </div>
+      </section>
+
+      <!-- SYMPTOMS -->
+      <section class="panel" id="p-symptoms">
+        <div class="grid g4">
+          <div class="card stat"><div class="k">Fatigue</div><div class="n">6.2<span class="u">/10</span></div></div>
+          <div class="card stat"><div class="k">Brain fog</div><div class="n">5.4<span class="u">/10</span></div></div>
+          <div class="card stat"><div class="k">Dizziness days</div><div class="n">14<span class="u">/30</span></div></div>
+          <div class="card stat"><div class="k">Mood (evening)</div><div class="n">6.1<span class="u">/10</span></div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>Dizziness, by severity</h3><span class="note">days at each level</span></div>
+          <svg id="ch-anx" width="100%" height="160" viewBox="0 0 560 160"></svg>
+        </div>
+        <div class="callout"><b>In her words (14 May):</b> <span style="font-style:italic">"the room spun every time I stood, heart pounding, had to lie down all afternoon."</span></div>
+      </section>
+
+      <!-- CYCLE -->
+      <section class="panel" id="p-cycle">
+        <div class="card">
+          <p class="soft" style="margin:0 0 14px">Self-reported cycle phase shown against migraine and symptom days. Timing only — Neeve does not interpret hormones.</p>
+          <table class="kv">
+            <tr><td>Cycle length (this period)</td><td>29 days</td></tr>
+            <tr><td>Migraines in the pre-menstrual window</td><td class="hiv">4 of 8</td></tr>
+            <tr><td>Dizziness worse in the luteal phase</td><td>3 days reported</td></tr>
+          </table>
+        </div>
+        <div class="callout"><b>What this raises:</b> a possible menstrual-migraine pattern — over half her headaches fell
+          in the days before her period. Hormonal timing worth exploring. A pattern, not a cause.</div>
+      </section>
+
+      <!-- PATTERNS -->
+      <section class="panel" id="p-patterns">
+        <div class="card">
+          <p class="soft" style="margin:0 0 14px">Each check-in is tagged with local weather, air quality and pollen. These are associations across the period — what appeared alongside what, not cause.</p>
+          <table class="kv env">
+            <tr><td>Pressure · Anxiety</td><td style="text-align:left;font-weight:400;color:var(--ink-soft)">Anxiety 8 on lower-pressure days vs 5 on higher (3/4 days) <span class="pill lo">lower</span></td></tr>
+            <tr><td>Pollen · Fog</td><td style="text-align:left;font-weight:400;color:var(--ink-soft)">Fog 4.7 on lower-pollen days vs 1.7 on higher (3/3 days) <span class="pill lo">lower</span></td></tr>
+            <tr><td>PM2.5 · Fatigue</td><td style="text-align:left;font-weight:400;color:var(--ink-soft)">Fatigue 5.7 on lower-particle days vs 3.0 on higher (4/3 days) <span class="pill lo">lower</span></td></tr>
+          </table>
+        </div>
+      </section>
+
+      <!-- DAYS -->
+      <section class="panel" id="p-days">
+        <p class="muted" style="margin:0 0 14px">The days where the most markers moved together. Any day can be opened.</p>
+        <div class="card tap" onclick="go('day')" style="margin-bottom:12px"><div class="night" style="border:0;padding:0;cursor:pointer"><div class="nd"><div class="d">2</div><div class="w">Mon</div></div>
+          <div style="flex:1"><div style="font-weight:600">Several markers elevated together</div><div class="muted" style="font-size:12.5px">anxiety 10 · stress 10 · fatigue 9 · energy 2</div></div><span class="muted" style="font-size:18px">›</span></div></div>
+        <div class="card tap" onclick="go('day')"><div class="night" style="border:0;padding:0;cursor:pointer"><div class="nd"><div class="d">5</div><div class="w">Thu</div></div>
+          <div style="flex:1"><div style="font-weight:600">Shortest night, lowest energy</div><div class="muted" style="font-size:12.5px">slept 6.3h · energy 1 · fatigue 8</div></div><span class="muted" style="font-size:18px">›</span></div></div>
+      </section>
+
+      <!-- DAY DETAIL -->
+      <section class="panel" id="p-day">
+        <button class="backbtn" onclick="go('days')">‹ Days to discuss</button>
+        <div class="row" style="display:flex;align-items:baseline;gap:12px;margin-bottom:2px"><h1 style="font-size:25px">Wednesday 14 May</h1></div>
+        <div class="seg"><span class="s">dizziness rough</span><span class="s">3 standing jumps</span><span class="s">fatigue 8</span><span class="s">migraine 6</span></div>
+        <p class="soft" style="margin:6px 0 18px">Her worst orthostatic day — repeated standing jumps and rough dizziness together. Shown side by side: what appeared alongside what.</p>
+        <div class="grid g2">
+          <div class="card">
+            <div class="ch-h"><h3>Heart rate across the day</h3></div>
+            <svg id="ch-day" width="100%" height="150" viewBox="0 0 480 150"></svg>
+            <p class="soft" style="font-size:12.5px;margin-top:8px">Three sustained standing jumps through the day (to +68 bpm), each when she stood after resting. Settled only when lying down.</p>
+          </div>
+          <div class="card">
+            <div class="ch-h"><h3>What Francesca reported</h3></div>
+            <table class="kv">
+              <tr><td>Dizziness</td><td class="hiv">rough</td></tr>
+              <tr><td>Fatigue</td><td class="hiv">8 / 10</td></tr>
+              <tr><td>Headache</td><td class="hiv">6 / 10</td></tr>
+              <tr><td>Brain fog</td><td class="hiv">7 / 10</td></tr>
+              <tr><td>Standing jumps (ring)</td><td class="hiv">3 · up to +68 bpm</td></tr>
+              <tr><td>Could do normal activities</td><td>No</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="grid g2" style="margin-top:16px">
+          <div class="card"><div class="ch-h"><h3>The night before</h3></div>
+            <div class="night" style="cursor:default;border:0;padding:6px 0"><div class="nd"><div class="d">14</div><div class="w">Wed</div></div><div class="bar"><i class="b-deep" style="width:9%"></i><i class="b-light" style="width:71%"></i><i class="b-rem" style="width:20%"></i></div><div class="nh">4h 30m</div></div></div>
+          <div class="card"><div class="ch-h"><h3>Conditions / context</h3></div>
+            <table class="kv"><tr><td>Barometric pressure</td><td>998 hPa · falling</td></tr><tr><td>Cycle phase</td><td>pre-menstrual</td></tr><tr><td>Grass pollen</td><td>moderate</td></tr></table></div>
+        </div>
+        <div class="callout"><b>In her words:</b> <span style="font-style:italic">"the room spun every time I stood, heart pounding, had to lie down all afternoon."</span></div>
+      </section>
+
+      <!-- QUESTIONS -->
+      <section class="panel" id="p-questions">
+        <div class="card">
+          <div class="q"><p class="ask">Is the gap between sleeping a full night and waking depleted worth investigating?</p>
+            <div class="ans filled">Bloods + thyroid to rule out reversible causes; revisit in 6 weeks with a sleep-quality focus.<div class="by">— Dr. M, added 9 Jun</div></div></div>
+          <div class="q"><p class="ask">Could the standing heart-rate pattern warrant an active-stand test?</p><div class="ans">Doctor can answer here →</div></div>
+          <div class="q"><p class="ask">Is the anxiety something to address alongside the physical symptoms?</p><div class="ans">Doctor can answer here →</div></div>
+        </div>
+      </section>
+
+      <!-- NOTES -->
+      <section class="panel" id="p-notes">
+        <div class="notebox"><b>A shared space for what you decide together.</b><br>The doctor can add a note here — visible to the patient, kept as <i>their</i> record of the conversation. Not a medical record, and it never changes the data.</div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const TITLES={overview:['Insights','what the data suggests · 30 days · describes, does not diagnose'],vitals:['Vitals','Continuously logged via the Neeve Ring'],
+    sleep:['Sleep','Ring-tracked, HR-corrected'],ortho:['Orthostatic signal','Ring · candidate events'],
+    migraine:['Migraine','Headache days, intensity, triggers'],cycle:['Cycle','Phase timing vs symptoms'],
+    symptoms:['Reported symptoms','Self-reported, 0–10'],patterns:['Environmental context','Co-occurrence, not cause'],
+    days:['Days to discuss','Where the most markers moved together'],day:['Day detail','Wednesday 14 May'],
+    questions:['Questions for this visit',''],notes:['Notes from this visit','']};
+  function go(p){
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+    document.getElementById('p-'+p).classList.add('on');
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+    document.getElementById('pt-title').textContent=TITLES[p][0];
+    document.getElementById('pt-sub').textContent=TITLES[p][1];
+    document.querySelector('.content').scrollTo?.(0,0); window.scrollTo(0,0);
+  }
+  document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>go(b.dataset.p)));
+  document.querySelectorAll('[data-range]').forEach(r=>r.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{r.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');})));
+
+  // ── tiny chart helpers ──
+  const NS='http://www.w3.org/2000/svg';
+  function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+  function barChart(id,data,opts={}){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal; const W=vb.width,H=vb.height;
+    const pad={t:10,r:6,b:22,l:6}; const max=opts.max||Math.max(...data); const n=data.length;
+    const bw=(W-pad.l-pad.r)/n*0.62, gap=(W-pad.l-pad.r)/n;
+    data.forEach((v,i)=>{ const h=(v/max)*(H-pad.t-pad.b); const x=pad.l+i*gap+(gap-bw)/2; const y=H-pad.b-h;
+      s.appendChild(el('rect',{x,y,width:bw,height:Math.max(h,1),rx:2,fill:opts.color||'#d29a82',opacity:opts.hot&&opts.hot(i)?1:.7})); });
+    if(opts.labels) opts.labels.forEach((l,i)=>{ if(l==null)return; s.appendChild(el('text',{x:pad.l+i*gap+gap/2,y:H-7,'text-anchor':'middle','font-size':10,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=l; });
+  }
+  function lineChart(id,data,opts={}){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal; const W=vb.width,H=vb.height;
+    const pad={t:14,r:8,b:8,l:8}; const mn=opts.min,mx=opts.max; const n=data.length;
+    const X=i=>pad.l+i*(W-pad.l-pad.r)/(n-1); const Y=v=>pad.t+(1-(v-mn)/(mx-mn))*(H-pad.t-pad.b);
+    if(opts.band){ s.appendChild(el('rect',{x:pad.l,y:Y(opts.band[1]),width:W-pad.l-pad.r,height:Math.max(2,Y(opts.band[0])-Y(opts.band[1])),fill:'#9a8473',opacity:.12})); }
+    const pts=data.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+    s.appendChild(el('polyline',{points:pts,fill:'none',stroke:opts.color||'#bb6147','stroke-width':2.2,'stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}));
+  }
+  // scatter: each dot a day — x sleep hours, y next-morning energy
+  function scatter(id,pts,o={}){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal,W=vb.width,H=vb.height;
+    const pad={t:10,r:10,b:20,l:24};
+    const X=v=>pad.l+(v-o.xmin)/(o.xmax-o.xmin)*(W-pad.l-pad.r);
+    const Y=v=>pad.t+(1-(v-o.ymin)/(o.ymax-o.ymin))*(H-pad.t-pad.b);
+    [0,5,10].forEach(g=>{const y=Y(g);s.appendChild(el('line',{x1:pad.l,y1:y,x2:W-pad.r,y2:y,stroke:'#efe4d2'}));
+      s.appendChild(el('text',{x:pad.l-5,y:y+3,'text-anchor':'end','font-size':9,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=g;});
+    pts.forEach(p=>s.appendChild(el('circle',{cx:X(p[0]).toFixed(1),cy:Y(p[1]).toFixed(1),r:5,fill:o.color||'#bb6147',opacity:.5})));
+    s.appendChild(el('text',{x:pad.l-5,y:14,'text-anchor':'end','font-size':9,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent='energy';
+  }
+  // orthostatic strip: bars where jumps, dots where a symptom was reported same day
+  function orthoStrip(id,jumps,sympt){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal,W=vb.width,H=vb.height,n=30,gap=W/n,base=H-22;
+    s.appendChild(el('line',{x1:0,y1:base,x2:W,y2:base,stroke:'#e6d8c4'}));
+    jumps.forEach(j=>{const x=j.i*gap+gap/2,h=(j.bpm/60)*(base-12);s.appendChild(el('rect',{x:(x-3).toFixed(1),y:(base-h).toFixed(1),width:6,height:h.toFixed(1),rx:2,fill:'#bb6147'}));
+      s.appendChild(el('text',{x:x.toFixed(1),y:(base-h-4).toFixed(1),'text-anchor':'middle','font-size':9,fill:'#6b574a','font-family':'Hanken Grotesk'})).textContent='+'+j.bpm;});
+    sympt.forEach(i=>s.appendChild(el('circle',{cx:(i*gap+gap/2).toFixed(1),cy:base+10,r:3.5,fill:'#6b4f63'})));
+  }
+  // two-bar comparison
+  function compare(id,a,b){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal,W=vb.width,H=vb.height,base=H-26,max=10;
+    [[a,'lower pressure',60,'#bb6147'],[b,'higher pressure',190,'#d29a82']].forEach(([v,lab,x,c])=>{
+      const h=(v/max)*(base-10);s.appendChild(el('rect',{x,y:(base-h).toFixed(1),width:60,height:h.toFixed(1),rx:3,fill:c,opacity:.8}));
+      s.appendChild(el('text',{x:x+30,y:(base-h-5).toFixed(1),'text-anchor':'middle','font-size':13,fill:'#42332b','font-family':'Fraunces'})).textContent=v;
+      s.appendChild(el('text',{x:x+30,y:base+15,'text-anchor':'middle','font-size':9.5,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=lab;});
+  }
+  // her POTS pattern: standing jumps (bars) + dizziness-reported days (dots)
+  orthoStrip('ch-os',[{i:3,bpm:44},{i:7,bpm:38},{i:12,bpm:68},{i:13,bpm:52},{i:21,bpm:40},{i:26,bpm:48}],[3,7,12,13,21,26]);
+  // migraine: intensity bars + pressure-drop (▼) + pre-menstrual window (♀ shaded)
+  (function(){ const s=document.getElementById('ch-mig'); if(!s)return; const W=480,H=100,n=30,gap=W/n,base=H-22;
+    const hd={5:6,6:7,12:8,13:7,18:5,24:6,25:8,26:7}, drops=[5,12,18,24], premens=[23,24,25,26];
+    premens.forEach(i=>s.appendChild(el('rect',{x:(i*gap).toFixed(1),y:6,width:gap.toFixed(1),height:base-6,fill:'#6b4f63',opacity:.09})));
+    s.appendChild(el('line',{x1:0,y1:base,x2:W,y2:base,stroke:'#e6d8c4'}));
+    for(const k in hd){const i=+k,h=(hd[k]/10)*(base-14),x=i*gap+gap/2;s.appendChild(el('rect',{x:(x-3.5).toFixed(1),y:(base-h).toFixed(1),width:7,height:h.toFixed(1),rx:2,fill:'#bb6147',opacity:.85}));}
+    drops.forEach(i=>{const x=i*gap+gap/2;s.appendChild(el('polygon',{points:`${(x-3).toFixed(1)},4 ${(x+3).toFixed(1)},4 ${x.toFixed(1)},10`,fill:'#6b574a'}));});
+    s.appendChild(el('text',{x:(24.5*gap).toFixed(1),y:base+15,'text-anchor':'middle','font-size':9.5,fill:'#6b4f63','font-family':'Hanken Grotesk'})).textContent='period';
+  })();
+  // her wildly variable sleep
+  const sleepH=[7.7,9.7,3.1,7.5,7.6,9.8,7.3,9.3,6.2,8.4,4.5,7.9,8.8,6.7,7.1,5.2,9.1,6.8,8.0,4.8,7.6,9.3,6.4,7.9,8.6,5.5,7.2,9.0,6.9,7.7];
+  barChart('ch-sv',sleepH,{max:10,color:'#d29a82'});
+  // lower, flatter HRV (dysautonomia)
+  const hrv=[33,30,35,28,32,34,29,31,27,33,30,28,34,31,29,32,30,33,28,31,30,32,29,33,31,30,34,29,32,31];
+  barChart('ch-sleep2',sleepH,{max:10,color:'#d29a82'});
+  lineChart('ch-hrv2',hrv,{min:22,max:42,band:[29,33],color:'#6b4f63'});
+  barChart('ch-ortho',[0,0,0,44,0,0,0,38,0,0,0,0,68,52,0,0,0,0,0,0,0,40,0,0,0,0,48,0,0,0],{max:80,color:'#bb6147',hot:i=>true});
+  // dizziness levels (none / mild / moderate / rough — day counts)
+  barChart('ch-anx',[8,6,5,3],{max:10,color:'#d29a82',hot:i=>i>=2,labels:['none','mild','mod','rough']});
+  // day HR timeline
+  (function(){ const d=[68,66,112,82,70,118,86,72,70,69,124,88,74,70]; lineChart('ch-day',d,{min:60,max:135,color:'#bb6147'});
+    const s=document.getElementById('ch-day'); [2,5,10].forEach(i=>{const v=d[i];
+      s.appendChild(el('circle',{cx:(i/13*(480-16)+8).toFixed(1),cy:(14+(1-(v-60)/75)*(150-22)).toFixed(1),r:4,fill:'#bb6147'}));}); })();
+</script>
+</body>
+</html>

@@ -584,7 +584,54 @@ function renderPrepare() {
 
       <button id="prep-go" class="prepare-go" onclick="prepGenerate()">Generate PDF</button>
       <p class="prepare-status" id="prep-status"></p>
+
+      <div style="margin-top:28px;padding-top:22px;border-top:1px solid var(--hair,#e6d8c4)">
+        <h2 style="font-size:18px;margin:0 0 4px">Or share a live dashboard</h2>
+        <p class="prepare-sub">An interactive version your doctor can open at a private link — the same data, explorable. You create it, and can revoke it any time.</p>
+        <button class="prepare-go" id="mk-share" onclick="createShare()" style="margin-top:6px">Create a share link</button>
+        <div id="share-out" style="margin-top:14px"></div>
+        <div id="share-list" style="margin-top:12px"></div>
+      </div>
     </div>`;
+  loadShares();
+}
+
+// ── Share a live dashboard link with your doctor ──
+async function createShare(){
+  const b=document.getElementById('mk-share'); b.disabled=true; const t=b.textContent; b.textContent='Creating…';
+  try{
+    const res=await fetch('https://api.noti.au/me/shares',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({days:30})});
+    const d=await res.json();
+    if(d&&d.url){ showShare(d); loadShares(); b.textContent='Create another link'; } else b.textContent=t;
+  }catch(e){ b.textContent=t; }
+  b.disabled=false;
+}
+function showShare(d){
+  const exp=d.expires_at? new Date(d.expires_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'no expiry';
+  document.getElementById('share-out').innerHTML=
+    '<div style="background:#f6f7ef;border:1px solid #d8ddc4;border-radius:12px;padding:13px 14px">'+
+    '<p class="prepare-sub" style="margin:0 0 8px">Send this to your doctor — expires '+exp+'.</p>'+
+    '<div style="display:flex;gap:8px;align-items:center">'+
+    '<input id="share-url" readonly value="'+d.url+'" style="flex:1;font-size:13px;padding:9px 11px;border:1px solid #e6d8c4;border-radius:9px;background:#fff;color:#42332b">'+
+    '<button class="prepare-go" style="width:auto;padding:9px 16px;margin:0" onclick="copyShare(this)">Copy</button></div></div>';
+}
+function copyShare(btn){ const i=document.getElementById('share-url'); i.select();
+  (navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(()=>{ btn.textContent='Copied'; setTimeout(()=>btn.textContent='Copy',1500); }).catch(()=>{ try{document.execCommand('copy');}catch(_){} }); }
+async function loadShares(){
+  const el=document.getElementById('share-list'); if(!el) return;
+  try{
+    const res=await fetch('https://api.noti.au/me/shares',{headers:{'Authorization':'Bearer '+getToken()}});
+    const d=await res.json(); const active=(d.shares||[]).filter(s=>s.status==='active');
+    el.innerHTML = active.length
+      ? '<p class="prepare-sub" style="margin:8px 0 4px">Active links</p>'+active.map(s=>
+          '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #efe4d2;font-size:13px">'+
+          '<span style="color:#6b574a">…'+s.code.slice(-6)+' · '+(s.view_count||0)+' view'+(s.view_count===1?'':'s')+'</span>'+
+          '<button class="prepare-go" style="width:auto;padding:5px 12px;margin:0;font-size:12px" onclick="revokeShare(\''+s.code+'\')">Revoke</button></div>').join('')
+      : '';
+  }catch(e){}
+}
+async function revokeShare(code){
+  try{ await fetch('https://api.noti.au/me/shares/'+encodeURIComponent(code)+'/revoke',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}}); loadShares(); }catch(e){}
 }
 
 // Open the iOS native print dialog with the report HTML. From there the

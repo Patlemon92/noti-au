@@ -502,6 +502,23 @@ function renderHypnogram(container, sleepSamples, sessionSamples) {
   const night = arr.filter(a => a.ts >= tMin - 60_000 && a.ts <= tMax + 60_000);
   const span  = (tMax - tMin) || 1;
 
+  // Smooth near-wake flips BEFORE drawing or tallying: a brief awake (<2 min)
+  // with sleep on BOTH sides is movement/restlessness (the morning twitchiness
+  // where the ring flips WAKE↔LIGHT every minute), not a real awakening. Fold
+  // it into light so the hypnogram AND the awake total reflect real
+  // wakefulness — standard tracker behaviour. Bed-window total is unchanged;
+  // the time just moves awake → light.
+  const SMOOTH_MS = 2 * 60 * 1000;
+  const isSleepStage = st => st === 1 || st === 2 || st === 3;
+  for (let i = 1; i < night.length - 1; i++) {
+    const b = night[i];
+    if (b.stage !== 0) continue;
+    const dur = b.dur || (night[i + 1].ts - b.ts);
+    if (dur > 0 && dur < SMOOTH_MS && isSleepStage(night[i - 1].stage) && isSleepStage(night[i + 1].stage)) {
+      b.stage = 1; // fold the blip into light
+    }
+  }
+
   // Stage-track hypnogram — Patrick's pick after the single-bar
   // version. Four horizontal tracks (Awake / REM / Light / Deep
   // top-to-bottom) each running the full width of the night. A

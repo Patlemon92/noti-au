@@ -125,6 +125,13 @@
   .research sup{color:var(--clay);font-weight:700;font-size:9px;}
   .research .refs{margin-top:11px;padding-top:11px;border-top:1px solid var(--line);}
   .research .refs p{font-size:10.5px;color:var(--muted);margin:0 0 4px;line-height:1.4;}
+  .research .refs p[data-q]{cursor:pointer;padding-left:13px;position:relative;}
+  .research .refs p[data-q]:hover{color:var(--ink-soft);}
+  .research .refs p[data-q]::before{content:"›";position:absolute;left:2px;color:var(--clay);font-weight:700;transition:transform .15s;}
+  .research .refs p[data-q].open::before{transform:rotate(90deg);}
+  .qbox{margin:6px 0 10px;border-left:3px solid var(--gold);background:rgba(233,205,162,.18);border-radius:0 8px 8px 0;padding:9px 13px;}
+  .qbox .qt{font-size:12px;color:var(--ink);font-style:italic;line-height:1.5;margin:0 0 4px;}
+  .qbox .qs{font-size:10px;color:var(--muted);margin:0;}
   .surfaced{border-left:3px solid var(--sage);background:rgba(111,117,81,.08);padding:12px 15px;border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink);margin:2px 0 14px;}
   .surfaced b{color:var(--ink);}
   .rest-row{display:flex;align-items:center;gap:14px;padding:8px 0;}
@@ -325,8 +332,8 @@
           <p>Finger reflective PPG is the most accurate single site for it — resting error ~0.1–0.6 breaths/min — but it <b>degrades sharply with movement</b> (to ~6.5 while walking).<sup>2</sup></p>
           <p class="surfaced">So Neeve treats respiratory rate as a <b>resting / overnight within-person trend</b>, never an absolute clinical breath count — which is exactly how it's used above. The overnight figures are stable, low-movement nights; daytime is read only as a relative rise/fall around her own baseline.</p>
           <div class="refs">
-            <p><sup>1</sup> Charlton PH, et al. An assessment of algorithms to estimate respiratory rate from the electrocardiogram and photoplethysmogram. <i>Physiol Meas</i>. 2016;37(4):610–26.</p>
-            <p><sup>2</sup> Longmore SK, et al. A comparison of reflective PPG for detection of HR, SpO₂ and respiration rate at various anatomical locations. <i>Sensors</i>. 2019;19(8):1874.</p>
+            <p data-q="51"><sup>1</sup> Charlton PH, et al. An assessment of algorithms to estimate respiratory rate from the electrocardiogram and photoplethysmogram. <i>Physiol Meas</i>. 2016;37(4):610–26.</p>
+            <p data-q="47"><sup>2</sup> Longmore SK, et al. A comparison of reflective PPG for detection of HR, SpO₂ and respiration rate at various anatomical locations. <i>Sensors</i>. 2019;19(8):1874.</p>
           </div>
         </div>
         <div class="callout"><b>Blood pressure:</b> shown only from a calibrated cuff — the ring's optical estimate is excluded. None logged this period.</div>
@@ -373,9 +380,9 @@
           <p>Since the 2021 NICE update, <b>pacing — staying within an energy envelope — is the only recommended ME/CFS management strategy</b>; graded exercise is no longer advised.<sup>1</sup> The same "activity pacing" is the documented use of heart-rate monitoring in POTS: <i>"maintaining activity levels within the parameters of the condition… without exacerbating symptoms."</i><sup>2</sup></p>
           <p class="surfaced">So this surface isn't about naps — it's about making the <b>envelope visible</b>: how much of the day was low-load recovery. Detection leads with <b>stillness</b> (accelerometer step count, standard accuracy); heart rate eases only confirm it, because resting HR from the ring is ±5–10 bpm on a single reading<sup>3</sup> — reliable as a 15-minute trend, not as one number.</p>
           <div class="refs">
-            <p><sup>1</sup> Sanal-Hayes NEM, et al. A scoping review of pacing for myalgic encephalomyelitis/chronic fatigue syndrome. <i>J Transl Med</i>. 2023;21:720.</p>
-            <p><sup>2</sup> Raj SR, et al. Canadian Cardiovascular Society position statement on postural orthostatic tachycardia syndrome. <i>Can J Cardiol</i>. 2020;36(3):357–72.</p>
-            <p><sup>3</sup> Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. <i>npj Digit Med</i>. 2020;3:18.</p>
+            <p data-q="21"><sup>1</sup> Sanal-Hayes NEM, et al. A scoping review of pacing for myalgic encephalomyelitis/chronic fatigue syndrome. <i>J Transl Med</i>. 2023;21:720.</p>
+            <p data-q="15"><sup>2</sup> Gabriel AS, et al. Feasibility of a wearable app to manage POTS symptoms using real-time heart rate monitoring. <i>Stud Health Technol Inform</i>. 2024;316:159–66.</p>
+            <p data-q="48"><sup>3</sup> Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. <i>npj Digit Med</i>. 2020;3:18.</p>
           </div>
         </div>
       </section>
@@ -406,9 +413,9 @@
           <p>Her captured standing responses (median +44 bpm, up to +68) <b>sit well above that threshold</b>, and the ring's resting heart-rate accuracy (±5–10 bpm) leaves clear margin at a 30 bpm change.<sup>2</sup></p>
           <p>It's also a pattern that's easy to miss: in an Australian registry, people with POTS waited a mean of <b>7 years</b> to be diagnosed, and <b>64.6%</b> had their symptoms attributed to anxiety first.<sup>3</sup></p>
           <div class="refs">
-            <p><sup>1</sup> Sheldon RS, et al. 2015 Heart Rhythm Society Expert Consensus Statement on the Diagnosis and Treatment of Postural Tachycardia Syndrome. <i>Heart Rhythm</i>. 2015;12(6):e41–63.</p>
-            <p><sup>2</sup> Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. <i>npj Digit Med</i>. 2020;3:18.</p>
-            <p><sup>3</sup> Seeley M-C, et al. Symptom burden, quality of life, and diagnostic journey of people with POTS, Australia. <i>Med J Aust</i>. 2025;223(3):159–60.</p>
+            <p data-q="12"><sup>1</sup> Sheldon RS, et al. 2015 Heart Rhythm Society Expert Consensus Statement on the Diagnosis and Treatment of Postural Tachycardia Syndrome. <i>Heart Rhythm</i>. 2015;12(6):e41–63.</p>
+            <p data-q="48"><sup>2</sup> Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. <i>npj Digit Med</i>. 2020;3:18.</p>
+            <p data-q="16"><sup>3</sup> Seeley M-C, et al. Symptom burden, quality of life, and diagnostic journey of people with POTS, Australia. <i>Med J Aust</i>. 2025;223(3):159–60.</p>
           </div>
         </div>
         <div class="callout"><b>What this raises:</b> a consistent orthostatic pattern that supports a POTS assessment. A formal
@@ -571,6 +578,26 @@
 
 <div class="nav-ov" id="nav-ov" onclick="closeNav()"></div>
 <script>
+  // Clickable citations → verbatim extract from the paper (same idea as the
+  // calendar day view). Quotes keyed by Foundations reference number.
+  const QUOTES={
+    12:['a sustained heart rate increase of ≥30 beats/min within 10 minutes of assuming an upright posture, in the absence of orthostatic hypotension','Sheldon RS, et al. 2015 Heart Rhythm Society Expert Consensus Statement on POTS. Heart Rhythm. 2015;12(6):e41–63. p. e43'],
+    15:['maintaining activity levels within the parameters of the condition … enables patients to carry out daily tasks without experiencing severe exhaustion or exacerbating other symptoms','Gabriel AS, et al. Wearable app to manage POTS using real-time heart rate monitoring. Stud Health Technol Inform. 2024;316:159–66. p. 159'],
+    16:['64.6% had their symptoms attributed to anxiety before they were diagnosed … a mean of 7 years to diagnosis','Seeley M-C, et al. Symptom burden, quality of life, and diagnostic journey of people with POTS, Australia. Med J Aust. 2025;223(3):159–60. p. 159'],
+    21:['regulating activity to avoid post exertional malaise (PEM), the worsening of symptoms after an activity … to be as active as possible within the limits imposed by the illness','Sanal-Hayes NEM, et al. A scoping review of ‘Pacing’ for ME/CFS. J Transl Med. 2023;21:720. p. 1'],
+    47:['the finger to be the best location for measurement of all three parameters at rest','Longmore SK, et al. A comparison of reflective PPG … at various anatomical locations. Sensors. 2019;19(8):1874. p. 1'],
+    48:['different wearables are all reasonably accurate at resting and prolonged elevated heart rate, but … differences exist between devices in responding to changes in activity','Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. npj Digit Med. 2020;3:18. p. 1'],
+    51:['95% LOAs of −5.1 to 7.2 bpm and a bias of 1.0 bpm when using PPG','Charlton PH, et al. An assessment of algorithms to estimate respiratory rate from the ECG and PPG. Physiol Meas. 2016;37(4):610–26. p. 610'],
+  };
+  document.addEventListener('click',function(e){
+    const p=e.target.closest('.research .refs p[data-q]'); if(!p) return;
+    const next=p.nextElementSibling;
+    if(next && next.classList.contains('qbox')){ next.remove(); p.classList.remove('open'); return; }
+    const q=QUOTES[p.dataset.q]; if(!q) return;
+    const box=document.createElement('div'); box.className='qbox';
+    box.innerHTML='<p class="qt">“'+q[0]+'”</p><p class="qs">— '+q[1]+'</p>';
+    p.after(box); p.classList.add('open');
+  });
   const TITLES={overview:['Insights','what the data suggests · 30 days · describes, does not diagnose'],calendar:['Calendar','Everything tracked · month at a glance'],vitals:['Vitals','Continuously logged via the Neeve Ring'],
     sleep:['Sleep','Ring-tracked sleep'],ortho:['Orthostatic signal','Ring · candidate events'],
     migraine:['Migraine','Headache days, intensity, triggers'],cycle:['Cycle','Phase timing vs symptoms'],

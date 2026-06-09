@@ -676,6 +676,13 @@
     // the calendar so it loads the patient's real record, and set the header.
     const code=new URLSearchParams(location.search).get('c');
     if(code){
+      // SHARE/LIVE mode. Only Insights + Calendar are wired to live data; the
+      // other panels still hold Fran's prototype data, so HIDE them — a share
+      // must never show another patient's data. (They return as each is wired.)
+      const LIVE_PAGES=new Set(['overview','calendar']);
+      document.querySelectorAll('#nav button').forEach(b=>{ if(!LIVE_PAGES.has(b.dataset.p)) b.style.display='none'; });
+      document.querySelectorAll('#nav .lab').forEach(l=>l.style.display='none');
+      const condLine=document.querySelector('.pt-card .mt'); if(condLine) condLine.textContent=''; // Fran's hardcoded conditions
       f.src='neeve-calendar.html?embed=1&c='+encodeURIComponent(code);
       fetch('https://api.noti.au/share/'+encodeURIComponent(code)+'/data').then(r=>r.json()).then(j=>{
         if(j&&j.ok){
@@ -690,7 +697,7 @@
   function toggleNav(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('nav-ov').classList.toggle('on');}
   function closeNav(){document.querySelector('.sidebar').classList.remove('open');document.getElementById('nav-ov').classList.remove('on');}
   if(location.hash.slice(1)) go(location.hash.slice(1));
-  else if(new URLSearchParams(location.search).get('c')) go('calendar'); // live share lands on the live calendar
+  else if(new URLSearchParams(location.search).get('c')) go('overview'); // live share lands on Insights (the live summary)
   document.querySelectorAll('[data-range]').forEach(r=>r.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{r.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');})));
 
   // ── tiny chart helpers ──

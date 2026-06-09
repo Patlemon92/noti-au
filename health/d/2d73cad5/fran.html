@@ -273,15 +273,24 @@
 
       <!-- SLEEP -->
       <section class="panel" id="p-sleep">
-        <div class="grid g2">
-          <div class="card stat"><div class="k">Average duration</div><div class="n">7.4<span class="u">h</span></div><div class="b">range 3.1–9.8h · highly variable · 14 nights</div></div>
-          <div class="card stat"><div class="k">Stage mix</div><div class="n" style="font-size:24px">18% · 62% · 20%</div><div class="b">deep · light · REM</div></div>
+        <div class="grid g4">
+          <div class="card stat"><div class="k">Avg duration</div><div class="n">7.4<span class="u">h</span></div><div class="b">range 3.1–9.8h</div></div>
+          <div class="card stat"><div class="k">Night-to-night swing</div><div class="n">6.7<span class="u">h</span></div><div class="b">highly variable</div></div>
+          <div class="card stat"><div class="k">Awakenings</div><div class="n">3.4<span class="u">/night</span></div><div class="b">fragmented</div></div>
+          <div class="card stat"><div class="k">Daytime naps</div><div class="n">9</div><div class="b">over 30 days</div></div>
         </div>
         <div class="card" style="margin-top:16px">
-          <div class="ch-h"><h3>Nightly duration</h3><span class="note">hours</span></div>
-          <svg id="ch-sleep2" width="100%" height="180" viewBox="0 0 720 180"></svg>
+          <div class="ch-h"><h3>When she slept, night to night</h3><span class="note">bed → wake · last 12 nights · | = an awakening</span></div>
+          <svg id="ch-timing" width="100%" viewBox="0 0 720 280"></svg>
+          <p class="soft" style="font-size:12.5px;margin-top:8px">Bedtime and wake time swing widely — an irregular sleep–wake schedule, not just variable duration.</p>
         </div>
-        <div class="callout">Duration is corrected against overnight heart rate, which recovers sleep the ring under-counts when contact is briefly lost.</div>
+        <div class="callout"><b>What this shows:</b> sleep that's both fragmented (frequent awakenings) and irregular in timing —
+          a pattern common in dysautonomia and worth distinguishing from primary insomnia. Duration is HR-corrected: it recovers
+          nights the ring under-counts when contact is briefly lost (one reading of 2h44m was really ~7.7h of continuous low-HR sleep).</div>
+        <div class="card">
+          <div class="ch-h"><h3>Nightly duration & stage mix</h3><span class="note">hours · deep / light / REM 18% · 62% · 20%</span></div>
+          <svg id="ch-sleep2" width="100%" height="170" viewBox="0 0 720 170"></svg>
+        </div>
         <div class="card">
           <div class="ch-h"><h3>Recent nights</h3><span class="note">click a night to open that day</span></div>
           <div class="night" onclick="go('day')"><div class="nd"><div class="d">9</div><div class="w">Tue</div></div><div class="bar"><i class="b-deep" style="width:16%"></i><i class="b-light" style="width:64%"></i><i class="b-rem" style="width:20%"></i></div><div class="nh">7h 42m</div></div>
@@ -565,6 +574,23 @@
   }
   function calMove(s){ calMo+=s; if(calMo<0){calMo=11;calY--;} if(calMo>11){calMo=0;calY++;} renderCal(); }
   renderCal();
+  // sleep timing — bed→wake per night (hours after 20:00), | = awakening
+  (function(){ const s=document.getElementById('ch-timing'); if(!s)return;
+    const N=[{l:'9',b:3.5,w:11.2,a:[6,8.5]},{l:'8',b:2.1,w:11.4,a:[5]},{l:'7',b:5.7,w:10.2,a:[7.5]},
+      {l:'6',b:1.8,w:11.6,a:[4,7,9]},{l:'5',b:4.5,w:10.8,a:[6]},{l:'4',b:2.7,w:12,a:[5,9]},
+      {l:'3',b:3.2,w:10.3,a:[5.5]},{l:'2',b:1.5,w:11.3,a:[4,8]},{l:'1',b:5.2,w:10.5,a:[7]},
+      {l:'31',b:2.8,w:11.8,a:[6,9]},{l:'30',b:3.7,w:13,a:[5,7,10]},{l:'29',b:2.3,w:9.8,a:[4]}];
+    const W=720,rowH=19,padL=34,padT=22,axisW=W-padL-14,SPAN=16,x=h=>padL+(h/SPAN)*axisW;
+    let g='';
+    [['9pm',1],['12am',4],['3am',7],['6am',10],['9am',13]].forEach(([lab,h])=>{
+      g+=`<line x1="${x(h).toFixed(1)}" y1="${padT-4}" x2="${x(h).toFixed(1)}" y2="${(padT+N.length*rowH).toFixed(1)}" stroke="#efe4d2"/>`
+        +`<text x="${x(h).toFixed(1)}" y="${padT-9}" text-anchor="middle" font-size="10" fill="#9a8473" font-family="Hanken Grotesk">${lab}</text>`;});
+    N.forEach((n,i)=>{ const y=padT+i*rowH;
+      g+=`<text x="${padL-7}" y="${(y+11).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#6b574a" font-family="Hanken Grotesk">${n.l}</text>`
+        +`<rect x="${x(n.b).toFixed(1)}" y="${y+3}" width="${(x(n.w)-x(n.b)).toFixed(1)}" height="11" rx="4" fill="#d29a82" opacity="0.9"/>`;
+      n.a.forEach(aw=>g+=`<rect x="${x(aw).toFixed(1)}" y="${y+3}" width="1.6" height="11" fill="#f4eadc"/>`);});
+    s.innerHTML=g;
+  })();
   // day HR timeline
   (function(){ const d=[68,66,112,82,70,118,86,72,70,69,124,88,74,70]; lineChart('ch-day',d,{min:60,max:135,color:'#bb6147'});
     const s=document.getElementById('ch-day'); [2,5,10].forEach(i=>{const v=d[i];

@@ -427,15 +427,15 @@
         if(m.archetype==='resting'){ bLo=ref*0.96; bHi=ref*1.10; lab='your resting range'; }
         else { const sd=(baseline.p90!=null&&baseline.p7!=null)?Math.abs(baseline.p90-baseline.p7)/2:ref*0.08; bLo=ref-sd; bHi=ref+sd; lab='your usual range'; }
         const yT=Y(Math.min(bHi,yMax)), yB=Y(Math.max(bLo,yMin));
-        if(isFinite(yT)&&isFinite(yB)&&yB>yT){ svg.appendChild(mk('rect',{x:padL,y:yT,width:plotW,height:yB-yT,fill:'#8d8a6a',opacity:.10,rx:6})); svg.appendChild(mk('text',{x:padL+6,y:yT-7,class:'restlabel'})).textContent=lab; }
+        if(isFinite(yT)&&isFinite(yB)&&yB>yT){ svg.appendChild(mk('rect',{x:padL,y:yT,width:plotW,height:yB-yT,fill:'#8d8a6a',opacity:.15,rx:6})); svg.appendChild(mk('text',{x:padL+6,y:yT-7,class:'restlabel'})).textContent=lab; }
       }
     }
     [...new Set([yMin+(yMax-yMin)*0.2,(yMin+yMax)/2,yMax-(yMax-yMin)*0.2].map(v=>Math.round(v)))].forEach(v=>{ svg.appendChild(mk('line',{x1:padL,y1:Y(v),x2:W-padR,y2:Y(v),class:'gridline',opacity:.7})); svg.appendChild(mk('text',{x:padL-10,y:Y(v)+4,class:'axis','text-anchor':'end'})).textContent=v; });
     const fmt=t=>{const d=new Date(t); return days<=1?d.toLocaleTimeString('en-AU',{hour:'numeric'}):d.toLocaleDateString('en-AU',{day:'numeric',month:'short'});};
     [tMin,(tMin+tMax)/2,tMax].forEach((t,i)=>{ svg.appendChild(mk('text',{x:X(t),y:H-12,class:'axis','text-anchor':i===0?'start':i===2?'end':'middle'})).textContent=fmt(t); });
-    const hiPts=buckets.map(b=>({x:X(b.t),y:Y(b.hi)})), loPts=buckets.map(b=>({x:X(b.t),y:Y(b.lo)}));
-    const band=smooth(hiPts)+' L '+loPts[loPts.length-1].x.toFixed(1)+' '+loPts[loPts.length-1].y.toFixed(1)+' '+smooth([...loPts].reverse()).replace(/^M[^C]*/,'')+' Z';
-    svg.appendChild(mk('path',{d:band,fill:'#c98a6f',opacity:.18}));
+    // (the per-bucket reading-spread band was removed — it read as an alarming
+    // "red" and confused the chart; the flat 'usual range' band + the trend
+    // line tell the story clearly, matching the caption.)
     const meanPts=buckets.map(b=>({x:X(b.t),y:Y(b.mean)}));
     const line=mk('path',{d:smooth(meanPts),fill:'none',stroke:'#6f7551','stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round'});
     svg.appendChild(line);
@@ -444,6 +444,30 @@
     svg.appendChild(mk('circle',{cx:last.x,cy:last.y,r:5.5,fill:'#5c613f'}));
     $('m-range').textContent=fmt(tMin)+' – '+fmt(tMax);
     $('m-caption').textContent=caption();
+
+    // ── Scrubbing: touch/drag the chart to read the value + time at a point ──
+    const cur=mk('line',{x1:padL,y1:padT,x2:padL,y2:padT+plotH,stroke:'#5c613f','stroke-width':1.2,opacity:0});
+    const cdot=mk('circle',{r:5,fill:'#fff',stroke:'#5c613f','stroke-width':2,opacity:0});
+    const pill=mk('rect',{rx:7,height:22,fill:'#42332b',opacity:0});
+    const ptxt=mk('text',{'text-anchor':'middle','font-size':12,'font-weight':'700',fill:'#fff',opacity:0});
+    svg.appendChild(cur); svg.appendChild(pill); svg.appendChild(cdot); svg.appendChild(ptxt);
+    const fmtT=t=>{const d=new Date(t); return days<=1?d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}).toLowerCase():d.toLocaleDateString('en-AU',{day:'numeric',month:'short'});};
+    function scrub(clientX){
+      const r=svg.getBoundingClientRect(); const sx=(clientX-r.left)/r.width*W;
+      let bi=0,bd=1e9; meanPts.forEach((p,i)=>{const dd=Math.abs(p.x-sx); if(dd<bd){bd=dd;bi=i;}});
+      const p=meanPts[bi], b=buckets[bi];
+      cur.setAttribute('x1',p.x); cur.setAttribute('x2',p.x); cur.setAttribute('opacity',.35);
+      cdot.setAttribute('cx',p.x); cdot.setAttribute('cy',p.y); cdot.setAttribute('opacity',1);
+      const label=Math.round(b.mean)+'  ·  '+fmtT(b.t); const px=Math.min(Math.max(p.x,padL+44),W-padR-44);
+      ptxt.textContent=label; ptxt.setAttribute('x',px); ptxt.setAttribute('y',padT+2); ptxt.setAttribute('opacity',1);
+      pill.setAttribute('x',px-label.length*3.6-8); pill.setAttribute('width',label.length*7.2+16); pill.setAttribute('y',padT-16); pill.setAttribute('opacity',.92);
+    }
+    function endScrub(){ [cur,cdot,pill,ptxt].forEach(e=>e.setAttribute('opacity',0)); }
+    let down=false;
+    svg.style.touchAction='none';
+    svg.addEventListener('pointerdown',e=>{down=true; scrub(e.clientX); e.preventDefault();});
+    svg.addEventListener('pointermove',e=>{ if(down) scrub(e.clientX); });
+    window.addEventListener('pointerup',()=>{ if(down){down=false; endScrub();} });
   }
   // BP — two trend lines (systolic + diastolic), no band, labelled.
   function drawChartBP(sysBk, diaBk){

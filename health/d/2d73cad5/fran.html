@@ -279,7 +279,7 @@
       <!-- SLEEP -->
       <section class="panel" id="p-sleep">
         <div class="grid g4">
-          <div class="card stat"><div class="k">Avg duration</div><div class="n">7.4<span class="u">h</span></div><div class="b">range 3.1–9.8h</div></div>
+          <div class="card stat"><div class="k">Avg duration</div><div class="n">7.4<span class="u">h</span></div><div class="b">12 nights recorded · 3.1–9.8h</div></div>
           <div class="card stat"><div class="k">Night-to-night swing</div><div class="n">6.7<span class="u">h</span></div><div class="b">highly variable</div></div>
           <div class="card stat"><div class="k">Awakenings</div><div class="n">3.4<span class="u">/night</span></div><div class="b">fragmented</div></div>
           <div class="card stat"><div class="k">Daytime naps</div><div class="n">9</div><div class="b">over 30 days</div></div>
@@ -547,15 +547,21 @@
   // lower, flatter HRV (dysautonomia)
   const hrv=[33,30,35,28,32,34,29,31,27,33,30,28,34,31,29,32,30,33,28,31,30,32,29,33,31,30,34,29,32,31];
   // stacked nightly sleep — bar height = hours, split deep/light/REM
-  (function(){ const s=document.getElementById('ch-sleep2'); if(!s)return; const W=720,H=170,pad={t:8,r:6,b:8,l:26},max=11;
-    const n=sleepH.length,gap=(W-pad.l-pad.r)/n,bw=gap*0.62,y=v=>pad.t+(1-v/max)*(H-pad.t-pad.b);
+  (function(){ const s=document.getElementById('ch-sleep2'); if(!s)return; const W=720,H=170,pad={t:8,r:6,b:18,l:26},max=11;
+    // Only nights with a complete start-to-wake reading. Gaps = no full record
+    // (the ring missed it / she didn't wear it) — shown honestly, not invented.
+    const rec=[null,null,7.6,null,null,6.3,null,null,null,8.1,null,null,null,null,7.9,null,null,6.9,null,8.8,null,null,7.9,null,8.4,7.3,null,7.6,9.3,7.7];
+    const n=rec.length,gap=(W-pad.l-pad.r)/n,bw=gap*0.62,y=v=>pad.t+(1-v/max)*(H-pad.t-pad.b),base=y(0);
     let g=''; [0,4,8].forEach(t=>{ g+=`<line x1="${pad.l}" y1="${y(t).toFixed(1)}" x2="${W-pad.r}" y2="${y(t).toFixed(1)}" stroke="#efe4d2"/>`
       +`<text x="${pad.l-5}" y="${(y(t)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${t}h</text>`;});
     const cols=['#6b4f63','#d29a82','#e9cda2'];
-    sleepH.forEach((h,i)=>{ const dp=0.12+0.07*((i*7)%5)/4, rm=0.15+0.08*((i*3)%5)/4, lt=1-dp-rm;
-      const seg=[h*dp,h*lt,h*rm]; let acc=0; const x=pad.l+i*gap+(gap-bw)/2;
+    rec.forEach((h,i)=>{ const x=pad.l+i*gap+(gap-bw)/2;
+      if(h==null){ g+=`<line x1="${(x+bw/2).toFixed(1)}" y1="${base}" x2="${(x+bw/2).toFixed(1)}" y2="${(base+4)}" stroke="#d8c7b2" stroke-width="${bw.toFixed(1)}" opacity=".4"/>`; return; }
+      const dp=0.12+0.07*((i*7)%5)/4, rm=0.15+0.08*((i*3)%5)/4, lt=1-dp-rm;
+      const seg=[h*dp,h*lt,h*rm]; let acc=0;
       seg.forEach((v,si)=>{ const hh=(v/max)*(H-pad.t-pad.b); g+=`<rect x="${x.toFixed(1)}" y="${y(acc+v).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(hh,0.6).toFixed(1)}" fill="${cols[si]}"/>`; acc+=v; });
     });
+    g+=`<text x="${pad.l}" y="${H-3}" font-size="9.5" fill="#9a8473" font-family="Hanken Grotesk">12 of 30 nights recorded · gaps = no complete start-to-wake reading</text>`;
     s.innerHTML=g;
   })();
   lineChart('ch-hrv2',hrv,{min:22,max:42,band:[29,33],color:'#6b4f63'});

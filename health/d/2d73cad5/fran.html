@@ -127,6 +127,13 @@
   .research .refs p{font-size:10.5px;color:var(--muted);margin:0 0 4px;line-height:1.4;}
   .surfaced{border-left:3px solid var(--sage);background:rgba(111,117,81,.08);padding:12px 15px;border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink);margin:2px 0 14px;}
   .surfaced b{color:var(--ink);}
+  .rest-row{display:flex;align-items:center;gap:14px;padding:8px 0;}
+  .rest-when{min-width:120px;display:flex;flex-direction:column;}
+  .rest-when b{font-size:14px;color:var(--ink);} .rest-when span{font-size:12px;color:var(--muted);}
+  .rest-bar{flex:1;height:8px;border-radius:6px;background:#efe4d2;overflow:hidden;}
+  .rest-bar i{display:block;height:100%;border-radius:6px;background:var(--sage);}
+  .rest-meta{min-width:150px;text-align:right;display:flex;flex-direction:column;}
+  .rest-meta b{font-size:14px;color:var(--ink);} .rest-meta span{font-size:11.5px;color:var(--muted);}
   /* mobile menu drawer + on-page patient header */
   .hamb{display:none;flex-direction:column;gap:4px;background:none;border:0;cursor:pointer;padding:7px 4px;flex:none;margin-right:2px;}
   .hamb span{display:block;width:21px;height:2px;background:var(--ink);border-radius:2px;}
@@ -182,6 +189,7 @@
     <div class="pt-card"><div class="nm">Francesca L</div><div class="mt" style="color:var(--clay);font-weight:600">POTS · migraine · multi-system</div><div class="mt">9 May – 9 Jun 2026 · 30 days</div></div>
     <nav id="nav">
       <button class="on" data-p="overview"><span class="i">✦</span> Insights</button>
+      <button data-p="calendar"><span class="i">▦</span> Calendar</button>
       <div class="lab">Objective</div>
       <button data-p="vitals"><span class="i">❤</span> Vitals</button>
       <button data-p="sleep"><span class="i">🌙</span> Sleep</button>
@@ -275,18 +283,26 @@
           <div class="ih"><span class="ib val">Noticed · a good thing</span></div>
           <h2 class="it">Her body settled during the appointment meant to help</h2>
           <p class="id">Across her 12:00–1:40pm appointment, her heart rate eased from the high 80s down to about <b>65 bpm</b> —
-            its calmest of the afternoon — and held there for most of the session, with HRV steady. It rose again as it ended.
-            The thing that was meant to help, helped — and the ring saw it.</p>
+            its calmest of the afternoon — and her <b>breathing slowed with it</b>, holding there for most of the session before rising again as it ended.
+            Her HRV, though, <b>stayed at its usual low level rather than lifting</b> — the rise you'd hope to see in deep relaxation was muted. So the settling
+            was real and clear in heart rate and breathing; the parasympathetic "lift" was not. The thing that was meant to help, helped — and the ring saw both sides of it.</p>
           <svg id="ch-relax" width="100%" viewBox="0 0 600 150" style="margin-top:4px"></svg>
         </div>
       </section>
 
+      <!-- CALENDAR -->
+      <section class="panel" id="p-calendar">
+        <iframe id="cal-frame" src="neeve-calendar.html?embed=1" title="Calendar" style="width:100%;border:0;min-height:760px;background:transparent" scrolling="no"></iframe>
+        <p class="soft" style="font-size:12.5px;margin-top:6px">The whole record, one month at a glance — tap a day for its detail, or a marker to see its pattern across time. The same calendar appears on each signal page, scoped to that metric.</p>
+      </section>
+
       <!-- VITALS -->
       <section class="panel" id="p-vitals">
-        <div class="grid g3">
+        <div class="grid g4">
           <div class="card stat"><div class="k">HRV (overnight)</div><div class="n">31<span class="u">ms</span></div><div class="b">at the lower end · 14 nights</div></div>
           <div class="card stat"><div class="k">Resting heart rate</div><div class="n">72<span class="u">bpm</span></div><div class="b">a little high for rest · 14 nights</div></div>
           <div class="card stat"><div class="k">Blood oxygen</div><div class="n">97<span class="u">%</span></div><div class="b">steady · 14 nights</div></div>
+          <div class="card stat"><div class="k">Respiratory rate</div><div class="n">13<span class="u">/min</span></div><div class="b">steady overnight · 8 nights</div></div>
         </div>
         <div class="card" style="margin-top:16px">
           <div class="ch-h"><h3>Overnight HRV</h3><span class="note">ms · band = her usual range · 14 nights captured</span></div>
@@ -296,8 +312,23 @@
           <div class="ch-h"><h3>Resting heart rate</h3><span class="note">bpm · overnight low · 14 nights captured</span></div>
           <svg id="ch-rhr" width="100%" viewBox="0 0 760 160" style="height:auto"></svg>
         </div>
+        <div class="card">
+          <div class="ch-h"><h3>Overnight respiratory rate</h3><span class="note">breaths/min · band = her usual range · 8 nights captured</span></div>
+          <svg id="ch-resp" width="100%" viewBox="0 0 760 160" style="height:auto"></svg>
+        </div>
         <div class="callout"><b>What this shows:</b> HRV sitting at the low end while resting heart rate runs a little high — a
           reduced heart-rate-variability pattern often seen alongside dysautonomia. Both are relative to her own usual range, not a population norm.</div>
+        <div class="callout"><b>Respiratory rate</b> is one of her <em>steady</em> signals — ~13/min asleep, ~17 awake, both within a normal range. Its value here is as a sensitive marker of arousal: it slowed in lockstep with her heart rate during the afternoon settle (see Insights), which is the clean confirmation a settling response was real and not noise.</div>
+        <div class="card research">
+          <p class="rlab">What the research says</p>
+          <p>Breathing rate is pulled from the same finger PPG waveform as heart rate. The largest systematic comparison of breathing-rate algorithms found the best PPG method good to <b>±6 breaths/min</b> on a single window against a reference (95% limits −5.1 to 7.2, bias 1.0).<sup>1</sup></p>
+          <p>Finger reflective PPG is the most accurate single site for it — resting error ~0.1–0.6 breaths/min — but it <b>degrades sharply with movement</b> (to ~6.5 while walking).<sup>2</sup></p>
+          <p class="surfaced">So Neeve treats respiratory rate as a <b>resting / overnight within-person trend</b>, never an absolute clinical breath count — which is exactly how it's used above. The overnight figures are stable, low-movement nights; daytime is read only as a relative rise/fall around her own baseline.</p>
+          <div class="refs">
+            <p><sup>1</sup> Charlton PH, et al. An assessment of algorithms to estimate respiratory rate from the electrocardiogram and photoplethysmogram. <i>Physiol Meas</i>. 2016;37(4):610–26.</p>
+            <p><sup>2</sup> Longmore SK, et al. A comparison of reflective PPG for detection of HR, SpO₂ and respiration rate at various anatomical locations. <i>Sensors</i>. 2019;19(8):1874.</p>
+          </div>
+        </div>
         <div class="callout"><b>Blood pressure:</b> shown only from a calibrated cuff — the ring's optical estimate is excluded. None logged this period.</div>
       </section>
 
@@ -307,7 +338,7 @@
           <div class="card stat"><div class="k">Avg duration</div><div class="n">7.4<span class="u">h</span></div><div class="b">over 12 captured nights · 3.1–9.8h</div></div>
           <div class="card stat"><div class="k">Night-to-night swing</div><div class="n">6.7<span class="u">h</span></div><div class="b">highly variable</div></div>
           <div class="card stat"><div class="k">Awakenings</div><div class="n">3.4<span class="u">/night</span></div><div class="b">fragmented</div></div>
-          <div class="card stat"><div class="k">Daytime naps</div><div class="n">9</div><div class="b">over 30 days</div></div>
+          <div class="card stat"><div class="k">Quiet periods</div><div class="n">1</div><div class="b">daytime · newly tracked</div></div>
         </div>
         <div class="card" style="margin-top:16px">
           <div class="ch-h"><h3>When she slept, night to night</h3><span class="note">bed → wake · last 12 nights · | = an awakening</span></div>
@@ -327,6 +358,25 @@
           <div class="night" onclick="go('day')"><div class="nd"><div class="d">7</div><div class="w">Sun</div></div><div class="bar-wrap"><div class="bar" style="width:45%"><i class="b-deep" style="width:9%"></i><i class="b-light" style="width:71%"></i><i class="b-rem" style="width:20%"></i></div></div><div class="nh">4h 30m</div></div>
           <div class="night" onclick="go('day')"><div class="nd"><div class="d">6</div><div class="w">Sat</div></div><div class="bar-wrap"><div class="bar" style="width:98%"><i class="b-deep" style="width:21%"></i><i class="b-light" style="width:59%"></i><i class="b-rem" style="width:20%"></i></div></div><div class="nh">9h 48m</div></div>
           <div class="key"><span><i class="b-deep"></i>Deep</span><span><i class="b-light"></i>Light</span><span><i class="b-rem"></i>REM</span></div>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>Daytime quiet periods</h3><span class="note">low-movement stretches with heart rate eased below her daytime usual</span></div>
+          <div class="rest-row">
+            <div class="rest-when"><b>Today</b><span>12:10 – 1:30pm</span></div>
+            <div class="rest-bar"><i style="width:62%"></i></div>
+            <div class="rest-meta"><b>80 min</b><span>HR eased to 68 · −10 from usual</span></div>
+          </div>
+          <p class="soft" style="font-size:12.5px;margin-top:10px">The ring can see the body settle — low movement, heart rate and breathing easing — but not <em>why</em>. A note (a rest, watching TV, an appointment, or a crash) gives each one its meaning. Detection began today, so this list fills in from here; it isn't reconstructed for past days.</p>
+        </div>
+        <div class="card research">
+          <p class="rlab">What the research says</p>
+          <p>Since the 2021 NICE update, <b>pacing — staying within an energy envelope — is the only recommended ME/CFS management strategy</b>; graded exercise is no longer advised.<sup>1</sup> The same "activity pacing" is the documented use of heart-rate monitoring in POTS: <i>"maintaining activity levels within the parameters of the condition… without exacerbating symptoms."</i><sup>2</sup></p>
+          <p class="surfaced">So this surface isn't about naps — it's about making the <b>envelope visible</b>: how much of the day was low-load recovery. Detection leads with <b>stillness</b> (accelerometer step count, standard accuracy); heart rate eases only confirm it, because resting HR from the ring is ±5–10 bpm on a single reading<sup>3</sup> — reliable as a 15-minute trend, not as one number.</p>
+          <div class="refs">
+            <p><sup>1</sup> Sanal-Hayes NEM, et al. A scoping review of pacing for myalgic encephalomyelitis/chronic fatigue syndrome. <i>J Transl Med</i>. 2023;21:720.</p>
+            <p><sup>2</sup> Raj SR, et al. Canadian Cardiovascular Society position statement on postural orthostatic tachycardia syndrome. <i>Can J Cardiol</i>. 2020;36(3):357–72.</p>
+            <p><sup>3</sup> Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. <i>npj Digit Med</i>. 2020;3:18.</p>
+          </div>
         </div>
       </section>
 
@@ -411,8 +461,8 @@
         </div>
         <div class="card" style="margin-top:16px">
           <div class="ch-h"><h3>Fatigue, fog and dizziness — same days</h3><span class="note">they tend to rise together</span></div>
-          <svg id="ch-cluster" width="100%" height="160" viewBox="0 0 720 160"></svg>
-          <p class="soft" style="font-size:12.5px;margin-top:6px">On her worse days these rose together — a multi-system pattern, not one symptom in isolation.</p>
+          <svg id="ch-cluster" width="100%" viewBox="0 0 720 178" style="height:auto"></svg>
+          <p class="soft" style="font-size:12.5px;margin-top:6px">Each shaded band is a <b>worse day</b> — one where all three climbed together. That co-movement is the point: a multi-system pattern, not one symptom in isolation.</p>
         </div>
         <div class="card">
           <div class="ch-h"><h3>Dizziness, by severity</h3><span class="note">days at each level · 18 logged</span></div>
@@ -521,7 +571,7 @@
 
 <div class="nav-ov" id="nav-ov" onclick="closeNav()"></div>
 <script>
-  const TITLES={overview:['Insights','what the data suggests · 30 days · describes, does not diagnose'],vitals:['Vitals','Continuously logged via the Neeve Ring'],
+  const TITLES={overview:['Insights','what the data suggests · 30 days · describes, does not diagnose'],calendar:['Calendar','Everything tracked · month at a glance'],vitals:['Vitals','Continuously logged via the Neeve Ring'],
     sleep:['Sleep','Ring-tracked sleep'],ortho:['Orthostatic signal','Ring · candidate events'],
     migraine:['Migraine','Headache days, intensity, triggers'],cycle:['Cycle','Phase timing vs symptoms'],
     symptoms:['Reported symptoms','Self-reported, 0–10'],patterns:['Environmental context','Co-occurrence, not cause'],
@@ -536,6 +586,11 @@
     document.querySelector('.content').scrollTo?.(0,0); window.scrollTo(0,0);
   }
   document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>{go(b.dataset.p);closeNav();}));
+  // size the embedded calendar to its content + keep it sized as it switches month/year/day
+  (function(){ const f=document.getElementById('cal-frame'); if(!f) return;
+    function fit(){ try{ const h=f.contentDocument.body.scrollHeight; if(h) f.style.height=(h+10)+'px'; }catch(e){} }
+    f.addEventListener('load',()=>{ try{ const b=f.contentDocument.body; new ResizeObserver(fit).observe(b); }catch(e){} fit(); });
+  })();
   function toggleNav(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('nav-ov').classList.toggle('on');}
   function closeNav(){document.querySelector('.sidebar').classList.remove('open');document.getElementById('nav-ov').classList.remove('on');}
   if(location.hash.slice(1)) go(location.hash.slice(1));
@@ -642,6 +697,9 @@
   // resting HR trend (runs a little high)
   const rhr=[71,73,70,74,72,75,71,73,76,72,74,73,72,71];
   lineChart('ch-rhr',rhr,{min:60,max:82,band:[66,72],color:'#bb6147'});
+  // overnight respiratory rate — real per-night medians, 8 captured nights (steady, normal range)
+  const resp=[14,12,13,13,14,13,14,13];
+  lineChart('ch-resp',resp,{min:10,max:20,band:[12,14],color:'#6f7551'});
   // range toggle — re-window the trend charts (the real product re-queries every chart)
   window.setRange=function(d,btn){
     document.querySelectorAll('.range button').forEach(x=>x.classList.remove('on')); if(btn) btn.classList.add('on');
@@ -650,12 +708,23 @@
     const rh=document.getElementById('ch-rhr'); if(rh){ rh.innerHTML=''; lineChart('ch-rhr',win(rhr),{min:60,max:82,band:[66,72],color:'#bb6147'}); }
   };
   // symptoms moving together (fatigue/fog/dizziness over logged days)
-  (function(){ const s=document.getElementById('ch-cluster'); if(!s)return; const W=720,H=160,pad={t:14,r:10,b:24,l:24},max=10,
+  (function(){ const s=document.getElementById('ch-cluster'); if(!s)return; const W=720,H=178,pad={t:18,r:80,b:30,l:28},max=10,
     fat=[4,7,3,8,5,9,4,6,8,5,7,6], fog=[3,6,2,7,4,8,3,5,7,4,6,5], diz=[2,6,1,7,3,8,2,4,7,3,5,4],
     n=fat.length, X=i=>pad.l+i*(W-pad.l-pad.r)/(n-1), Y=v=>pad.t+(1-v/max)*(H-pad.t-pad.b);
-    let g=''; [0,5,10].forEach(t=>{ g+=`<line x1="${pad.l}" y1="${Y(t).toFixed(1)}" x2="${W-pad.r}" y2="${Y(t).toFixed(1)}" stroke="#efe4d2"/><text x="${pad.l-5}" y="${(Y(t)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${t}</text>`;});
-    [[fat,'#bb6147'],[fog,'#6b4f63'],[diz,'#c08a3e']].forEach(([d,c])=>{ g+=`<polyline points="${d.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linejoin="round"/>`;});
-    g+=`<text x="${W-pad.r}" y="${(pad.t+8)}" text-anchor="end" font-size="10" fill="#9a8473" font-family="Hanken Grotesk"><tspan fill="#bb6147">fatigue</tspan> · <tspan fill="#6b4f63">fog</tspan> · <tspan fill="#c08a3e">dizziness</tspan></text>`;
+    const dates={0:'18 May',4:'26 May',8:'3 Jun',11:'9 Jun'};
+    let g='';
+    // worse-day bands: days where all three symptoms are high (>=7) — the co-movement made visible
+    fat.forEach((_,i)=>{ if(fat[i]>=7&&fog[i]>=7&&diz[i]>=7){ const x=X(i);
+      g+=`<rect x="${(x-13).toFixed(1)}" y="${pad.t}" width="26" height="${(H-pad.t-pad.b).toFixed(1)}" rx="4" fill="#bb6147" opacity=".08"/>`; }});
+    [0,5,10].forEach(t=>{ g+=`<line x1="${pad.l}" y1="${Y(t).toFixed(1)}" x2="${W-pad.r}" y2="${Y(t).toFixed(1)}" stroke="#efe4d2"/><text x="${pad.l-6}" y="${(Y(t)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${t}</text>`;});
+    for(const i in dates){ g+=`<text x="${X(+i).toFixed(1)}" y="${(H-pad.b+16)}" text-anchor="middle" font-size="9" fill="#b3a290" font-family="Hanken Grotesk">${dates[i]}</text>`;}
+    const series=[[fat,'#bb6147','fatigue'],[fog,'#6b4f63','fog'],[diz,'#c08a3e','dizziness']];
+    series.forEach(([d,c])=>{ g+=`<polyline points="${d.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="2.4" stroke-linejoin="round"/>`;
+      d.forEach((v,i)=>{ g+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.4" fill="${c}"/>`;});});
+    // direct end-labels (staggered) instead of a legend the eye has to match up
+    const ends=series.map(([d,c,lab])=>({y:Y(d[n-1]),c,lab})).sort((a,b)=>a.y-b.y);
+    let prevY=-99; ends.forEach(e=>{ let ly=e.y; if(ly-prevY<14) ly=prevY+14; prevY=ly;
+      g+=`<text x="${(W-pad.r+8)}" y="${(ly+3.5).toFixed(1)}" font-size="11" font-weight="600" fill="${e.c}" font-family="Hanken Grotesk">${e.lab}</text>`;});
     s.innerHTML=g;
   })();
   barChart('ch-ortho',[0,0,0,44,0,0,0,38,0,0,0,0,68,52,0,0,0,0,0,0,0,40,0,0,0,0,48,0,0,0],{max:80,color:'#bb6147',hot:i=>true,vals:true,valPrefix:'+'});

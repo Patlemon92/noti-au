@@ -117,6 +117,16 @@
   .insight .raise{font-size:13.5px;color:var(--ink);background:rgba(111,117,81,.09);border-left:3px solid var(--sage);padding:11px 14px;border-radius:0 10px 10px 0;}
   .insight.valid{background:linear-gradient(150deg,#fbf6ee,#f5ebdd);}
   .ilink{font-family:inherit;font-size:13px;font-weight:600;color:var(--clay);background:none;border:0;cursor:pointer;padding:0;margin-top:12px;}
+  /* research / evidence card */
+  .research{background:linear-gradient(150deg,#fbf6ee,#f3ead9);}
+  .research .rlab{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);margin:0 0 9px;}
+  .research p{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:0 0 9px;}
+  .research b{color:var(--ink);}
+  .research sup{color:var(--clay);font-weight:700;font-size:9px;}
+  .research .refs{margin-top:11px;padding-top:11px;border-top:1px solid var(--line);}
+  .research .refs p{font-size:10.5px;color:var(--muted);margin:0 0 4px;line-height:1.4;}
+  .surfaced{border-left:3px solid var(--sage);background:rgba(111,117,81,.08);padding:12px 15px;border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink);margin:2px 0 14px;}
+  .surfaced b{color:var(--ink);}
   /* mobile menu drawer + on-page patient header */
   .hamb{display:none;flex-direction:column;gap:4px;background:none;border:0;cursor:pointer;padding:7px 4px;flex:none;margin-right:2px;}
   .hamb span{display:block;width:21px;height:2px;background:var(--ink);border-radius:2px;}
@@ -270,11 +280,11 @@
         </div>
         <div class="card" style="margin-top:16px">
           <div class="ch-h"><h3>Overnight HRV</h3><span class="note">ms · band = her usual range · 14 nights captured</span></div>
-          <svg id="ch-hrv2" width="100%" height="160" viewBox="0 0 1000 160" preserveAspectRatio="none" style="height:160px"></svg>
+          <svg id="ch-hrv2" width="100%" viewBox="0 0 760 170" style="height:auto"></svg>
         </div>
         <div class="card">
           <div class="ch-h"><h3>Resting heart rate</h3><span class="note">bpm · overnight low · 14 nights captured</span></div>
-          <svg id="ch-rhr" width="100%" height="150" viewBox="0 0 1000 150" preserveAspectRatio="none" style="height:150px"></svg>
+          <svg id="ch-rhr" width="100%" viewBox="0 0 760 160" style="height:auto"></svg>
         </div>
         <div class="callout"><b>What this shows:</b> HRV sitting at the low end while resting heart rate runs a little high — a
           reduced heart-rate-variability pattern often seen alongside dysautonomia. Both are relative to her own usual range, not a population norm.</div>
@@ -329,6 +339,17 @@
         <div class="card">
           <div class="ch-h"><h3>Standing jumps across the period</h3><span class="note">bpm rise, by day</span></div>
           <svg id="ch-ortho" width="100%" height="150" viewBox="0 0 720 150"></svg>
+        </div>
+        <div class="card research">
+          <p class="rlab">What the research says</p>
+          <p>The published criterion for postural orthostatic tachycardia syndrome (POTS) is a <b>sustained heart-rate rise of ≥30 bpm within 10 minutes of standing</b>, with blood pressure not dropping — the 2015 Heart Rhythm Society Expert Consensus Statement.<sup>1</sup></p>
+          <p>Her captured standing responses (median +44 bpm, up to +68) <b>sit well above that threshold</b>, and the ring's resting heart-rate accuracy (±5–10 bpm) leaves clear margin at a 30 bpm change.<sup>2</sup></p>
+          <p>It's also a pattern that's easy to miss: in an Australian registry, people with POTS waited a mean of <b>7 years</b> to be diagnosed, and <b>64.6%</b> had their symptoms attributed to anxiety first.<sup>3</sup></p>
+          <div class="refs">
+            <p><sup>1</sup> Sheldon RS, et al. 2015 Heart Rhythm Society Expert Consensus Statement on the Diagnosis and Treatment of Postural Tachycardia Syndrome. <i>Heart Rhythm</i>. 2015;12(6):e41–63.</p>
+            <p><sup>2</sup> Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. <i>npj Digit Med</i>. 2020;3:18.</p>
+            <p><sup>3</sup> Seeley M-C, et al. Symptom burden, quality of life, and diagnostic journey of people with POTS, Australia. <i>Med J Aust</i>. 2025;223(3):159–60.</p>
+          </div>
         </div>
         <div class="callout"><b>What this raises:</b> a consistent orthostatic pattern that supports a POTS assessment. A formal
           active-stand or tilt test would confirm or rule it out. One spike (&gt;+80 bpm) was excluded as likely movement — these are candidate events, not a diagnosis.</div>
@@ -518,16 +539,23 @@
     const pad={t:10,r:6,b:22,l:6}; const max=opts.max||Math.max(...data); const n=data.length;
     const bw=(W-pad.l-pad.r)/n*0.62, gap=(W-pad.l-pad.r)/n;
     data.forEach((v,i)=>{ const h=(v/max)*(H-pad.t-pad.b); const x=pad.l+i*gap+(gap-bw)/2; const y=H-pad.b-h;
-      s.appendChild(el('rect',{x,y,width:bw,height:Math.max(h,1),rx:2,fill:opts.color||'#d29a82',opacity:opts.hot&&opts.hot(i)?1:.7})); });
+      s.appendChild(el('rect',{x,y,width:bw,height:Math.max(h,1),rx:2,fill:opts.color||'#d29a82',opacity:opts.hot&&opts.hot(i)?1:.7}));
+      if(opts.vals && v){ s.appendChild(el('text',{x:(pad.l+i*gap+gap/2).toFixed(1),y:(y-4).toFixed(1),'text-anchor':'middle','font-size':10,'font-weight':600,fill:'#6b574a','font-family':'Hanken Grotesk'})).textContent=(opts.valPrefix||'')+v; } });
     if(opts.labels) opts.labels.forEach((l,i)=>{ if(l==null)return; s.appendChild(el('text',{x:pad.l+i*gap+gap/2,y:H-7,'text-anchor':'middle','font-size':10,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=l; });
   }
   function lineChart(id,data,opts={}){
     const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal; const W=vb.width,H=vb.height;
-    const pad={t:14,r:8,b:8,l:8}; const mn=opts.min,mx=opts.max; const n=data.length;
+    const pad={t:14,r:46,b:18,l:30}; const mn=opts.min,mx=opts.max; const n=data.length;
     const X=i=>pad.l+i*(W-pad.l-pad.r)/(n-1); const Y=v=>pad.t+(1-(v-mn)/(mx-mn))*(H-pad.t-pad.b);
+    const ticks=opts.ticks||[mn,Math.round((mn+mx)/2),mx];
+    ticks.forEach(t=>{ const y=Y(t); s.appendChild(el('line',{x1:pad.l,y1:y,x2:W-pad.r,y2:y,stroke:'#efe4d2'}));
+      s.appendChild(el('text',{x:pad.l-5,y:(y+3).toFixed(1),'text-anchor':'end','font-size':10,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=t; });
     if(opts.band){ s.appendChild(el('rect',{x:pad.l,y:Y(opts.band[1]),width:W-pad.l-pad.r,height:Math.max(2,Y(opts.band[0])-Y(opts.band[1])),fill:'#9a8473',opacity:.12})); }
     const pts=data.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
-    s.appendChild(el('polyline',{points:pts,fill:'none',stroke:opts.color||'#bb6147','stroke-width':2.2,'stroke-linejoin':'round','vector-effect':'non-scaling-stroke'}));
+    s.appendChild(el('polyline',{points:pts,fill:'none',stroke:opts.color||'#bb6147','stroke-width':2.2,'stroke-linejoin':'round'}));
+    const last=data[n-1],lx=X(n-1),ly=Y(last);
+    s.appendChild(el('circle',{cx:lx.toFixed(1),cy:ly.toFixed(1),r:3.5,fill:opts.color||'#bb6147'}));
+    s.appendChild(el('text',{x:(lx+6).toFixed(1),y:(ly+4).toFixed(1),'font-size':12,'font-weight':'700',fill:opts.color||'#bb6147','font-family':'Hanken Grotesk'})).textContent=last+(opts.unit||'');
   }
   // scatter: each dot a day — x sleep hours, y next-morning energy
   function scatter(id,pts,o={}){
@@ -612,7 +640,7 @@
     g+=`<text x="${W-pad.r}" y="${(pad.t+8)}" text-anchor="end" font-size="10" fill="#9a8473" font-family="Hanken Grotesk"><tspan fill="#bb6147">fatigue</tspan> · <tspan fill="#6b4f63">fog</tspan> · <tspan fill="#c08a3e">dizziness</tspan></text>`;
     s.innerHTML=g;
   })();
-  barChart('ch-ortho',[0,0,0,44,0,0,0,38,0,0,0,0,68,52,0,0,0,0,0,0,0,40,0,0,0,0,48,0,0,0],{max:80,color:'#bb6147',hot:i=>true});
+  barChart('ch-ortho',[0,0,0,44,0,0,0,38,0,0,0,0,68,52,0,0,0,0,0,0,0,40,0,0,0,0,48,0,0,0],{max:80,color:'#bb6147',hot:i=>true,vals:true,valPrefix:'+'});
   // cycle timeline — phases + migraine (circle) + dizziness (dot)
   (function(){ const s=document.getElementById('ch-cycle'); if(!s)return; const W=720,H=132,pad={l:8,r:8},days=29,
     cw=(W-pad.l-pad.r)/days, barY=72, barH=24;
@@ -651,7 +679,7 @@
     s.innerHTML=g;
   })();
   // dizziness levels (none / mild / moderate / rough — day counts)
-  barChart('ch-anx',[8,6,5,3],{max:10,color:'#d29a82',hot:i=>i>=2,labels:['none','mild','mod','rough']});
+  barChart('ch-anx',[8,6,5,3],{max:10,color:'#d29a82',hot:i=>i>=2,labels:['none','mild','mod','rough'],vals:true});
   // navigable month calendar — events keyed by Y-M(0idx)-D
   const CAL_HEAD={'2026-4-16':6,'2026-4-17':7,'2026-4-23':8,'2026-4-24':7,'2026-4-29':5,'2026-5-4':6,'2026-5-5':8,'2026-5-6':7};
   const CAL_DROP=new Set(['2026-4-16','2026-4-23','2026-4-29','2026-5-4']);

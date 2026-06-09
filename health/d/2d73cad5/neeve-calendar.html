@@ -200,15 +200,24 @@ const COND = {
   '2026-06-04':{temp:14.8,feels:13.7,pressure:1001.4,humidity:91,aqi:20,uv:0.05,grass:3.4},
   '2026-06-05':{temp:13.2,feels:10.8,pressure:1008.3,humidity:84,aqi:21,uv:0,grass:0.4},
 };
-// real ring vitals through the day (30-min buckets), where captured
+// Real per-day ring vitals — daily average + range, every captured day (not
+// just one). Values straight from ring_samples. HR lows clamped at 45 to drop
+// sub-physiological contact-noise artefacts (e.g. a stray 10 bpm). The
+// through-the-day graph comes from the live render; here we show the honest
+// daily figures so no captured day ever reads as "no capture".
+const VMETA = { hr:['Heart rate','bpm'], hrv:['HRV (RMSSD)','ms'], rr:['Respiration','/min'], spo2:['Blood oxygen','%'], bp:['Blood pressure','mmHg'] };
 const DAY_VITALS = {
-  '2026-06-09': {
-    hr:  {label:'Heart rate', unit:'bpm', color:'#bb6147', series:[86,88,83,87,81,78,73,69,84,84,85,86,86,84,87,84,81,76,82], avg:82, lo:69, hi:88},
-    hrv: {label:'HRV (RMSSD)', unit:'ms', color:'#6b4f63', series:[40,44,44,41,43,41,42,40,41,40,40,40,42,43,42,42,42,43,42], avg:42, lo:40, hi:44},
-    rr:  {label:'Respiration', unit:'/min', color:'#6f7551', series:[17,18,17,17,17,16,14,14,17,17,17,18,17,18,18,17,16,16,16], avg:17, lo:14, hi:18},
-    spo2:{label:'Blood oxygen', unit:'%', color:'#4f7a8a', series:[98,98,98,98,98,98,98,98,98,98,98,98,98,98,98,98,98,98,98], avg:98, lo:98, hi:98},
-    bp:  {label:'Blood pressure', unit:'mmHg', color:'#c08a3e', series:[114,116,112,114,112,111,110,109,113,112,114,114,115,114,114,114,113,111,112], avg:'113/75', lo:'109/72', hi:'116/76', est:true},
-  },
+  '2026-06-09':{hr:[76,57,98],hrv:[41,37,46],rr:[15,11,20],spo2:[98,94,98],bp:['110/73','103/68','118/78']},
+  '2026-06-08':{hr:[76,60,105],hrv:[42,37,46],rr:[15,12,21],spo2:[98,96,98],bp:['110/73','104/68','122/81']},
+  '2026-06-07':{hr:[81,61,122],hrv:[41,37,46],rr:[16,12,25],spo2:[98,94,98],bp:['112/74','104/69','137/90']},
+  '2026-06-06':{hr:[76,60,103],hrv:[41,37,46],rr:[16,12,21],spo2:[98,96,98],bp:['112/74','105/69','118/78']},
+  '2026-06-05':{hr:[79,57,100],hrv:[42,37,46],rr:[16,13,19],spo2:[98,97,98],bp:['112/74','106/70','116/76']},
+  '2026-06-04':{hr:[70,56,145],hrv:[41,37,46],rr:[15,11,30],spo2:[97,92,98],bp:['110/73','102/68','139/90']},
+  '2026-06-03':{hr:[78,58,118],hrv:[42,37,46],rr:[16,12,24],spo2:[98,95,98],bp:['112/74','102/69','128/86']},
+  '2026-06-02':{hr:[78,56,143],hrv:[41,37,46],rr:[14,11,20],spo2:[97,94,98],bp:['107/70','102/68','116/78']},
+  '2026-06-01':{hr:[79,55,107],hrv:[41,37,46],rr:[15,11,22],spo2:[97,93,98],bp:['102/69','90/63','123/80']},
+  '2026-05-31':{hr:[75,54,167],hrv:[41,37,46],rr:[15,11,34],spo2:[98,90,98],bp:['97/67','90/64','105/70']},
+  '2026-05-30':{hr:[86,73,112],hrv:[41,37,46],rr:[17,15,23],spo2:[98,95,98],bp:['102/70','96/67','112/75']},
 };
 // research drawn from the pattern_library — the matching evidence for a day's events
 const RESEARCH = {
@@ -361,9 +370,9 @@ function renderDay(){
   // vitals — every signal the ring captured that day
   let vitalsHtml; const vit=DAY_VITALS[key];
   if(vit){
-    const card=v=>`<div class="v-card"><div class="v-h"><span class="v-l">${v.label}</span><span class="v-avg">${v.avg}<small>${v.unit}</small></span></div>${daySpark(v.series,v.color)}<div class="v-range">${v.lo}–${v.hi}${v.est?' · est.':''}</div></div>`;
-    vitalsHtml=`<div class="d-sec"><h4>Vitals through the day</h4><div class="v-grid">${['hr','hrv','rr','spo2','bp'].filter(k=>vit[k]).map(k=>card(vit[k])).join('')}</div><p class="muted" style="font-size:11.5px;margin-top:9px">Each is the ring's reading across the day. Blood pressure is the ring's optical estimate (trend only) — the doctor report uses calibrated cuff readings.</p></div>`;
-  } else vitalsHtml=`<div class="d-sec"><h4>Vitals</h4><p class="muted" style="font-size:13px;margin:0">No continuous ring capture for this day. Resting HR, HRV and respiration trends sit on the Vitals page.</p></div>`;
+    const card=(k,a)=>{ const m=VMETA[k]; return `<div class="v-card"><div class="v-h"><span class="v-l">${m[0]}</span><span class="v-avg">${a[0]}<small>${m[1]}</small></span></div><div class="v-range">range ${a[1]}–${a[2]}${k==='bp'?' · est.':''}</div></div>`; };
+    vitalsHtml=`<div class="d-sec"><h4>Vitals — daily average &amp; range</h4><div class="v-grid">${['hr','hrv','rr','spo2','bp'].filter(k=>vit[k]).map(k=>card(k,vit[k])).join('')}</div><p class="muted" style="font-size:11.5px;margin-top:9px">Full-day average and range from the ring. Blood pressure is the optical estimate (trend only) — the doctor report uses calibrated cuff readings. The reading through the day appears in the live shared view.</p></div>`;
+  } else vitalsHtml=`<div class="d-sec"><h4>Vitals</h4><p class="muted" style="font-size:13px;margin:0">The ring didn't capture vitals on this day.</p></div>`;
 
   // conditions that day
   let condHtml=''; const co=COND[key];

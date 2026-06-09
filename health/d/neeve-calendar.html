@@ -447,12 +447,15 @@ function applyLive(j){
 async function boot(){
   const code = new URLSearchParams(location.search).get('c');
   if(code){
+    // LIVE mode: wipe the embedded demo data immediately so another user's
+    // data can NEVER be shown — not even for a frame, and not if the fetch fails.
+    MARKERS={}; DAY_VITALS={}; COND={};
     try{
       const r = await fetch(`${API}/share/${encodeURIComponent(code)}/data`);
       const j = await r.json();
       if(j && j.ok) applyLive(j);
       else { const cap=document.getElementById('cal-cap'); if(cap) cap.textContent = j&&j.error==='expired'?'this share link has expired':j&&j.error==='revoked'?'this share link was revoked':'link not found'; }
-    }catch(e){ /* fall back to whatever is embedded */ }
+    }catch(e){ /* stays empty — never falls back to demo data */ }
   }
   renderLegend(); render();
 }

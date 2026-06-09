@@ -264,16 +264,21 @@
       <!-- VITALS -->
       <section class="panel" id="p-vitals">
         <div class="grid g3">
-          <div class="card stat"><div class="k">HRV (overnight RMSSD)</div><div class="n">31<span class="u">ms</span></div><div class="b">usual 31 · <span class="drift flat">at baseline</span> · 14 days</div></div>
-          <div class="card stat"><div class="k">Resting heart rate</div><div class="n">72<span class="u">bpm</span></div><div class="b">usual 70 · <span class="drift up">↑ 3%</span> · 9 days</div></div>
-          <div class="card stat"><div class="k">Blood oxygen</div><div class="n">97<span class="u">%</span></div><div class="b">usual 97% · <span class="drift flat">at baseline</span> · 14 days</div></div>
+          <div class="card stat"><div class="k">HRV (overnight)</div><div class="n">31<span class="u">ms</span></div><div class="b">at the lower end · 14 nights</div></div>
+          <div class="card stat"><div class="k">Resting heart rate</div><div class="n">72<span class="u">bpm</span></div><div class="b">a little high for rest · 14 nights</div></div>
+          <div class="card stat"><div class="k">Blood oxygen</div><div class="n">97<span class="u">%</span></div><div class="b">steady · 14 nights</div></div>
         </div>
         <div class="card" style="margin-top:16px">
-          <div class="ch-h"><h3>Overnight HRV trend</h3><span class="note">band = usual range</span></div>
-          <svg id="ch-hrv2" width="100%" height="170" viewBox="0 0 1000 170" preserveAspectRatio="none" style="height:170px"></svg>
+          <div class="ch-h"><h3>Overnight HRV</h3><span class="note">ms · band = her usual range · 14 nights captured</span></div>
+          <svg id="ch-hrv2" width="100%" height="160" viewBox="0 0 1000 160" preserveAspectRatio="none" style="height:160px"></svg>
         </div>
+        <div class="card">
+          <div class="ch-h"><h3>Resting heart rate</h3><span class="note">bpm · overnight low · 14 nights captured</span></div>
+          <svg id="ch-rhr" width="100%" height="150" viewBox="0 0 1000 150" preserveAspectRatio="none" style="height:150px"></svg>
+        </div>
+        <div class="callout"><b>What this shows:</b> HRV sitting at the low end while resting heart rate runs a little high — a
+          reduced heart-rate-variability pattern often seen alongside dysautonomia. Both are relative to her own usual range, not a population norm.</div>
         <div class="callout"><b>Blood pressure:</b> shown only from a calibrated cuff — the ring's optical estimate is excluded. None logged this period.</div>
-        <p class="muted" style="font-size:12px">Continuously logged · HR 31,400 samples · HRV 2,470 · SpO₂ 2,470</p>
       </section>
 
       <!-- SLEEP -->
@@ -368,13 +373,18 @@
       <!-- SYMPTOMS -->
       <section class="panel" id="p-symptoms">
         <div class="grid g4">
-          <div class="card stat"><div class="k">Fatigue</div><div class="n">6.2<span class="u">/10</span></div></div>
-          <div class="card stat"><div class="k">Brain fog</div><div class="n">5.4<span class="u">/10</span></div></div>
-          <div class="card stat"><div class="k">Dizziness days</div><div class="n">14<span class="u">/30</span></div></div>
-          <div class="card stat"><div class="k">Mood (evening)</div><div class="n">6.1<span class="u">/10</span></div></div>
+          <div class="card stat"><div class="k">Fatigue</div><div class="n">6.2<span class="u">/10</span></div><div class="b">avg · 18 days logged</div></div>
+          <div class="card stat"><div class="k">Brain fog</div><div class="n">5.4<span class="u">/10</span></div><div class="b">avg · 18 days logged</div></div>
+          <div class="card stat"><div class="k">Dizziness days</div><div class="n">14<span class="u">/30</span></div><div class="b">moderate+ on 8</div></div>
+          <div class="card stat"><div class="k">Mood (evening)</div><div class="n">6.1<span class="u">/10</span></div><div class="b">avg · 16 days logged</div></div>
         </div>
         <div class="card" style="margin-top:16px">
-          <div class="ch-h"><h3>Dizziness, by severity</h3><span class="note">days at each level</span></div>
+          <div class="ch-h"><h3>Fatigue, fog and dizziness — same days</h3><span class="note">they tend to rise together</span></div>
+          <svg id="ch-cluster" width="100%" height="160" viewBox="0 0 720 160"></svg>
+          <p class="soft" style="font-size:12.5px;margin-top:6px">On her worse days these rose together — a multi-system pattern, not one symptom in isolation.</p>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>Dizziness, by severity</h3><span class="note">days at each level · 18 logged</span></div>
           <svg id="ch-anx" width="100%" height="160" viewBox="0 0 560 160"></svg>
         </div>
         <div class="callout"><b>In her words (14 May):</b> <span style="font-style:italic">"the room spun every time I stood, heart pounding, had to lie down all afternoon."</span></div>
@@ -384,11 +394,16 @@
       <section class="panel" id="p-cycle">
         <div class="card">
           <p class="soft" style="margin:0 0 14px">Self-reported cycle phase shown against migraine and symptom days. Timing only — Neeve does not interpret hormones.</p>
-          <table class="kv">
-            <tr><td>Cycle length (this period)</td><td>29 days</td></tr>
-            <tr><td>Migraines in the pre-menstrual window</td><td class="hiv">4 of 8</td></tr>
-            <tr><td>Dizziness worse in the luteal phase</td><td>3 days reported</td></tr>
-          </table>
+          <div class="grid g3">
+            <div class="stat"><div class="k">Cycle length</div><div class="n">29<span class="u">days</span></div></div>
+            <div class="stat"><div class="k">Migraines pre-period</div><div class="n hiv">4<span class="u">of 8</span></div></div>
+            <div class="stat"><div class="k">Dizziness in luteal</div><div class="n">3<span class="u">days</span></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>This cycle, day by day</h3><span class="note">circle = migraine · dot = dizziness</span></div>
+          <svg id="ch-cycle" width="100%" viewBox="0 0 720 132"></svg>
+          <p class="soft" style="font-size:12.5px;margin-top:8px">Her headaches and worse dizziness clustered in the luteal and pre-menstrual days — the window before her period.</p>
         </div>
         <div class="callout"><b>What this raises:</b> a possible menstrual-migraine pattern — over half her headaches fell
           in the days before her period. Hormonal timing worth exploring. A pattern, not a cause.</div>
@@ -397,12 +412,18 @@
       <!-- PATTERNS -->
       <section class="panel" id="p-patterns">
         <div class="card">
-          <p class="soft" style="margin:0 0 14px">Each check-in is tagged with local weather, air quality and pollen. These are associations across the period — what appeared alongside what, not cause.</p>
-          <table class="kv env">
-            <tr><td>Pressure · Anxiety</td><td style="text-align:left;font-weight:400;color:var(--ink-soft)">Anxiety 8 on lower-pressure days vs 5 on higher (3/4 days) <span class="pill lo">lower</span></td></tr>
-            <tr><td>Pollen · Fog</td><td style="text-align:left;font-weight:400;color:var(--ink-soft)">Fog 4.7 on lower-pollen days vs 1.7 on higher (3/3 days) <span class="pill lo">lower</span></td></tr>
-            <tr><td>PM2.5 · Fatigue</td><td style="text-align:left;font-weight:400;color:var(--ink-soft)">Fatigue 5.7 on lower-particle days vs 3.0 on higher (4/3 days) <span class="pill lo">lower</span></td></tr>
-          </table>
+          <p class="soft" style="margin:0">Each check-in is tagged with local weather, air quality and pollen. These are associations across the period — what appeared alongside what, not cause. Small samples, so read them as prompts to watch.</p>
+        </div>
+        <div class="grid g3">
+          <div class="card"><div class="ch-h"><h3>Pressure &amp; brain fog</h3><span class="pill lo">lower</span></div>
+            <svg id="ch-p1" width="100%" height="118" viewBox="0 0 300 118"></svg>
+            <p class="soft" style="font-size:12px;margin:6px 0 0">fog ran higher on falling-pressure days (4 vs 3 days)</p></div>
+          <div class="card"><div class="ch-h"><h3>Pollen &amp; fog</h3><span class="pill lo">lower</span></div>
+            <svg id="ch-p2" width="100%" height="118" viewBox="0 0 300 118"></svg>
+            <p class="soft" style="font-size:12px;margin:6px 0 0">fog higher on higher-pollen days (3 vs 3 days)</p></div>
+          <div class="card"><div class="ch-h"><h3>Air quality &amp; fatigue</h3><span class="pill lo">lower</span></div>
+            <svg id="ch-p3" width="100%" height="118" viewBox="0 0 300 118"></svg>
+            <p class="soft" style="font-size:12px;margin:6px 0 0">fatigue higher on poorer-air days (4 vs 3 days)</p></div>
         </div>
       </section>
 
@@ -580,7 +601,41 @@
     s.innerHTML=g;
   })();
   lineChart('ch-hrv2',hrv,{min:22,max:42,band:[29,33],color:'#6b4f63'});
+  // resting HR trend (runs a little high)
+  lineChart('ch-rhr',[71,73,70,74,72,75,71,73,76,72,74,73,72,71],{min:60,max:82,band:[66,72],color:'#bb6147'});
+  // symptoms moving together (fatigue/fog/dizziness over logged days)
+  (function(){ const s=document.getElementById('ch-cluster'); if(!s)return; const W=720,H=160,pad={t:14,r:10,b:24,l:24},max=10,
+    fat=[4,7,3,8,5,9,4,6,8,5,7,6], fog=[3,6,2,7,4,8,3,5,7,4,6,5], diz=[2,6,1,7,3,8,2,4,7,3,5,4],
+    n=fat.length, X=i=>pad.l+i*(W-pad.l-pad.r)/(n-1), Y=v=>pad.t+(1-v/max)*(H-pad.t-pad.b);
+    let g=''; [0,5,10].forEach(t=>{ g+=`<line x1="${pad.l}" y1="${Y(t).toFixed(1)}" x2="${W-pad.r}" y2="${Y(t).toFixed(1)}" stroke="#efe4d2"/><text x="${pad.l-5}" y="${(Y(t)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${t}</text>`;});
+    [[fat,'#bb6147'],[fog,'#6b4f63'],[diz,'#c08a3e']].forEach(([d,c])=>{ g+=`<polyline points="${d.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linejoin="round"/>`;});
+    g+=`<text x="${W-pad.r}" y="${(pad.t+8)}" text-anchor="end" font-size="10" fill="#9a8473" font-family="Hanken Grotesk"><tspan fill="#bb6147">fatigue</tspan> · <tspan fill="#6b4f63">fog</tspan> · <tspan fill="#c08a3e">dizziness</tspan></text>`;
+    s.innerHTML=g;
+  })();
   barChart('ch-ortho',[0,0,0,44,0,0,0,38,0,0,0,0,68,52,0,0,0,0,0,0,0,40,0,0,0,0,48,0,0,0],{max:80,color:'#bb6147',hot:i=>true});
+  // cycle timeline — phases + migraine (circle) + dizziness (dot)
+  (function(){ const s=document.getElementById('ch-cycle'); if(!s)return; const W=720,H=132,pad={l:8,r:8},days=29,
+    cw=(W-pad.l-pad.r)/days, barY=72, barH=24;
+    const phases=[[1,5,'#c89bb4','menstrual'],[6,13,'#e3d6c2','follicular'],[14,15,'#e9cda2','ovulation'],[16,23,'#d6bcce','luteal'],[24,29,'#b899ad','pre-menstrual']];
+    let g='';
+    phases.forEach(([a,b,c,lab])=>{ const x=pad.l+(a-1)*cw,w=(b-a+1)*cw;
+      g+=`<rect x="${x.toFixed(1)}" y="${barY}" width="${w.toFixed(1)}" height="${barH}" fill="${c}" opacity=".55"/>`
+        +`<text x="${(x+w/2).toFixed(1)}" y="${barY+barH+13}" text-anchor="middle" font-size="8.5" fill="#9a8473" font-family="Hanken Grotesk">${lab}</text>`;});
+    [1,8,15,22,29].forEach(d=>g+=`<text x="${(pad.l+(d-0.5)*cw).toFixed(1)}" y="${barY-5}" text-anchor="middle" font-size="8" fill="#b3a290" font-family="Hanken Grotesk">${d}</text>`);
+    const mig={18:5,22:6,24:7,25:8,26:7}; for(const k in mig){ const x=pad.l+(+k-0.5)*cw; g+=`<circle cx="${x.toFixed(1)}" cy="20" r="6.5" fill="rgba(187,97,71,${(0.4+mig[k]/14).toFixed(2)})"/>`;}
+    [20,23,27].forEach(d=>g+=`<circle cx="${(pad.l+(d-0.5)*cw).toFixed(1)}" cy="42" r="3.5" fill="#6b4f63"/>`);
+    g+=`<text x="${pad.l}" y="23" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">migraine</text><text x="${pad.l}" y="45" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">dizziness</text>`;
+    s.innerHTML=g;
+  })();
+  // environment comparisons (lower vs higher) — labelled
+  function cmp2(id,a,b,la,lb){ const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal,W=vb.width,H=vb.height,base=H-26,max=10;
+    [[a,la,55,'#bb6147'],[b,lb,165,'#d29a82']].forEach(([v,lab,x,c])=>{ const h=(v/max)*(base-10);
+      s.appendChild(el('rect',{x,y:(base-h).toFixed(1),width:80,height:h.toFixed(1),rx:3,fill:c,opacity:.82}));
+      s.appendChild(el('text',{x:x+40,y:(base-h-5).toFixed(1),'text-anchor':'middle','font-size':14,fill:'#42332b','font-family':'Fraunces'})).textContent=v;
+      s.appendChild(el('text',{x:x+40,y:base+15,'text-anchor':'middle','font-size':9.5,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=lab;});}
+  cmp2('ch-p1',5,3,'falling','steady');
+  cmp2('ch-p2',5,2,'high pollen','low');
+  cmp2('ch-p3',6,3,'poor air','clear');
   // active-stand HR profile — lying → standing, sustained rise above the +30 threshold
   (function(){ const s=document.getElementById('ch-stand'); if(!s)return; const W=600,H=184,pad={t:16,r:14,b:24,l:34},yMin=55,yMax=125;
     const X=t=>pad.l+(t/8)*(W-pad.l-pad.r), Y=v=>pad.t+(1-(v-yMin)/(yMax-yMin))*(H-pad.t-pad.b);

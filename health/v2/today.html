@@ -181,6 +181,26 @@
   </div>
 </div>
 
+<!-- Noticed sheet — opens from the bottom when the Noticed card is tapped -->
+<style>
+  .nt-item{border:1px solid var(--hair);border-radius:14px;padding:13px 14px;margin-bottom:10px;background:#fffdf9;}
+  .nt-h{display:flex;align-items:baseline;gap:8px;}
+  .nt-k{font-family:"Fraunces",serif;font-weight:500;font-size:15.5px;color:var(--ink);}
+  .nt-w{margin-left:auto;font-size:11.5px;color:var(--muted);}
+  .nt-s{font-size:13px;color:var(--muted);margin:5px 0 11px;line-height:1.45;}
+  .nt-row{display:flex;gap:8px;}
+  .nb{font-family:inherit;font-size:13px;font-weight:600;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:11px;padding:8px 13px;cursor:pointer;}
+  .nb.yes{background:var(--sage,#6f7551);color:#fff;border-color:var(--sage,#6f7551);}
+</style>
+<div class="ql-backdrop" id="nt-backdrop" onclick="closeNoticed()"></div>
+<div class="ql-sheet" id="nt-sheet" role="dialog" aria-modal="true">
+  <div class="ql-grip"></div>
+  <h2>Worth a look</h2>
+  <div class="sub">Quiet things the ring noticed. If one matches how you felt, tell Alys — it helps her learn what matters to you.</div>
+  <div id="nt-list"></div>
+  <div class="ql-actions" style="margin-top:2px"><button class="btn" onclick="closeNoticed()">Done</button></div>
+</div>
+
 <div id="nav-mount"></div>
 <script src="/health/v2/lib.js"></script>
 <script>
@@ -309,8 +329,8 @@ async function load(){
     let next='';
     if(t.checkin&&t.checkin.due){ const slot=t.checkin.slot==='evening'?'Evening':'Morning';
       next+=`<a class="ncard checkin" href="/health/v2/checkin.html?slot=${t.checkin.slot}"><span class="ic">✎</span><div><div class="t">${slot} check-in</div><div class="s">a couple of minutes, when you're ready</div></div><span class="go">›</span></a>`; }
-    const ev=(flags&&flags.events)||[];
-    if(ev.length){ next+=`<a class="ncard noticed" href="/health/v2/today.html"><span class="ic">◔</span><div><div class="t">Noticed</div><div class="s">${ev.length} thing${ev.length>1?'s':''} worth a look</div></div><span class="go">›</span></a>`; }
+    const ev=(flags&&flags.events)||[]; window._noticed=ev;
+    if(ev.length){ next+=`<button class="ncard noticed" type="button" onclick="openNoticed()" style="border:0;width:100%;text-align:left;cursor:pointer;font:inherit"><span class="ic"></span><div><div class="t">Noticed</div><div class="s">${ev.length} thing${ev.length>1?'s':''} worth a look</div></div><span class="go">›</span></button>`; }
     document.getElementById('next').innerHTML=next;
   }
 }
@@ -319,6 +339,35 @@ async function load(){
 let _qlKind=null;
 function openLogSheet(){ document.getElementById('ql-backdrop').classList.add('open'); document.getElementById('ql-sheet').classList.add('open'); setTimeout(()=>document.getElementById('ql-body').focus(),200); }
 function closeLogSheet(){ document.getElementById('ql-backdrop').classList.remove('open'); document.getElementById('ql-sheet').classList.remove('open'); }
+
+// ── Noticed sheet ──
+function flagKindLabel(t){ return ({hr_spike:'Heart rate elevated',hr_orthostatic:'A jump on standing',hrv_crash:'HRV dipped below usual',spo2_dip:'Blood oxygen dipped',bp_outlier:'BP outside your usual',rr_jump:'Breathing rate up'})[t] || 'Something to note'; }
+function flagSummary(f){ const t=f.trigger||{}; switch(f.flag_type){
+  case 'hr_spike':       return `reached ${t.value} bpm`;
+  case 'hr_orthostatic': return `heart rate went ${t.from_bpm}→${t.to_bpm} bpm — looks like standing up`;
+  case 'hrv_crash':      return `${t.window_median} ms, against your usual ${t.baseline} ms`;
+  case 'spo2_dip':       return `dipped to ${t.value}%`;
+  case 'bp_outlier':     return `${t.sys||'—'}/${t.dia||'—'} mmHg`;
+  case 'rr_jump':        return `${t.value} breaths/min, against your usual ${t.baseline}`;
+  default:               return ''; } }
+function flagWhen(iso){ if(!iso) return ''; const d=new Date(iso);
+  return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})+', '+d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}).toLowerCase(); }
+function openNoticed(){
+  const evs=window._noticed||[]; const list=document.getElementById('nt-list');
+  list.innerHTML = evs.length ? evs.map(f=>`<div class="nt-item" data-id="${f.id}">
+    <div class="nt-h"><span class="nt-k">${flagKindLabel(f.flag_type)}</span><span class="nt-w">${flagWhen(f.ts)}</span></div>
+    <p class="nt-s">${flagSummary(f)}</p>
+    <div class="nt-row"><button class="nb yes" type="button" onclick="ackFlag('${f.id}',true)">Yes, I felt that</button><button class="nb" type="button" onclick="ackFlag('${f.id}',false)">Wasn't me</button></div>
+  </div>`).join('') : '<p class="nt-s">Nothing right now.</p>';
+  document.getElementById('nt-backdrop').classList.add('open'); document.getElementById('nt-sheet').classList.add('open');
+}
+function closeNoticed(){ document.getElementById('nt-backdrop').classList.remove('open'); document.getElementById('nt-sheet').classList.remove('open'); }
+async function ackFlag(id, felt){
+  try{ await api('/me/flagged-events/'+id+'/'+(felt?'respond':'dismiss'), {method:'POST', body: JSON.stringify(felt?{tags:['felt']}:{})}); }catch(_){}
+  window._noticed=(window._noticed||[]).filter(f=>f.id!==id);
+  const el=document.querySelector('.nt-item[data-id="'+id+'"]'); if(el) el.remove();
+  if(!(window._noticed||[]).length){ closeNoticed(); load(); }
+}
 function selectKind(k){ _qlKind=_qlKind===k?null:k; document.querySelectorAll('#ql-kinds .ql-chip').forEach(b=>b.classList.toggle('on',b.dataset.kind===_qlKind)); refreshQlSubmit(); }
 function refreshQlSubmit(){ document.getElementById('ql-submit').disabled=!(document.getElementById('ql-body').value||'').trim(); }
 document.getElementById('ql-body').addEventListener('input', refreshQlSubmit);

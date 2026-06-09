@@ -156,6 +156,16 @@
     </div>
   </section>
 
+  <section class="section" id="rest-section" style="display:none">
+    <div class="section-head">
+      <h2 class="title-sm">Quiet periods</h2>
+    </div>
+    <div class="card">
+      <div id="rest-list"></div>
+      <p class="caption" style="margin-top:12px">Daytime stretches where you were still and your heart rate eased below its usual. The ring can see the body settle — not why. What you were doing (a rest, watching TV, an appointment, a crash) is the meaning behind it.</p>
+    </div>
+  </section>
+
   <p class="caption" style="margin-top:24px">
     The system describes; it doesn't judge. No score here — the breakdown is the data.
   </p>
@@ -326,10 +336,45 @@ function renderTotals(t) {
   document.getElementById('awake-val').classList.toggle('zero', awakeMin === 0);
 }
 
+// Daytime quiet periods (rest_session) — low-movement stretches where HR
+// eased below the daytime baseline. The ring sees the settle, not the why;
+// a note carries intent. Section stays hidden until there's at least one.
+async function loadRest() {
+  try {
+    const since = new Date(Date.now() - 14 * 86400 * 1000).toISOString();
+    const { samples } = await api(`/ring/samples?metric=rest_session&limit=100&since=${encodeURIComponent(since)}`);
+    const rests = (samples || []).filter(s => s.metric === 'rest_session')
+      .sort((a, b) => new Date(b.ts) - new Date(a.ts));
+    const sec = document.getElementById('rest-section');
+    const list = document.getElementById('rest-list');
+    if (!rests.length) { sec.style.display = 'none'; return; }
+    const fmtT = ts => new Date(ts).toLocaleTimeString('en-AU', { hour:'numeric', minute:'2-digit', hour12:true }).toLowerCase();
+    const fmtD = ts => { const d = new Date(ts), t = new Date(), y = new Date(Date.now() - 864e5);
+      if (d.toDateString() === t.toDateString()) return 'Today';
+      if (d.toDateString() === y.toDateString()) return 'Yesterday';
+      return d.toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'short' }); };
+    list.innerHTML = rests.map(r => {
+      const mins = Math.round((Number(r.value) || 0) / 60);
+      const m = r.meta || {};
+      const drop = (m.hr_baseline && m.hr_median) ? Math.round(m.hr_baseline - m.hr_median) : null;
+      const kindLab = m.kind === 'nap' ? 'deep enough to look like sleep' : 'settled, low activity';
+      const sub = `${drop != null ? `heart rate eased ${drop} below usual · ` : ''}${kindLab}`;
+      return `<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--hair,#e6d8c4)">
+        <div style="min-width:104px"><div style="font-weight:600;color:var(--ink,#42332b);font-size:14.5px">${fmtD(r.ts)}</div>
+          <div style="font-size:12px;color:var(--muted,#9a8473)">${fmtT(r.ts)}${m.end_ts ? ` → ${fmtT(m.end_ts)}` : ''}</div></div>
+        <div style="flex:1;text-align:right"><div style="font-weight:600;color:var(--ink,#42332b);font-size:14.5px">${mins} min</div>
+          <div style="font-size:11.5px;color:var(--muted,#9a8473)">${sub}</div></div>
+      </div>`;
+    }).join('');
+    sec.style.display = '';
+  } catch (e) { /* silent — section stays hidden */ }
+}
+
 loadLastNight();
 loadHistory();
 loadAnalysis();
-onResume(() => { loadLastNight(); loadHistory(); loadAnalysis(); });
+loadRest();
+onResume(() => { loadLastNight(); loadHistory(); loadAnalysis(); loadRest(); });
 </script>
 </body>
 </html>

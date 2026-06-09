@@ -1,462 +1,851 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Neeve · Calendar</title>
+<title>Neeve — clinical dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;450;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#f4eadc; --card:#fbf6ee; --ink:#42332b; --ink-soft:#6b574a; --muted:#9a8473;
-    --clay:#bb6147; --sage:#6f7551; --plum:#6b4f63; --gold:#c08a3e; --line:#e6d8c4; --line-soft:#efe4d2;
+    --clay:#bb6147; --clay-soft:#d29a82; --sage:#6f7551; --gold:#e9cda2; --plum:#6b4f63;
+    --line:#e6d8c4; --line-soft:#efe4d2; --good:#6f8a5e; --high:#bb6147;
+    --sidebar:#ece0cf;
   }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Hanken Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
-  .wrap{max-width:1180px;margin:0 auto;padding:26px 22px 60px;}
-  /* embedded inside a dashboard panel */
-  html.embed body{background:transparent;}
-  html.embed .wrap{padding:2px 2px 20px;max-width:none;}
-  html.embed h1, html.embed .sub{display:none;}
-  html.embed .card{margin-top:0;border:0;box-shadow:none;background:transparent;padding:0;}
-  h1{font-family:"Fraunces",serif;font-weight:500;font-size:26px;margin:0;}
-  .sub{color:var(--muted);font-size:13px;margin-top:2px;}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin-top:18px;box-shadow:0 1px 0 rgba(0,0,0,.02);}
-  /* calendar */
-  .cal-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
-  .cal-head h2{font-family:"Fraunces",serif;font-weight:500;font-size:21px;margin:0;min-width:172px;}
-  .cal-nav{display:flex;gap:8px;}
-  .cal-nav button{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:11px;color:var(--clay);font-size:15px;cursor:pointer;line-height:1;}
-  .cal-nav button:hover{background:#fbf3ea;}
-  .cal-cap{margin-left:auto;color:var(--muted);font-size:13px;}
-  .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:8px;}
-  .dow span{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding-left:2px;}
-  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
-  .cell{position:relative;min-height:96px;border:1px solid var(--line-soft);border-radius:13px;background:#fcf8f1;padding:8px 9px;}
-  .cell.out{background:#f4eee2;}
-  .cell.out .dn{color:#c8b9a3;}
-  .cell.today{border-color:var(--clay);box-shadow:0 0 0 1px var(--clay);}
-  .dn{font-size:13px;color:var(--ink-soft);font-weight:600;}
-  .cell.out .mk,.cell.out .band{opacity:.45;}
-  .ck{position:absolute;top:9px;right:9px;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--sage);}
-  .ck.done{background:var(--sage);}
-  .mk{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px;align-items:center;}
-  .chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;letter-spacing:.01em;padding:2px 7px 2px 6px;border-radius:999px;line-height:1.5;white-space:nowrap;}
-  .chip svg{display:block;flex:none;}
-  .mk{gap:7px !important;}
-  .sym{display:inline-flex;align-items:center;gap:2px;}
-  .sym svg{display:block;}
-  .symv{font-size:11.5px;font-weight:700;line-height:1;}
-  .band{position:absolute;left:9px;right:9px;bottom:8px;height:5px;border-radius:3px;}
-  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);align-items:center;}
-  .legend .li{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-soft);}
-  .lchip{cursor:pointer;transition:.12s;}
-  .lchip.off{opacity:.32;}
-  .legend-hint{font-size:11.5px;color:var(--muted);width:100%;margin-bottom:2px;}
-  .cell.faded{opacity:.32;}
-  .note{color:var(--muted);font-size:12px;margin-top:14px;line-height:1.5;}
-  /* level switch */
-  .switch{display:inline-flex;background:#f1e7d8;border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px;}
-  .switch button{border:0;background:none;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);padding:5px 13px;border-radius:8px;cursor:pointer;}
-  .switch button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06);}
-  /* year view: 12 mini-months */
-  .year{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
-  .mini{border:1px solid var(--line-soft);border-radius:12px;padding:11px 11px 9px;background:#fcf8f1;cursor:pointer;transition:.12s;}
-  .mini:hover{background:#fbf3ea;border-color:var(--line);}
-  .mini h3{font-family:"Fraunces",serif;font-weight:500;font-size:14px;margin:0 0 7px;color:var(--ink);}
-  .mini .mg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-  .mini .md{aspect-ratio:1;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8.5px;color:#b9a890;position:relative;}
-  .mini .md.has{font-weight:700;color:#fff;}
-  .mini .md .pip{position:absolute;bottom:1px;width:4px;height:4px;border-radius:50%;}
-  .mini .cnt{font-size:10.5px;color:var(--muted);margin-top:7px;}
-  /* day view */
-  .day-detail h2{font-family:"Fraunces",serif;font-weight:500;font-size:22px;margin:0 0 3px;}
-  .day-sub{color:var(--muted);font-size:13px;margin-bottom:16px;}
-  .ev-list{display:flex;flex-direction:column;gap:9px;}
-  .ev{display:flex;flex-direction:column;border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;background:#fcf8f1;}
-  .ev-top{display:flex;align-items:center;gap:11px;}
-  .ev-top svg{flex:none;}
-  .ev .ev-t{font-size:14px;color:var(--ink);font-weight:600;}
-  .ev .ev-d{font-size:12.5px;color:var(--muted);}
-  .ev-why{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--ink-soft);line-height:1.55;}
-  .ev-cite{color:var(--muted);font-size:10.5px;}
-  .ev-cite .ref{color:var(--clay);font-weight:700;cursor:pointer;border-bottom:1px dotted var(--clay);}
-  .ev-cite .ref:hover{background:rgba(187,97,71,.08);}
-  .quote{margin-top:8px;border-left:3px solid var(--gold);background:rgba(233,205,162,.16);border-radius:0 8px 8px 0;padding:9px 13px;}
-  .q-text{font-size:12.5px;color:var(--ink);font-style:italic;line-height:1.5;margin:0 0 5px;}
-  .q-src{font-size:10.5px;color:var(--muted);margin:0;}
-  .day-empty{color:var(--muted);font-size:13.5px;padding:18px 2px;}
-  .d-sec{margin-top:22px;}
-  .d-sec:first-child{margin-top:4px;}
-  .d-sec h4{font-family:"Fraunces",serif;font-weight:500;font-size:15px;color:var(--ink);margin:0 0 10px;}
-  .d-stats{display:flex;gap:18px;align-items:baseline;margin-top:6px;font-size:13px;color:var(--ink-soft);}
-  .d-stats b{font-size:17px;color:var(--ink);font-family:"Fraunces",serif;}
-  .d-stats .muted{margin-left:auto;font-size:11.5px;}
-  .v-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;}
-  .v-card{border:1px solid var(--line-soft);border-radius:12px;background:#fcf8f1;padding:11px 12px 9px;}
-  .v-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px;}
-  .v-l{font-size:12px;color:var(--ink-soft);font-weight:600;}
-  .v-avg{font-family:"Fraunces",serif;font-size:18px;color:var(--ink);}
-  .v-avg small{font-size:10.5px;color:var(--muted);margin-left:2px;font-family:"Hanken Grotesk";}
-  .v-range{font-size:10.5px;color:var(--muted);margin-top:3px;}
-  .d-cond{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:2px 22px;}
-  .d-cond > div{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:13px;}
-  .ck-k{color:var(--ink-soft);} .ck-v{color:var(--ink);font-weight:600;}
-  .d-res{border:1px solid var(--line-soft);border-left:3px solid var(--sage);border-radius:0 11px 11px 0;background:#fcf8f1;padding:11px 14px;margin-bottom:9px;}
-  .d-res-h{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
-  .d-res-h svg{flex:none;}
-  .d-res-l{font-weight:700;font-size:13px;color:var(--ink);}
-  .d-res p{font-size:13px;color:var(--ink-soft);line-height:1.5;margin:0 0 5px;}
-  .d-res-r{font-size:10.5px;color:var(--muted);}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Hanken Grotesk",system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;font-size:14px;}
+  h1,h2,h3{font-family:"Fraunces",serif;font-weight:500;letter-spacing:-.01em;margin:0;}
+  .serif{font-family:"Fraunces",serif;} .num{font-family:"Fraunces",serif;font-weight:500;}
+  .muted{color:var(--muted);} .soft{color:var(--ink-soft);}
+  .pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:11px;border:1px solid;}
+  .pill.lo{color:#8a7a6e;border-color:#cdbfab;} .pill.md{color:#9a6a2a;border-color:#d8b27a;} .pill.hi{color:#5c7a52;border-color:#a6bf8e;}
+  .drift{font-size:12px;font-weight:600;} .up{color:var(--high);} .dn{color:var(--good);} .flat{color:var(--muted);}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* ── sidebar ── */
+  .sidebar{width:236px;flex:none;background:var(--sidebar);border-right:1px solid var(--line);
+    padding:20px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+  .brand{display:flex;align-items:center;gap:9px;padding:0 6px 16px;}
+  .mark{width:24px;height:24px;border-radius:50%;border:2px solid var(--clay);position:relative;flex:none;}
+  .mark::after{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:var(--gold);right:-1px;top:50%;transform:translateY(-50%);}
+  .brand b{font-family:"Fraunces",serif;font-size:18px;font-weight:500;}
+  .pt-card{background:rgba(255,255,255,.5);border:1px solid var(--line);border-radius:13px;padding:12px 13px;margin-bottom:16px;}
+  .pt-card .nm{font-family:"Fraunces",serif;font-size:18px;}
+  .pt-card .mt{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  nav{display:flex;flex-direction:column;gap:2px;}
+  nav .lab{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 10px 5px;}
+  nav button{display:flex;align-items:center;gap:11px;font-family:inherit;font-size:14px;font-weight:500;
+    color:var(--ink-soft);background:none;border:0;border-radius:10px;padding:9px 11px;cursor:pointer;text-align:left;width:100%;transition:.12s;}
+  nav button:hover{background:rgba(255,255,255,.45);}
+  nav button.on{background:var(--ink);color:var(--paper);}
+  nav button .i{display:none;} /* no emojis/icon glyphs — text-only nav */
+  .side-foot{margin-top:auto;padding-top:14px;font-size:11.5px;color:var(--muted);line-height:1.5;}
+  .side-foot .acc{display:flex;align-items:center;gap:7px;color:var(--ink-soft);margin-bottom:9px;}
+  .gdot{width:7px;height:7px;border-radius:50%;background:var(--good);flex:none;}
+
+  /* ── main ── */
+  .main{flex:1;min-width:0;}
+  .topbar{position:sticky;top:0;z-index:10;background:rgba(244,234,220,.9);backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);padding:16px 30px;display:flex;align-items:center;gap:14px;}
+  .topbar h1{font-size:23px;} .topbar .sub{font-size:12.5px;color:var(--muted);}
+  .topbar .right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .tag{font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--sage);background:rgba(111,117,81,.13);padding:4px 11px;border-radius:20px;text-transform:uppercase;}
+  .range{display:inline-flex;gap:4px;background:var(--line-soft);border-radius:20px;padding:3px;}
+  .range button{font-family:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);background:transparent;border:0;border-radius:16px;padding:5px 13px;cursor:pointer;}
+  .range button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(66,51,43,.1);}
+
+  .content{padding:24px 30px 60px;max-width:1080px;}
+  .panel{display:none;} .panel.on{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .frame{padding:13px 16px;background:var(--card);border:1px solid var(--line);border-radius:13px;
+    font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:20px;}
+  .frame b{color:var(--ink);}
+
+  .grid{display:grid;gap:16px;}
+  .g4{grid-template-columns:repeat(4,1fr);} .g3{grid-template-columns:repeat(3,1fr);} .g2{grid-template-columns:1fr 1fr;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;}
+  .card.tap{cursor:pointer;transition:.12s;} .card.tap:hover{border-color:var(--clay-soft);}
+  .stat .k{font-size:12.5px;color:var(--ink-soft);font-weight:600;}
+  .stat .n{font-family:"Fraunces",serif;font-size:32px;font-weight:500;line-height:1;margin:8px 0 4px;}
+  .stat .n .u{font-size:14px;color:var(--muted);}
+  .stat .b{font-size:12px;color:var(--muted);}
+  .ch-h{display:flex;align-items:baseline;margin-bottom:6px;} .ch-h h3{font-size:16px;} .ch-h .note{font-size:12px;color:var(--muted);margin-left:auto;}
+  .sect-h{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:26px 0 12px;}
+
+  .finding{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line);} .finding:last-child{border-bottom:0;}
+  .finding .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--clay);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px;}
+  .finding .t{font-size:15px;font-weight:600;margin:0 0 4px;} .finding .d{font-size:13px;color:var(--ink-soft);margin:0 0 7px;}
+
+  .callout{border-left:3px solid var(--clay-soft);background:rgba(187,97,71,.06);padding:11px 15px;border-radius:0 10px 10px 0;font-size:13px;color:var(--ink-soft);margin:14px 0;}
+  .callout b{color:var(--ink);}
+  table.kv{width:100%;border-collapse:collapse;} table.kv td{padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;} table.kv tr:last-child td{border-bottom:0;}
+  table.kv td:last-child{text-align:right;font-weight:600;} .hiv{color:var(--high);}
+
+  .night{display:flex;align-items:center;gap:13px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;} .night:last-child{border-bottom:0;} .night:hover{opacity:.7;}
+  .nd{flex:none;width:30px;text-align:center;} .nd .d{font-family:"Fraunces",serif;font-size:19px;line-height:1;} .nd .w{font-size:10.5px;color:var(--muted);}
+  .bar{flex:1;height:12px;border-radius:6px;overflow:hidden;display:flex;background:var(--line-soft);} .bar i{display:block;height:100%;}
+  .bar-wrap{flex:1;height:12px;border-radius:6px;background:rgba(230,216,196,.5);overflow:hidden;}
+  .bar-wrap .bar{flex:none;}
+  .b-deep{background:var(--plum);} .b-light{background:var(--clay-soft);} .b-rem{background:var(--gold);}
+  .nh{flex:none;font-family:"Fraunces",serif;font-size:14px;width:52px;text-align:right;}
+  .key{display:flex;gap:16px;font-size:12px;color:var(--ink-soft);margin-top:12px;} .key i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;}
+
+  .env td:first-child{font-weight:600;width:150px;}
+  .q{padding:13px 0;border-bottom:1px solid var(--line);} .q:last-child{border-bottom:0;}
+  .q .ask{font-size:14.5px;font-weight:600;}
+  .q .ans{margin-top:8px;font-size:13.5px;color:var(--ink-soft);background:var(--paper);border:1px dashed var(--line);border-radius:10px;padding:9px 12px;font-style:italic;}
+  .q .ans.filled{font-style:normal;border-style:solid;background:#fff;} .q .by{font-size:11.5px;color:var(--muted);margin-top:6px;}
+  .notebox{background:var(--paper);border:1px dashed var(--line);border-radius:12px;padding:18px;font-size:13.5px;color:var(--muted);text-align:center;} .notebox b{color:var(--ink-soft);}
+  .seg{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0;} .seg .s{font-size:12px;font-weight:600;padding:4px 11px;border-radius:20px;background:rgba(187,97,71,.13);color:var(--high);}
+  .backbtn{font-family:inherit;font-size:13px;font-weight:600;color:var(--clay);background:none;border:0;cursor:pointer;padding:0;margin-bottom:6px;}
+
+  /* ── insight cards ── */
+  .insight{margin-bottom:16px;}
+  .insight .ih{display:flex;align-items:center;gap:10px;margin-bottom:9px;flex-wrap:wrap;}
+  .insight .ib{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--clay);}
+  .insight .ib.val{color:var(--sage);}
+  .insight .it{font-size:20px;line-height:1.22;margin-bottom:7px;}
+  .insight .id{font-size:14px;color:var(--ink-soft);margin:0 0 15px;max-width:66ch;}
+  .insight .ev{display:flex;gap:22px;align-items:center;}
+  .insight .ev-c{flex:none;width:300px;}
+  .insight .ev-x{font-size:10.5px;color:var(--muted);text-align:center;margin-top:1px;}
+  .insight .ev-t{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;}
+  .insight .raise{font-size:13.5px;color:var(--ink);background:rgba(111,117,81,.09);border-left:3px solid var(--sage);padding:11px 14px;border-radius:0 10px 10px 0;}
+  .insight.valid{background:linear-gradient(150deg,#fbf6ee,#f5ebdd);}
+  .ilink{font-family:inherit;font-size:13px;font-weight:600;color:var(--clay);background:none;border:0;cursor:pointer;padding:0;margin-top:12px;}
+  /* research / evidence card */
+  .research{background:linear-gradient(150deg,#fbf6ee,#f3ead9);}
+  .research .rlab{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);margin:0 0 9px;}
+  .research p{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin:0 0 9px;}
+  .research b{color:var(--ink);}
+  .research sup{color:var(--clay);font-weight:700;font-size:9px;}
+  .research .refs{margin-top:11px;padding-top:11px;border-top:1px solid var(--line);}
+  .research .refs p{font-size:10.5px;color:var(--muted);margin:0 0 4px;line-height:1.4;}
+  .surfaced{border-left:3px solid var(--sage);background:rgba(111,117,81,.08);padding:12px 15px;border-radius:0 10px 10px 0;font-size:13.5px;color:var(--ink);margin:2px 0 14px;}
+  .surfaced b{color:var(--ink);}
+  .rest-row{display:flex;align-items:center;gap:14px;padding:8px 0;}
+  .rest-when{min-width:120px;display:flex;flex-direction:column;}
+  .rest-when b{font-size:14px;color:var(--ink);} .rest-when span{font-size:12px;color:var(--muted);}
+  .rest-bar{flex:1;height:8px;border-radius:6px;background:#efe4d2;overflow:hidden;}
+  .rest-bar i{display:block;height:100%;border-radius:6px;background:var(--sage);}
+  .rest-meta{min-width:150px;text-align:right;display:flex;flex-direction:column;}
+  .rest-meta b{font-size:14px;color:var(--ink);} .rest-meta span{font-size:11.5px;color:var(--muted);}
+  /* mobile menu drawer + on-page patient header */
+  .hamb{display:none;flex-direction:column;gap:4px;background:none;border:0;cursor:pointer;padding:7px 4px;flex:none;margin-right:2px;}
+  .hamb span{display:block;width:21px;height:2px;background:var(--ink);border-radius:2px;}
+  .mob-pt{display:none;}
+  .nav-ov{position:fixed;inset:0;background:rgba(40,30,24,.42);z-index:45;opacity:0;visibility:hidden;transition:.2s;}
+  .nav-ov.on{opacity:1;visibility:visible;}
+  /* compact migraine calendar — small cells, clear centred markers */
+  .cal-nav{display:flex;align-items:center;gap:8px;margin:2px 0 12px;}
+  .cal-nav button{font-family:inherit;font-size:17px;line-height:1;color:var(--clay);background:var(--card);border:1px solid var(--line);border-radius:8px;width:30px;height:30px;cursor:pointer;padding:0;}
+  .cal-nav button:hover{border-color:var(--clay-soft);}
+  .cal-nav #cal-label{font-family:"Fraunces",serif;font-size:16px;font-weight:500;min-width:124px;text-align:center;}
+  .cal-nav .today{margin-left:auto;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--clay);background:none;border:0;width:auto;}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px;}
+  .cal-h{font-size:10px;font-weight:600;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.04em;padding-bottom:2px;}
+  .cal-d{height:72px;border-radius:9px;background:var(--line-soft);position:relative;}
+  .cal-d.pm{background:rgba(107,79,99,.14);}
+  .cal-d.other{background:rgba(230,216,196,.22);}
+  .cal-d.other .dn{opacity:.4;}
+  .cal-d.other .mk-hd{opacity:.55;}
+  .cal-d .dn{position:absolute;top:5px;left:7px;font-size:10px;color:var(--muted);line-height:1;}
+  .cal-ctr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .mk-hd{width:16px;height:16px;border-radius:50%;}
+  .mk-hd.aura{box-shadow:0 0 0 1.5px var(--card),0 0 0 3px var(--gold);}
+  .mk-x{position:absolute;top:2px;right:2px;}
+  .mk-dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:var(--sage);}
+  .cal-leg{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:11.5px;color:var(--ink-soft);margin-top:14px;align-items:center;}
+  .cal-leg span{display:inline-flex;align-items:center;gap:6px;}
+  .lg-hd{width:13px;height:13px;border-radius:50%;background:var(--clay);}
+  .lg-au{width:13px;height:13px;border-radius:50%;background:var(--clay-soft);box-shadow:0 0 0 1.5px var(--card),0 0 0 3px var(--gold);}
+  .lg-dot{width:6px;height:6px;border-radius:50%;background:var(--sage);}
+  .lg-pm{width:13px;height:13px;border-radius:4px;background:rgba(107,79,99,.18);}
+  @media(max-width:820px){
+    .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:transform .28s cubic-bezier(.32,.72,0,1);z-index:50;box-shadow:3px 0 22px rgba(40,30,24,.2);}
+    .sidebar.open{transform:translateX(0);}
+    .hamb{display:flex;}
+    .content{padding:16px;} .topbar{padding:12px 16px;}
+    .topbar .right{display:none;} .topbar h1{font-size:19px;}
+    .mob-pt{display:block;margin:0 0 16px;padding:13px 15px;background:var(--card);border:1px solid var(--line);border-radius:14px;}
+    .mob-pt .nm{font-family:"Fraunces",serif;font-size:20px;font-weight:500;}
+    .mob-pt .cd{font-size:12.5px;color:var(--clay);font-weight:600;margin-top:1px;}
+    .mob-pt .pr{font-size:12px;color:var(--muted);margin-top:1px;}
+    .g4{grid-template-columns:1fr 1fr;} .g3,.g2{grid-template-columns:1fr;}
+    .insight .ev{flex-direction:column;align-items:stretch;} .insight .ev-c{width:100%;}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>Calendar</h1>
-  <div class="sub">Everything tracked, one month at a glance — each day's markers from the real record.</div>
-  <div class="card">
-    <div class="cal-head">
-      <div class="cal-nav"><button id="prev" aria-label="previous">‹</button><button id="next" aria-label="next">›</button></div>
-      <h2 id="cal-title">June 2026</h2>
-      <div class="switch" id="cal-switch">
-        <button data-lvl="year">Year</button><button data-lvl="month" class="on">Month</button><button data-lvl="day">Day</button>
-      </div>
-      <span class="cal-cap" id="cal-cap"></span>
+<div class="app">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="brand"><span class="mark"></span><b>Neeve</b></div>
+    <div class="pt-card"><div class="nm">Francesca L</div><div class="mt" style="color:var(--clay);font-weight:600">POTS · migraine · multi-system</div><div class="mt">9 May – 9 Jun 2026 · 30 days</div></div>
+    <nav id="nav">
+      <button class="on" data-p="overview"><span class="i">✦</span> Insights</button>
+      <button data-p="calendar"><span class="i">▦</span> Calendar</button>
+      <div class="lab">Objective</div>
+      <button data-p="vitals"><span class="i">❤</span> Vitals</button>
+      <button data-p="sleep"><span class="i">🌙</span> Sleep</button>
+      <button data-p="ortho"><span class="i">↑</span> Orthostatic</button>
+      <div class="lab">Reported</div>
+      <button data-p="migraine"><span class="i">◐</span> Migraine</button>
+      <button data-p="symptoms"><span class="i">◔</span> Symptoms</button>
+      <button data-p="cycle"><span class="i">○</span> Cycle</button>
+      <button data-p="patterns"><span class="i">≈</span> Patterns</button>
+      <div class="lab">Conversation</div>
+      <button data-p="days"><span class="i">◷</span> Days to discuss</button>
+      <button data-p="questions"><span class="i">?</span> Questions</button>
+      <button data-p="notes"><span class="i">✎</span> Notes</button>
+    </nav>
+    <div class="side-foot">
+      <div class="acc"><span class="gdot"></span> Shared · expires in 6 days</div>
+      Describes patterns to support this conversation. Does not diagnose.
     </div>
-    <div class="dow" id="cal-dow"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
-    <div class="grid" id="cal-grid"></div>
-    <div class="legend" id="cal-legend"></div>
-    <p class="note">Markers come from the actual record — ring-flagged events, logged check-ins, rest, and cycle entries. Empty days are days with nothing recorded, not days estimated. The ring sees what it captured; the rest is what was logged.</p>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+    <div class="topbar">
+      <button class="hamb" onclick="toggleNav()" aria-label="Menu"><span></span><span></span><span></span></button>
+      <div><h1 id="pt-title">Insights</h1><div class="sub" id="pt-sub">what the data suggests · 30 days · describes, does not diagnose</div></div>
+      <div class="right">
+        <span class="range"><button onclick="setRange(7,this)">7d</button><button class="on" onclick="setRange(30,this)">30d</button><button onclick="setRange(90,this)">90d</button></span>
+        <span class="tag">shared view</span>
+      </div>
+    </div>
+    <div class="content">
+      <div class="mob-pt"><div class="nm">Francesca L</div><div class="cd">POTS · migraine · multi-system</div><div class="pr">9 May – 9 Jun 2026 · 30 days</div></div>
+
+      <!-- INSIGHTS (insight-led overview) -->
+      <section class="panel on" id="p-overview">
+        <div class="frame">Synthesised from 30 days of self-reported and wearable data. Each is a <b>pattern, not
+          a conclusion</b> — shown with its evidence and confidence. Neeve describes; it does not diagnose.</div>
+
+        <!-- 1 — POTS: standing jumps + dizziness cluster (her headline) -->
+        <div class="card insight">
+          <div class="ih"><span class="ib">Pattern · highest relevance</span><span class="pill md">6 days · moderate confidence</span></div>
+          <h2 class="it">Standing brings on her dizziness — and the ring sees it at the same time</h2>
+          <p class="id">On 6 days the ring recorded sustained heart-rate jumps of ≥30 bpm within ~5 min of standing
+            (median +44 bpm, largest +68). Those same days are when she reported moderate-to-rough dizziness
+            (shown as dots below). The objective and reported signals line up.</p>
+          <div class="ev"><div class="ev-c"><svg id="ch-os" width="100%" height="100" viewBox="0 0 480 100"></svg>
+            <div class="ev-x">30 days · bars = standing jump · dots = dizziness reported</div></div>
+            <div class="ev-t"><div class="raise"><b>What this raises:</b> a consistent orthostatic pattern. An
+              active-stand or tilt test would confirm — these support a POTS assessment but are candidate events, not a stand test.</div>
+            <button class="ilink" onclick="go('ortho')">See the orthostatic data →</button></div></div>
+        </div>
+
+        <!-- 2 — migraine: pressure + cycle timing -->
+        <div class="card insight">
+          <div class="ih"><span class="ib">Pattern · reported</span><span class="pill md">8 headache days · moderate confidence</span></div>
+          <h2 class="it">Her migraines cluster on falling-pressure days and before her period</h2>
+          <p class="id">8 headache days this period (intensity up to 8/10). They lined up both with drops in barometric
+            pressure and with the days before her period — two recognised migraine triggers showing together.</p>
+          <div class="ev"><div class="ev-c"><svg id="ch-mig" width="100%" height="100" viewBox="0 0 480 100"></svg>
+            <div class="ev-x">headache intensity · marks = pressure drop · shaded = pre-menstrual window</div></div>
+            <div class="ev-t"><div class="raise"><b>What this raises:</b> a barometric and a hormonal (menstrual-migraine)
+              pattern worth distinguishing — they may need different management. Triggers to watch, not established cause.</div>
+            <button class="ilink" onclick="go('migraine')">See the migraine data →</button></div></div>
+        </div>
+
+        <!-- 3 — sleep fragmentation -->
+        <div class="card insight">
+          <div class="ih"><span class="ib">Pattern · objective</span><span class="pill md">12 nights · moderate confidence</span></div>
+          <h2 class="it">Her sleep swings wildly night to night — fragmentation, not simply short sleep</h2>
+          <p class="id">Nights ranged 3.1–9.8h, with frequent awakenings — a wide, inconsistent swing from one night to the
+            next. The variability and fragmentation themselves are the signal, not just the occasional short night.</p>
+          <div class="ev"><div class="ev-c"><svg id="ch-sv" width="100%" height="100" viewBox="0 0 480 100"></svg>
+            <div class="ev-x">hours per night across the period</div></div>
+            <div class="ev-t"><div class="raise"><b>What this raises:</b> fragmented, highly variable sleep — common in
+              dysautonomia, and worth distinguishing from insomnia.</div>
+            <button class="ilink" onclick="go('sleep')">See the sleep data →</button></div></div>
+        </div>
+
+        <!-- 4 — validation: felt meets measured -->
+        <div class="card insight valid">
+          <div class="ih"><span class="ib val">What she felt · what the ring saw</span></div>
+          <h2 class="it">On her worst day, the data matched what she described</h2>
+          <p class="id">On 14 May she wrote <i>"the room spun every time I stood, heart pounding, had to lie down all afternoon"</i>
+            — and that day the ring recorded three standing jumps (up to +68 bpm) and she rated dizziness rough. What she
+            felt and what was measured line up.</p>
+          <button class="ilink" onclick="go('day')">Open that day →</button>
+        </div>
+
+        <!-- positive noticing — not every signal is a warning -->
+        <div class="card insight valid">
+          <div class="ih"><span class="ib val">Noticed · a good thing</span></div>
+          <h2 class="it">Her body settled during the appointment meant to help</h2>
+          <p class="id">Across her 12:00–1:40pm appointment, her heart rate eased from the high 80s down to about <b>65 bpm</b> —
+            its calmest of the afternoon — and her <b>breathing slowed with it</b>, holding there for most of the session before rising again as it ended.
+            Her HRV, though, <b>stayed at its usual low level rather than lifting</b> — the rise you'd hope to see in deep relaxation was muted. So the settling
+            was real and clear in heart rate and breathing; the parasympathetic "lift" was not. The thing that was meant to help, helped — and the ring saw both sides of it.</p>
+          <svg id="ch-relax" width="100%" viewBox="0 0 600 150" style="margin-top:4px"></svg>
+        </div>
+      </section>
+
+      <!-- CALENDAR -->
+      <section class="panel" id="p-calendar">
+        <iframe id="cal-frame" src="neeve-calendar.html?embed=1" title="Calendar" style="width:100%;border:0;min-height:760px;background:transparent" scrolling="no"></iframe>
+        <p class="soft" style="font-size:12.5px;margin-top:6px">The whole record, one month at a glance — tap a day for its detail, or a marker to see its pattern across time. The same calendar appears on each signal page, scoped to that metric.</p>
+      </section>
+
+      <!-- VITALS -->
+      <section class="panel" id="p-vitals">
+        <div class="grid g4">
+          <div class="card stat"><div class="k">HRV (overnight)</div><div class="n">31<span class="u">ms</span></div><div class="b">at the lower end · 14 nights</div></div>
+          <div class="card stat"><div class="k">Resting heart rate</div><div class="n">72<span class="u">bpm</span></div><div class="b">a little high for rest · 14 nights</div></div>
+          <div class="card stat"><div class="k">Blood oxygen</div><div class="n">97<span class="u">%</span></div><div class="b">steady · 14 nights</div></div>
+          <div class="card stat"><div class="k">Respiratory rate</div><div class="n">13<span class="u">/min</span></div><div class="b">steady overnight · 8 nights</div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>Overnight HRV</h3><span class="note">ms · band = her usual range · 14 nights captured</span></div>
+          <svg id="ch-hrv2" width="100%" viewBox="0 0 760 170" style="height:auto"></svg>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>Resting heart rate</h3><span class="note">bpm · overnight low · 14 nights captured</span></div>
+          <svg id="ch-rhr" width="100%" viewBox="0 0 760 160" style="height:auto"></svg>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>Overnight respiratory rate</h3><span class="note">breaths/min · band = her usual range · 8 nights captured</span></div>
+          <svg id="ch-resp" width="100%" viewBox="0 0 760 160" style="height:auto"></svg>
+        </div>
+        <div class="callout"><b>What this shows:</b> HRV sitting at the low end while resting heart rate runs a little high — a
+          reduced heart-rate-variability pattern often seen alongside dysautonomia. Both are relative to her own usual range, not a population norm.</div>
+        <div class="callout"><b>Respiratory rate</b> is one of her <em>steady</em> signals — ~13/min asleep, ~17 awake, both within a normal range. Its value here is as a sensitive marker of arousal: it slowed in lockstep with her heart rate during the afternoon settle (see Insights), which is the clean confirmation a settling response was real and not noise.</div>
+        <div class="card research">
+          <p class="rlab">What the research says</p>
+          <p>Breathing rate is pulled from the same finger PPG waveform as heart rate. The largest systematic comparison of breathing-rate algorithms found the best PPG method good to <b>±6 breaths/min</b> on a single window against a reference (95% limits −5.1 to 7.2, bias 1.0).<sup>1</sup></p>
+          <p>Finger reflective PPG is the most accurate single site for it — resting error ~0.1–0.6 breaths/min — but it <b>degrades sharply with movement</b> (to ~6.5 while walking).<sup>2</sup></p>
+          <p class="surfaced">So Neeve treats respiratory rate as a <b>resting / overnight within-person trend</b>, never an absolute clinical breath count — which is exactly how it's used above. The overnight figures are stable, low-movement nights; daytime is read only as a relative rise/fall around her own baseline.</p>
+          <div class="refs">
+            <p><sup>1</sup> Charlton PH, et al. An assessment of algorithms to estimate respiratory rate from the electrocardiogram and photoplethysmogram. <i>Physiol Meas</i>. 2016;37(4):610–26.</p>
+            <p><sup>2</sup> Longmore SK, et al. A comparison of reflective PPG for detection of HR, SpO₂ and respiration rate at various anatomical locations. <i>Sensors</i>. 2019;19(8):1874.</p>
+          </div>
+        </div>
+        <div class="callout"><b>Blood pressure:</b> shown only from a calibrated cuff — the ring's optical estimate is excluded. None logged this period.</div>
+      </section>
+
+      <!-- SLEEP -->
+      <section class="panel" id="p-sleep">
+        <div class="grid g4">
+          <div class="card stat"><div class="k">Avg duration</div><div class="n">7.4<span class="u">h</span></div><div class="b">over 12 captured nights · 3.1–9.8h</div></div>
+          <div class="card stat"><div class="k">Night-to-night swing</div><div class="n">6.7<span class="u">h</span></div><div class="b">highly variable</div></div>
+          <div class="card stat"><div class="k">Awakenings</div><div class="n">3.4<span class="u">/night</span></div><div class="b">fragmented</div></div>
+          <div class="card stat"><div class="k">Quiet periods</div><div class="n">1</div><div class="b">daytime · newly tracked</div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>When she slept, night to night</h3><span class="note">bed → wake · last 12 nights · | = an awakening</span></div>
+          <svg id="ch-timing" width="100%" viewBox="0 0 720 280"></svg>
+          <p class="soft" style="font-size:12.5px;margin-top:8px">Bedtime and wake time swing widely — an irregular sleep–wake schedule, not just variable duration.</p>
+        </div>
+        <div class="callout"><b>What this shows:</b> sleep that's both fragmented (frequent awakenings) and irregular in timing —
+          a pattern common in dysautonomia and worth distinguishing from primary insomnia.</div>
+        <div class="card">
+          <div class="ch-h"><h3>Nightly duration & stage mix</h3><span class="note">hours · deep / light / REM 18% · 62% · 20%</span></div>
+          <svg id="ch-sleep2" width="100%" height="170" viewBox="0 0 720 170"></svg>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>Recent nights</h3><span class="note">click a night to open that day</span></div>
+          <div class="night" onclick="go('day')"><div class="nd"><div class="d">9</div><div class="w">Tue</div></div><div class="bar-wrap"><div class="bar" style="width:77%"><i class="b-deep" style="width:16%"></i><i class="b-light" style="width:64%"></i><i class="b-rem" style="width:20%"></i></div></div><div class="nh">7h 42m</div></div>
+          <div class="night" onclick="go('day')"><div class="nd"><div class="d">8</div><div class="w">Mon</div></div><div class="bar-wrap"><div class="bar" style="width:93%"><i class="b-deep" style="width:20%"></i><i class="b-light" style="width:58%"></i><i class="b-rem" style="width:22%"></i></div></div><div class="nh">9h 18m</div></div>
+          <div class="night" onclick="go('day')"><div class="nd"><div class="d">7</div><div class="w">Sun</div></div><div class="bar-wrap"><div class="bar" style="width:45%"><i class="b-deep" style="width:9%"></i><i class="b-light" style="width:71%"></i><i class="b-rem" style="width:20%"></i></div></div><div class="nh">4h 30m</div></div>
+          <div class="night" onclick="go('day')"><div class="nd"><div class="d">6</div><div class="w">Sat</div></div><div class="bar-wrap"><div class="bar" style="width:98%"><i class="b-deep" style="width:21%"></i><i class="b-light" style="width:59%"></i><i class="b-rem" style="width:20%"></i></div></div><div class="nh">9h 48m</div></div>
+          <div class="key"><span><i class="b-deep"></i>Deep</span><span><i class="b-light"></i>Light</span><span><i class="b-rem"></i>REM</span></div>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>Daytime quiet periods</h3><span class="note">low-movement stretches with heart rate eased below her daytime usual</span></div>
+          <div class="rest-row">
+            <div class="rest-when"><b>Today</b><span>12:10 – 1:30pm</span></div>
+            <div class="rest-bar"><i style="width:62%"></i></div>
+            <div class="rest-meta"><b>80 min</b><span>HR eased to 68 · −10 from usual</span></div>
+          </div>
+          <p class="soft" style="font-size:12.5px;margin-top:10px">The ring can see the body settle — low movement, heart rate and breathing easing — but not <em>why</em>. A note (a rest, watching TV, an appointment, or a crash) gives each one its meaning. Detection began today, so this list fills in from here; it isn't reconstructed for past days.</p>
+        </div>
+        <div class="card research">
+          <p class="rlab">What the research says</p>
+          <p>Since the 2021 NICE update, <b>pacing — staying within an energy envelope — is the only recommended ME/CFS management strategy</b>; graded exercise is no longer advised.<sup>1</sup> The same "activity pacing" is the documented use of heart-rate monitoring in POTS: <i>"maintaining activity levels within the parameters of the condition… without exacerbating symptoms."</i><sup>2</sup></p>
+          <p class="surfaced">So this surface isn't about naps — it's about making the <b>envelope visible</b>: how much of the day was low-load recovery. Detection leads with <b>stillness</b> (accelerometer step count, standard accuracy); heart rate eases only confirm it, because resting HR from the ring is ±5–10 bpm on a single reading<sup>3</sup> — reliable as a 15-minute trend, not as one number.</p>
+          <div class="refs">
+            <p><sup>1</sup> Sanal-Hayes NEM, et al. A scoping review of pacing for myalgic encephalomyelitis/chronic fatigue syndrome. <i>J Transl Med</i>. 2023;21:720.</p>
+            <p><sup>2</sup> Raj SR, et al. Canadian Cardiovascular Society position statement on postural orthostatic tachycardia syndrome. <i>Can J Cardiol</i>. 2020;36(3):357–72.</p>
+            <p><sup>3</sup> Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. <i>npj Digit Med</i>. 2020;3:18.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ORTHOSTATIC -->
+      <section class="panel" id="p-ortho">
+        <div class="card">
+          <p class="soft" style="margin:0 0 16px">Sustained heart-rate jumps of ≥30 bpm within ~5 minutes during waking hours — a likely sit-to-stand response. The ring has no posture sensor, so these are candidate events captured passively, not a clinical active-stand test.</p>
+          <div class="grid g4">
+            <div class="stat"><div class="k">Standing jumps</div><div class="n">11</div><div class="b">over 6 days</div></div>
+            <div class="stat"><div class="k">Resting HR</div><div class="n">68<span class="u">bpm</span></div></div>
+            <div class="stat"><div class="k">Median jump</div><div class="n">+44<span class="u">bpm</span></div></div>
+            <div class="stat"><div class="k">Largest</div><div class="n">+68<span class="u">bpm</span></div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>A captured standing response</h3><span class="note">heart rate around one stand</span></div>
+          <svg id="ch-stand" width="100%" viewBox="0 0 600 184"></svg>
+          <p class="soft" style="font-size:12.5px;margin-top:6px">On standing, her heart rate rose ~44 bpm and stayed above the +30 bpm POTS threshold for several minutes — the shape clinicians look for in an active-stand test. One of the events the ring captured; not a formal test.</p>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>Standing jumps across the period</h3><span class="note">bpm rise, by day</span></div>
+          <svg id="ch-ortho" width="100%" height="150" viewBox="0 0 720 150"></svg>
+        </div>
+        <div class="card research">
+          <p class="rlab">What the research says</p>
+          <p>The published criterion for postural orthostatic tachycardia syndrome (POTS) is a <b>sustained heart-rate rise of ≥30 bpm within 10 minutes of standing</b>, with blood pressure not dropping — the 2015 Heart Rhythm Society Expert Consensus Statement.<sup>1</sup></p>
+          <p>Her captured standing responses (median +44 bpm, up to +68) <b>sit well above that threshold</b>, and the ring's resting heart-rate accuracy (±5–10 bpm) leaves clear margin at a 30 bpm change.<sup>2</sup></p>
+          <p>It's also a pattern that's easy to miss: in an Australian registry, people with POTS waited a mean of <b>7 years</b> to be diagnosed, and <b>64.6%</b> had their symptoms attributed to anxiety first.<sup>3</sup></p>
+          <div class="refs">
+            <p><sup>1</sup> Sheldon RS, et al. 2015 Heart Rhythm Society Expert Consensus Statement on the Diagnosis and Treatment of Postural Tachycardia Syndrome. <i>Heart Rhythm</i>. 2015;12(6):e41–63.</p>
+            <p><sup>2</sup> Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. <i>npj Digit Med</i>. 2020;3:18.</p>
+            <p><sup>3</sup> Seeley M-C, et al. Symptom burden, quality of life, and diagnostic journey of people with POTS, Australia. <i>Med J Aust</i>. 2025;223(3):159–60.</p>
+          </div>
+        </div>
+        <div class="callout"><b>What this raises:</b> a consistent orthostatic pattern that supports a POTS assessment. A formal
+          active-stand or tilt test would confirm or rule it out. One spike (&gt;+80 bpm) was excluded as likely movement — these are candidate events, not a diagnosis.</div>
+      </section>
+
+      <!-- SYMPTOMS -->
+      <!-- MIGRAINE -->
+      <section class="panel" id="p-migraine">
+        <div class="grid g3">
+          <div class="card stat"><div class="k">Headache days</div><div class="n">8<span class="u">/30</span></div></div>
+          <div class="card stat"><div class="k">Peak intensity</div><div class="n">8<span class="u">/10</span></div></div>
+          <div class="card stat"><div class="k">Days with aura</div><div class="n">3</div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>Calendar</h3><span class="note">each day's markers at a glance</span></div>
+          <div class="cal-nav">
+            <button onclick="calMove(-1)" aria-label="Previous month">‹</button>
+            <span id="cal-label">May 2026</span>
+            <button onclick="calMove(1)" aria-label="Next month">›</button>
+          </div>
+          <div class="cal" id="mig-cal"></div>
+          <div class="cal-leg">
+            <span><i class="lg-hd"></i>headache (darker = stronger)</span>
+            <span><i class="lg-au"></i>with aura</span>
+            <span><svg width="11" height="11" viewBox="0 0 8 8"><line x1="1.3" y1="1.3" x2="6.7" y2="6.7" stroke="#42332b" stroke-width="1.4"/><line x1="6.7" y1="1.3" x2="1.3" y2="6.7" stroke="#42332b" stroke-width="1.4"/></svg>pressure drop</span>
+            <span><i class="lg-dot"></i>relief medication</span>
+            <span><i class="lg-pm"></i>pre-menstrual</span>
+          </div>
+        </div>
+        <div class="callout"><b>Pattern:</b> headaches clustered both on falling-pressure days and in the pre-menstrual
+          window — two recognised triggers appearing together. Triggers to watch, not an established cause.</div>
+        <div class="card">
+          <table class="kv">
+            <tr><td>Most common reported trigger</td><td>weather change</td></tr>
+            <tr><td>Headaches in the pre-menstrual window</td><td class="hiv">4 of 8</td></tr>
+            <tr><td>Days needing to lie down</td><td>5</td></tr>
+            <tr><td>Relief medication used</td><td>6 days</td></tr>
+          </table>
+        </div>
+      </section>
+
+      <!-- SYMPTOMS -->
+      <section class="panel" id="p-symptoms">
+        <div class="grid g4">
+          <div class="card stat"><div class="k">Fatigue</div><div class="n">6.2<span class="u">/10</span></div><div class="b">avg · 18 days logged</div></div>
+          <div class="card stat"><div class="k">Brain fog</div><div class="n">5.4<span class="u">/10</span></div><div class="b">avg · 18 days logged</div></div>
+          <div class="card stat"><div class="k">Dizziness days</div><div class="n">14<span class="u">/30</span></div><div class="b">moderate+ on 8</div></div>
+          <div class="card stat"><div class="k">Mood (evening)</div><div class="n">6.1<span class="u">/10</span></div><div class="b">avg · 16 days logged</div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="ch-h"><h3>Fatigue, fog and dizziness — same days</h3><span class="note">they tend to rise together</span></div>
+          <svg id="ch-cluster" width="100%" viewBox="0 0 720 178" style="height:auto"></svg>
+          <p class="soft" style="font-size:12.5px;margin-top:6px">Each shaded band is a <b>worse day</b> — one where all three climbed together. That co-movement is the point: a multi-system pattern, not one symptom in isolation.</p>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>Dizziness, by severity</h3><span class="note">days at each level · 18 logged</span></div>
+          <svg id="ch-anx" width="100%" height="160" viewBox="0 0 560 160"></svg>
+        </div>
+        <div class="callout"><b>In her words (14 May):</b> <span style="font-style:italic">"the room spun every time I stood, heart pounding, had to lie down all afternoon."</span></div>
+      </section>
+
+      <!-- CYCLE -->
+      <section class="panel" id="p-cycle">
+        <div class="card">
+          <p class="soft" style="margin:0 0 14px">Self-reported cycle phase shown against migraine and symptom days. Timing only — Neeve does not interpret hormones.</p>
+          <div class="grid g3">
+            <div class="stat"><div class="k">Cycle length</div><div class="n">29<span class="u">days</span></div></div>
+            <div class="stat"><div class="k">Migraines pre-period</div><div class="n hiv">4<span class="u">of 8</span></div></div>
+            <div class="stat"><div class="k">Dizziness in luteal</div><div class="n">3<span class="u">days</span></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch-h"><h3>This cycle, day by day</h3><span class="note">circle = migraine · dot = dizziness</span></div>
+          <svg id="ch-cycle" width="100%" viewBox="0 0 720 132"></svg>
+          <p class="soft" style="font-size:12.5px;margin-top:8px">Her headaches and worse dizziness clustered in the luteal and pre-menstrual days — the window before her period.</p>
+        </div>
+        <div class="callout"><b>What this raises:</b> a possible menstrual-migraine pattern — over half her headaches fell
+          in the days before her period. Hormonal timing worth exploring. A pattern, not a cause.</div>
+      </section>
+
+      <!-- PATTERNS -->
+      <section class="panel" id="p-patterns">
+        <div class="card">
+          <p class="soft" style="margin:0">Each check-in is tagged with local weather, air quality and pollen. These are associations across the period — what appeared alongside what, not cause. Small samples, so read them as prompts to watch.</p>
+        </div>
+        <div class="grid g3">
+          <div class="card"><div class="ch-h"><h3>Pressure &amp; brain fog</h3><span class="pill lo">lower</span></div>
+            <svg id="ch-p1" width="100%" height="118" viewBox="0 0 300 118"></svg>
+            <p class="soft" style="font-size:12px;margin:6px 0 0">fog ran higher on falling-pressure days (4 vs 3 days)</p></div>
+          <div class="card"><div class="ch-h"><h3>Pollen &amp; fog</h3><span class="pill lo">lower</span></div>
+            <svg id="ch-p2" width="100%" height="118" viewBox="0 0 300 118"></svg>
+            <p class="soft" style="font-size:12px;margin:6px 0 0">fog higher on higher-pollen days (3 vs 3 days)</p></div>
+          <div class="card"><div class="ch-h"><h3>Air quality &amp; fatigue</h3><span class="pill lo">lower</span></div>
+            <svg id="ch-p3" width="100%" height="118" viewBox="0 0 300 118"></svg>
+            <p class="soft" style="font-size:12px;margin:6px 0 0">fatigue higher on poorer-air days (4 vs 3 days)</p></div>
+        </div>
+      </section>
+
+      <!-- DAYS -->
+      <section class="panel" id="p-days">
+        <p class="muted" style="margin:0 0 14px">The days where the most markers moved together. Any day can be opened.</p>
+        <div class="card tap" onclick="go('day')" style="margin-bottom:12px"><div class="night" style="border:0;padding:0;cursor:pointer"><div class="nd"><div class="d">2</div><div class="w">Mon</div></div>
+          <div style="flex:1"><div style="font-weight:600">Several markers elevated together</div><div class="muted" style="font-size:12.5px">anxiety 10 · stress 10 · fatigue 9 · energy 2</div></div><span class="muted" style="font-size:18px">›</span></div></div>
+        <div class="card tap" onclick="go('day')"><div class="night" style="border:0;padding:0;cursor:pointer"><div class="nd"><div class="d">5</div><div class="w">Thu</div></div>
+          <div style="flex:1"><div style="font-weight:600">Shortest night, lowest energy</div><div class="muted" style="font-size:12.5px">slept 6.3h · energy 1 · fatigue 8</div></div><span class="muted" style="font-size:18px">›</span></div></div>
+      </section>
+
+      <!-- DAY DETAIL -->
+      <section class="panel" id="p-day">
+        <button class="backbtn" onclick="go('days')">‹ Days to discuss</button>
+        <div class="row" style="display:flex;align-items:baseline;gap:12px;margin-bottom:2px"><h1 style="font-size:25px">Wednesday 14 May</h1></div>
+        <div class="seg"><span class="s">dizziness rough</span><span class="s">3 standing jumps</span><span class="s">fatigue 8</span><span class="s">migraine 6</span></div>
+        <p class="soft" style="margin:6px 0 18px">Her worst orthostatic day — repeated standing jumps and rough dizziness together. Shown side by side: what appeared alongside what.</p>
+        <div class="grid g2">
+          <div class="card">
+            <div class="ch-h"><h3>Heart rate across the day</h3></div>
+            <svg id="ch-day" width="100%" height="150" viewBox="0 0 480 150"></svg>
+            <p class="soft" style="font-size:12.5px;margin-top:8px">Three sustained standing jumps through the day (to +68 bpm), each when she stood after resting. Settled only when lying down.</p>
+          </div>
+          <div class="card">
+            <div class="ch-h"><h3>What Francesca reported</h3></div>
+            <table class="kv">
+              <tr><td>Dizziness</td><td class="hiv">rough</td></tr>
+              <tr><td>Fatigue</td><td class="hiv">8 / 10</td></tr>
+              <tr><td>Headache</td><td class="hiv">6 / 10</td></tr>
+              <tr><td>Brain fog</td><td class="hiv">7 / 10</td></tr>
+              <tr><td>Standing jumps (ring)</td><td class="hiv">3 · up to +68 bpm</td></tr>
+              <tr><td>Could do normal activities</td><td>No</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="grid g2" style="margin-top:16px">
+          <div class="card"><div class="ch-h"><h3>The night before</h3></div>
+            <div class="night" style="cursor:default;border:0;padding:6px 0"><div class="nd"><div class="d">14</div><div class="w">Wed</div></div><div class="bar"><i class="b-deep" style="width:9%"></i><i class="b-light" style="width:71%"></i><i class="b-rem" style="width:20%"></i></div><div class="nh">4h 30m</div></div></div>
+          <div class="card"><div class="ch-h"><h3>Conditions / context</h3></div>
+            <table class="kv"><tr><td>Barometric pressure</td><td>998 hPa · falling</td></tr><tr><td>Cycle phase</td><td>pre-menstrual</td></tr><tr><td>Grass pollen</td><td>moderate</td></tr></table></div>
+        </div>
+        <div class="callout"><b>In her words:</b> <span style="font-style:italic">"the room spun every time I stood, heart pounding, had to lie down all afternoon."</span></div>
+      </section>
+
+      <!-- QUESTIONS -->
+      <section class="panel" id="p-questions">
+        <div class="card">
+          <div class="q"><p class="ask">Is the gap between sleeping a full night and waking depleted worth investigating?</p>
+            <div class="ans filled">Bloods + thyroid to rule out reversible causes; revisit in 6 weeks with a sleep-quality focus.<div class="by">— Dr. M, added 9 Jun</div></div></div>
+          <div class="q"><p class="ask">Could the standing heart-rate pattern warrant an active-stand test?</p><div class="ans">Doctor can answer here →</div></div>
+          <div class="q"><p class="ask">Is the anxiety something to address alongside the physical symptoms?</p><div class="ans">Doctor can answer here →</div></div>
+        </div>
+      </section>
+
+      <!-- NOTES -->
+      <section class="panel" id="p-notes">
+        <div class="notebox"><b>A shared space for what you decide together.</b><br>The doctor can add a note here — visible to the patient, kept as <i>their</i> record of the conversation. Not a medical record, and it never changes the data.</div>
+      </section>
+
+    </div>
   </div>
 </div>
 
+<div class="nav-ov" id="nav-ov" onclick="closeNav()"></div>
 <script>
-// ── Marker vocabulary: a labelled chip per category — the word makes it
-// readable at a glance, the colour + shape reinforce it. ──
-function shapeSvg(shape,color,s){ s=s||9; const c=(s/2).toFixed(1);
-  if(shape==='tri')  return `<svg width="${s}" height="${s}"><polygon points="${c},${s*0.06} ${s},${s*0.94} 0,${s*0.94}" fill="${color}"/></svg>`;
-  if(shape==='ring') return `<svg width="${s}" height="${s}"><circle cx="${c}" cy="${c}" r="${(s/2-1.6).toFixed(1)}" fill="none" stroke="${color}" stroke-width="2"/></svg>`;
-  if(shape==='sq')   return `<svg width="${s}" height="${s}"><rect x="1" y="1" width="${s-2}" height="${s-2}" rx="2" fill="${color}"/></svg>`;
-  return `<svg width="${s}" height="${s}"><circle cx="${c}" cy="${c}" r="${(s/2-0.5).toFixed(1)}" fill="${color}"/></svg>`;
-}
-// Event-specific markers — each shows the actual event so patterns read off
-// the calendar (clustering, cyclicality). Grouped: orthostatic / vitals /
-// positive / cycle. No glyphs (SVG shapes only).
-const CATS = {
-  stand:  { chip:'stand',     legend:'Orthostatic event (heart-rate jump on standing)', dot:'#bb6147', fg:'#9a4a34', bg:'rgba(187,97,71,.13)', shape:'tri' },
-  hr:     { chip:'HR spike',  legend:'Heart-rate spike',  dot:'#c0734a', fg:'#9a4a2e', bg:'rgba(192,115,74,.14)', shape:'dot' },
-  bp:     { chip:'BP',        legend:'Blood pressure outside usual', dot:'#c08a3e', fg:'#86601f', bg:'rgba(192,138,62,.16)', shape:'dot' },
-  breath: { chip:'breathing', legend:'Breathing rate up', dot:'#caa24e', fg:'#876722', bg:'rgba(202,162,78,.17)', shape:'dot' },
-  migraine:{ chip:'migraine', legend:'Migraine', dot:'#8a4a63', fg:'#6b3a4e', bg:'rgba(138,74,99,.15)', shape:'ring' },
-  headache:{ chip:'headache', legend:'Headache (number = severity /10)', dot:'#a8553f', fg:'#8a3e2c', bg:'rgba(168,85,63,.14)', shape:'dot' },
-  dizzy:  { chip:'dizziness', legend:'Dizziness / vertigo', dot:'#9a7bb0', fg:'#634a7a', bg:'rgba(154,123,176,.16)', shape:'dot' },
-  nausea: { chip:'nausea/gut',legend:'Nausea / gut symptoms', dot:'#8a7a3f', fg:'#6b5e26', bg:'rgba(138,122,63,.16)', shape:'dot' },
-  pain:   { chip:'pain',      legend:'Pain (number = severity /10)', dot:'#9a6b4a', fg:'#7a4f34', bg:'rgba(154,107,74,.15)', shape:'dot' },
-  pem:    { chip:'PEM',       legend:'Post-exertional crash (PEM)', dot:'#9c3f3f', fg:'#7e2e2e', bg:'rgba(156,63,63,.15)', shape:'tri' },
-  lowenergy:{ chip:'low energy',legend:'Low energy / fatigue', dot:'#8a8a6a', fg:'#5e5e44', bg:'rgba(138,138,106,.18)', shape:'dot' },
-  lowmood:{ chip:'low mood',  legend:'Low mood', dot:'#6b7b8a', fg:'#465662', bg:'rgba(107,123,138,.16)', shape:'dot' },
-  med:    { chip:'medication',legend:'Took medication to help', dot:'#7d8aa0', fg:'#4d5a70', bg:'rgba(125,138,160,.16)', shape:'sq' },
-  good:   { chip:'settled',   legend:'Noticed · a good thing', dot:'#6f7551', fg:'#566042', bg:'rgba(111,117,81,.16)', shape:'ring' },
-  rest:   { chip:'rest',      legend:'Quiet / rest period', dot:'#94a06f', fg:'#5a6a4e', bg:'rgba(148,160,111,.22)', shape:'dot' },
-};
-function chip(cat, count, title, val){
-  const d=CATS[cat]; if(!d) return '';
-  const lab = d.chip + (val?` ${val}`:'') + (count>1?` ×${count}`:'');
-  return `<span class="chip" style="color:${d.fg};background:${d.bg}" title="${title||d.legend}">${shapeSvg(d.shape,d.dot)}${lab}</span>`;
-}
-// check-in (corner dot) and period (bottom band) render specially.
-const LEGEND_EXTRA = [
-  { label:'Check-in logged', html:'<span style="width:9px;height:9px;border-radius:50%;border:1.5px solid var(--sage);background:var(--sage);display:inline-block"></span>' },
-  { label:'Period (band = flow)', html:'<span style="width:18px;height:5px;border-radius:3px;background:#8f5d7e;display:inline-block"></span>' },
-];
-
-// ── Real markers, keyed by ISO date (from Supabase, Fran). ──
-// cat markers + checkin(slots) + period{flow,pain,phase}
-let MARKERS = {
-  '2026-05-31': { checkin:['evening'], period:{ flow:'light' },
-    cats:[{c:'migraine',t:'Migraine logged'},{c:'headache',v:'5',t:'Headache 5/10'},{c:'dizzy',t:'Dizziness — bad vertigo'},{c:'nausea',t:'Nausea / gut — strong, bloating'},{c:'pain',v:'3',t:'Pain 3/10 — lower back, throbbing'},{c:'lowenergy',t:'Energy 3/10'},{c:'med',t:'Took medication — it helped'}] },
-  '2026-06-01': { cats:[{c:'bp',t:'BP outside usual range'}] },
-  '2026-06-03': { cats:[{c:'bp',t:'BP outside usual'},{c:'breath',t:'Breathing rate up'}] },
-  '2026-06-04': { checkin:['morning'], cats:[{c:'pem',t:'PEM — heavy'},{c:'hr',t:'HR spike'},{c:'breath',t:'Breathing rate up'},{c:'breath',t:'Breathing rate up'},{c:'headache',t:'Morning headache — mild'},{c:'pain',v:'4',t:'Morning pain 4/10 — lower back'}] },
-  '2026-06-05': { checkin:['morning'], cats:[{c:'stand',v:'+63',t:'Standing heart-rate jump +63 bpm'},{c:'pem',t:'PEM — mild'},{c:'lowenergy',t:'Morning energy 2/10'},{c:'headache',t:'Morning headache — mild'}] },
-  '2026-06-07': { cats:[{c:'bp',t:'BP outside usual'},{c:'breath',t:'Breathing rate up'}] },
-  '2026-06-09': { cats:[{c:'good',t:'A settled, restful stretch'},{c:'rest',t:'80-min quiet period'}] },
-};
-// priority order — drives month-cell capping and year-view dominant pip
-const PRIORITY = ['migraine','pem','stand','headache','dizzy','nausea','pain','hr','bp','breath','lowenergy','lowmood','med','good','rest'];
-let filter = null; // when set to a cat key, the calendar isolates that one metric (see patterns at a glance)
-// SCOPE: when this calendar is embedded on a single signal page (?scope=stand,
-// ?scope=hr …) it shows only that metric — the reusable per-page component.
-const SCOPE = new URLSearchParams(location.search).get('scope');
-// EMBED: drop the page chrome (title/padding/background) so the calendar sits
-// inside a dashboard panel via <iframe src="...?embed=1">.
-const EMBED = new URLSearchParams(location.search).get('embed')==='1';
-if(EMBED) document.documentElement.classList.add('embed');
-
-// ── Day-view data (real, from the record) ──
-// Conditions that day (real environment_snapshot from each check-in)
-let COND = {
-  '2026-05-31':{temp:22.5,feels:19.9,pressure:1014.6,humidity:49,aqi:32,uv:4.7,grass:20.6},
-  '2026-06-04':{temp:14.8,feels:13.7,pressure:1001.4,humidity:91,aqi:20,uv:0.05,grass:3.4},
-  '2026-06-05':{temp:13.2,feels:10.8,pressure:1008.3,humidity:84,aqi:21,uv:0,grass:0.4},
-};
-// Real per-day ring vitals — daily average + range, every captured day (not
-// just one). Values straight from ring_samples. HR lows clamped at 45 to drop
-// sub-physiological contact-noise artefacts (e.g. a stray 10 bpm). The
-// through-the-day graph comes from the live render; here we show the honest
-// daily figures so no captured day ever reads as "no capture".
-const VMETA = { hr:['Heart rate','bpm'], hrv:['HRV (RMSSD)','ms'], rr:['Respiration','/min'], spo2:['Blood oxygen','%'], bp:['Blood pressure','mmHg'] };
-let DAY_VITALS = {
-  '2026-06-09':{hr:[76,57,98],hrv:[41,37,46],rr:[15,11,20],spo2:[98,94,98],bp:['110/73','103/68','118/78']},
-  '2026-06-08':{hr:[76,60,105],hrv:[42,37,46],rr:[15,12,21],spo2:[98,96,98],bp:['110/73','104/68','122/81']},
-  '2026-06-07':{hr:[81,61,122],hrv:[41,37,46],rr:[16,12,25],spo2:[98,94,98],bp:['112/74','104/69','137/90']},
-  '2026-06-06':{hr:[76,60,103],hrv:[41,37,46],rr:[16,12,21],spo2:[98,96,98],bp:['112/74','105/69','118/78']},
-  '2026-06-05':{hr:[79,57,100],hrv:[42,37,46],rr:[16,13,19],spo2:[98,97,98],bp:['112/74','106/70','116/76']},
-  '2026-06-04':{hr:[70,56,145],hrv:[41,37,46],rr:[15,11,30],spo2:[97,92,98],bp:['110/73','102/68','139/90']},
-  '2026-06-03':{hr:[78,58,118],hrv:[42,37,46],rr:[16,12,24],spo2:[98,95,98],bp:['112/74','102/69','128/86']},
-  '2026-06-02':{hr:[78,56,143],hrv:[41,37,46],rr:[14,11,20],spo2:[97,94,98],bp:['107/70','102/68','116/78']},
-  '2026-06-01':{hr:[79,55,107],hrv:[41,37,46],rr:[15,11,22],spo2:[97,93,98],bp:['102/69','90/63','123/80']},
-  '2026-05-31':{hr:[75,54,167],hrv:[41,37,46],rr:[15,11,34],spo2:[98,90,98],bp:['97/67','90/64','105/70']},
-  '2026-05-30':{hr:[86,73,112],hrv:[41,37,46],rr:[17,15,23],spo2:[98,95,98],bp:['102/70','96/67','112/75']},
-};
-// research drawn from the pattern_library — the matching evidence for a day's events
-const RESEARCH = {
-  stand:{l:'Orthostatic heart-rate rise',c:'A sustained ≥30 bpm rise within 10 min of standing (BP not dropping) is the POTS benchmark; ring resting HR is ±5–10 bpm, leaving clear margin at 30.',r:'Sheldon 2015 [12]; Bent 2020 [48]'},
-  pem:{l:'Post-exertional crash (PEM)',c:'A delayed, disproportionate, prolonged worsening after even minor exertion — the defining ME/CFS feature, with a duration floor ~14–24 h.',r:'Carruthers 2011 [17]'},
-  rest:{l:'Daytime rest / pacing',c:'Pacing within an energy envelope is the only NICE-recommended ME/CFS strategy; rest periods make the envelope visible.',r:'Sanal-Hayes 2023 [21]'},
-  good:{l:'A settled stretch',c:'A spell of real recovery — heart rate and breathing settled, then returned. Rest like this is what staying inside an energy envelope looks like, the recovery the body needs to keep within its limits.',r:'Sanal-Hayes 2023 [21]'},
-  migraine:{l:'Migraine',c:'Overnight autonomic shifts can precede migraine but never replace the logged prodrome; the report holds them as context.',r:'Kapustynska 2024 [25]'},
-  headache:{l:'Headache',c:'Tracked against cycle phase and environmental triggers to surface patterns — never to diagnose.',r:'—'},
-  bp:{l:'Blood pressure',c:'The ring optical BP estimate is excluded from clinical use; only calibrated cuff readings are shown to a doctor.',r:'Mukkamala 2022 [52]'},
-  breath:{l:'Respiration',c:'PPG breathing rate is a resting within-person trend (±6 bpm) and a sensitive marker of arousal.',r:'Charlton 2016 [51]'},
-  hr:{l:'Heart-rate spike',c:'A sustained rise above the personal baseline; consumer-wearable resting HR is accurate to ±5–10 bpm vs ECG.',r:'Bent 2020 [48]'},
-  pain:{l:'Pain',c:'Logged with location, type and severity over time, held alongside cycle and activity to show what it tracks with.',r:'—'},
-  nausea:{l:'Nausea / gut',c:'Part of the multi-system picture; surfaced as co-occurrence, not a standalone diagnosis.',r:'—'},
-  lowenergy:{l:'Low energy / fatigue',c:'Read against the person’s own baseline and recent load — a possible post-exertional signal when it follows a high-load day.',r:'Carruthers 2011 [17]'},
-  dizzy:{l:'Dizziness / vertigo',c:'Logged as reported, and surfaced alongside the same day’s standing heart-rate events so a clinician can see whether they coincide.',r:'—'},
-};
-// Verbatim extracts behind each citation — what makes a reference clickable.
-// (In the live build these live with the reference in Supabase; here embedded.)
-const QUOTES = {
-  48:{q:'different wearables are all reasonably accurate at resting and prolonged elevated heart rate, but … differences exist between devices in responding to changes in activity',p:'1',cite:'Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. npj Digit Med. 2020;3:18.'},
-  51:{q:'95% LOAs of −5.1 to 7.2 bpm and a bias of 1.0 bpm when using PPG',p:'610',cite:'Charlton PH, et al. An assessment of algorithms to estimate respiratory rate from the ECG and PPG. Physiol Meas. 2016;37(4):610–26.'},
-  21:{q:'regulating activity to avoid post exertional malaise (PEM), the worsening of symptoms after an activity … to be as active as possible within the limits imposed by the illness',p:'1',cite:'Sanal-Hayes NEM, et al. A scoping review of ‘Pacing’ for ME/CFS. J Transl Med. 2023;21:720.'},
-  17:{q:'Recovery period is prolonged, usually taking 24 h or longer. A relapse can last days, weeks or longer',p:'329',cite:'Carruthers BM, et al. Myalgic encephalomyelitis: international consensus criteria. J Intern Med. 2011;270(4):327–38.'},
-  50:{q:'nightly-mean RMSSD … agrees with ECG at a Pearson r of about 0.96',p:'10',cite:'Cao R, et al. Accuracy assessment of Oura Ring nocturnal HR and HRV vs electrocardiography. J Med Internet Res. 2022;24(1):e27487.'},
-};
-function refLinks(rstr){ if(!rstr||rstr==='—') return '';
-  return rstr.replace(/\[(\d+)\]/g,(m,n)=> QUOTES[n] ? `<a class="ref" onclick="toggleQuote(this,${n})">[${n}]</a>` : m); }
-window.toggleQuote=function(el,n){
-  const why=el.closest('.ev-why'); const ex=why.querySelector('.quote[data-n="'+n+'"]');
-  if(ex){ ex.remove(); return; }
-  const q=QUOTES[n]; if(!q) return;
-  const box=document.createElement('div'); box.className='quote'; box.dataset.n=n;
-  box.innerHTML=`<p class="q-text">“${q.q}”</p><p class="q-src">— ${q.cite}${q.p?` p. ${q.p}`:''}</p>`;
-  why.appendChild(box);
-};
-const aqiLab = n => n<=20?'good':n<=40?'fair':n<=60?'moderate':n<=80?'poor':'very poor';
-const uvLab  = n => n<3?'low':n<6?'moderate':n<8?'high':'very high';
-const grassLab = n => n<30?'low':n<50?'moderate':n<150?'high':'very high';
-const FLOW_COLOR = { spotting:'#d6b8c8', light:'#b98aa6', medium:'#8f5d7e', heavy:'#6b4f63' };
-
-const TODAY = '2026-06-09';
-let view = { y:2026, m:5 }; // month is 0-based; 5 = June
-let level = 'month';        // 'year' | 'month' | 'day'
-let sel = TODAY;            // selected day for day view
-
-function iso(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-function renderCell(y,m,d,outside){
-  const key = iso(y,m,d);
-  const data = MARKERS[key] || {};
-  const isToday = key===TODAY;
-  // aggregate identical cats (e.g. vitals x3 → one shape + count)
-  let mkHtml='';
-  let cats = data.cats||[];
-  if(filter) cats = cats.filter(x=>x.c===filter);
-  const seen=[]; cats.forEach(x=>{ if(!seen.includes(x.c)) seen.push(x.c); });
-  const present = seen.sort((a,b)=>PRIORITY.indexOf(a)-PRIORITY.indexOf(b));
-  // symbol + actual number (severity/value), no name word — legend maps symbols
-  present.forEach(c=>{
-    const d2=CATS[c]; if(!d2) return;
-    const items=cats.filter(x=>x.c===c);
-    const title=items.map(x=>x.t).filter(Boolean).join(' · ')||d2.legend;
-    const val=(items.find(x=>x.v)||{}).v;
-    mkHtml += `<span class="sym" title="${title}">${shapeSvg(d2.shape,d2.dot,12)}${(val!=null&&val!=='')?`<span class="symv" style="color:${d2.fg}">${val}</span>`:''}</span>`;
-  });
-  // when isolating one metric, dim days that don't have it so the pattern pops
-  const faded = filter ? (present.length?'':' faded') : '';
-  const showMeta = !filter; // hide check-in dot + period underline while filtering
-  const ck = (showMeta && data.checkin) ? `<span class="ck done" title="Check-in: ${data.checkin.join(', ')}"></span>` : '';
-  const pcol = (showMeta && data.period) ? (FLOW_COLOR[data.period.flow]||'#8f5d7e') : null;
-  const dn = pcol
-    ? `<span class="dn" style="border-bottom:2.5px solid ${pcol};padding-bottom:1px" title="Period · ${data.period.flow} flow">${d}</span>`
-    : `<span class="dn">${d}</span>`;
-  return `<div class="cell${outside?' out':''}${isToday?' today':''}${faded}" style="cursor:pointer" onclick="goDay('${key}')">
-    ${dn}${ck}
-    <div class="mk">${mkHtml}</div>
-  </div>`;
-}
-
-// dominant category for a day (for the year heatmap pip)
-function domCat(key){ const d=MARKERS[key]; if(!d) return null;
-  const cats=d.cats||[];
-  if(filter) return cats.some(x=>x.c===filter)?filter:null;
-  for(const p of PRIORITY) if(cats.some(x=>x.c===p)) return p;
-  if(d.period) return 'period'; if(d.checkin) return 'checkin'; return null; }
-const PIP={ migraine:'#8a4a63', stand:'#bb6147', headache:'#a8553f', hr:'#c0734a', bp:'#c08a3e', breath:'#caa24e', dizzy:'#9a7bb0', med:'#7d8aa0', good:'#6f7551', rest:'#94a06f', period:'#8f5d7e', checkin:'#b9a890' };
-
-function renderMonth(){
-  const {y,m}=view;
-  document.getElementById('cal-title').textContent = `${MONTHS[m]} ${y}`;
-  let firstDow = new Date(y,m,1).getDay(); firstDow=(firstDow+6)%7; // Mon=0
-  const daysIn = new Date(y,m+1,0).getDate(), prevDays = new Date(y,m,0).getDate();
-  let cells='';
-  for(let i=firstDow;i>0;i--){ const d=prevDays-i+1; cells+=renderCell(m===0?y-1:y,(m+11)%12,d,true); }
-  let recorded=0;
-  for(let d=1; d<=daysIn; d++){ if(MARKERS[iso(y,m,d)]) recorded++; cells+=renderCell(y,m,d,false); }
-  const trail=(7-(firstDow+daysIn)%7)%7;
-  for(let d=1; d<=trail; d++){ cells+=renderCell(m===11?y+1:y,(m+1)%12,d,true); }
-  document.getElementById('cal-grid').className='grid';
-  document.getElementById('cal-grid').innerHTML = cells;
-  document.getElementById('cal-cap').textContent = recorded ? `${recorded} day${recorded>1?'s':''} with something recorded` : 'nothing recorded this month';
-}
-
-function renderYear(){
-  const {y}=view;
-  document.getElementById('cal-title').textContent = `${y}`;
-  let html='', total=0;
-  for(let m=0;m<12;m++){
-    let firstDow=new Date(y,m,1).getDay(); firstDow=(firstDow+6)%7;
-    const daysIn=new Date(y,m+1,0).getDate();
-    let cellsMini='', cnt=0;
-    for(let i=0;i<firstDow;i++) cellsMini+=`<span class="md"></span>`;
-    for(let d=1;d<=daysIn;d++){ const key=iso(y,m,d); const c=domCat(key);
-      if(c){cnt++;total++;} const col=c?PIP[c]:null;
-      cellsMini+=`<span class="md">${d}${col?`<span class="pip" style="background:${col}"></span>`:''}</span>`; }
-    html+=`<div class="mini" onclick="goMonth(${m})"><h3>${MONTHS[m]}</h3><div class="mg">${cellsMini}</div><div class="cnt">${cnt?cnt+' marked':'—'}</div></div>`;
+  const TITLES={overview:['Insights','what the data suggests · 30 days · describes, does not diagnose'],calendar:['Calendar','Everything tracked · month at a glance'],vitals:['Vitals','Continuously logged via the Neeve Ring'],
+    sleep:['Sleep','Ring-tracked sleep'],ortho:['Orthostatic signal','Ring · candidate events'],
+    migraine:['Migraine','Headache days, intensity, triggers'],cycle:['Cycle','Phase timing vs symptoms'],
+    symptoms:['Reported symptoms','Self-reported, 0–10'],patterns:['Environmental context','Co-occurrence, not cause'],
+    days:['Days to discuss','Where the most markers moved together'],day:['Day detail','Wednesday 14 May'],
+    questions:['Questions for this visit',''],notes:['Notes from this visit','']};
+  function go(p){
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+    document.getElementById('p-'+p).classList.add('on');
+    document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+    document.getElementById('pt-title').textContent=TITLES[p][0];
+    document.getElementById('pt-sub').textContent=TITLES[p][1];
+    document.querySelector('.content').scrollTo?.(0,0); window.scrollTo(0,0);
   }
-  document.getElementById('cal-grid').className='year';
-  document.getElementById('cal-grid').innerHTML=html;
-  document.getElementById('cal-cap').textContent = total?`${total} days marked across ${y}`:'';
-}
+  document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>{go(b.dataset.p);closeNav();}));
+  // size the embedded calendar to its content + keep it sized as it switches month/year/day
+  (function(){ const f=document.getElementById('cal-frame'); if(!f) return;
+    // LIVE: when this dashboard is opened with a share code (?c=…), pass it to
+    // the calendar so it loads the patient's real record, and set the header.
+    const code=new URLSearchParams(location.search).get('c');
+    if(code){
+      f.src='neeve-calendar.html?embed=1&c='+encodeURIComponent(code);
+      fetch('https://api.noti.au/share/'+encodeURIComponent(code)).then(r=>r.json()).then(j=>{
+        if(j&&j.ok&&j.patient){ const nm=document.querySelector('.pt-card .nm'); if(nm) nm.textContent=j.patient+' '+(j.patient_last||''); }
+      }).catch(()=>{});
+    }
+    function fit(){ try{ const h=f.contentDocument.body.scrollHeight; if(h) f.style.height=(h+10)+'px'; }catch(e){} }
+    f.addEventListener('load',()=>{ try{ const b=f.contentDocument.body; new ResizeObserver(fit).observe(b); }catch(e){} fit(); });
+  })();
+  function toggleNav(){document.querySelector('.sidebar').classList.toggle('open');document.getElementById('nav-ov').classList.toggle('on');}
+  function closeNav(){document.querySelector('.sidebar').classList.remove('open');document.getElementById('nav-ov').classList.remove('on');}
+  if(location.hash.slice(1)) go(location.hash.slice(1));
+  else if(new URLSearchParams(location.search).get('c')) go('calendar'); // live share lands on the live calendar
+  document.querySelectorAll('[data-range]').forEach(r=>r.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{r.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');})));
 
-function daySpark(arr,color,W,H){
-  W=W||230;H=H||58;const pad={t:7,r:6,b:6,l:6}, mn=Math.min(...arr),mx=Math.max(...arr);
-  const X=i=>pad.l+i*(W-pad.l-pad.r)/(arr.length-1), Y=v=>pad.t+(1-(v-mn)/((mx-mn)||1))*(H-pad.t-pad.b);
-  const pts=arr.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ');
-  return `<svg width="100%" viewBox="0 0 ${W} ${H}" style="height:auto;display:block">`+
-    `<polyline points="${pts}" fill="none" stroke="${color||'#bb6147'}" stroke-width="2" stroke-linejoin="round"/></svg>`;
-}
-function renderDay(){
-  const key=sel, dt=new Date(key+'T00:00:00');
-  document.getElementById('cal-title').textContent =
-    dt.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('cal-cap').textContent = key===TODAY?'today':'';
-  const data=MARKERS[key]||{}, cats=data.cats||[];
-
-  // events — each carries its OWN evidence inline ("why it matters"), so
-  // research is tied to the thing that happened, not a separate floating block
-  let evs=[];
-  cats.forEach(x=>{ const d=CATS[x.c]; if(!d) return; const rc=RESEARCH[x.c];
-    evs.push(`<div class="ev"><div class="ev-top">${shapeSvg(d.shape,d.dot,13)}<div><div class="ev-t">${d.legend}${x.v?` — ${x.v}`:''}</div>${x.t?`<div class="ev-d">${x.t}</div>`:''}</div></div>`+
-      (rc?`<div class="ev-why">${rc.c}${(rc.r&&rc.r!=='—')?` <span class="ev-cite">${refLinks(rc.r)}</span>`:''}</div>`:'')+`</div>`); });
-  if(data.checkin) evs.push(`<div class="ev"><div class="ev-top"><span class="ck done" style="position:static"></span><div><div class="ev-t">Check-in logged</div><div class="ev-d">${data.checkin.join(', ')}</div></div></div></div>`);
-  if(data.period) evs.push(`<div class="ev"><div class="ev-top"><span style="width:11px;height:11px;border-radius:50%;background:${FLOW_COLOR[data.period.flow]||'#8f5d7e'};flex:none"></span><div><div class="ev-t">Period</div><div class="ev-d">${data.period.flow} flow</div></div></div></div>`);
-  const eventsHtml = evs.length ? `<div class="ev-list">${evs.join('')}</div>`
-    : `<div class="day-empty">Nothing recorded this day — empty isn't estimated, just a day without a logged check-in or captured event.</div>`;
-
-  // vitals — every signal the ring captured that day
-  let vitalsHtml; const vit=DAY_VITALS[key];
-  if(vit){
-    const card=(k,a)=>{ const m=VMETA[k]; return `<div class="v-card"><div class="v-h"><span class="v-l">${m[0]}</span><span class="v-avg">${a[0]}<small>${m[1]}</small></span></div><div class="v-range">range ${a[1]}–${a[2]}${k==='bp'?' · est.':''}</div></div>`; };
-    vitalsHtml=`<div class="d-sec"><h4>Vitals — daily average &amp; range</h4><div class="v-grid">${['hr','hrv','rr','spo2','bp'].filter(k=>vit[k]).map(k=>card(k,vit[k])).join('')}</div><p class="muted" style="font-size:11.5px;margin-top:9px">Full-day average and range from the ring. Blood pressure is the optical estimate (trend only) — the doctor report uses calibrated cuff readings. The reading through the day appears in the live shared view.</p></div>`;
-  } else vitalsHtml=`<div class="d-sec"><h4>Vitals</h4><p class="muted" style="font-size:13px;margin:0">The ring didn't capture vitals on this day.</p></div>`;
-
-  // conditions that day
-  let condHtml=''; const co=COND[key];
-  if(co){ const lines=[['Temperature',`${Math.round(co.temp)}°C · feels ${Math.round(co.feels)}°`],['Barometric pressure',`${Math.round(co.pressure)} hPa`],['Air quality (AQI)',`${Math.round(co.aqi)} · ${aqiLab(co.aqi)}`],['Grass pollen',grassLab(co.grass)],['UV',`${co.uv<1?'0':Math.round(co.uv)} · ${uvLab(co.uv)}`],['Humidity',`${Math.round(co.humidity)}%`]];
-    condHtml=`<div class="d-sec"><h4>Conditions that day</h4><div class="d-cond">${lines.map(l=>`<div><span class="ck-k">${l[0]}</span><span class="ck-v">${l[1]}</span></div>`).join('')}</div></div>`; }
-
-  document.getElementById('cal-grid').className='';
-  document.getElementById('cal-grid').innerHTML = `<div class="day-detail">
-    <div class="d-sec"><h4>What happened</h4>${eventsHtml}</div>
-    ${vitalsHtml}${condHtml}
-  </div>`;
-}
-
-function render(){
-  document.getElementById('cal-dow').style.display = level==='month' ? '' : 'none';
-  if(level==='year') renderYear();
-  else if(level==='day') renderDay();
-  else renderMonth();
-  if(filter) document.getElementById('cal-cap').textContent = `showing only: ${CATS[filter].chip} — tap it again to clear`;
-}
-function renderLegend(){
-  if(SCOPE && CATS[SCOPE]){ document.getElementById('cal-legend').innerHTML =
-    `<span class="legend-hint">This page shows only <b>${CATS[SCOPE].legend.toLowerCase()}</b>. The full Calendar shows every metric together.</span><span class="lchip">${chip(SCOPE)}</span>`;
-    return; }
-  document.getElementById('cal-legend').innerHTML =
-    `<span class="legend-hint">Tap a marker to isolate it and see its pattern across time.</span>` +
-    Object.keys(CATS).map(k=>`<span class="lchip${filter&&filter!==k?' off':''}" onclick="toggleFilter('${k}')">${chip(k)}</span>`).join('') +
-    LEGEND_EXTRA.map(e=>`<span class="li">${e.html}${e.label}</span>`).join('');
-}
-window.toggleFilter=function(k){ if(SCOPE) return; filter=(filter===k)?null:k; renderLegend(); render(); };
-function setLevel(l){ level=l;
-  document.querySelectorAll('#cal-switch button').forEach(b=>b.classList.toggle('on',b.dataset.lvl===l));
-  render();
-}
-window.goDay=function(key){ sel=key; const dt=new Date(key+'T00:00:00'); view={y:dt.getFullYear(),m:dt.getMonth()}; setLevel('day'); };
-window.goMonth=function(m){ view.m=m; setLevel('month'); };
-
-// scope this calendar to a single signal when embedded on a signal page
-if(SCOPE && CATS[SCOPE]){
-  filter = SCOPE;
-  document.querySelector('h1').textContent = CATS[SCOPE].chip.charAt(0).toUpperCase()+CATS[SCOPE].chip.slice(1);
-  document.querySelector('.sub').textContent = `${CATS[SCOPE].legend} — when it showed up, at a glance.`;
-}
-// legend
-renderLegend();
-
-function step(dir){
-  if(level==='year'){ view.y+=dir; }
-  else if(level==='month'){ view.m+=dir; if(view.m<0){view.m=11;view.y--;} if(view.m>11){view.m=0;view.y++;} }
-  else { const dt=new Date(sel+'T00:00:00'); dt.setDate(dt.getDate()+dir); sel=iso(dt.getFullYear(),dt.getMonth(),dt.getDate()); view={y:dt.getFullYear(),m:dt.getMonth()}; }
-  render();
-}
-document.getElementById('prev').onclick=()=>step(-1);
-document.getElementById('next').onclick=()=>step(1);
-document.querySelectorAll('#cal-switch button').forEach(b=>b.onclick=()=>setLevel(b.dataset.lvl));
-
-// ── LIVE DATA ── when opened with a share code (?c=…), pull the patient's
-// real record from the API and render from THAT, not the embedded demo data.
-const API = 'https://api.noti.au';
-function applyLive(j){
-  MARKERS = {}; DAY_VITALS = {}; COND = {}; let latest=null;
-  for(const d in (j.days||{})){ const x=j.days[d];
-    MARKERS[d] = { cats:x.cats||[], checkin:x.checkin, period:x.period };
-    if(x.vitals && Object.keys(x.vitals).length) DAY_VITALS[d]=x.vitals;
-    if(x.cond) COND[d]=x.cond;
-    if(!latest || d>latest) latest=d;
+  // ── tiny chart helpers ──
+  const NS='http://www.w3.org/2000/svg';
+  function el(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+  function barChart(id,data,opts={}){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal; const W=vb.width,H=vb.height;
+    const pad={t:10,r:6,b:22,l:6}; const max=opts.max||Math.max(...data); const n=data.length;
+    const bw=(W-pad.l-pad.r)/n*0.62, gap=(W-pad.l-pad.r)/n;
+    data.forEach((v,i)=>{ const h=(v/max)*(H-pad.t-pad.b); const x=pad.l+i*gap+(gap-bw)/2; const y=H-pad.b-h;
+      s.appendChild(el('rect',{x,y,width:bw,height:Math.max(h,1),rx:2,fill:opts.color||'#d29a82',opacity:opts.hot&&opts.hot(i)?1:.7}));
+      if(opts.vals && v){ s.appendChild(el('text',{x:(pad.l+i*gap+gap/2).toFixed(1),y:(y-4).toFixed(1),'text-anchor':'middle','font-size':10,'font-weight':600,fill:'#6b574a','font-family':'Hanken Grotesk'})).textContent=(opts.valPrefix||'')+v; } });
+    if(opts.labels) opts.labels.forEach((l,i)=>{ if(l==null)return; s.appendChild(el('text',{x:pad.l+i*gap+gap/2,y:H-7,'text-anchor':'middle','font-size':10,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=l; });
   }
-  if(latest){ const dt=new Date(latest+'T00:00:00'); view={y:dt.getFullYear(),m:dt.getMonth()}; sel=latest; }
-  const sub=document.querySelector('.sub');
-  if(sub) sub.textContent = (j.patient? j.patient+'’s record' : 'Patient record') + ' · everything tracked, month at a glance';
-}
-async function boot(){
-  const code = new URLSearchParams(location.search).get('c');
-  if(code){
-    try{
-      const r = await fetch(`${API}/share/${encodeURIComponent(code)}/data`);
-      const j = await r.json();
-      if(j && j.ok) applyLive(j);
-      else { const cap=document.getElementById('cal-cap'); if(cap) cap.textContent = j&&j.error==='expired'?'this share link has expired':j&&j.error==='revoked'?'this share link was revoked':'link not found'; }
-    }catch(e){ /* fall back to whatever is embedded */ }
+  function lineChart(id,data,opts={}){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal; const W=vb.width,H=vb.height;
+    const pad={t:14,r:46,b:18,l:30}; const mn=opts.min,mx=opts.max; const n=data.length;
+    const X=i=>pad.l+i*(W-pad.l-pad.r)/(n-1); const Y=v=>pad.t+(1-(v-mn)/(mx-mn))*(H-pad.t-pad.b);
+    const ticks=opts.ticks||[mn,Math.round((mn+mx)/2),mx];
+    ticks.forEach(t=>{ const y=Y(t); s.appendChild(el('line',{x1:pad.l,y1:y,x2:W-pad.r,y2:y,stroke:'#efe4d2'}));
+      s.appendChild(el('text',{x:pad.l-5,y:(y+3).toFixed(1),'text-anchor':'end','font-size':10,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=t; });
+    if(opts.band){ s.appendChild(el('rect',{x:pad.l,y:Y(opts.band[1]),width:W-pad.l-pad.r,height:Math.max(2,Y(opts.band[0])-Y(opts.band[1])),fill:'#9a8473',opacity:.12})); }
+    const pts=data.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+    s.appendChild(el('polyline',{points:pts,fill:'none',stroke:opts.color||'#bb6147','stroke-width':2.2,'stroke-linejoin':'round'}));
+    const last=data[n-1],lx=X(n-1),ly=Y(last);
+    s.appendChild(el('circle',{cx:lx.toFixed(1),cy:ly.toFixed(1),r:3.5,fill:opts.color||'#bb6147'}));
+    s.appendChild(el('text',{x:(lx+6).toFixed(1),y:(ly+4).toFixed(1),'font-size':12,'font-weight':'700',fill:opts.color||'#bb6147','font-family':'Hanken Grotesk'})).textContent=last+(opts.unit||'');
   }
-  renderLegend(); render();
-}
-boot();
+  // scatter: each dot a day — x sleep hours, y next-morning energy
+  function scatter(id,pts,o={}){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal,W=vb.width,H=vb.height;
+    const pad={t:10,r:10,b:20,l:24};
+    const X=v=>pad.l+(v-o.xmin)/(o.xmax-o.xmin)*(W-pad.l-pad.r);
+    const Y=v=>pad.t+(1-(v-o.ymin)/(o.ymax-o.ymin))*(H-pad.t-pad.b);
+    [0,5,10].forEach(g=>{const y=Y(g);s.appendChild(el('line',{x1:pad.l,y1:y,x2:W-pad.r,y2:y,stroke:'#efe4d2'}));
+      s.appendChild(el('text',{x:pad.l-5,y:y+3,'text-anchor':'end','font-size':9,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=g;});
+    pts.forEach(p=>s.appendChild(el('circle',{cx:X(p[0]).toFixed(1),cy:Y(p[1]).toFixed(1),r:5,fill:o.color||'#bb6147',opacity:.5})));
+    s.appendChild(el('text',{x:pad.l-5,y:14,'text-anchor':'end','font-size':9,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent='energy';
+  }
+  // orthostatic strip: bars where jumps, dots where a symptom was reported same day
+  function orthoStrip(id,jumps,sympt){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal,W=vb.width,H=vb.height,n=30,gap=W/n,base=H-22;
+    s.appendChild(el('line',{x1:0,y1:base,x2:W,y2:base,stroke:'#e6d8c4'}));
+    jumps.forEach(j=>{const x=j.i*gap+gap/2,h=(j.bpm/60)*(base-12);s.appendChild(el('rect',{x:(x-3).toFixed(1),y:(base-h).toFixed(1),width:6,height:h.toFixed(1),rx:2,fill:'#bb6147'}));
+      s.appendChild(el('text',{x:x.toFixed(1),y:(base-h-4).toFixed(1),'text-anchor':'middle','font-size':9,fill:'#6b574a','font-family':'Hanken Grotesk'})).textContent='+'+j.bpm;});
+    sympt.forEach(i=>s.appendChild(el('circle',{cx:(i*gap+gap/2).toFixed(1),cy:base+10,r:3.5,fill:'#6b4f63'})));
+  }
+  // two-bar comparison
+  function compare(id,a,b){
+    const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal,W=vb.width,H=vb.height,base=H-26,max=10;
+    [[a,'lower pressure',60,'#bb6147'],[b,'higher pressure',190,'#d29a82']].forEach(([v,lab,x,c])=>{
+      const h=(v/max)*(base-10);s.appendChild(el('rect',{x,y:(base-h).toFixed(1),width:60,height:h.toFixed(1),rx:3,fill:c,opacity:.8}));
+      s.appendChild(el('text',{x:x+30,y:(base-h-5).toFixed(1),'text-anchor':'middle','font-size':13,fill:'#42332b','font-family':'Fraunces'})).textContent=v;
+      s.appendChild(el('text',{x:x+30,y:base+15,'text-anchor':'middle','font-size':9.5,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=lab;});
+  }
+  // her POTS pattern: standing jumps (bars) + dizziness-reported days (dots)
+  orthoStrip('ch-os',[{i:3,bpm:44},{i:7,bpm:38},{i:12,bpm:68},{i:13,bpm:52},{i:21,bpm:40},{i:26,bpm:48}],[3,7,12,13,21,26]);
+  // migraine: intensity bars + pressure-drop (▼) + pre-menstrual window (♀ shaded)
+  (function(){ const s=document.getElementById('ch-mig'); if(!s)return; const W=480,H=100,n=30,gap=W/n,base=H-22;
+    const hd={5:6,6:7,12:8,13:7,18:5,24:6,25:8,26:7}, drops=[5,12,18,24], premens=[23,24,25,26];
+    premens.forEach(i=>s.appendChild(el('rect',{x:(i*gap).toFixed(1),y:6,width:gap.toFixed(1),height:base-6,fill:'#6b4f63',opacity:.09})));
+    s.appendChild(el('line',{x1:0,y1:base,x2:W,y2:base,stroke:'#e6d8c4'}));
+    for(const k in hd){const i=+k,h=(hd[k]/10)*(base-14),x=i*gap+gap/2;s.appendChild(el('rect',{x:(x-3.5).toFixed(1),y:(base-h).toFixed(1),width:7,height:h.toFixed(1),rx:2,fill:'#bb6147',opacity:.85}));}
+    drops.forEach(i=>{const x=i*gap+gap/2;s.appendChild(el('polygon',{points:`${(x-3).toFixed(1)},4 ${(x+3).toFixed(1)},4 ${x.toFixed(1)},10`,fill:'#6b574a'}));});
+    s.appendChild(el('text',{x:(24.5*gap).toFixed(1),y:base+15,'text-anchor':'middle','font-size':9.5,fill:'#6b4f63','font-family':'Hanken Grotesk'})).textContent='period';
+  })();
+  // her wildly variable sleep
+  const sleepH=[7.7,9.7,3.1,7.5,7.6,9.8,7.3,9.3,6.2,8.4,4.5,7.9,8.8,6.7,7.1,5.2,9.1,6.8,8.0,4.8,7.6,9.3,6.4,7.9,8.6,5.5,7.2,9.0,6.9,7.7];
+  // insight sleep chart — the 12 recorded nights, actual range (swing visible)
+  (function(){ const s=document.getElementById('ch-sv'); if(!s)return; const W=480,H=100,pad={t:6,r:6,b:16,l:22},max=10;
+    const rec=[7.7,3.1,8.4,9.3,5.2,8.8,6.2,9.8,4.5,7.9,6.4,7.6];
+    const n=rec.length,gap=(W-pad.l-pad.r)/n,bw=gap*0.55,y=v=>pad.t+(1-v/max)*(H-pad.t-pad.b);
+    let g=''; [0,4,8].forEach(t=>{ g+=`<line x1="${pad.l}" y1="${y(t).toFixed(1)}" x2="${W-pad.r}" y2="${y(t).toFixed(1)}" stroke="#efe4d2"/>`
+      +`<text x="${pad.l-4}" y="${(y(t)+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#9a8473" font-family="Hanken Grotesk">${t}h</text>`;});
+    rec.forEach((h,i)=>{ const hh=(h/max)*(H-pad.t-pad.b),x=pad.l+i*gap+(gap-bw)/2,col=h<5?'#bb6147':(h>9?'#6b4f63':'#d29a82');
+      g+=`<rect x="${x.toFixed(1)}" y="${y(h).toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="${col}" opacity=".88"/>`;});
+    g+=`<text x="${pad.l}" y="${H-3}" font-size="8.5" fill="#9a8473" font-family="Hanken Grotesk">12 captured nights · 3.1–9.8h · short nights flagged</text>`;
+    s.innerHTML=g;
+  })();
+  // lower, flatter HRV (dysautonomia)
+  const hrv=[33,30,35,28,32,34,29,31,27,33,30,28,34,31,29,32,30,33,28,31,30,32,29,33,31,30,34,29,32,31];
+  // stacked nightly sleep — bar height = hours, split deep/light/REM
+  (function(){ const s=document.getElementById('ch-sleep2'); if(!s)return; const W=720,H=170,pad={t:8,r:6,b:18,l:26},max=11;
+    // Only nights with a complete start-to-wake reading. Gaps = no full record
+    // (the ring missed it / she didn't wear it) — shown honestly, not invented.
+    const rec=[null,null,7.6,null,null,3.1,null,null,null,8.4,null,null,null,null,9.3,null,null,5.2,null,9.8,null,null,6.2,null,8.8,4.5,null,7.6,7.9,7.7];
+    const n=rec.length,gap=(W-pad.l-pad.r)/n,bw=gap*0.62,y=v=>pad.t+(1-v/max)*(H-pad.t-pad.b),base=y(0);
+    let g=''; [0,4,8].forEach(t=>{ g+=`<line x1="${pad.l}" y1="${y(t).toFixed(1)}" x2="${W-pad.r}" y2="${y(t).toFixed(1)}" stroke="#efe4d2"/>`
+      +`<text x="${pad.l-5}" y="${(y(t)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${t}h</text>`;});
+    const cols=['#6b4f63','#d29a82','#e9cda2'];
+    rec.forEach((h,i)=>{ const x=pad.l+i*gap+(gap-bw)/2;
+      if(h==null){ g+=`<line x1="${(x+bw/2).toFixed(1)}" y1="${base}" x2="${(x+bw/2).toFixed(1)}" y2="${(base+4)}" stroke="#d8c7b2" stroke-width="${bw.toFixed(1)}" opacity=".4"/>`; return; }
+      const dp=0.12+0.07*((i*7)%5)/4, rm=0.15+0.08*((i*3)%5)/4, lt=1-dp-rm;
+      const seg=[h*dp,h*lt,h*rm]; let acc=0;
+      seg.forEach((v,si)=>{ const hh=(v/max)*(H-pad.t-pad.b); g+=`<rect x="${x.toFixed(1)}" y="${y(acc+v).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(hh,0.6).toFixed(1)}" fill="${cols[si]}"/>`; acc+=v; });
+    });
+    g+=`<text x="${pad.l}" y="${H-3}" font-size="9.5" fill="#9a8473" font-family="Hanken Grotesk">12 of 30 nights captured · gaps = the ring didn't record those nights, so they're left out (not estimated)</text>`;
+    s.innerHTML=g;
+  })();
+  lineChart('ch-hrv2',hrv,{min:22,max:42,band:[29,33],color:'#6b4f63'});
+  // resting HR trend (runs a little high)
+  const rhr=[71,73,70,74,72,75,71,73,76,72,74,73,72,71];
+  lineChart('ch-rhr',rhr,{min:60,max:82,band:[66,72],color:'#bb6147'});
+  // overnight respiratory rate — real per-night medians, 8 captured nights (steady, normal range)
+  const resp=[14,12,13,13,14,13,14,13];
+  lineChart('ch-resp',resp,{min:10,max:20,band:[12,14],color:'#6f7551'});
+  // range toggle — re-window the trend charts (the real product re-queries every chart)
+  window.setRange=function(d,btn){
+    document.querySelectorAll('.range button').forEach(x=>x.classList.remove('on')); if(btn) btn.classList.add('on');
+    const win=a=>a.slice(Math.max(0,a.length-d));
+    const hv=document.getElementById('ch-hrv2'); if(hv){ hv.innerHTML=''; lineChart('ch-hrv2',win(hrv),{min:22,max:42,band:[29,33],color:'#6b4f63'}); }
+    const rh=document.getElementById('ch-rhr'); if(rh){ rh.innerHTML=''; lineChart('ch-rhr',win(rhr),{min:60,max:82,band:[66,72],color:'#bb6147'}); }
+  };
+  // symptoms moving together (fatigue/fog/dizziness over logged days)
+  (function(){ const s=document.getElementById('ch-cluster'); if(!s)return; const W=720,H=178,pad={t:18,r:80,b:30,l:28},max=10,
+    fat=[4,7,3,8,5,9,4,6,8,5,7,6], fog=[3,6,2,7,4,8,3,5,7,4,6,5], diz=[2,6,1,7,3,8,2,4,7,3,5,4],
+    n=fat.length, X=i=>pad.l+i*(W-pad.l-pad.r)/(n-1), Y=v=>pad.t+(1-v/max)*(H-pad.t-pad.b);
+    const dates={0:'18 May',4:'26 May',8:'3 Jun',11:'9 Jun'};
+    let g='';
+    // worse-day bands: days where all three symptoms are high (>=7) — the co-movement made visible
+    fat.forEach((_,i)=>{ if(fat[i]>=7&&fog[i]>=7&&diz[i]>=7){ const x=X(i);
+      g+=`<rect x="${(x-13).toFixed(1)}" y="${pad.t}" width="26" height="${(H-pad.t-pad.b).toFixed(1)}" rx="4" fill="#bb6147" opacity=".08"/>`; }});
+    [0,5,10].forEach(t=>{ g+=`<line x1="${pad.l}" y1="${Y(t).toFixed(1)}" x2="${W-pad.r}" y2="${Y(t).toFixed(1)}" stroke="#efe4d2"/><text x="${pad.l-6}" y="${(Y(t)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${t}</text>`;});
+    for(const i in dates){ g+=`<text x="${X(+i).toFixed(1)}" y="${(H-pad.b+16)}" text-anchor="middle" font-size="9" fill="#b3a290" font-family="Hanken Grotesk">${dates[i]}</text>`;}
+    const series=[[fat,'#bb6147','fatigue'],[fog,'#6b4f63','fog'],[diz,'#c08a3e','dizziness']];
+    series.forEach(([d,c])=>{ g+=`<polyline points="${d.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}" fill="none" stroke="${c}" stroke-width="2.4" stroke-linejoin="round"/>`;
+      d.forEach((v,i)=>{ g+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.4" fill="${c}"/>`;});});
+    // direct end-labels (staggered) instead of a legend the eye has to match up
+    const ends=series.map(([d,c,lab])=>({y:Y(d[n-1]),c,lab})).sort((a,b)=>a.y-b.y);
+    let prevY=-99; ends.forEach(e=>{ let ly=e.y; if(ly-prevY<14) ly=prevY+14; prevY=ly;
+      g+=`<text x="${(W-pad.r+8)}" y="${(ly+3.5).toFixed(1)}" font-size="11" font-weight="600" fill="${e.c}" font-family="Hanken Grotesk">${e.lab}</text>`;});
+    s.innerHTML=g;
+  })();
+  barChart('ch-ortho',[0,0,0,44,0,0,0,38,0,0,0,0,68,52,0,0,0,0,0,0,0,40,0,0,0,0,48,0,0,0],{max:80,color:'#bb6147',hot:i=>true,vals:true,valPrefix:'+'});
+  // cycle timeline — phases + migraine (circle) + dizziness (dot)
+  (function(){ const s=document.getElementById('ch-cycle'); if(!s)return; const W=720,H=132,pad={l:8,r:8},days=29,
+    cw=(W-pad.l-pad.r)/days, barY=72, barH=24;
+    const phases=[[1,5,'#c89bb4','menstrual'],[6,13,'#e3d6c2','follicular'],[14,15,'#e9cda2','ovulation'],[16,23,'#d6bcce','luteal'],[24,29,'#b899ad','pre-menstrual']];
+    let g='';
+    phases.forEach(([a,b,c,lab])=>{ const x=pad.l+(a-1)*cw,w=(b-a+1)*cw;
+      g+=`<rect x="${x.toFixed(1)}" y="${barY}" width="${w.toFixed(1)}" height="${barH}" fill="${c}" opacity=".55"/>`
+        +`<text x="${(x+w/2).toFixed(1)}" y="${barY+barH+13}" text-anchor="middle" font-size="8.5" fill="#9a8473" font-family="Hanken Grotesk">${lab}</text>`;});
+    [1,8,15,22,29].forEach(d=>g+=`<text x="${(pad.l+(d-0.5)*cw).toFixed(1)}" y="${barY-5}" text-anchor="middle" font-size="8" fill="#b3a290" font-family="Hanken Grotesk">${d}</text>`);
+    const mig={18:5,22:6,24:7,25:8,26:7}; for(const k in mig){ const x=pad.l+(+k-0.5)*cw; g+=`<circle cx="${x.toFixed(1)}" cy="20" r="6.5" fill="rgba(187,97,71,${(0.4+mig[k]/14).toFixed(2)})"/>`;}
+    [20,23,27].forEach(d=>g+=`<circle cx="${(pad.l+(d-0.5)*cw).toFixed(1)}" cy="42" r="3.5" fill="#6b4f63"/>`);
+    g+=`<text x="${pad.l}" y="23" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">migraine</text><text x="${pad.l}" y="45" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">dizziness</text>`;
+    s.innerHTML=g;
+  })();
+  // environment comparisons (lower vs higher) — labelled
+  function cmp2(id,a,b,la,lb){ const s=document.getElementById(id); if(!s)return; const vb=s.viewBox.baseVal,W=vb.width,H=vb.height,base=H-26,max=10;
+    [[a,la,55,'#bb6147'],[b,lb,165,'#d29a82']].forEach(([v,lab,x,c])=>{ const h=(v/max)*(base-10);
+      s.appendChild(el('rect',{x,y:(base-h).toFixed(1),width:80,height:h.toFixed(1),rx:3,fill:c,opacity:.82}));
+      s.appendChild(el('text',{x:x+40,y:(base-h-5).toFixed(1),'text-anchor':'middle','font-size':14,fill:'#42332b','font-family':'Fraunces'})).textContent=v;
+      s.appendChild(el('text',{x:x+40,y:base+15,'text-anchor':'middle','font-size':9.5,fill:'#9a8473','font-family':'Hanken Grotesk'})).textContent=lab;});}
+  cmp2('ch-p1',5,3,'falling','steady');
+  cmp2('ch-p2',5,2,'high pollen','low');
+  cmp2('ch-p3',6,3,'poor air','clear');
+  // positive noticing — HR settling through the appointment
+  (function(){ const s=document.getElementById('ch-relax'); if(!s)return; const W=600,H=150,pad={t:14,r:14,b:22,l:30},yMin=55,yMax=100;
+    const hr=[93,83,80,69,83,93,73,76,72,76,74,74,71,71,75,69,68,65,66,70,77,70,72,88,75,89,90,85,85,88];
+    const t0=11+40/60,step=5/60,idxAt=h=>(h-t0)/step;
+    const X=i=>pad.l+i*(W-pad.l-pad.r)/(hr.length-1),Y=v=>pad.t+(1-(v-yMin)/(yMax-yMin))*(H-pad.t-pad.b);
+    const ax=X(idxAt(12)),bx=X(idxAt(13+40/60));
+    let g=`<rect x="${ax.toFixed(1)}" y="${pad.t}" width="${(bx-ax).toFixed(1)}" height="${H-pad.t-pad.b}" fill="#6f7551" opacity=".1"/>`
+      +`<text x="${((ax+bx)/2).toFixed(1)}" y="${(pad.t+10).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#6f7551" font-family="Hanken Grotesk">appointment</text>`;
+    [60,75,90].forEach(v=>{ g+=`<line x1="${pad.l}" y1="${Y(v).toFixed(1)}" x2="${W-pad.r}" y2="${Y(v).toFixed(1)}" stroke="#efe4d2"/><text x="${pad.l-5}" y="${(Y(v)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${v}</text>`;});
+    g+=`<polyline points="${hr.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}" fill="none" stroke="#bb6147" stroke-width="2.2" stroke-linejoin="round"/>`;
+    g+=`<circle cx="${X(17).toFixed(1)}" cy="${Y(65).toFixed(1)}" r="3.5" fill="#6f7551"/><text x="${X(17).toFixed(1)}" y="${(Y(65)+16).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#6f7551" font-family="Hanken Grotesk">65</text>`;
+    [['12pm',idxAt(12)],['1pm',idxAt(13)],['2pm',idxAt(14)]].forEach(([lab,i])=>g+=`<text x="${X(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${lab}</text>`);
+    s.innerHTML=g;
+  })();
+  // active-stand HR profile — lying → standing, sustained rise above the +30 threshold
+  (function(){ const s=document.getElementById('ch-stand'); if(!s)return; const W=600,H=184,pad={t:16,r:14,b:24,l:34},yMin=55,yMax=125;
+    const X=t=>pad.l+(t/8)*(W-pad.l-pad.r), Y=v=>pad.t+(1-(v-yMin)/(yMax-yMin))*(H-pad.t-pad.b);
+    let g=''; [60,80,100,120].forEach(v=>{ g+=`<line x1="${pad.l}" y1="${Y(v).toFixed(1)}" x2="${W-pad.r}" y2="${Y(v).toFixed(1)}" stroke="#efe4d2"/>`
+      +`<text x="${pad.l-5}" y="${(Y(v)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${v}</text>`;});
+    g+=`<line x1="${pad.l}" y1="${Y(98).toFixed(1)}" x2="${W-pad.r}" y2="${Y(98).toFixed(1)}" stroke="#bb6147" stroke-width="1.2" stroke-dasharray="4 3"/>`
+      +`<text x="${(W-pad.r).toFixed(1)}" y="${(Y(98)-5).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#bb6147" font-family="Hanken Grotesk">POTS threshold · resting +30 bpm</text>`;
+    g+=`<line x1="${X(2).toFixed(1)}" y1="${pad.t}" x2="${X(2).toFixed(1)}" y2="${H-pad.b}" stroke="#9a8473" stroke-dasharray="2 2" opacity=".6"/>`
+      +`<text x="${X(2).toFixed(1)}" y="${(pad.t-4).toFixed(1)}" text-anchor="middle" font-size="9" fill="#6b574a" font-family="Hanken Grotesk">stood up</text>`;
+    const pts=[[0,67],[1,68],[2,68],[2.3,84],[2.7,100],[3,112],[4,110],[5,107],[6,113],[7,109],[8,108]];
+    g+=`<polyline points="${pts.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' ')}" fill="none" stroke="#6b4f63" stroke-width="2.4" stroke-linejoin="round"/>`;
+    [0,2,4,6,8].forEach(t=>g+=`<text x="${X(t).toFixed(1)}" y="${H-7}" text-anchor="middle" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${t}m</text>`);
+    s.innerHTML=g;
+  })();
+  // dizziness levels (none / mild / moderate / rough — day counts)
+  barChart('ch-anx',[8,6,5,3],{max:10,color:'#d29a82',hot:i=>i>=2,labels:['none','mild','mod','rough'],vals:true});
+  // navigable month calendar — events keyed by Y-M(0idx)-D
+  const CAL_HEAD={'2026-4-16':6,'2026-4-17':7,'2026-4-23':8,'2026-4-24':7,'2026-4-29':5,'2026-5-4':6,'2026-5-5':8,'2026-5-6':7};
+  const CAL_DROP=new Set(['2026-4-16','2026-4-23','2026-4-29','2026-5-4']);
+  const CAL_PM=new Set(['2026-5-3','2026-5-4','2026-5-5','2026-5-6']);
+  const CAL_AURA=new Set(['2026-4-23','2026-5-5','2026-5-6']);
+  const CAL_MED=new Set(['2026-4-17','2026-4-23','2026-4-24','2026-5-4','2026-5-5','2026-5-6']);
+  const CAL_MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let calY=2026, calMo=4;  // May 2026
+  function renderCal(){
+    const cal=document.getElementById('mig-cal'); if(!cal)return;
+    document.getElementById('cal-label').textContent=CAL_MN[calMo]+' '+calY;
+    const startDow=(new Date(calY,calMo,1).getDay()+6)%7;     // Mon = 0
+    const dim=new Date(calY,calMo+1,0).getDate();
+    const lastDow=(new Date(calY,calMo,dim).getDay()+6)%7;
+    const total=startDow+dim+(6-lastDow);                     // full weeks
+    const gridStart=new Date(calY,calMo,1-startDow);          // Monday before the 1st
+    const X='<svg class="mk-x" width="8" height="8" viewBox="0 0 8 8"><line x1="1.3" y1="1.3" x2="6.7" y2="6.7" stroke="#42332b" stroke-width="1.4"/><line x1="6.7" y1="1.3" x2="1.3" y2="6.7" stroke="#42332b" stroke-width="1.4"/></svg>';
+    let html=''; ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(w=>html+=`<div class="cal-h">${w}</div>`);
+    for(let i=0;i<total;i++){
+      const dt=new Date(gridStart); dt.setDate(gridStart.getDate()+i);
+      const Y=dt.getFullYear(),M=dt.getMonth(),D=dt.getDate(), inM=(M===calMo&&Y===calY);
+      const k=`${Y}-${M}-${D}`; const sev=CAL_HEAD[k];
+      let cls='cal-d'+(inM?'':' other')+(CAL_PM.has(k)?' pm':'');
+      let inner=`<span class="dn">${D}</span>`;
+      if(sev){ const op=(0.42+sev/14).toFixed(2);
+        inner+=`<span class="cal-ctr"><span class="mk-hd${CAL_AURA.has(k)?' aura':''}" style="background:rgba(187,97,71,${op})"></span></span>`; }
+      if(CAL_DROP.has(k)) inner+=X;
+      if(CAL_MED.has(k)) inner+='<span class="mk-dot"></span>';
+      html+=`<div class="${cls}">${inner}</div>`;
+    }
+    cal.innerHTML=html;
+  }
+  function calMove(s){ calMo+=s; if(calMo<0){calMo=11;calY--;} if(calMo>11){calMo=0;calY++;} renderCal(); }
+  renderCal();
+  // sleep timing — bed→wake per night (hours after 20:00), | = awakening
+  (function(){ const s=document.getElementById('ch-timing'); if(!s)return;
+    const N=[{l:'9',b:3.5,w:11.2,a:[6,8.5]},{l:'8',b:2.1,w:11.4,a:[5]},{l:'7',b:5.7,w:10.2,a:[7.5]},
+      {l:'6',b:1.8,w:11.6,a:[4,7,9]},{l:'5',b:4.5,w:10.8,a:[6]},{l:'4',b:2.7,w:12,a:[5,9]},
+      {l:'3',b:3.2,w:10.3,a:[5.5]},{l:'2',b:1.5,w:11.3,a:[4,8]},{l:'1',b:5.2,w:10.5,a:[7]},
+      {l:'31',b:2.8,w:11.8,a:[6,9]},{l:'30',b:3.7,w:13,a:[5,7,10]},{l:'29',b:2.3,w:9.8,a:[4]}];
+    const W=720,rowH=19,padL=34,padT=22,axisW=W-padL-14,SPAN=16,x=h=>padL+(h/SPAN)*axisW;
+    let g='';
+    [['9pm',1],['12am',4],['3am',7],['6am',10],['9am',13]].forEach(([lab,h])=>{
+      g+=`<line x1="${x(h).toFixed(1)}" y1="${padT-4}" x2="${x(h).toFixed(1)}" y2="${(padT+N.length*rowH).toFixed(1)}" stroke="#efe4d2"/>`
+        +`<text x="${x(h).toFixed(1)}" y="${padT-9}" text-anchor="middle" font-size="10" fill="#9a8473" font-family="Hanken Grotesk">${lab}</text>`;});
+    N.forEach((n,i)=>{ const y=padT+i*rowH;
+      g+=`<text x="${padL-7}" y="${(y+11).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#6b574a" font-family="Hanken Grotesk">${n.l}</text>`
+        +`<rect x="${x(n.b).toFixed(1)}" y="${y+3}" width="${(x(n.w)-x(n.b)).toFixed(1)}" height="11" rx="4" fill="#d29a82" opacity="0.9"/>`;
+      n.a.forEach(aw=>g+=`<rect x="${x(aw).toFixed(1)}" y="${y+3}" width="1.6" height="11" fill="#f4eadc"/>`);});
+    s.innerHTML=g;
+  })();
+  // day HR timeline
+  (function(){ const d=[68,66,112,82,70,118,86,72,70,69,124,88,74,70]; lineChart('ch-day',d,{min:60,max:135,color:'#bb6147'});
+    const s=document.getElementById('ch-day'); [2,5,10].forEach(i=>{const v=d[i];
+      s.appendChild(el('circle',{cx:(i/13*(480-16)+8).toFixed(1),cy:(14+(1-(v-60)/75)*(150-22)).toFixed(1),r:4,fill:'#bb6147'}));}); })();
 </script>
 </body>
 </html>

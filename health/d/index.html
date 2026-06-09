@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neeve · Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4eadc; --card:#fbf6ee; --ink:#42332b; --ink-soft:#6b574a; --muted:#9a8473;
+    --clay:#bb6147; --sage:#6f7551; --plum:#6b4f63; --gold:#c08a3e; --line:#e6d8c4; --line-soft:#efe4d2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Hanken Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1180px;margin:0 auto;padding:26px 22px 60px;}
+  /* embedded inside a dashboard panel */
+  html.embed body{background:transparent;}
+  html.embed .wrap{padding:2px 2px 20px;max-width:none;}
+  html.embed h1, html.embed .sub{display:none;}
+  html.embed .card{margin-top:0;border:0;box-shadow:none;background:transparent;padding:0;}
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:26px;margin:0;}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin-top:18px;box-shadow:0 1px 0 rgba(0,0,0,.02);}
+  /* calendar */
+  .cal-head{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+  .cal-head h2{font-family:"Fraunces",serif;font-weight:500;font-size:21px;margin:0;min-width:172px;}
+  .cal-nav{display:flex;gap:8px;}
+  .cal-nav button{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:11px;color:var(--clay);font-size:15px;cursor:pointer;line-height:1;}
+  .cal-nav button:hover{background:#fbf3ea;}
+  .cal-cap{margin-left:auto;color:var(--muted);font-size:13px;}
+  .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:8px;}
+  .dow span{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding-left:2px;}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  .cell{position:relative;min-height:96px;border:1px solid var(--line-soft);border-radius:13px;background:#fcf8f1;padding:8px 9px;}
+  .cell.out{background:#f4eee2;}
+  .cell.out .dn{color:#c8b9a3;}
+  .cell.today{border-color:var(--clay);box-shadow:0 0 0 1px var(--clay);}
+  .dn{font-size:13px;color:var(--ink-soft);font-weight:600;}
+  .cell.out .mk,.cell.out .band{opacity:.45;}
+  .ck{position:absolute;top:9px;right:9px;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--sage);}
+  .ck.done{background:var(--sage);}
+  .mk{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px;align-items:center;}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;letter-spacing:.01em;padding:2px 7px 2px 6px;border-radius:999px;line-height:1.5;white-space:nowrap;}
+  .chip svg{display:block;flex:none;}
+  .mk{gap:7px !important;}
+  .sym{display:inline-flex;align-items:center;gap:2px;}
+  .sym svg{display:block;}
+  .symv{font-size:11.5px;font-weight:700;line-height:1;}
+  .band{position:absolute;left:9px;right:9px;bottom:8px;height:5px;border-radius:3px;}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);align-items:center;}
+  .legend .li{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-soft);}
+  .lchip{cursor:pointer;transition:.12s;}
+  .lchip.off{opacity:.32;}
+  .legend-hint{font-size:11.5px;color:var(--muted);width:100%;margin-bottom:2px;}
+  .cell.faded{opacity:.32;}
+  .note{color:var(--muted);font-size:12px;margin-top:14px;line-height:1.5;}
+  /* level switch */
+  .switch{display:inline-flex;background:#f1e7d8;border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px;}
+  .switch button{border:0;background:none;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);padding:5px 13px;border-radius:8px;cursor:pointer;}
+  .switch button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  /* year view: 12 mini-months */
+  .year{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .mini{border:1px solid var(--line-soft);border-radius:12px;padding:11px 11px 9px;background:#fcf8f1;cursor:pointer;transition:.12s;}
+  .mini:hover{background:#fbf3ea;border-color:var(--line);}
+  .mini h3{font-family:"Fraunces",serif;font-weight:500;font-size:14px;margin:0 0 7px;color:var(--ink);}
+  .mini .mg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+  .mini .md{aspect-ratio:1;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8.5px;color:#b9a890;position:relative;}
+  .mini .md.has{font-weight:700;color:#fff;}
+  .mini .md .pip{position:absolute;bottom:1px;width:4px;height:4px;border-radius:50%;}
+  .mini .cnt{font-size:10.5px;color:var(--muted);margin-top:7px;}
+  /* day view */
+  .day-detail h2{font-family:"Fraunces",serif;font-weight:500;font-size:22px;margin:0 0 3px;}
+  .day-sub{color:var(--muted);font-size:13px;margin-bottom:16px;}
+  .ev-list{display:flex;flex-direction:column;gap:9px;}
+  .ev{display:flex;flex-direction:column;border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;background:#fcf8f1;}
+  .ev-top{display:flex;align-items:center;gap:11px;}
+  .ev-top svg{flex:none;}
+  .ev .ev-t{font-size:14px;color:var(--ink);font-weight:600;}
+  .ev .ev-d{font-size:12.5px;color:var(--muted);}
+  .ev-why{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--ink-soft);line-height:1.55;}
+  .ev-cite{color:var(--muted);font-size:10.5px;}
+  .ev-cite .ref{color:var(--clay);font-weight:700;cursor:pointer;border-bottom:1px dotted var(--clay);}
+  .ev-cite .ref:hover{background:rgba(187,97,71,.08);}
+  .quote{margin-top:8px;border-left:3px solid var(--gold);background:rgba(233,205,162,.16);border-radius:0 8px 8px 0;padding:9px 13px;}
+  .q-text{font-size:12.5px;color:var(--ink);font-style:italic;line-height:1.5;margin:0 0 5px;}
+  .q-src{font-size:10.5px;color:var(--muted);margin:0;}
+  .day-empty{color:var(--muted);font-size:13.5px;padding:18px 2px;}
+  .d-sec{margin-top:22px;}
+  .d-sec:first-child{margin-top:4px;}
+  .d-sec h4{font-family:"Fraunces",serif;font-weight:500;font-size:15px;color:var(--ink);margin:0 0 10px;}
+  .d-stats{display:flex;gap:18px;align-items:baseline;margin-top:6px;font-size:13px;color:var(--ink-soft);}
+  .d-stats b{font-size:17px;color:var(--ink);font-family:"Fraunces",serif;}
+  .d-stats .muted{margin-left:auto;font-size:11.5px;}
+  .v-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px;}
+  .v-card{border:1px solid var(--line-soft);border-radius:12px;background:#fcf8f1;padding:11px 12px 9px;}
+  .v-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:5px;}
+  .v-l{font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .v-avg{font-family:"Fraunces",serif;font-size:18px;color:var(--ink);}
+  .v-avg small{font-size:10.5px;color:var(--muted);margin-left:2px;font-family:"Hanken Grotesk";}
+  .v-range{font-size:10.5px;color:var(--muted);margin-top:3px;}
+  .d-cond{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:2px 22px;}
+  .d-cond > div{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:13px;}
+  .ck-k{color:var(--ink-soft);} .ck-v{color:var(--ink);font-weight:600;}
+  .d-res{border:1px solid var(--line-soft);border-left:3px solid var(--sage);border-radius:0 11px 11px 0;background:#fcf8f1;padding:11px 14px;margin-bottom:9px;}
+  .d-res-h{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+  .d-res-h svg{flex:none;}
+  .d-res-l{font-weight:700;font-size:13px;color:var(--ink);}
+  .d-res p{font-size:13px;color:var(--ink-soft);line-height:1.5;margin:0 0 5px;}
+  .d-res-r{font-size:10.5px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Calendar</h1>
+  <div class="sub">Everything tracked, one month at a glance — each day's markers from the real record.</div>
+  <div class="card">
+    <div class="cal-head">
+      <div class="cal-nav"><button id="prev" aria-label="previous">‹</button><button id="next" aria-label="next">›</button></div>
+      <h2 id="cal-title">June 2026</h2>
+      <div class="switch" id="cal-switch">
+        <button data-lvl="year">Year</button><button data-lvl="month" class="on">Month</button><button data-lvl="day">Day</button>
+      </div>
+      <span class="cal-cap" id="cal-cap"></span>
+    </div>
+    <div class="dow" id="cal-dow"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+    <div class="grid" id="cal-grid"></div>
+    <div class="legend" id="cal-legend"></div>
+    <p class="note">Markers come from the actual record — ring-flagged events, logged check-ins, rest, and cycle entries. Empty days are days with nothing recorded, not days estimated. The ring sees what it captured; the rest is what was logged.</p>
+  </div>
+</div>
+
+<script>
+// ── Marker vocabulary: a labelled chip per category — the word makes it
+// readable at a glance, the colour + shape reinforce it. ──
+function shapeSvg(shape,color,s){ s=s||9; const c=(s/2).toFixed(1);
+  if(shape==='tri')  return `<svg width="${s}" height="${s}"><polygon points="${c},${s*0.06} ${s},${s*0.94} 0,${s*0.94}" fill="${color}"/></svg>`;
+  if(shape==='ring') return `<svg width="${s}" height="${s}"><circle cx="${c}" cy="${c}" r="${(s/2-1.6).toFixed(1)}" fill="none" stroke="${color}" stroke-width="2"/></svg>`;
+  if(shape==='sq')   return `<svg width="${s}" height="${s}"><rect x="1" y="1" width="${s-2}" height="${s-2}" rx="2" fill="${color}"/></svg>`;
+  return `<svg width="${s}" height="${s}"><circle cx="${c}" cy="${c}" r="${(s/2-0.5).toFixed(1)}" fill="${color}"/></svg>`;
+}
+// Event-specific markers — each shows the actual event so patterns read off
+// the calendar (clustering, cyclicality). Grouped: orthostatic / vitals /
+// positive / cycle. No glyphs (SVG shapes only).
+const CATS = {
+  stand:  { chip:'stand',     legend:'Orthostatic event (heart-rate jump on standing)', dot:'#bb6147', fg:'#9a4a34', bg:'rgba(187,97,71,.13)', shape:'tri' },
+  hr:     { chip:'HR spike',  legend:'Heart-rate spike',  dot:'#c0734a', fg:'#9a4a2e', bg:'rgba(192,115,74,.14)', shape:'dot' },
+  bp:     { chip:'BP',        legend:'Blood pressure outside usual', dot:'#c08a3e', fg:'#86601f', bg:'rgba(192,138,62,.16)', shape:'dot' },
+  breath: { chip:'breathing', legend:'Breathing rate up', dot:'#caa24e', fg:'#876722', bg:'rgba(202,162,78,.17)', shape:'dot' },
+  migraine:{ chip:'migraine', legend:'Migraine', dot:'#8a4a63', fg:'#6b3a4e', bg:'rgba(138,74,99,.15)', shape:'ring' },
+  headache:{ chip:'headache', legend:'Headache (number = severity /10)', dot:'#a8553f', fg:'#8a3e2c', bg:'rgba(168,85,63,.14)', shape:'dot' },
+  dizzy:  { chip:'dizziness', legend:'Dizziness / vertigo', dot:'#9a7bb0', fg:'#634a7a', bg:'rgba(154,123,176,.16)', shape:'dot' },
+  nausea: { chip:'nausea/gut',legend:'Nausea / gut symptoms', dot:'#8a7a3f', fg:'#6b5e26', bg:'rgba(138,122,63,.16)', shape:'dot' },
+  pain:   { chip:'pain',      legend:'Pain (number = severity /10)', dot:'#9a6b4a', fg:'#7a4f34', bg:'rgba(154,107,74,.15)', shape:'dot' },
+  pem:    { chip:'PEM',       legend:'Post-exertional crash (PEM)', dot:'#9c3f3f', fg:'#7e2e2e', bg:'rgba(156,63,63,.15)', shape:'tri' },
+  lowenergy:{ chip:'low energy',legend:'Low energy / fatigue', dot:'#8a8a6a', fg:'#5e5e44', bg:'rgba(138,138,106,.18)', shape:'dot' },
+  lowmood:{ chip:'low mood',  legend:'Low mood', dot:'#6b7b8a', fg:'#465662', bg:'rgba(107,123,138,.16)', shape:'dot' },
+  med:    { chip:'medication',legend:'Took medication to help', dot:'#7d8aa0', fg:'#4d5a70', bg:'rgba(125,138,160,.16)', shape:'sq' },
+  good:   { chip:'settled',   legend:'Noticed · a good thing', dot:'#6f7551', fg:'#566042', bg:'rgba(111,117,81,.16)', shape:'ring' },
+  rest:   { chip:'rest',      legend:'Quiet / rest period', dot:'#94a06f', fg:'#5a6a4e', bg:'rgba(148,160,111,.22)', shape:'dot' },
+};
+function chip(cat, count, title, val){
+  const d=CATS[cat]; if(!d) return '';
+  const lab = d.chip + (val?` ${val}`:'') + (count>1?` ×${count}`:'');
+  return `<span class="chip" style="color:${d.fg};background:${d.bg}" title="${title||d.legend}">${shapeSvg(d.shape,d.dot)}${lab}</span>`;
+}
+// check-in (corner dot) and period (bottom band) render specially.
+const LEGEND_EXTRA = [
+  { label:'Check-in logged', html:'<span style="width:9px;height:9px;border-radius:50%;border:1.5px solid var(--sage);background:var(--sage);display:inline-block"></span>' },
+  { label:'Period (band = flow)', html:'<span style="width:18px;height:5px;border-radius:3px;background:#8f5d7e;display:inline-block"></span>' },
+];
+
+// ── Real markers, keyed by ISO date (from Supabase, Fran). ──
+// cat markers + checkin(slots) + period{flow,pain,phase}
+let MARKERS = {
+  '2026-05-31': { checkin:['evening'], period:{ flow:'light' },
+    cats:[{c:'migraine',t:'Migraine logged'},{c:'headache',v:'5',t:'Headache 5/10'},{c:'dizzy',t:'Dizziness — bad vertigo'},{c:'nausea',t:'Nausea / gut — strong, bloating'},{c:'pain',v:'3',t:'Pain 3/10 — lower back, throbbing'},{c:'lowenergy',t:'Energy 3/10'},{c:'med',t:'Took medication — it helped'}] },
+  '2026-06-01': { cats:[{c:'bp',t:'BP outside usual range'}] },
+  '2026-06-03': { cats:[{c:'bp',t:'BP outside usual'},{c:'breath',t:'Breathing rate up'}] },
+  '2026-06-04': { checkin:['morning'], cats:[{c:'pem',t:'PEM — heavy'},{c:'hr',t:'HR spike'},{c:'breath',t:'Breathing rate up'},{c:'breath',t:'Breathing rate up'},{c:'headache',t:'Morning headache — mild'},{c:'pain',v:'4',t:'Morning pain 4/10 — lower back'}] },
+  '2026-06-05': { checkin:['morning'], cats:[{c:'stand',v:'+63',t:'Standing heart-rate jump +63 bpm'},{c:'pem',t:'PEM — mild'},{c:'lowenergy',t:'Morning energy 2/10'},{c:'headache',t:'Morning headache — mild'}] },
+  '2026-06-07': { cats:[{c:'bp',t:'BP outside usual'},{c:'breath',t:'Breathing rate up'}] },
+  '2026-06-09': { cats:[{c:'good',t:'A settled, restful stretch'},{c:'rest',t:'80-min quiet period'}] },
+};
+// priority order — drives month-cell capping and year-view dominant pip
+const PRIORITY = ['migraine','pem','stand','headache','dizzy','nausea','pain','hr','bp','breath','lowenergy','lowmood','med','good','rest'];
+let filter = null; // when set to a cat key, the calendar isolates that one metric (see patterns at a glance)
+// SCOPE: when this calendar is embedded on a single signal page (?scope=stand,
+// ?scope=hr …) it shows only that metric — the reusable per-page component.
+const SCOPE = new URLSearchParams(location.search).get('scope');
+// EMBED: drop the page chrome (title/padding/background) so the calendar sits
+// inside a dashboard panel via <iframe src="...?embed=1">.
+const EMBED = new URLSearchParams(location.search).get('embed')==='1';
+if(EMBED) document.documentElement.classList.add('embed');
+
+// ── Day-view data (real, from the record) ──
+// Conditions that day (real environment_snapshot from each check-in)
+let COND = {
+  '2026-05-31':{temp:22.5,feels:19.9,pressure:1014.6,humidity:49,aqi:32,uv:4.7,grass:20.6},
+  '2026-06-04':{temp:14.8,feels:13.7,pressure:1001.4,humidity:91,aqi:20,uv:0.05,grass:3.4},
+  '2026-06-05':{temp:13.2,feels:10.8,pressure:1008.3,humidity:84,aqi:21,uv:0,grass:0.4},
+};
+// Real per-day ring vitals — daily average + range, every captured day (not
+// just one). Values straight from ring_samples. HR lows clamped at 45 to drop
+// sub-physiological contact-noise artefacts (e.g. a stray 10 bpm). The
+// through-the-day graph comes from the live render; here we show the honest
+// daily figures so no captured day ever reads as "no capture".
+const VMETA = { hr:['Heart rate','bpm'], hrv:['HRV (RMSSD)','ms'], rr:['Respiration','/min'], spo2:['Blood oxygen','%'], bp:['Blood pressure','mmHg'] };
+let DAY_VITALS = {
+  '2026-06-09':{hr:[76,57,98],hrv:[41,37,46],rr:[15,11,20],spo2:[98,94,98],bp:['110/73','103/68','118/78']},
+  '2026-06-08':{hr:[76,60,105],hrv:[42,37,46],rr:[15,12,21],spo2:[98,96,98],bp:['110/73','104/68','122/81']},
+  '2026-06-07':{hr:[81,61,122],hrv:[41,37,46],rr:[16,12,25],spo2:[98,94,98],bp:['112/74','104/69','137/90']},
+  '2026-06-06':{hr:[76,60,103],hrv:[41,37,46],rr:[16,12,21],spo2:[98,96,98],bp:['112/74','105/69','118/78']},
+  '2026-06-05':{hr:[79,57,100],hrv:[42,37,46],rr:[16,13,19],spo2:[98,97,98],bp:['112/74','106/70','116/76']},
+  '2026-06-04':{hr:[70,56,145],hrv:[41,37,46],rr:[15,11,30],spo2:[97,92,98],bp:['110/73','102/68','139/90']},
+  '2026-06-03':{hr:[78,58,118],hrv:[42,37,46],rr:[16,12,24],spo2:[98,95,98],bp:['112/74','102/69','128/86']},
+  '2026-06-02':{hr:[78,56,143],hrv:[41,37,46],rr:[14,11,20],spo2:[97,94,98],bp:['107/70','102/68','116/78']},
+  '2026-06-01':{hr:[79,55,107],hrv:[41,37,46],rr:[15,11,22],spo2:[97,93,98],bp:['102/69','90/63','123/80']},
+  '2026-05-31':{hr:[75,54,167],hrv:[41,37,46],rr:[15,11,34],spo2:[98,90,98],bp:['97/67','90/64','105/70']},
+  '2026-05-30':{hr:[86,73,112],hrv:[41,37,46],rr:[17,15,23],spo2:[98,95,98],bp:['102/70','96/67','112/75']},
+};
+// research drawn from the pattern_library — the matching evidence for a day's events
+const RESEARCH = {
+  stand:{l:'Orthostatic heart-rate rise',c:'A sustained ≥30 bpm rise within 10 min of standing (BP not dropping) is the POTS benchmark; ring resting HR is ±5–10 bpm, leaving clear margin at 30.',r:'Sheldon 2015 [12]; Bent 2020 [48]'},
+  pem:{l:'Post-exertional crash (PEM)',c:'A delayed, disproportionate, prolonged worsening after even minor exertion — the defining ME/CFS feature, with a duration floor ~14–24 h.',r:'Carruthers 2011 [17]'},
+  rest:{l:'Daytime rest / pacing',c:'Pacing within an energy envelope is the only NICE-recommended ME/CFS strategy; rest periods make the envelope visible.',r:'Sanal-Hayes 2023 [21]'},
+  good:{l:'A settled stretch',c:'A spell of real recovery — heart rate and breathing settled, then returned. Rest like this is what staying inside an energy envelope looks like, the recovery the body needs to keep within its limits.',r:'Sanal-Hayes 2023 [21]'},
+  migraine:{l:'Migraine',c:'Overnight autonomic shifts can precede migraine but never replace the logged prodrome; the report holds them as context.',r:'Kapustynska 2024 [25]'},
+  headache:{l:'Headache',c:'Tracked against cycle phase and environmental triggers to surface patterns — never to diagnose.',r:'—'},
+  bp:{l:'Blood pressure',c:'The ring optical BP estimate is excluded from clinical use; only calibrated cuff readings are shown to a doctor.',r:'Mukkamala 2022 [52]'},
+  breath:{l:'Respiration',c:'PPG breathing rate is a resting within-person trend (±6 bpm) and a sensitive marker of arousal.',r:'Charlton 2016 [51]'},
+  hr:{l:'Heart-rate spike',c:'A sustained rise above the personal baseline; consumer-wearable resting HR is accurate to ±5–10 bpm vs ECG.',r:'Bent 2020 [48]'},
+  pain:{l:'Pain',c:'Logged with location, type and severity over time, held alongside cycle and activity to show what it tracks with.',r:'—'},
+  nausea:{l:'Nausea / gut',c:'Part of the multi-system picture; surfaced as co-occurrence, not a standalone diagnosis.',r:'—'},
+  lowenergy:{l:'Low energy / fatigue',c:'Read against the person’s own baseline and recent load — a possible post-exertional signal when it follows a high-load day.',r:'Carruthers 2011 [17]'},
+  dizzy:{l:'Dizziness / vertigo',c:'Logged as reported, and surfaced alongside the same day’s standing heart-rate events so a clinician can see whether they coincide.',r:'—'},
+};
+// Verbatim extracts behind each citation — what makes a reference clickable.
+// (In the live build these live with the reference in Supabase; here embedded.)
+const QUOTES = {
+  48:{q:'different wearables are all reasonably accurate at resting and prolonged elevated heart rate, but … differences exist between devices in responding to changes in activity',p:'1',cite:'Bent B, et al. Investigating sources of inaccuracy in wearable optical heart rate sensors. npj Digit Med. 2020;3:18.'},
+  51:{q:'95% LOAs of −5.1 to 7.2 bpm and a bias of 1.0 bpm when using PPG',p:'610',cite:'Charlton PH, et al. An assessment of algorithms to estimate respiratory rate from the ECG and PPG. Physiol Meas. 2016;37(4):610–26.'},
+  21:{q:'regulating activity to avoid post exertional malaise (PEM), the worsening of symptoms after an activity … to be as active as possible within the limits imposed by the illness',p:'1',cite:'Sanal-Hayes NEM, et al. A scoping review of ‘Pacing’ for ME/CFS. J Transl Med. 2023;21:720.'},
+  17:{q:'Recovery period is prolonged, usually taking 24 h or longer. A relapse can last days, weeks or longer',p:'329',cite:'Carruthers BM, et al. Myalgic encephalomyelitis: international consensus criteria. J Intern Med. 2011;270(4):327–38.'},
+  50:{q:'nightly-mean RMSSD … agrees with ECG at a Pearson r of about 0.96',p:'10',cite:'Cao R, et al. Accuracy assessment of Oura Ring nocturnal HR and HRV vs electrocardiography. J Med Internet Res. 2022;24(1):e27487.'},
+};
+function refLinks(rstr){ if(!rstr||rstr==='—') return '';
+  return rstr.replace(/\[(\d+)\]/g,(m,n)=> QUOTES[n] ? `<a class="ref" onclick="toggleQuote(this,${n})">[${n}]</a>` : m); }
+window.toggleQuote=function(el,n){
+  const why=el.closest('.ev-why'); const ex=why.querySelector('.quote[data-n="'+n+'"]');
+  if(ex){ ex.remove(); return; }
+  const q=QUOTES[n]; if(!q) return;
+  const box=document.createElement('div'); box.className='quote'; box.dataset.n=n;
+  box.innerHTML=`<p class="q-text">“${q.q}”</p><p class="q-src">— ${q.cite}${q.p?` p. ${q.p}`:''}</p>`;
+  why.appendChild(box);
+};
+const aqiLab = n => n<=20?'good':n<=40?'fair':n<=60?'moderate':n<=80?'poor':'very poor';
+const uvLab  = n => n<3?'low':n<6?'moderate':n<8?'high':'very high';
+const grassLab = n => n<30?'low':n<50?'moderate':n<150?'high':'very high';
+const FLOW_COLOR = { spotting:'#d6b8c8', light:'#b98aa6', medium:'#8f5d7e', heavy:'#6b4f63' };
+
+const TODAY = '2026-06-09';
+let view = { y:2026, m:5 }; // month is 0-based; 5 = June
+let level = 'month';        // 'year' | 'month' | 'day'
+let sel = TODAY;            // selected day for day view
+
+function iso(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function renderCell(y,m,d,outside){
+  const key = iso(y,m,d);
+  const data = MARKERS[key] || {};
+  const isToday = key===TODAY;
+  // aggregate identical cats (e.g. vitals x3 → one shape + count)
+  let mkHtml='';
+  let cats = data.cats||[];
+  if(filter) cats = cats.filter(x=>x.c===filter);
+  const seen=[]; cats.forEach(x=>{ if(!seen.includes(x.c)) seen.push(x.c); });
+  const present = seen.sort((a,b)=>PRIORITY.indexOf(a)-PRIORITY.indexOf(b));
+  // symbol + actual number (severity/value), no name word — legend maps symbols
+  present.forEach(c=>{
+    const d2=CATS[c]; if(!d2) return;
+    const items=cats.filter(x=>x.c===c);
+    const title=items.map(x=>x.t).filter(Boolean).join(' · ')||d2.legend;
+    const val=(items.find(x=>x.v)||{}).v;
+    mkHtml += `<span class="sym" title="${title}">${shapeSvg(d2.shape,d2.dot,12)}${(val!=null&&val!=='')?`<span class="symv" style="color:${d2.fg}">${val}</span>`:''}</span>`;
+  });
+  // when isolating one metric, dim days that don't have it so the pattern pops
+  const faded = filter ? (present.length?'':' faded') : '';
+  const showMeta = !filter; // hide check-in dot + period underline while filtering
+  const ck = (showMeta && data.checkin) ? `<span class="ck done" title="Check-in: ${data.checkin.join(', ')}"></span>` : '';
+  const pcol = (showMeta && data.period) ? (FLOW_COLOR[data.period.flow]||'#8f5d7e') : null;
+  const dn = pcol
+    ? `<span class="dn" style="border-bottom:2.5px solid ${pcol};padding-bottom:1px" title="Period · ${data.period.flow} flow">${d}</span>`
+    : `<span class="dn">${d}</span>`;
+  return `<div class="cell${outside?' out':''}${isToday?' today':''}${faded}" style="cursor:pointer" onclick="goDay('${key}')">
+    ${dn}${ck}
+    <div class="mk">${mkHtml}</div>
+  </div>`;
+}
+
+// dominant category for a day (for the year heatmap pip)
+function domCat(key){ const d=MARKERS[key]; if(!d) return null;
+  const cats=d.cats||[];
+  if(filter) return cats.some(x=>x.c===filter)?filter:null;
+  for(const p of PRIORITY) if(cats.some(x=>x.c===p)) return p;
+  if(d.period) return 'period'; if(d.checkin) return 'checkin'; return null; }
+const PIP={ migraine:'#8a4a63', stand:'#bb6147', headache:'#a8553f', hr:'#c0734a', bp:'#c08a3e', breath:'#caa24e', dizzy:'#9a7bb0', med:'#7d8aa0', good:'#6f7551', rest:'#94a06f', period:'#8f5d7e', checkin:'#b9a890' };
+
+function renderMonth(){
+  const {y,m}=view;
+  document.getElementById('cal-title').textContent = `${MONTHS[m]} ${y}`;
+  let firstDow = new Date(y,m,1).getDay(); firstDow=(firstDow+6)%7; // Mon=0
+  const daysIn = new Date(y,m+1,0).getDate(), prevDays = new Date(y,m,0).getDate();
+  let cells='';
+  for(let i=firstDow;i>0;i--){ const d=prevDays-i+1; cells+=renderCell(m===0?y-1:y,(m+11)%12,d,true); }
+  let recorded=0;
+  for(let d=1; d<=daysIn; d++){ if(MARKERS[iso(y,m,d)]) recorded++; cells+=renderCell(y,m,d,false); }
+  const trail=(7-(firstDow+daysIn)%7)%7;
+  for(let d=1; d<=trail; d++){ cells+=renderCell(m===11?y+1:y,(m+1)%12,d,true); }
+  document.getElementById('cal-grid').className='grid';
+  document.getElementById('cal-grid').innerHTML = cells;
+  document.getElementById('cal-cap').textContent = recorded ? `${recorded} day${recorded>1?'s':''} with something recorded` : 'nothing recorded this month';
+}
+
+function renderYear(){
+  const {y}=view;
+  document.getElementById('cal-title').textContent = `${y}`;
+  let html='', total=0;
+  for(let m=0;m<12;m++){
+    let firstDow=new Date(y,m,1).getDay(); firstDow=(firstDow+6)%7;
+    const daysIn=new Date(y,m+1,0).getDate();
+    let cellsMini='', cnt=0;
+    for(let i=0;i<firstDow;i++) cellsMini+=`<span class="md"></span>`;
+    for(let d=1;d<=daysIn;d++){ const key=iso(y,m,d); const c=domCat(key);
+      if(c){cnt++;total++;} const col=c?PIP[c]:null;
+      cellsMini+=`<span class="md">${d}${col?`<span class="pip" style="background:${col}"></span>`:''}</span>`; }
+    html+=`<div class="mini" onclick="goMonth(${m})"><h3>${MONTHS[m]}</h3><div class="mg">${cellsMini}</div><div class="cnt">${cnt?cnt+' marked':'—'}</div></div>`;
+  }
+  document.getElementById('cal-grid').className='year';
+  document.getElementById('cal-grid').innerHTML=html;
+  document.getElementById('cal-cap').textContent = total?`${total} days marked across ${y}`:'';
+}
+
+function daySpark(arr,color,W,H){
+  W=W||230;H=H||58;const pad={t:7,r:6,b:6,l:6}, mn=Math.min(...arr),mx=Math.max(...arr);
+  const X=i=>pad.l+i*(W-pad.l-pad.r)/(arr.length-1), Y=v=>pad.t+(1-(v-mn)/((mx-mn)||1))*(H-pad.t-pad.b);
+  const pts=arr.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ');
+  return `<svg width="100%" viewBox="0 0 ${W} ${H}" style="height:auto;display:block">`+
+    `<polyline points="${pts}" fill="none" stroke="${color||'#bb6147'}" stroke-width="2" stroke-linejoin="round"/></svg>`;
+}
+function renderDay(){
+  const key=sel, dt=new Date(key+'T00:00:00');
+  document.getElementById('cal-title').textContent =
+    dt.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('cal-cap').textContent = key===TODAY?'today':'';
+  const data=MARKERS[key]||{}, cats=data.cats||[];
+
+  // events — each carries its OWN evidence inline ("why it matters"), so
+  // research is tied to the thing that happened, not a separate floating block
+  let evs=[];
+  cats.forEach(x=>{ const d=CATS[x.c]; if(!d) return; const rc=RESEARCH[x.c];
+    evs.push(`<div class="ev"><div class="ev-top">${shapeSvg(d.shape,d.dot,13)}<div><div class="ev-t">${d.legend}${x.v?` — ${x.v}`:''}</div>${x.t?`<div class="ev-d">${x.t}</div>`:''}</div></div>`+
+      (rc?`<div class="ev-why">${rc.c}${(rc.r&&rc.r!=='—')?` <span class="ev-cite">${refLinks(rc.r)}</span>`:''}</div>`:'')+`</div>`); });
+  if(data.checkin) evs.push(`<div class="ev"><div class="ev-top"><span class="ck done" style="position:static"></span><div><div class="ev-t">Check-in logged</div><div class="ev-d">${data.checkin.join(', ')}</div></div></div></div>`);
+  if(data.period) evs.push(`<div class="ev"><div class="ev-top"><span style="width:11px;height:11px;border-radius:50%;background:${FLOW_COLOR[data.period.flow]||'#8f5d7e'};flex:none"></span><div><div class="ev-t">Period</div><div class="ev-d">${data.period.flow} flow</div></div></div></div>`);
+  const eventsHtml = evs.length ? `<div class="ev-list">${evs.join('')}</div>`
+    : `<div class="day-empty">Nothing recorded this day — empty isn't estimated, just a day without a logged check-in or captured event.</div>`;
+
+  // vitals — every signal the ring captured that day
+  let vitalsHtml; const vit=DAY_VITALS[key];
+  if(vit){
+    const card=(k,a)=>{ const m=VMETA[k]; return `<div class="v-card"><div class="v-h"><span class="v-l">${m[0]}</span><span class="v-avg">${a[0]}<small>${m[1]}</small></span></div><div class="v-range">range ${a[1]}–${a[2]}${k==='bp'?' · est.':''}</div></div>`; };
+    vitalsHtml=`<div class="d-sec"><h4>Vitals — daily average &amp; range</h4><div class="v-grid">${['hr','hrv','rr','spo2','bp'].filter(k=>vit[k]).map(k=>card(k,vit[k])).join('')}</div><p class="muted" style="font-size:11.5px;margin-top:9px">Full-day average and range from the ring. Blood pressure is the optical estimate (trend only) — the doctor report uses calibrated cuff readings. The reading through the day appears in the live shared view.</p></div>`;
+  } else vitalsHtml=`<div class="d-sec"><h4>Vitals</h4><p class="muted" style="font-size:13px;margin:0">The ring didn't capture vitals on this day.</p></div>`;
+
+  // conditions that day
+  let condHtml=''; const co=COND[key];
+  if(co){ const lines=[['Temperature',`${Math.round(co.temp)}°C · feels ${Math.round(co.feels)}°`],['Barometric pressure',`${Math.round(co.pressure)} hPa`],['Air quality (AQI)',`${Math.round(co.aqi)} · ${aqiLab(co.aqi)}`],['Grass pollen',grassLab(co.grass)],['UV',`${co.uv<1?'0':Math.round(co.uv)} · ${uvLab(co.uv)}`],['Humidity',`${Math.round(co.humidity)}%`]];
+    condHtml=`<div class="d-sec"><h4>Conditions that day</h4><div class="d-cond">${lines.map(l=>`<div><span class="ck-k">${l[0]}</span><span class="ck-v">${l[1]}</span></div>`).join('')}</div></div>`; }
+
+  document.getElementById('cal-grid').className='';
+  document.getElementById('cal-grid').innerHTML = `<div class="day-detail">
+    <div class="d-sec"><h4>What happened</h4>${eventsHtml}</div>
+    ${vitalsHtml}${condHtml}
+  </div>`;
+}
+
+function render(){
+  document.getElementById('cal-dow').style.display = level==='month' ? '' : 'none';
+  if(level==='year') renderYear();
+  else if(level==='day') renderDay();
+  else renderMonth();
+  if(filter) document.getElementById('cal-cap').textContent = `showing only: ${CATS[filter].chip} — tap it again to clear`;
+}
+function renderLegend(){
+  if(SCOPE && CATS[SCOPE]){ document.getElementById('cal-legend').innerHTML =
+    `<span class="legend-hint">This page shows only <b>${CATS[SCOPE].legend.toLowerCase()}</b>. The full Calendar shows every metric together.</span><span class="lchip">${chip(SCOPE)}</span>`;
+    return; }
+  document.getElementById('cal-legend').innerHTML =
+    `<span class="legend-hint">Tap a marker to isolate it and see its pattern across time.</span>` +
+    Object.keys(CATS).map(k=>`<span class="lchip${filter&&filter!==k?' off':''}" onclick="toggleFilter('${k}')">${chip(k)}</span>`).join('') +
+    LEGEND_EXTRA.map(e=>`<span class="li">${e.html}${e.label}</span>`).join('');
+}
+window.toggleFilter=function(k){ if(SCOPE) return; filter=(filter===k)?null:k; renderLegend(); render(); };
+function setLevel(l){ level=l;
+  document.querySelectorAll('#cal-switch button').forEach(b=>b.classList.toggle('on',b.dataset.lvl===l));
+  render();
+}
+window.goDay=function(key){ sel=key; const dt=new Date(key+'T00:00:00'); view={y:dt.getFullYear(),m:dt.getMonth()}; setLevel('day'); };
+window.goMonth=function(m){ view.m=m; setLevel('month'); };
+
+// scope this calendar to a single signal when embedded on a signal page
+if(SCOPE && CATS[SCOPE]){
+  filter = SCOPE;
+  document.querySelector('h1').textContent = CATS[SCOPE].chip.charAt(0).toUpperCase()+CATS[SCOPE].chip.slice(1);
+  document.querySelector('.sub').textContent = `${CATS[SCOPE].legend} — when it showed up, at a glance.`;
+}
+// legend
+renderLegend();
+
+function step(dir){
+  if(level==='year'){ view.y+=dir; }
+  else if(level==='month'){ view.m+=dir; if(view.m<0){view.m=11;view.y--;} if(view.m>11){view.m=0;view.y++;} }
+  else { const dt=new Date(sel+'T00:00:00'); dt.setDate(dt.getDate()+dir); sel=iso(dt.getFullYear(),dt.getMonth(),dt.getDate()); view={y:dt.getFullYear(),m:dt.getMonth()}; }
+  render();
+}
+document.getElementById('prev').onclick=()=>step(-1);
+document.getElementById('next').onclick=()=>step(1);
+document.querySelectorAll('#cal-switch button').forEach(b=>b.onclick=()=>setLevel(b.dataset.lvl));
+
+// ── LIVE DATA ── when opened with a share code (?c=…), pull the patient's
+// real record from the API and render from THAT, not the embedded demo data.
+const API = 'https://api.noti.au';
+function applyLive(j){
+  MARKERS = {}; DAY_VITALS = {}; COND = {}; let latest=null;
+  for(const d in (j.days||{})){ const x=j.days[d];
+    MARKERS[d] = { cats:x.cats||[], checkin:x.checkin, period:x.period };
+    if(x.vitals && Object.keys(x.vitals).length) DAY_VITALS[d]=x.vitals;
+    if(x.cond) COND[d]=x.cond;
+    if(!latest || d>latest) latest=d;
+  }
+  if(latest){ const dt=new Date(latest+'T00:00:00'); view={y:dt.getFullYear(),m:dt.getMonth()}; sel=latest; }
+  const sub=document.querySelector('.sub');
+  if(sub) sub.textContent = (j.patient? j.patient+'’s record' : 'Patient record') + ' · everything tracked, month at a glance';
+}
+async function boot(){
+  const code = new URLSearchParams(location.search).get('c');
+  if(code){
+    try{
+      const r = await fetch(`${API}/share/${encodeURIComponent(code)}/data`);
+      const j = await r.json();
+      if(j && j.ok) applyLive(j);
+      else { const cap=document.getElementById('cal-cap'); if(cap) cap.textContent = j&&j.error==='expired'?'this share link has expired':j&&j.error==='revoked'?'this share link was revoked':'link not found'; }
+    }catch(e){ /* fall back to whatever is embedded */ }
+  }
+  renderLegend(); render();
+}
+boot();
+</script>
+</body>
+</html>

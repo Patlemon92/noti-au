@@ -279,7 +279,7 @@
       <!-- SLEEP -->
       <section class="panel" id="p-sleep">
         <div class="grid g4">
-          <div class="card stat"><div class="k">Avg duration</div><div class="n">7.4<span class="u">h</span></div><div class="b">12 nights recorded · 3.1–9.8h</div></div>
+          <div class="card stat"><div class="k">Avg duration</div><div class="n">7.4<span class="u">h</span></div><div class="b">over 12 captured nights · 3.1–9.8h</div></div>
           <div class="card stat"><div class="k">Night-to-night swing</div><div class="n">6.7<span class="u">h</span></div><div class="b">highly variable</div></div>
           <div class="card stat"><div class="k">Awakenings</div><div class="n">3.4<span class="u">/night</span></div><div class="b">fragmented</div></div>
           <div class="card stat"><div class="k">Daytime naps</div><div class="n">9</div><div class="b">over 30 days</div></div>
@@ -550,7 +550,7 @@
       +`<text x="${pad.l-4}" y="${(y(t)+3).toFixed(1)}" text-anchor="end" font-size="8.5" fill="#9a8473" font-family="Hanken Grotesk">${t}h</text>`;});
     rec.forEach((h,i)=>{ const hh=(h/max)*(H-pad.t-pad.b),x=pad.l+i*gap+(gap-bw)/2,col=h<5?'#bb6147':(h>9?'#6b4f63':'#d29a82');
       g+=`<rect x="${x.toFixed(1)}" y="${y(h).toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="2" fill="${col}" opacity=".88"/>`;});
-    g+=`<text x="${pad.l}" y="${H-3}" font-size="8.5" fill="#9a8473" font-family="Hanken Grotesk">12 recorded nights · 3.1–9.8h · short nights flagged</text>`;
+    g+=`<text x="${pad.l}" y="${H-3}" font-size="8.5" fill="#9a8473" font-family="Hanken Grotesk">12 captured nights · 3.1–9.8h · short nights flagged</text>`;
     s.innerHTML=g;
   })();
   // lower, flatter HRV (dysautonomia)
@@ -570,7 +570,7 @@
       const seg=[h*dp,h*lt,h*rm]; let acc=0;
       seg.forEach((v,si)=>{ const hh=(v/max)*(H-pad.t-pad.b); g+=`<rect x="${x.toFixed(1)}" y="${y(acc+v).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(hh,0.6).toFixed(1)}" fill="${cols[si]}"/>`; acc+=v; });
     });
-    g+=`<text x="${pad.l}" y="${H-3}" font-size="9.5" fill="#9a8473" font-family="Hanken Grotesk">12 of 30 nights recorded · gaps = no complete start-to-wake reading</text>`;
+    g+=`<text x="${pad.l}" y="${H-3}" font-size="9.5" fill="#9a8473" font-family="Hanken Grotesk">12 of 30 nights captured · gaps = the ring didn't record those nights, so they're left out (not estimated)</text>`;
     s.innerHTML=g;
   })();
   lineChart('ch-hrv2',hrv,{min:22,max:42,band:[29,33],color:'#6b4f63'});

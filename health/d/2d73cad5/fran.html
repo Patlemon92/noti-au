@@ -122,6 +122,11 @@
   .nav-ov{position:fixed;inset:0;background:rgba(40,30,24,.42);z-index:45;opacity:0;visibility:hidden;transition:.2s;}
   .nav-ov.on{opacity:1;visibility:visible;}
   /* compact migraine calendar — small cells, clear centred markers */
+  .cal-nav{display:flex;align-items:center;gap:8px;margin:2px 0 12px;}
+  .cal-nav button{font-family:inherit;font-size:17px;line-height:1;color:var(--clay);background:var(--card);border:1px solid var(--line);border-radius:8px;width:30px;height:30px;cursor:pointer;padding:0;}
+  .cal-nav button:hover{border-color:var(--clay-soft);}
+  .cal-nav #cal-label{font-family:"Fraunces",serif;font-size:16px;font-weight:500;min-width:124px;text-align:center;}
+  .cal-nav .today{margin-left:auto;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--clay);background:none;border:0;width:auto;}
   .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:392px;margin-top:4px;}
   .cal-h{font-size:9.5px;font-weight:600;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:.03em;padding-bottom:1px;}
   .cal-d{aspect-ratio:1;border-radius:7px;background:var(--line-soft);position:relative;}
@@ -314,7 +319,12 @@
           <div class="card stat"><div class="k">Days with aura</div><div class="n">3</div></div>
         </div>
         <div class="card" style="margin-top:16px">
-          <div class="ch-h"><h3>Migraine calendar</h3><span class="note">9 May – 9 Jun · the clustering at a glance</span></div>
+          <div class="ch-h"><h3>Calendar</h3><span class="note">each day's markers at a glance</span></div>
+          <div class="cal-nav">
+            <button onclick="calMove(-1)" aria-label="Previous month">‹</button>
+            <span id="cal-label">May 2026</span>
+            <button onclick="calMove(1)" aria-label="Next month">›</button>
+          </div>
           <div class="cal" id="mig-cal"></div>
           <div class="cal-leg">
             <span><i class="lg-hd"></i>headache (darker = stronger)</span>
@@ -527,26 +537,34 @@
   barChart('ch-ortho',[0,0,0,44,0,0,0,38,0,0,0,0,68,52,0,0,0,0,0,0,0,40,0,0,0,0,48,0,0,0],{max:80,color:'#bb6147',hot:i=>true});
   // dizziness levels (none / mild / moderate / rough — day counts)
   barChart('ch-anx',[8,6,5,3],{max:10,color:'#d29a82',hot:i=>i>=2,labels:['none','mild','mod','rough']});
-  // migraine calendar — 11 May (Mon) → 9 Jun, marked per day
-  (function(){ const cal=document.getElementById('mig-cal'); if(!cal)return;
-    const days=[]; for(let d=11;d<=31;d++)days.push('May-'+d); for(let d=1;d<=9;d++)days.push('Jun-'+d);
-    const head={'May-16':6,'May-17':7,'May-23':8,'May-24':7,'May-29':5,'Jun-4':6,'Jun-5':8,'Jun-6':7};
-    const drop=new Set(['May-16','May-23','May-29','Jun-4']);
-    const pm=new Set(['Jun-3','Jun-4','Jun-5','Jun-6']);
-    const aura=new Set(['May-23','Jun-5','Jun-6']);
-    const med=new Set(['May-17','May-23','May-24','Jun-4','Jun-5','Jun-6']);  // relief medication taken
+  // navigable month calendar — events keyed by Y-M(0idx)-D
+  const CAL_HEAD={'2026-4-16':6,'2026-4-17':7,'2026-4-23':8,'2026-4-24':7,'2026-4-29':5,'2026-5-4':6,'2026-5-5':8,'2026-5-6':7};
+  const CAL_DROP=new Set(['2026-4-16','2026-4-23','2026-4-29','2026-5-4']);
+  const CAL_PM=new Set(['2026-5-3','2026-5-4','2026-5-5','2026-5-6']);
+  const CAL_AURA=new Set(['2026-4-23','2026-5-5','2026-5-6']);
+  const CAL_MED=new Set(['2026-4-17','2026-4-23','2026-4-24','2026-5-4','2026-5-5','2026-5-6']);
+  const CAL_MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let calY=2026, calMo=4;  // May 2026
+  function renderCal(){
+    const cal=document.getElementById('mig-cal'); if(!cal)return;
+    document.getElementById('cal-label').textContent=CAL_MN[calMo]+' '+calY;
+    const startDow=(new Date(calY,calMo,1).getDay()+6)%7;     // Mon = 0
+    const dim=new Date(calY,calMo+1,0).getDate();
     const X='<svg class="mk-x" width="8" height="8" viewBox="0 0 8 8"><line x1="1.3" y1="1.3" x2="6.7" y2="6.7" stroke="#42332b" stroke-width="1.4"/><line x1="6.7" y1="1.3" x2="1.3" y2="6.7" stroke="#42332b" stroke-width="1.4"/></svg>';
     let html=''; ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(w=>html+=`<div class="cal-h">${w}</div>`);
-    days.forEach(k=>{ const dn=k.split('-')[1]; const sev=head[k]; let cls='cal-d'+(pm.has(k)?' pm':'');
-      let inner=`<span class="dn">${dn}</span>`;
+    for(let i=0;i<startDow;i++) html+='<div></div>';
+    for(let d=1; d<=dim; d++){ const k=`${calY}-${calMo}-${d}`; const sev=CAL_HEAD[k]; let cls='cal-d'+(CAL_PM.has(k)?' pm':'');
+      let inner=`<span class="dn">${d}</span>`;
       if(sev){ const op=(0.42+sev/14).toFixed(2);
-        inner+=`<span class="cal-ctr"><span class="mk-hd${aura.has(k)?' aura':''}" style="background:rgba(187,97,71,${op})"></span></span>`; }
-      if(drop.has(k)) inner+=X;
-      if(med.has(k)) inner+=`<span class="mk-dot"></span>`;
+        inner+=`<span class="cal-ctr"><span class="mk-hd${CAL_AURA.has(k)?' aura':''}" style="background:rgba(187,97,71,${op})"></span></span>`; }
+      if(CAL_DROP.has(k)) inner+=X;
+      if(CAL_MED.has(k)) inner+='<span class="mk-dot"></span>';
       html+=`<div class="${cls}">${inner}</div>`;
-    });
+    }
     cal.innerHTML=html;
-  })();
+  }
+  function calMove(s){ calMo+=s; if(calMo<0){calMo=11;calY--;} if(calMo>11){calMo=0;calY++;} renderCal(); }
+  renderCal();
   // day HR timeline
   (function(){ const d=[68,66,112,82,70,118,86,72,70,69,124,88,74,70]; lineChart('ch-day',d,{min:60,max:135,color:'#bb6147'});
     const s=document.getElementById('ch-day'); [2,5,10].forEach(i=>{const v=d[i];

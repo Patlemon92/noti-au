@@ -191,6 +191,17 @@
   .nt-row{display:flex;gap:8px;}
   .nb{font-family:inherit;font-size:13px;font-weight:600;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:11px;padding:8px 13px;cursor:pointer;}
   .nb.yes{background:var(--sage,#6f7551);color:#fff;border-color:var(--sage,#6f7551);}
+  /* positive ("a good thing") noticed items — warm, not alarm */
+  .nt-item.good{background:#f6f7ef;border-color:#d8ddc4;}
+  .nt-tag{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--sage,#6f7551);margin-bottom:5px;}
+  .nt-panel{margin:9px 0 11px;border-top:1px solid #e6e3d6;}
+  .nt-prow{display:grid;grid-template-columns:1fr auto auto auto;gap:4px 10px;align-items:baseline;padding:6px 0 5px;border-bottom:1px solid #efe9da;font-size:12.5px;}
+  .nt-prow .pk{color:var(--ink);}
+  .nt-prow .pv{font-variant-numeric:tabular-nums;color:var(--muted);min-width:34px;text-align:right;}
+  .nt-prow .pv.mid{color:var(--sage,#6f7551);font-weight:600;}
+  .nt-phd{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .nt-note{width:100%;box-sizing:border-box;border:1px solid var(--hair);border-radius:11px;padding:9px 11px;font:inherit;font-size:13px;color:var(--ink);background:#fff;resize:none;margin-bottom:9px;line-height:1.4;}
+  .nt-note:focus{outline:none;border-color:var(--sage,#6f7551);}
 </style>
 <div class="ql-backdrop" id="nt-backdrop" onclick="closeNoticed()"></div>
 <div class="ql-sheet" id="nt-sheet" role="dialog" aria-modal="true">
@@ -341,7 +352,9 @@ function openLogSheet(){ document.getElementById('ql-backdrop').classList.add('o
 function closeLogSheet(){ document.getElementById('ql-backdrop').classList.remove('open'); document.getElementById('ql-sheet').classList.remove('open'); }
 
 // ── Noticed sheet ──
-function flagKindLabel(t){ return ({hr_spike:'Heart rate elevated',hr_orthostatic:'A jump on standing',hrv_crash:'HRV dipped below usual',spo2_dip:'Blood oxygen dipped',bp_outlier:'BP outside your usual',rr_jump:'Breathing rate up'})[t] || 'Something to note'; }
+const GOOD_FLAGS = new Set(['good_settle','calm_period','good_recovery']);
+function isGoodFlag(t){ return GOOD_FLAGS.has(t); }
+function flagKindLabel(t){ return ({hr_spike:'Heart rate elevated',hr_orthostatic:'A jump on standing',hrv_crash:'HRV dipped below usual',spo2_dip:'Blood oxygen dipped',bp_outlier:'BP outside your usual',rr_jump:'Breathing rate up',good_settle:'A settled stretch',calm_period:'A calm stretch',good_recovery:'A good recovery'})[t] || 'Something to note'; }
 function flagSummary(f){ const t=f.trigger||{}; switch(f.flag_type){
   case 'hr_spike':       return `reached ${t.value} bpm`;
   case 'hr_orthostatic': return `heart rate went ${t.from_bpm}→${t.to_bpm} bpm — looks like standing up`;
@@ -349,21 +362,38 @@ function flagSummary(f){ const t=f.trigger||{}; switch(f.flag_type){
   case 'spo2_dip':       return `dipped to ${t.value}%`;
   case 'bp_outlier':     return `${t.sys||'—'}/${t.dia||'—'} mmHg`;
   case 'rr_jump':        return `${t.value} breaths/min, against your usual ${t.baseline}`;
+  case 'good_settle':
+  case 'calm_period':
+  case 'good_recovery':  return t.note || 'Your body settled — everything eased together, then came back after.';
   default:               return ''; } }
+// before → during → after panel for positive "settle" flags
+function flagPanel(f){ const rows=(f.trigger&&f.trigger.panel)||[]; if(!rows.length) return '';
+  const cells=rows.map(r=>`<div class="nt-prow"><span class="pk">${r.k}</span><span class="pv">${r.b}</span><span class="pv mid">${r.d}</span><span class="pv">${r.a}</span></div>`).join('');
+  return `<div class="nt-panel"><div class="nt-prow nt-phd"><span></span><span class="pv">before</span><span class="pv">during</span><span class="pv">after</span></div>${cells}</div>`; }
 function flagWhen(iso){ if(!iso) return ''; const d=new Date(iso);
   return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})+', '+d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}).toLowerCase(); }
 function openNoticed(){
   const evs=window._noticed||[]; const list=document.getElementById('nt-list');
-  list.innerHTML = evs.length ? evs.map(f=>`<div class="nt-item" data-id="${f.id}">
+  list.innerHTML = evs.length ? evs.map(f=>{
+    const good=isGoodFlag(f.flag_type);
+    return `<div class="nt-item${good?' good':''}" data-id="${f.id}">
+    ${good?'<span class="nt-tag">Noticed · a good thing</span>':''}
     <div class="nt-h"><span class="nt-k">${flagKindLabel(f.flag_type)}</span><span class="nt-w">${flagWhen(f.ts)}</span></div>
     <p class="nt-s">${flagSummary(f)}</p>
-    <div class="nt-row"><button class="nb yes" type="button" onclick="ackFlag('${f.id}',true)">Yes, I felt that</button><button class="nb" type="button" onclick="ackFlag('${f.id}',false)">Wasn't me</button></div>
-  </div>`).join('') : '<p class="nt-s">Nothing right now.</p>';
+    ${good?flagPanel(f):''}
+    <textarea class="nt-note" rows="2" placeholder="${good?'Add a note — what were you doing?':'Add a note (optional)'}"></textarea>
+    <div class="nt-row">${good
+      ?`<button class="nb yes" type="button" onclick="ackFlag('${f.id}',true)">Yes, that felt good</button><button class="nb" type="button" onclick="ackFlag('${f.id}',false)">Didn't notice</button>`
+      :`<button class="nb yes" type="button" onclick="ackFlag('${f.id}',true)">Yes, I felt that</button><button class="nb" type="button" onclick="ackFlag('${f.id}',false)">Wasn't me</button>`}</div>
+  </div>`;}).join('') : '<p class="nt-s">Nothing right now.</p>';
   document.getElementById('nt-backdrop').classList.add('open'); document.getElementById('nt-sheet').classList.add('open');
 }
 function closeNoticed(){ document.getElementById('nt-backdrop').classList.remove('open'); document.getElementById('nt-sheet').classList.remove('open'); }
 async function ackFlag(id, felt){
-  try{ await api('/me/flagged-events/'+id+'/'+(felt?'respond':'dismiss'), {method:'POST', body: JSON.stringify(felt?{tags:['felt']}:{})}); }catch(_){}
+  const el0=document.querySelector('.nt-item[data-id="'+id+'"]');
+  const note=(el0&&el0.querySelector('.nt-note')&&el0.querySelector('.nt-note').value.trim())||'';
+  const body=felt?{tags:['felt'],note:note||undefined}:(note?{note}:{});
+  try{ await api('/me/flagged-events/'+id+'/'+(felt?'respond':'dismiss'), {method:'POST', body: JSON.stringify(body)}); }catch(_){}
   window._noticed=(window._noticed||[]).filter(f=>f.id!==id);
   const el=document.querySelector('.nt-item[data-id="'+id+'"]'); if(el) el.remove();
   if(!(window._noticed||[]).length){ closeNoticed(); load(); }

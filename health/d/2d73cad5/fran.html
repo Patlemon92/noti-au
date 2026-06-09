@@ -208,7 +208,7 @@
       <button class="hamb" onclick="toggleNav()" aria-label="Menu"><span></span><span></span><span></span></button>
       <div><h1 id="pt-title">Insights</h1><div class="sub" id="pt-sub">what the data suggests · 30 days · describes, does not diagnose</div></div>
       <div class="right">
-        <span class="range" data-range><button>7d</button><button class="on">30d</button><button>90d</button></span>
+        <span class="range"><button onclick="setRange(7,this)">7d</button><button class="on" onclick="setRange(30,this)">30d</button><button onclick="setRange(90,this)">90d</button></span>
         <span class="tag">shared view</span>
       </div>
     </div>
@@ -268,6 +268,16 @@
             — and that day the ring recorded three standing jumps (up to +68 bpm) and she rated dizziness rough. What she
             felt and what was measured line up.</p>
           <button class="ilink" onclick="go('day')">Open that day →</button>
+        </div>
+
+        <!-- positive noticing — not every signal is a warning -->
+        <div class="card insight valid">
+          <div class="ih"><span class="ib val">Noticed · a good thing</span></div>
+          <h2 class="it">Her body settled during the appointment meant to help</h2>
+          <p class="id">Across her 12:00–1:40pm appointment, her heart rate eased from the high 80s down to about <b>65 bpm</b> —
+            its calmest of the afternoon — and held there for most of the session, with HRV steady. It rose again as it ended.
+            The thing that was meant to help, helped — and the ring saw it.</p>
+          <svg id="ch-relax" width="100%" viewBox="0 0 600 150" style="margin-top:4px"></svg>
         </div>
       </section>
 
@@ -630,7 +640,15 @@
   })();
   lineChart('ch-hrv2',hrv,{min:22,max:42,band:[29,33],color:'#6b4f63'});
   // resting HR trend (runs a little high)
-  lineChart('ch-rhr',[71,73,70,74,72,75,71,73,76,72,74,73,72,71],{min:60,max:82,band:[66,72],color:'#bb6147'});
+  const rhr=[71,73,70,74,72,75,71,73,76,72,74,73,72,71];
+  lineChart('ch-rhr',rhr,{min:60,max:82,band:[66,72],color:'#bb6147'});
+  // range toggle — re-window the trend charts (the real product re-queries every chart)
+  window.setRange=function(d,btn){
+    document.querySelectorAll('.range button').forEach(x=>x.classList.remove('on')); if(btn) btn.classList.add('on');
+    const win=a=>a.slice(Math.max(0,a.length-d));
+    const hv=document.getElementById('ch-hrv2'); if(hv){ hv.innerHTML=''; lineChart('ch-hrv2',win(hrv),{min:22,max:42,band:[29,33],color:'#6b4f63'}); }
+    const rh=document.getElementById('ch-rhr'); if(rh){ rh.innerHTML=''; lineChart('ch-rhr',win(rhr),{min:60,max:82,band:[66,72],color:'#bb6147'}); }
+  };
   // symptoms moving together (fatigue/fog/dizziness over logged days)
   (function(){ const s=document.getElementById('ch-cluster'); if(!s)return; const W=720,H=160,pad={t:14,r:10,b:24,l:24},max=10,
     fat=[4,7,3,8,5,9,4,6,8,5,7,6], fog=[3,6,2,7,4,8,3,5,7,4,6,5], diz=[2,6,1,7,3,8,2,4,7,3,5,4],
@@ -664,6 +682,20 @@
   cmp2('ch-p1',5,3,'falling','steady');
   cmp2('ch-p2',5,2,'high pollen','low');
   cmp2('ch-p3',6,3,'poor air','clear');
+  // positive noticing — HR settling through the appointment
+  (function(){ const s=document.getElementById('ch-relax'); if(!s)return; const W=600,H=150,pad={t:14,r:14,b:22,l:30},yMin=55,yMax=100;
+    const hr=[93,83,80,69,83,93,73,76,72,76,74,74,71,71,75,69,68,65,66,70,77,70,72,88,75,89,90,85,85,88];
+    const t0=11+40/60,step=5/60,idxAt=h=>(h-t0)/step;
+    const X=i=>pad.l+i*(W-pad.l-pad.r)/(hr.length-1),Y=v=>pad.t+(1-(v-yMin)/(yMax-yMin))*(H-pad.t-pad.b);
+    const ax=X(idxAt(12)),bx=X(idxAt(13+40/60));
+    let g=`<rect x="${ax.toFixed(1)}" y="${pad.t}" width="${(bx-ax).toFixed(1)}" height="${H-pad.t-pad.b}" fill="#6f7551" opacity=".1"/>`
+      +`<text x="${((ax+bx)/2).toFixed(1)}" y="${(pad.t+10).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#6f7551" font-family="Hanken Grotesk">appointment</text>`;
+    [60,75,90].forEach(v=>{ g+=`<line x1="${pad.l}" y1="${Y(v).toFixed(1)}" x2="${W-pad.r}" y2="${Y(v).toFixed(1)}" stroke="#efe4d2"/><text x="${pad.l-5}" y="${(Y(v)+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${v}</text>`;});
+    g+=`<polyline points="${hr.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}" fill="none" stroke="#bb6147" stroke-width="2.2" stroke-linejoin="round"/>`;
+    g+=`<circle cx="${X(17).toFixed(1)}" cy="${Y(65).toFixed(1)}" r="3.5" fill="#6f7551"/><text x="${X(17).toFixed(1)}" y="${(Y(65)+16).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#6f7551" font-family="Hanken Grotesk">65</text>`;
+    [['12pm',idxAt(12)],['1pm',idxAt(13)],['2pm',idxAt(14)]].forEach(([lab,i])=>g+=`<text x="${X(i).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="9" fill="#9a8473" font-family="Hanken Grotesk">${lab}</text>`);
+    s.innerHTML=g;
+  })();
   // active-stand HR profile — lying → standing, sustained rise above the +30 threshold
   (function(){ const s=document.getElementById('ch-stand'); if(!s)return; const W=600,H=184,pad={t:16,r:14,b:24,l:34},yMin=55,yMax=125;
     const X=t=>pad.l+(t/8)*(W-pad.l-pad.r), Y=v=>pad.t+(1-(v-yMin)/(yMax-yMin))*(H-pad.t-pad.b);

@@ -93,13 +93,13 @@
   </div>
 
   <section class="section" style="margin-top:26px">
-    <div class="section-label">Or share an interactive version</div>
+    <div class="section-label">Or share an interactive dashboard</div>
     <div class="card">
-      <p class="caption" style="margin:0 0 14px">A live dashboard your doctor can explore — the same data, but
-        interactive. They open a link or you show it on your phone in the room.
-        <span style="opacity:.65">(Preview. The full version generates a private, time-limited code you control.)</span></p>
-      <a class="btn" href="/health/d/2d73cad5/patrick.html" target="_blank" rel="noopener"
-         style="display:inline-block;text-decoration:none">View interactive dashboard →</a>
+      <p class="caption" style="margin:0 0 14px">A live dashboard your doctor can explore — the same data, interactive.
+        It opens at a private link only you create, and you can revoke it any time.</p>
+      <button class="btn btn-primary" id="mk-share" onclick="createShare()">Create a share link</button>
+      <div id="share-out" style="margin-top:14px"></div>
+      <div id="share-list" style="margin-top:14px"></div>
     </div>
   </section>
 </main>
@@ -234,6 +234,46 @@ async function generate() {
     go.disabled = false;
   }
 }
+
+// ── Share with your doctor — create / copy / revoke a live link ──
+const API = 'https://api.noti.au';
+async function createShare(){
+  const b=document.getElementById('mk-share'); b.disabled=true; b.textContent='Creating…';
+  try{
+    const res=await fetch(API+'/me/shares',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({days:30})});
+    const d=await res.json();
+    if(d&&d.url){ showShare(d); loadShares(); b.textContent='Create another link'; }
+    else b.textContent='Create a share link';
+  }catch(e){ b.textContent='Create a share link'; }
+  b.disabled=false;
+}
+function showShare(d){
+  const exp=d.expires_at? new Date(d.expires_at).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}):'no expiry';
+  document.getElementById('share-out').innerHTML=
+    '<div class="card" style="background:#f6f7ef;border:1px solid #d8ddc4;margin-top:0">'+
+    '<p class="caption" style="margin:0 0 8px">Send this to your doctor — expires '+exp+'.</p>'+
+    '<div style="display:flex;gap:8px;align-items:center">'+
+    '<input id="share-url" readonly value="'+d.url+'" style="flex:1;font-size:13px;padding:9px 11px;border:1px solid #e6d8c4;border-radius:9px;background:#fff;color:#42332b">'+
+    '<button class="btn" onclick="copyShare(this)">Copy</button></div></div>';
+}
+function copyShare(btn){ const i=document.getElementById('share-url'); i.select();
+  (navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).then(()=>{ if(btn){btn.textContent='Copied';setTimeout(()=>btn.textContent='Copy',1500);} }).catch(()=>{document.execCommand&&document.execCommand('copy');}); }
+async function loadShares(){
+  try{
+    const res=await fetch(API+'/me/shares',{headers:{'Authorization':'Bearer '+getToken()}});
+    const d=await res.json(); const active=(d.shares||[]).filter(s=>s.status==='active');
+    document.getElementById('share-list').innerHTML = active.length
+      ? '<p class="caption" style="margin:6px 0 4px">Active links</p>'+active.map(s=>
+          '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #efe4d2;font-size:13px">'+
+          '<span style="color:#6b574a">…'+s.code.slice(-6)+' · '+(s.view_count||0)+' view'+(s.view_count===1?'':'s')+'</span>'+
+          '<button class="btn" style="font-size:12px;padding:5px 11px" onclick="revokeShare(\''+s.code+'\')">Revoke</button></div>').join('')
+      : '';
+  }catch(e){}
+}
+async function revokeShare(code){
+  try{ await fetch(API+'/me/shares/'+code+'/revoke',{method:'POST',headers:{'Authorization':'Bearer '+getToken()}}); loadShares(); }catch(e){}
+}
+loadShares();
 </script>
 </body>
 </html>

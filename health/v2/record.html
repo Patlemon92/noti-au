@@ -202,6 +202,30 @@
     padding: 24px 4px;
   }
 
+  /* Patterns tab — research-backed signal cards. */
+  .pat-card {
+    background: var(--warm-card, #fffdf9); border: 1px solid rgba(43,32,24,.08);
+    border-radius: 16px; padding: 16px 18px; margin-bottom: 12px;
+    box-shadow: 0 14px 30px -24px rgba(140,80,50,.3);
+  }
+  .pat-h { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .pat-cat { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--sage, #6f7551); }
+  .pat-conf { font-size: 10.5px; font-weight: 600; border-radius: 99px; padding: 2px 9px; }
+  .pat-conf-early { background: #f1e7d8; color: #9a8473; }
+  .pat-conf-emerging { background: #ece3cf; color: #8a6d3b; }
+  .pat-conf-established { background: #dfe3cf; color: #5d6b3b; }
+  .pat-count { margin-left: auto; font-size: 11px; color: var(--taupe, #9a8473); }
+  .pat-label { font-family: 'Apricosa','Fraunces',serif; font-weight: 500; font-size: 18px; color: var(--ink-2,#2b2018); margin-bottom: 5px; }
+  .pat-sig { font-size: 13.5px; color: var(--ink-soft,#6b574a); line-height: 1.5; margin: 0 0 10px; }
+  .pat-surfaced { border-left: 3px solid var(--sage,#6f7551); background: rgba(111,117,81,.08);
+    padding: 10px 13px; border-radius: 0 10px 10px 0; font-size: 13px; color: var(--ink-2,#2b2018); margin: 2px 0 12px; line-height: 1.5; }
+  .pat-research p { font-size: 12.5px; color: var(--ink-soft,#6b574a); line-height: 1.55; margin: 0 0 7px; }
+  .pat-ref { color: var(--clay-2,#bf5a3c); font-weight: 700; cursor: pointer; border-bottom: 1px dotted; font-size: 11px; }
+  .pat-qbox { margin: 4px 0 10px; border-left: 3px solid #c08a3e; background: rgba(233,205,162,.18);
+    border-radius: 0 8px 8px 0; padding: 8px 12px; font-size: 11px; color: #7a5f52; line-height: 1.4; }
+  .pat-foot { margin-top: 8px; padding-top: 10px; border-top: 1px solid rgba(43,32,24,.06); font-size: 12px; color: var(--taupe,#9a8473); }
+  .pat-foot a { color: var(--clay-2,#bf5a3c); cursor: pointer; font-weight: 600; }
+
   /* Prepare-a-doctor-visit panel — replaces the old 'coming soon' stub. */
   .prepare h2 {
     font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500; font-size: 22px;
@@ -513,14 +537,58 @@ function paintNotes() {
   }).join('');
 }
 
-// ── PATTERNS (stub) ────────────────────────────────
-function renderPatterns() {
-  document.getElementById('content').innerHTML = `
-    <div class="stub">
-      <div class="icon">∿</div>
-      <h2>Patterns are coming</h2>
-      <p>This is where your sleep, HRV, standing-HR jumps, recovery and symptom correlations will live — each one a card you can flag for the doctor.</p>
-    </div>`;
+// ── PATTERNS ───────────────────────────────────────
+// The research-backed signals the engines surfaced for this user — the same
+// library the doctor report draws on. Each card shows what was seen, how often,
+// a confidence, and the evidence behind it.
+let PAT_REFS = {};
+window.togglePatCite = function(el, n) {
+  const p = el.closest('.pat-claim'); const nx = p.nextElementSibling;
+  if (nx && nx.classList.contains('pat-qbox')) { nx.remove(); return; }
+  const c = PAT_REFS[n]; if (!c) return;
+  const box = document.createElement('div'); box.className = 'pat-qbox';
+  box.textContent = c; p.insertAdjacentElement('afterend', box);
+};
+async function renderPatterns() {
+  const root = document.getElementById('content');
+  root.innerHTML = `
+    <div class="range-row">
+      <div class="range-pills" id="range-pills">
+        <button data-d="14">14d</button><button data-d="30">30d</button>
+        <button data-d="90">90d</button><button data-d="365">1y</button>
+      </div>
+      <div class="range-count" id="range-count">—</div>
+    </div>
+    <div id="pat-list"><div class="stub"><p>Loading your patterns…</p></div></div>`;
+  wireRangePills(renderPatterns);
+  try {
+    const r = await api(`/me/patterns?days=${range}`);
+    const pats = r.engine_patterns || [];
+    PAT_REFS = {}; (r.references || []).forEach(x => PAT_REFS[x.n] = x.citation);
+    const cnt = document.getElementById('range-count'); if (cnt) cnt.textContent = `${pats.length} pattern${pats.length === 1 ? '' : 's'}`;
+    const list = document.getElementById('pat-list');
+    if (!pats.length) {
+      list.innerHTML = `<div class="stub"><div class="icon">∿</div><h2>Nothing surfaced yet</h2>
+        <p>As you check in and wear the ring, the engines watch for signals — sleep that doesn't restore, standing-HR jumps, mood and anxiety trends — and each one shows up here with its evidence. Nothing in this window yet.</p></div>`;
+      return;
+    }
+    list.innerHTML = pats.map(p => {
+      const claims = (p.research || []).map(c =>
+        `<p class="pat-claim">${escapeHtml(c.claim || '')} ${(c.refs || []).map(n => `<a class="pat-ref" onclick="togglePatCite(this,${n})">[${n}]</a>`).join(' ')}</p>`).join('');
+      const conf = p.confidence ? `<span class="pat-conf pat-conf-${escapeHtml(p.confidence)}">${escapeHtml(p.confidence)}</span>` : '';
+      const seen = p.count ? `<span class="pat-count">seen ${p.count}×</span>` : '';
+      return `<div class="pat-card">
+        <div class="pat-h"><span class="pat-cat">${escapeHtml(p.category || '')}</span>${conf}${seen}</div>
+        <div class="pat-label">${escapeHtml(p.label || '')}</div>
+        ${p.signal ? `<p class="pat-sig">${escapeHtml(p.signal)}</p>` : ''}
+        ${p.surfaced ? `<p class="pat-surfaced">${escapeHtml(p.surfaced)}</p>` : ''}
+        ${claims ? `<div class="pat-research">${claims}</div>` : ''}
+        <div class="pat-foot">Add it to your next doctor report from the <a onclick="location.search='?tab=prepare'">Prepare</a> tab.</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    document.getElementById('pat-list').innerHTML = `<div class="stub"><p>Couldn't load patterns: ${escapeHtml(e.message)}</p></div>`;
+  }
 }
 
 // ── PREPARE ─────────────────────────────────────────

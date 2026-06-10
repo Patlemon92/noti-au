@@ -85,6 +85,7 @@
     <div class="ambient-text amb-eyebrow">Sleep</div>
     <div class="ambient-text" id="sleep-hero-total" style="font-family:'Apricosa','Fraunces',Georgia,serif;font-size:58px;font-weight:500;letter-spacing:-1.5px;line-height:1.02;margin-top:4px;text-shadow:0 2px 22px rgba(90,45,30,.32)">—</div>
     <div class="ambient-text" id="sleep-hero-range" style="font-size:14.5px;opacity:.92;margin-top:4px"></div>
+    <div class="ambient-text" id="sleep-hero-note" style="font-size:13px;opacity:.9;margin-top:8px;max-width:300px;line-height:1.4;display:none"></div>
     <button class="amb-cta ambient-text" style="margin-top:20px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);padding:11px 20px;border-radius:99px" onclick="document.getElementById('hypnogram-card').scrollIntoView({behavior:'smooth'})">
       see the night
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -217,6 +218,21 @@ async function loadLastNight() {
       if (range && s.meta?.end_ts) {
         const fmt = ts => new Date(ts).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
         range.textContent = `${fmt(s.ts)} → ${fmt(s.meta.end_ts)}`;
+      }
+      // Disclosure: the ring sometimes ends a night early on a momentary wake,
+      // or stages only part of it. We never fold that into the total — we show
+      // what was measured and disclose the rest honestly.
+      const note = document.getElementById('sleep-hero-note');
+      if (note) {
+        const hrs = s => `${Math.floor(s/3600)}h ${String(Math.round((s%3600)/60)).padStart(2,'0')}m`;
+        let msg = '';
+        if (s.meta?.cutoff_awake && s.meta?.post_wake_quiet_s > 0) {
+          const fmt = ts => new Date(ts).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
+          msg = `The ring ended the night at ${fmt(s.meta.end_ts)}, but you stayed in bed — about ${hrs(s.meta.post_wake_quiet_s)} of still, resting time followed that it didn't stage. Shown above is the measured ${h}h ${String(m).padStart(2,'0')}m; the rest is noted but not counted.`;
+        } else if (s.meta?.undercount && s.meta?.hr_window_s > totalS) {
+          msg = `The ring staged ${h}h ${String(m).padStart(2,'0')}m, but your overnight heart rate suggests a sleep window closer to ${hrs(s.meta.hr_window_s)}. We show the measured figure and note the wider window rather than estimate.`;
+        }
+        if (msg) { note.textContent = msg; note.style.display = 'block'; }
       }
     }
   } catch (e) {

@@ -44,6 +44,13 @@
   .il-foot{margin-top:8px;padding-top:10px;border-top:1px solid var(--line-soft);}
   .il-foot a{color:var(--clay);font-size:12.5px;font-weight:600;cursor:pointer;}
   #cal-frame{width:100%;border:0;min-height:760px;background:transparent;}
+  .back{color:var(--clay);font-size:13px;font-weight:600;cursor:pointer;display:inline-block;margin-bottom:8px;}
+  .dt-h{font-family:"Fraunces",serif;font-weight:500;font-size:24px;margin:4px 0 6px;}
+  .sec{font-family:"Fraunces",serif;font-weight:500;font-size:15px;color:var(--ink);margin:0 0 12px;}
+  .occ-list{display:flex;flex-direction:column;}
+  .occ{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;}
+  .occ span:first-child{color:var(--ink-soft);} .occ-v{color:var(--ink);font-weight:600;}
+  .dframe{width:100%;border:0;min-height:600px;background:transparent;}
   .hamb{display:none;}
   .msg{padding:40px 4px;color:var(--muted);font-size:14px;}
   @media(max-width:780px){
@@ -74,6 +81,7 @@
     <div class="content">
       <section class="panel on" id="p-overview"><div class="msg" id="ins-msg">Loading…</div></section>
       <section class="panel" id="p-calendar"><iframe id="cal-frame" title="Calendar" scrolling="no"></iframe></section>
+      <section class="panel" id="p-detail"></section>
     </div>
   </main>
 </div>
@@ -96,25 +104,56 @@ window.toggleCite=function(el,n){ const p=el.closest('p'); const nx=p.nextElemen
   const c=LIVE_REFS[n]; if(!c) return;
   const box=document.createElement('div'); box.className='qbox'; box.innerHTML='<p class="qs">['+n+'] '+c+'</p>'; p.after(box); };
 
-// each pattern → the calendar scoped to its own marker, so the link is specific
+// each pattern has its own calendar scope (its marker) for the detail page
 const PATTERN_SCOPE = { orthostatic:'stand', respiratory:'breath', daytime_rest:'rest', blood_pressure:'bp', pem:'pem', migraine:'migraine', pre_migraine:'migraine' };
-window.seeOnCalendar=function(scope){
-  const code=new URLSearchParams(location.search).get('c'); const f=document.getElementById('cal-frame');
-  if(code){ f.src='neeve-calendar.html?embed=1&c='+encodeURIComponent(code)+(scope?('&scope='+scope):''); }
-  go('calendar');
+let LIVE_DATA=null;
+function claimsHtml(p){ return (p.research||[]).map(c=>`<p>${c.claim} ${(c.refs||[]).map(n=>`<a class="ref" onclick="toggleCite(this,${n})">[${n}]</a>`).join(' ')}</p>`).join(''); }
+function detailVal(d){ if(!d) return '';
+  if(d.peak_hr!=null&&d.baseline_hr!=null) return '+'+Math.round(d.peak_hr-d.baseline_hr)+' bpm (to '+Math.round(d.peak_hr)+')';
+  if(d.delta_bpm!=null) return '+'+Math.round(d.delta_bpm)+' bpm';
+  if(d.minutes!=null) return Math.round(d.minutes)+' min';
+  if(d.drop!=null) return '−'+Math.round(d.drop)+' bpm';
+  if(d.sys!=null&&d.dia!=null) return Math.round(d.sys)+'/'+Math.round(d.dia);
+  if(d.value!=null) return Math.round(d.value)+(d.baseline!=null?' · usual '+Math.round(d.baseline):'');
+  return ''; }
+// A dedicated page per pattern: what it is, the data, the research, its calendar.
+window.openPattern=function(key){
+  const p=(LIVE_DATA&&LIVE_DATA.patterns||[]).find(x=>x.key===key); if(!p) return;
+  const code=new URLSearchParams(location.search).get('c'); const scope=PATTERN_SCOPE[key]||'';
+  const occ=(p.occurrences||[]).slice().sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const occRows=occ.length? occ.map(o=>{
+    const d=new Date(o.ts); const day=d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+    const t=d.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}).toLowerCase();
+    return `<div class="occ"><span>${day} · ${t}</span><span class="occ-v">${detailVal(o.detail)}</span></div>`;
+  }).join('') : '<p class="soft" style="font-size:13px;margin:0">No individual events recorded — surfaced from the trend.</p>';
+  document.getElementById('p-detail').innerHTML=
+    `<a class="back" onclick="go('overview')">‹ Insights</a>
+     <div class="il-h"><span class="il-cat">${p.category||''}</span><span class="il-count">seen ${p.count}×</span></div>
+     <div class="dt-h">${p.label}</div>
+     <p class="il-sig" style="margin-bottom:14px">${p.signal||''}</p>
+     ${p.surfaced?`<p class="surfaced">${p.surfaced}</p>`:''}
+     <div class="card"><div class="sec">When it showed up</div><div class="occ-list">${occRows}</div></div>
+     <div class="card"><div class="sec">On the calendar</div><iframe class="dframe" src="neeve-calendar.html?embed=1&c=${encodeURIComponent(code)}${scope?'&scope='+scope:''}" scrolling="no"></iframe></div>
+     <div class="card"><div class="sec">The research</div><div class="il-research">${claimsHtml(p)||'<p class="soft" style="margin:0">—</p>'}</div></div>`;
+  const df=document.querySelector('#p-detail .dframe');
+  if(df) df.addEventListener('load',()=>{ try{ const b=df.contentDocument.body; const fit=()=>{const h=b.scrollHeight; if(h) df.style.height=(h+10)+'px';}; new ResizeObserver(fit).observe(b); fit(); }catch(e){} });
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  document.getElementById('p-detail').classList.add('on');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pt-title').textContent=p.label;
+  document.getElementById('pt-sub').textContent='what the data is showing · with the evidence';
+  window.scrollTo(0,0); closeNav();
 };
 function renderLiveInsights(data){
-  LIVE_REFS={}; (data.references||[]).forEach(r=>LIVE_REFS[r.n]=r.citation);
+  LIVE_DATA=data; LIVE_REFS={}; (data.references||[]).forEach(r=>LIVE_REFS[r.n]=r.citation);
   const cards=(data.patterns||[]).map(p=>{
-    const claims=(p.research||[]).map(c=>`<p>${c.claim} ${(c.refs||[]).map(n=>`<a class="ref" onclick="toggleCite(this,${n})">[${n}]</a>`).join(' ')}</p>`).join('');
-    const scope=PATTERN_SCOPE[p.key]||'';
     return `<div class="card il-card">
       <div class="il-h"><span class="il-cat">${p.category||''}</span><span class="il-count">seen ${p.count}×</span></div>
       <div class="it">${p.label}</div>
       <p class="il-sig">${p.signal||''}</p>
       ${p.surfaced?`<p class="surfaced">${p.surfaced}</p>`:''}
-      ${claims?`<div class="il-research">${claims}</div>`:''}
-      <div class="il-foot"><a onclick="seeOnCalendar('${scope}')">see when this happened →</a></div>
+      ${claimsHtml(p)?`<div class="il-research">${claimsHtml(p)}</div>`:''}
+      <div class="il-foot"><a onclick="openPattern('${p.key}')">see the full picture →</a></div>
     </div>`;
   }).join('');
   const name=data.patient||'this';

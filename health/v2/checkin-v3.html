@@ -658,7 +658,13 @@
   }
 
   // ── Question renderers ─────────────────────────────
-  const scaleWords = ['rough','rough','tough','tough','okay','okay','pretty good','pretty good','bright','bright','bright'];
+  // Direction-aware (see checkin.html). higher_is_better → rough→bright;
+  // higher_is_worse → none→severe. Prevents inverted symptom scales.
+  const WORDS_BETTER = ['rough','rough','tough','tough','okay','okay','pretty good','pretty good','bright','bright','bright'];
+  const WORDS_WORSE  = ['none','barely','mild','mild','noticeable','moderate','moderate','strong','strong','severe','severe'];
+  function isBetter(direction){ return direction === 'higher_is_better'; }
+  function scaleWordFor(direction, n){ const i = Math.max(0, Math.min(10, Math.round(n))); return (isBetter(direction) ? WORDS_BETTER : WORDS_WORSE)[i]; }
+  function scaleEndsFor(direction){ return isBetter(direction) ? ['rough','bright'] : ['none','severe']; }
 
   // Short labels + sublabels (mock look). Maps the DB question to a clean
   // headline + small context line. Keys not listed keep their full question.
@@ -704,7 +710,7 @@
     return `
       <div class="scale-head"><span class="scale-num" id="val-${escapeHtml(q.key)}" style="color:${colour}">${v == null ? '–' : v}</span>${usual}</div>
       <div class="dotbar" data-q="${escapeHtml(q.key)}" style="--fill:${colour}">${mark}${dots}</div>
-      <div class="scale-ends"><span>rough</span><span>bright</span></div>`;
+      <div class="scale-ends"><span>${scaleEndsFor(q.direction)[0]}</span><span>${scaleEndsFor(q.direction)[1]}</span></div>`;
   }
 
   function renderChoice(q, initial) {
@@ -1005,7 +1011,7 @@
     if (v == null || v === '') return '<span class="view-empty-val">—</span>';
     if (q.type === 'scale') {
       const n = Number(v);
-      const word = !isNaN(n) ? scaleWords[Math.max(0, Math.min(10, Math.round(n)))] : '';
+      const word = !isNaN(n) ? scaleWordFor(q.direction, n) : '';
       return `<strong>${escapeHtml(String(v))}</strong>${word ? ' <span class="view-soft">· ' + escapeHtml(word) + '</span>' : ''}`;
     }
     if (q.type === 'choice' && Array.isArray(q.options)) {

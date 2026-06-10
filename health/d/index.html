@@ -187,14 +187,18 @@ function renderLiveInsights(data){
 // observed range, how it's measured and why it matters, and coverage. BP is
 // intentionally absent: ring-estimated BP must never appear on a doctor-facing
 // surface (cuff-only rule), and this payload's BP is ring-derived.
+// `plaus` = physiologically plausible [min,max]. Readings outside are clear
+// sensor artefacts (contact/movement noise — e.g. a finger-PPG HR of 236) and
+// are excluded from the recorded range, per the data-honesty rule. A doctor
+// should never see a 236 bpm "high" that the wearer never experienced.
 const VMETRICS=[
-  {k:'hrv', name:'Heart-rate variability', unit:'ms', dp:0,
+  {k:'hrv', name:'Heart-rate variability', unit:'ms', dp:0, plaus:[5,200],
    why:'Beat-to-beat variation in heart rate, measured overnight. Higher generally reflects a more rested autonomic state; a sustained drop can track strain or poorer recovery.'},
-  {k:'hr', name:'Heart rate', unit:'bpm', dp:0,
+  {k:'hr', name:'Heart rate', unit:'bpm', dp:0, plaus:[35,180],
    why:'Recorded heart rate across the day, including rest and activity. The full range matters more than any single reading.'},
-  {k:'rr', name:'Respiratory rate', unit:'breaths/min', dp:0,
+  {k:'rr', name:'Respiratory rate', unit:'breaths/min', dp:0, plaus:[6,40],
    why:'Breaths per minute from the finger PPG waveform. Steady overnight; a rise can accompany exertion, arousal or feeling unwell.'},
-  {k:'spo2', name:'Blood-oxygen (SpO₂)', unit:'%', dp:0,
+  {k:'spo2', name:'Blood-oxygen (SpO₂)', unit:'%', dp:0, plaus:[80,100],
    why:'Estimated oxygen saturation. Sits near 96–99% for most people; brief low readings are usually movement or contact artefacts.'},
 ];
 function median(a){ if(!a.length) return null; const s=a.slice().sort((x,y)=>x-y); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
@@ -203,10 +207,13 @@ function renderVitals(data){
   const days=data.days||{}; const dates=Object.keys(days);
   const total=dates.length;
   const cards=VMETRICS.map(M=>{
-    const avgs=[],los=[],his=[]; let cov=0;
+    const [pMin,pMax]=M.plaus; const ok=x=>isFinite(x)&&x>=pMin&&x<=pMax;
+    const avgs=[],los=[],his=[]; let cov=0, dropped=0;
     for(const d of dates){ const v=days[d]&&days[d].vitals&&days[d].vitals[M.k];
-      if(!v||v[0]==null) continue; avgs.push(+v[0]); los.push(+v[1]); his.push(+v[2]); cov++; }
-    if(cov<2) return '';
+      if(!v||v[0]==null) continue;
+      if(ok(+v[0])){ avgs.push(+v[0]); cov++; } else { dropped++; continue; }
+      if(ok(+v[1])) los.push(+v[1]); if(ok(+v[2])) his.push(+v[2]); }
+    if(cov<2||!los.length||!his.length) return '';
     const typ=median(avgs), b1=pct(avgs,.25), b2=pct(avgs,.75);
     const lo=Math.min(...los), hi=Math.max(...his), span=Math.max(1e-6,hi-lo);
     const P=v=>Math.max(0,Math.min(100,(v-lo)/span*100));
@@ -221,7 +228,7 @@ function renderVitals(data){
       </div>
       <div class="vt-ends"><span>${r(lo)}</span><span>${r(hi)}</span></div>
       <p class="vt-meta"><b>How:</b> typical = the middle of ${cov} daily readings; the band spans where values usually sat (${r(b1)}–${r(b2)}), the line ends are the lowest and highest recorded. <b>Why:</b> ${M.why}</p>
-      <div class="vt-cov">Recorded on ${cov} of ${total} days this period.</div>
+      <div class="vt-cov">Recorded on ${cov} of ${total} days this period.${dropped?` ${dropped} day${dropped>1?'s':''} with out-of-range sensor artefacts excluded.`:''}</div>
     </div>`;
   }).filter(Boolean).join('');
   document.getElementById('p-vitals').innerHTML =

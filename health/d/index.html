@@ -51,6 +51,20 @@
   .occ{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;}
   .occ span:first-child{color:var(--ink-soft);} .occ-v{color:var(--ink);font-weight:600;}
   .dframe{width:100%;border:0;min-height:600px;background:transparent;}
+  .vt-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:14px;}
+  .vt-top{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+  .vt-name{font-family:"Fraunces",serif;font-weight:500;font-size:17px;color:var(--ink);}
+  .vt-unit{font-size:12px;color:var(--muted);}
+  .vt-big{margin-left:auto;font-family:"Fraunces",serif;font-weight:500;font-size:26px;color:var(--ink);line-height:1;}
+  .vt-big small{font-size:13px;color:var(--muted);font-family:"Hanken Grotesk",sans-serif;}
+  .vt-bar{position:relative;height:30px;margin:6px 0 4px;}
+  .vt-track{position:absolute;top:13px;left:0;right:0;height:4px;border-radius:3px;background:#ece0cd;}
+  .vt-band{position:absolute;top:11px;height:8px;border-radius:5px;background:rgba(111,117,81,.42);}
+  .vt-dot{position:absolute;top:8px;width:14px;height:14px;border-radius:50%;background:var(--sage);border:2px solid var(--card);transform:translateX(-50%);}
+  .vt-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px;}
+  .vt-meta{font-size:12px;color:var(--ink-soft);line-height:1.5;margin:10px 0 0;}
+  .vt-meta b{color:var(--ink);font-weight:600;}
+  .vt-cov{font-size:11px;color:var(--muted);margin-top:6px;}
   .hamb{display:none;}
   .msg{padding:40px 4px;color:var(--muted);font-size:14px;}
   @media(max-width:780px){
@@ -71,6 +85,7 @@
     <div class="pt-card"><div class="nm" id="pt-name">—</div><div class="pr" id="pt-period"></div></div>
     <nav id="nav">
       <button data-p="overview" class="on" onclick="go('overview')">Insights</button>
+      <button data-p="vitals" onclick="go('vitals')">Vitals</button>
       <button data-p="calendar" onclick="go('calendar')">Calendar</button>
     </nav>
     <div class="side-foot">Shared by the patient. Describes patterns to support a conversation. Does not diagnose.</div>
@@ -80,13 +95,14 @@
       <div><h1 id="pt-title">Insights</h1><div class="sub" id="pt-sub">what the data suggests · describes, does not diagnose</div></div></div>
     <div class="content">
       <section class="panel on" id="p-overview"><div class="msg" id="ins-msg">Loading…</div></section>
+      <section class="panel" id="p-vitals"></section>
       <section class="panel" id="p-calendar"><iframe id="cal-frame" title="Calendar" scrolling="no"></iframe></section>
       <section class="panel" id="p-detail"></section>
     </div>
   </main>
 </div>
 <script>
-const TITLES={overview:['Insights','what the data suggests · describes, does not diagnose'],calendar:['Calendar','Everything tracked · month at a glance']};
+const TITLES={overview:['Insights','what the data suggests · describes, does not diagnose'],vitals:['Vitals','recorded ranges over this period · how each is measured'],calendar:['Calendar','Everything tracked · month at a glance']};
 function go(p){
   document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
   document.getElementById('p-'+p).classList.add('on');
@@ -163,6 +179,54 @@ function renderLiveInsights(data){
   document.getElementById('p-overview').innerHTML =
     `<p class="soft" style="margin:0 0 16px">The patterns the engines surfaced this period — each with its evidence, drawn live from ${poss} record.</p>`+
     (cards||'<p class="soft">No patterns surfaced this period yet.</p>');
+  renderVitals(data);
+}
+
+// Vitals overview — recorded ranges over the period, in the locked min–max
+// range-bar style. Each card shows the typical value, the usual band, the full
+// observed range, how it's measured and why it matters, and coverage. BP is
+// intentionally absent: ring-estimated BP must never appear on a doctor-facing
+// surface (cuff-only rule), and this payload's BP is ring-derived.
+const VMETRICS=[
+  {k:'hrv', name:'Heart-rate variability', unit:'ms', dp:0,
+   why:'Beat-to-beat variation in heart rate, measured overnight. Higher generally reflects a more rested autonomic state; a sustained drop can track strain or poorer recovery.'},
+  {k:'hr', name:'Heart rate', unit:'bpm', dp:0,
+   why:'Recorded heart rate across the day, including rest and activity. The full range matters more than any single reading.'},
+  {k:'rr', name:'Respiratory rate', unit:'breaths/min', dp:0,
+   why:'Breaths per minute from the finger PPG waveform. Steady overnight; a rise can accompany exertion, arousal or feeling unwell.'},
+  {k:'spo2', name:'Blood-oxygen (SpO₂)', unit:'%', dp:0,
+   why:'Estimated oxygen saturation. Sits near 96–99% for most people; brief low readings are usually movement or contact artefacts.'},
+];
+function median(a){ if(!a.length) return null; const s=a.slice().sort((x,y)=>x-y); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
+function pct(a,p){ if(!a.length) return null; const s=a.slice().sort((x,y)=>x-y); return s[Math.max(0,Math.min(s.length-1,Math.round((s.length-1)*p)))]; }
+function renderVitals(data){
+  const days=data.days||{}; const dates=Object.keys(days);
+  const total=dates.length;
+  const cards=VMETRICS.map(M=>{
+    const avgs=[],los=[],his=[]; let cov=0;
+    for(const d of dates){ const v=days[d]&&days[d].vitals&&days[d].vitals[M.k];
+      if(!v||v[0]==null) continue; avgs.push(+v[0]); los.push(+v[1]); his.push(+v[2]); cov++; }
+    if(cov<2) return '';
+    const typ=median(avgs), b1=pct(avgs,.25), b2=pct(avgs,.75);
+    const lo=Math.min(...los), hi=Math.max(...his), span=Math.max(1e-6,hi-lo);
+    const P=v=>Math.max(0,Math.min(100,(v-lo)/span*100));
+    const r=n=>n==null?'—':n.toFixed(M.dp);
+    return `<div class="vt-card">
+      <div class="vt-top"><span class="vt-name">${M.name}</span><span class="vt-unit">${M.unit}</span>
+        <span class="vt-big">${r(typ)}<small> typical</small></span></div>
+      <div class="vt-bar">
+        <div class="vt-track"></div>
+        <div class="vt-band" style="left:${P(b1)}%;width:${Math.max(2,P(b2)-P(b1))}%"></div>
+        <div class="vt-dot" style="left:${P(typ)}%"></div>
+      </div>
+      <div class="vt-ends"><span>${r(lo)}</span><span>${r(hi)}</span></div>
+      <p class="vt-meta"><b>How:</b> typical = the middle of ${cov} daily readings; the band spans where values usually sat (${r(b1)}–${r(b2)}), the line ends are the lowest and highest recorded. <b>Why:</b> ${M.why}</p>
+      <div class="vt-cov">Recorded on ${cov} of ${total} days this period.</div>
+    </div>`;
+  }).filter(Boolean).join('');
+  document.getElementById('p-vitals').innerHTML =
+    `<p class="soft" style="margin:0 0 16px">What ${data.patient||'this record'}’s vitals actually ranged across this period — measured, with how each is derived. Blood pressure is shown only from cuff readings, on a separate page.</p>`+
+    (cards||'<p class="soft">Not enough recorded vitals this period to summarise.</p>');
 }
 
 (function boot(){
@@ -176,7 +240,9 @@ function renderLiveInsights(data){
     if(!j||!j.ok){ fail(j&&j.error==='expired'?'This share link has expired.':j&&j.error==='revoked'?'This share link was revoked.':'This link wasn’t found.'); return; }
     document.getElementById('pt-name').textContent=j.patient||'Shared record';
     renderLiveInsights(j);
-    const m=(location.hash.match(/p=([a-z_]+)/)); if(m) openPattern(m[1]);
+    const m=(location.hash.match(/p=([a-z_]+)/)); if(m){ openPattern(m[1]); return; }
+    const h=location.hash.replace('#','');
+    if(h==='vitals'||h==='calendar') go(h);
   }).catch(()=>fail('Couldn’t load this record. Please check the link.'));
 })();
 </script>

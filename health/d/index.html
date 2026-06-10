@@ -96,17 +96,25 @@ window.toggleCite=function(el,n){ const p=el.closest('p'); const nx=p.nextElemen
   const c=LIVE_REFS[n]; if(!c) return;
   const box=document.createElement('div'); box.className='qbox'; box.innerHTML='<p class="qs">['+n+'] '+c+'</p>'; p.after(box); };
 
+// each pattern → the calendar scoped to its own marker, so the link is specific
+const PATTERN_SCOPE = { orthostatic:'stand', respiratory:'breath', daytime_rest:'rest', blood_pressure:'bp', pem:'pem', migraine:'migraine', pre_migraine:'migraine' };
+window.seeOnCalendar=function(scope){
+  const code=new URLSearchParams(location.search).get('c'); const f=document.getElementById('cal-frame');
+  if(code){ f.src='neeve-calendar.html?embed=1&c='+encodeURIComponent(code)+(scope?('&scope='+scope):''); }
+  go('calendar');
+};
 function renderLiveInsights(data){
   LIVE_REFS={}; (data.references||[]).forEach(r=>LIVE_REFS[r.n]=r.citation);
   const cards=(data.patterns||[]).map(p=>{
     const claims=(p.research||[]).map(c=>`<p>${c.claim} ${(c.refs||[]).map(n=>`<a class="ref" onclick="toggleCite(this,${n})">[${n}]</a>`).join(' ')}</p>`).join('');
+    const scope=PATTERN_SCOPE[p.key]||'';
     return `<div class="card il-card">
       <div class="il-h"><span class="il-cat">${p.category||''}</span><span class="il-count">seen ${p.count}×</span></div>
       <div class="it">${p.label}</div>
       <p class="il-sig">${p.signal||''}</p>
       ${p.surfaced?`<p class="surfaced">${p.surfaced}</p>`:''}
       ${claims?`<div class="il-research">${claims}</div>`:''}
-      <div class="il-foot"><a onclick="go('calendar')">see it on the calendar →</a></div>
+      <div class="il-foot"><a onclick="seeOnCalendar('${scope}')">see when this happened →</a></div>
     </div>`;
   }).join('');
   const name=data.patient||'this';

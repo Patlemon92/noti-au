@@ -93,6 +93,7 @@ function go(p){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
   document.getElementById('pt-title').textContent=TITLES[p][0];
   document.getElementById('pt-sub').textContent=TITLES[p][1];
+  try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){}
   window.scrollTo(0,0); closeNav();
 }
 function openNav(){document.getElementById('sidebar').classList.add('open');document.getElementById('ov').classList.add('on');}
@@ -142,6 +143,7 @@ window.openPattern=function(key){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('on'));
   document.getElementById('pt-title').textContent=p.label;
   document.getElementById('pt-sub').textContent='what the data is showing · with the evidence';
+  try{ history.replaceState(null,'','#p='+key); }catch(e){}
   window.scrollTo(0,0); closeNav();
 };
 function renderLiveInsights(data){
@@ -174,6 +176,7 @@ function renderLiveInsights(data){
     if(!j||!j.ok){ fail(j&&j.error==='expired'?'This share link has expired.':j&&j.error==='revoked'?'This share link was revoked.':'This link wasn’t found.'); return; }
     document.getElementById('pt-name').textContent=j.patient||'Shared record';
     renderLiveInsights(j);
+    const m=(location.hash.match(/p=([a-z_]+)/)); if(m) openPattern(m[1]);
   }).catch(()=>fail('Couldn’t load this record. Please check the link.'));
 })();
 </script>

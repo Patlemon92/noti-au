@@ -230,8 +230,30 @@
   .pat-ref { color: var(--clay-2,#bf5a3c); font-weight: 700; cursor: pointer; border-bottom: 1px dotted; font-size: 11px; }
   .pat-qbox { margin: 4px 0 10px; border-left: 3px solid #c08a3e; background: rgba(233,205,162,.18);
     border-radius: 0 8px 8px 0; padding: 8px 12px; font-size: 11px; color: #7a5f52; line-height: 1.4; }
-  .pat-foot { margin-top: 8px; padding-top: 10px; border-top: 1px solid rgba(43,32,24,.06); font-size: 12px; color: var(--taupe,#9a8473); }
+  .pat-foot { margin-top: 8px; padding-top: 10px; border-top: 1px solid rgba(43,32,24,.06); font-size: 12px; color: var(--taupe,#9a8473); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .pat-foot a { color: var(--clay-2,#bf5a3c); cursor: pointer; font-weight: 600; }
+  .pat-clickable { cursor: pointer; transition: box-shadow .15s, transform .15s; }
+  .pat-clickable:active { transform: scale(.995); }
+  .pat-when { color: var(--taupe,#9a8473); }
+  .pat-more { color: var(--clay-2,#bf5a3c); font-weight: 600; margin-left: auto; }
+  /* Detail view */
+  .pat-back { display: inline-block; color: var(--clay-2,#bf5a3c); font-weight: 600; font-size: 13px; cursor: pointer; margin-bottom: 12px; }
+  .pat-dtitle { font-family: 'Apricosa','Fraunces',serif; font-weight: 500; font-size: 22px; color: var(--ink-2,#2b2018); margin: 4px 0 10px; line-height: 1.2; }
+  .pat-chart { margin: 12px 0 4px; background: var(--warm-card,#fffdf9); border: 1px solid rgba(43,32,24,.07); border-radius: 12px; padding: 12px 12px 8px; }
+  .pat-chart-cap { font-size: 10.5px; color: var(--taupe,#9a8473); line-height: 1.4; margin: 4px 0 0; }
+  .pat-sec { margin-top: 18px; }
+  .pat-sec-h { font-family: 'Apricosa','Fraunces',serif; font-weight: 500; font-size: 14px; color: var(--ink-2,#2b2018); margin-bottom: 8px; }
+  .occ-list { display: flex; flex-direction: column; }
+  .occ-row { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid rgba(43,32,24,.06); font-size: 13px; }
+  .occ-row span:first-child { color: var(--ink-soft,#6b574a); }
+  .occ-v { color: var(--ink-2,#2b2018); font-weight: 600; }
+  .pat-note { padding: 10px 12px; background: rgba(233,205,162,.14); border-left: 2px solid #c08a3e; border-radius: 0 8px 8px 0; margin-bottom: 8px; }
+  .pat-note-when { font-size: 10px; color: var(--taupe,#9a8473); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+  .pat-note-body { font-size: 13.5px; color: var(--ink-2,#2b2018); line-height: 1.45; }
+  .pat-empty-note { font-size: 13px; color: var(--taupe,#9a8473); font-style: italic; margin: 0 0 6px; }
+  .pat-note-input { width: 100%; box-sizing: border-box; margin-top: 6px; background: var(--cream,#fbf6ee); border: 1px solid rgba(43,32,24,.12); border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 15px; line-height: 1.4; color: var(--ink-2,#2b2018); resize: vertical; }
+  .pat-note-save { margin-top: 8px; background: var(--ink-2,#2b2018); color: #fff7f0; border: 0; border-radius: 99px; padding: 9px 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .pat-note-save:disabled { opacity: .5; }
 
   /* Prepare-a-doctor-visit panel — replaces the old 'coming soon' stub. */
   .prepare h2 {
@@ -548,7 +570,7 @@ function paintNotes() {
 // The research-backed signals the engines surfaced for this user — the same
 // library the doctor report draws on. Each card shows what was seen, how often,
 // a confidence, and the evidence behind it.
-let PAT_REFS = {};
+let PAT_REFS = {}, PATS = [];
 window.togglePatCite = function(el, n) {
   const p = el.closest('.pat-claim'); const nx = p.nextElementSibling;
   if (nx && nx.classList.contains('pat-qbox')) { nx.remove(); return; }
@@ -556,6 +578,18 @@ window.togglePatCite = function(el, n) {
   const box = document.createElement('div'); box.className = 'pat-qbox';
   box.textContent = c; p.insertAdjacentElement('afterend', box);
 };
+function patDate(s, withTime) {
+  if (!s) return '';
+  const d = new Date(s);
+  return d.toLocaleString('en-AU', withTime
+    ? { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true }
+    : { day: 'numeric', month: 'short' }).toLowerCase();
+}
+function claimsHtml(p) {
+  return (p.research || []).map(c =>
+    `<p class="pat-claim">${escapeHtml(c.claim || '')} ${(c.refs || []).map(n => `<a class="pat-ref" onclick="togglePatCite(this,${n})">[${n}]</a>`).join(' ')}</p>`).join('');
+}
+
 async function renderPatterns() {
   const root = document.getElementById('content');
   root.innerHTML = `
@@ -570,35 +604,122 @@ async function renderPatterns() {
   wireRangePills(renderPatterns);
   try {
     const r = await api(`/me/patterns?days=${range}`);
-    const pats = r.engine_patterns || [];
+    PATS = r.engine_patterns || [];
     PAT_REFS = {}; (r.references || []).forEach(x => PAT_REFS[x.n] = x.citation);
-    const cnt = document.getElementById('range-count'); if (cnt) cnt.textContent = `${pats.length} pattern${pats.length === 1 ? '' : 's'}`;
+    const cnt = document.getElementById('range-count'); if (cnt) cnt.textContent = `${PATS.length} pattern${PATS.length === 1 ? '' : 's'}`;
     const list = document.getElementById('pat-list');
-    if (!pats.length) {
+    if (!PATS.length) {
       list.innerHTML = `<div class="stub"><div class="icon">∿</div><h2>Nothing surfaced yet</h2>
         <p>As you check in and wear the ring, the engines watch for signals — sleep that doesn't restore, standing-HR jumps, mood and anxiety trends — and each one shows up here with its evidence. Nothing in this window yet.</p></div>`;
       return;
     }
-    list.innerHTML = pats.map(p => {
-      const claims = (p.research || []).map(c =>
-        `<p class="pat-claim">${escapeHtml(c.claim || '')} ${(c.refs || []).map(n => `<a class="pat-ref" onclick="togglePatCite(this,${n})">[${n}]</a>`).join(' ')}</p>`).join('');
+    list.innerHTML = PATS.map(p => {
       const conf = p.confidence ? `<span class="pat-conf pat-conf-${escapeHtml(p.confidence)}">${escapeHtml(p.confidence)}</span>` : '';
       const seen = p.count ? `<span class="pat-count">seen ${p.count}×</span>` : '';
-      const title = p.patient_title || p.label || '';
-      const means = p.patient || p.surfaced || '';
-      return `<div class="pat-card">
+      const when = p.last_ts ? `<span class="pat-when">last seen ${patDate(p.last_ts)}</span>` : '';
+      const nNotes = (p.notes || []).length;
+      return `<div class="pat-card pat-clickable" onclick="openPattern('${p.key}')">
         <div class="pat-h"><span class="pat-cat">${escapeHtml(p.category || '')}</span>${conf}${seen}</div>
-        <div class="pat-label">${escapeHtml(title)}</div>
+        <div class="pat-label">${escapeHtml(p.patient_title || p.label || '')}</div>
         ${p.plain ? `<p class="pat-plain"><span class="pat-eyebrow">What we're seeing</span>${escapeHtml(p.plain)}</p>` : ''}
-        ${means ? `<p class="pat-means"><span class="pat-eyebrow">What it means</span>${escapeHtml(means)}</p>` : ''}
-        ${claims ? `<details class="pat-evidence"><summary>The research behind it</summary><div class="pat-research">${claims}</div></details>` : ''}
-        <div class="pat-foot">Add it to your next doctor report from the <a onclick="location.search='?tab=prepare'">Prepare</a> tab.</div>
+        <div class="pat-foot">${when}<span class="pat-more">${nNotes ? nNotes + ' note' + (nNotes === 1 ? '' : 's') + ' · ' : ''}view details →</span></div>
       </div>`;
     }).join('');
   } catch (e) {
     document.getElementById('pat-list').innerHTML = `<div class="stub"><p>Couldn't load patterns: ${escapeHtml(e.message)}</p></div>`;
   }
 }
+
+// Per-occurrence value text (matches the report's wording).
+function occDetail(d) {
+  if (!d) return '';
+  if (d.peak_hr != null && d.baseline_hr != null) return '+' + Math.round(d.peak_hr - d.baseline_hr) + ' bpm (to ' + Math.round(d.peak_hr) + ')';
+  if (d.delta_bpm != null) return '+' + Math.round(d.delta_bpm) + ' bpm';
+  if (d.minutes != null) return Math.round(d.minutes) + ' min';
+  if (d.value != null && d.baseline != null) return Math.round(d.value) + ' (usual ' + Math.round(d.baseline) + ')';
+  if (d.value != null) return String(Math.round(d.value));
+  if (d.anxiety_recent != null) return 'anxiety ' + Math.round(d.anxiety_recent) + '/10';
+  if (d.clarity_recent != null) return 'clarity ' + Math.round(d.clarity_recent) + '/10';
+  return '';
+}
+function occMag(d) {
+  if (!d) return null;
+  if (d.delta_bpm != null) return d.delta_bpm;
+  if (d.value != null) return d.value;
+  if (d.minutes != null) return d.minutes;
+  if (d.drop != null) return d.drop;
+  return null;
+}
+function chartWrap(inner, cap, W, H) {
+  return `<div class="pat-chart"><svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${escapeHtml(cap)}">${inner}</svg><p class="pat-chart-cap">${escapeHtml(cap)}</p></div>`;
+}
+// A graph drawn from the user's own occurrences. Resting→peak lollipops for
+// heart-rate jumps; magnitude bars otherwise; nothing when there's no per-event
+// number to plot (the dated list carries it).
+function patternChartSvg(p) {
+  const occ = (p.occurrences || []).slice().sort((a, b) => new Date(a.ts) - new Date(b.ts));
+  const hr = occ.map(o => o.detail).filter(d => d && d.peak_hr != null && d.baseline_hr != null && d.peak_hr <= 170 && d.peak_hr > d.baseline_hr);
+  if (hr.length >= 2) {
+    const W = 320, H = 132, L = 26, Rp = 8, T = 12, B = 16, pw = W - L - Rp, ph = H - T - B;
+    let lo = Math.min(...hr.map(d => d.baseline_hr)) - 5, hi = Math.max(...hr.map(d => d.peak_hr)) + 5; lo = Math.max(40, lo);
+    const yOf = v => T + ph * (1 - (v - lo) / (hi - lo)), step = pw / hr.length, xOf = i => L + step * (i + 0.5);
+    const ticks = [Math.round(lo), Math.round((lo + hi) / 2), Math.round(hi)];
+    const grid = ticks.map(t => `<line x1="${L}" y1="${yOf(t).toFixed(1)}" x2="${W - Rp}" y2="${yOf(t).toFixed(1)}" stroke="#ece0cd" stroke-width="0.6"/><text x="${L - 4}" y="${(yOf(t) + 2.5).toFixed(1)}" text-anchor="end" font-size="7" fill="#9a8473">${t}</text>`).join('');
+    const ll = hr.map((d, i) => { const x = xOf(i).toFixed(1), yb = yOf(d.baseline_hr).toFixed(1), yp = yOf(d.peak_hr).toFixed(1); return `<line x1="${x}" y1="${yb}" x2="${x}" y2="${yp}" stroke="#bf5a3c" stroke-width="1.4" opacity="0.4"/><circle cx="${x}" cy="${yb}" r="1.9" fill="#b9a48c"/><circle cx="${x}" cy="${yp}" r="2.5" fill="#bf5a3c"/>`; }).join('');
+    return chartWrap(`<text x="${L - 4}" y="${T - 3}" text-anchor="end" font-size="6.5" fill="#9a8473">bpm</text>${grid}${ll}`, 'Each line is one event: resting heart rate (lower dot) to the peak reached on standing (upper dot).', W, H);
+  }
+  const mags = occ.map(o => ({ v: occMag(o.detail) })).filter(x => x.v != null);
+  if (mags.length >= 3 && new Set(mags.map(m => Math.round(m.v))).size > 1) {
+    const W = 320, H = 120, L = 22, Rp = 8, T = 12, B = 14, pw = W - L - Rp, ph = H - T - B;
+    const top = Math.max(...mags.map(m => m.v)) * 1.1 || 1, yOf = v => T + ph * (1 - v / top);
+    const step = pw / mags.length, bw = Math.min(14, step * 0.6);
+    const bars = mags.map((m, i) => { const x = (L + step * i + (step - bw) / 2).toFixed(1), y = yOf(m.v).toFixed(1); return `<rect x="${x}" y="${y}" width="${bw.toFixed(1)}" height="${(yOf(0) - yOf(m.v)).toFixed(1)}" fill="#bf5a3c" opacity="0.78" rx="1"/>`; }).join('');
+    const grid = [0, Math.round(top)].map(t => `<line x1="${L}" y1="${yOf(t).toFixed(1)}" x2="${W - Rp}" y2="${yOf(t).toFixed(1)}" stroke="#ece0cd" stroke-width="0.6"/><text x="${L - 4}" y="${(yOf(t) + 2.5).toFixed(1)}" text-anchor="end" font-size="7" fill="#9a8473">${t}</text>`).join('');
+    return chartWrap(grid + bars, 'Each bar is one occurrence and how large it was.', W, H);
+  }
+  return '';
+}
+
+window.openPattern = function(key) {
+  const p = PATS.find(x => x.key === key); if (!p) return;
+  const occ = (p.occurrences || []).slice().sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const occRows = occ.map(o => `<div class="occ-row"><span>${patDate(o.ts, true)}</span><span class="occ-v">${escapeHtml(occDetail(o.detail))}</span></div>`).join('');
+  const notesHtml = (p.notes || []).length
+    ? p.notes.map(n => `<div class="pat-note"><div class="pat-note-when">${patDate(n.created_at, true)}</div><div class="pat-note-body">${escapeHtml(n.body || '')}</div></div>`).join('')
+    : '<p class="pat-empty-note">No notes yet — add the context the data can\'t see.</p>';
+  const claims = claimsHtml(p);
+  document.getElementById('content').innerHTML = `
+    <a class="pat-back" onclick="renderPatterns()">‹ All patterns</a>
+    <div class="pat-detail">
+      <div class="pat-h"><span class="pat-cat">${escapeHtml(p.category || '')}</span>${p.confidence ? `<span class="pat-conf pat-conf-${escapeHtml(p.confidence)}">${escapeHtml(p.confidence)}</span>` : ''}${p.count ? `<span class="pat-count">seen ${p.count}×</span>` : ''}</div>
+      <h2 class="pat-dtitle">${escapeHtml(p.patient_title || p.label || '')}</h2>
+      ${p.plain ? `<p class="pat-plain"><span class="pat-eyebrow">What we're seeing</span>${escapeHtml(p.plain)}</p>` : ''}
+      ${patternChartSvg(p)}
+      ${(p.patient || p.surfaced) ? `<p class="pat-means"><span class="pat-eyebrow">What it means</span>${escapeHtml(p.patient || p.surfaced)}</p>` : ''}
+      ${occRows ? `<div class="pat-sec"><div class="pat-sec-h">When it showed up</div><div class="occ-list">${occRows}</div></div>` : ''}
+      ${claims ? `<div class="pat-sec"><div class="pat-sec-h">The research</div><div class="pat-research">${claims}</div></div>` : ''}
+      <div class="pat-sec"><div class="pat-sec-h">Your notes</div>
+        <div id="pat-notes">${notesHtml}</div>
+        <textarea id="pat-note-input" class="pat-note-input" rows="2" placeholder="Add a note about this pattern…"></textarea>
+        <button class="pat-note-save" onclick="addPatternNote('${p.key}')">Save note</button>
+      </div>
+      <div class="pat-foot">Add this to your next doctor report from the <a onclick="location.search='?tab=prepare'">Prepare</a> tab.</div>
+    </div>`;
+  window.scrollTo(0, 0);
+};
+
+window.addPatternNote = async function(key) {
+  const ta = document.getElementById('pat-note-input'); const text = (ta?.value || '').trim();
+  if (!text) return;
+  const btn = document.querySelector('.pat-note-save'); if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    await fetch('https://api.noti.au/me/note', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, body: JSON.stringify({ body: text, pattern_key: key }) });
+    const r = await api(`/me/patterns?days=${range}`); PATS = r.engine_patterns || [];
+    openPattern(key);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Save note'; }
+  }
+};
 
 // ── PREPARE ─────────────────────────────────────────
 // Doctor-ready report generator. Picks up the existing /me/export flow

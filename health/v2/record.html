@@ -574,6 +574,7 @@ function noteContextLine(c) {
   if (!c) return '';
   const parts = [];
   if (c.hr)   parts.push(`HR ${c.hr.med} <span class="nc-range">(${c.hr.lo}–${c.hr.hi})</span>`);
+  if (c.hrv)  parts.push(`HRV ${c.hrv.med}`);
   if (c.spo2) parts.push(`SpO₂ ${c.spo2.med}%`);
   if (c.rr)   parts.push(`breathing ${c.rr.med}`);
   if (!parts.length) return '';

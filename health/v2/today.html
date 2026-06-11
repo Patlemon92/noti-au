@@ -319,12 +319,14 @@ function updateGlance(){
 async function load(){
   document.getElementById('wx-clock').textContent=new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}).toLowerCase();
   document.getElementById('date').textContent='Today, '+new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long'});
-  const [me,t,flags,week,obs]=await Promise.all([
+  // Only the FAST endpoints block the paint. The Today observation is an
+  // Alys (LLM) call — slow — so it's fetched separately below and filled in
+  // when it arrives, instead of holding the whole page at "--".
+  const [me,t,flags,week]=await Promise.all([
     api('/me').catch(()=>null),
     api('/me/today').catch(()=>null),
     api('/me/flagged-events?only_open=1&days=7').catch(()=>({events:[]})),
     api('/ring/trend?metric=readiness_state&days=7').catch(()=>({samples:[]})),
-    api('/me/today-observation').catch(()=>null),
   ]);
   const name=me?.name?me.name.split(' ')[0]:'there';
   document.getElementById('av').textContent=(name[0]||'•').toUpperCase();
@@ -354,10 +356,13 @@ async function load(){
     const state=t.state||'steady';
     document.getElementById('hero').dataset.mood=state;
     document.getElementById('day').textContent=t.day_word||DAY_FALLBACK[state]||'Today.';
-    // The box's body is Alys's personal read of today (her observation),
-    // falling back to the deterministic readiness "why" if she has none.
-    const obsLine = obs && (obs.text||obs.summary||obs.observation);
-    document.getElementById('why').textContent = obsLine || t.why || '';
+    // Paint the deterministic readiness "why" immediately; Alys's slower,
+    // warmer observation patches over it below when it arrives.
+    document.getElementById('why').textContent = t.why || '';
+    api('/me/today-observation').then(obs=>{
+      const obsLine = obs && (obs.text||obs.summary||obs.observation);
+      if(obsLine){ const el=document.getElementById('why'); if(el) el.textContent=obsLine; }
+    }).catch(()=>{});
     if(t.weather){ document.getElementById('wx-temp').textContent=t.weather.temperature!=null?Math.round(t.weather.temperature)+'°':'—'; document.getElementById('wx-cond').textContent=wmo(t.weather.weather_code); }
     let next='';
     if(t.checkin&&t.checkin.due){ const slot=t.checkin.slot==='evening'?'Evening':'Morning';

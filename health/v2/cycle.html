@@ -34,6 +34,9 @@
   .herobody .big{font-family:"Fraunces",serif;font-weight:500;font-size:56px;line-height:1;margin-top:2px;letter-spacing:-.01em;text-shadow:0 2px 30px rgba(80,40,55,.35)}
   .herobody .status{font-size:18px;margin-top:15px;opacity:.95;font-weight:450;padding:0 8px}
   .herobody .sub{font-size:14.5px;margin-top:7px;opacity:.74;font-weight:450}
+  .herobody .rhythm{display:inline-block;margin-top:13px;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);
+    border:1px solid rgba(255,255,255,.22);padding:7px 16px;border-radius:30px;font-size:13.5px;font-weight:500;opacity:.94}
+  .herobody .rhythm:empty{display:none}
   .ranges{display:flex;gap:12px;justify-content:center;margin-top:24px}
   .ranges button{flex:1;max-width:116px;border:none;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);
     color:rgba(255,246,236,.82);font-family:inherit;font-size:16px;font-weight:500;padding:14px 0;border-radius:30px;border:1px solid rgba(255,255,255,.22)}
@@ -88,6 +91,7 @@
       <div class="big" id="h-phase">…</div>
       <div class="status" id="h-status">Pulling your cycle together.</div>
       <div class="sub" id="h-sub"></div>
+      <div class="rhythm" id="h-rhythm"></div>
       <div class="ranges"><button class="on">This</button><button>Last</button><button>All</button></div>
     </div>
   </div>
@@ -193,6 +197,14 @@ function renderStrip(meta){
   return svg.outerHTML;
 }
 
+// Warm, sentence-style confidence that visibly climbs as more cycles are
+// logged — never the clinical words (learning/low/emerging/established).
+function rhythmPhrase(c){
+  return c==='established' ? 'Settled into your rhythm'
+    : c==='emerging' ? 'Your rhythm is taking shape'
+    : c==='low' ? 'Learning your rhythm'
+    : 'Getting to know your rhythm';
+}
 function statusLine(meta){
   const a=meta.autonomic||{};
   if((meta.phase==='luteal'||meta.phase==='premenstrual') && (a.confirm_count>=2))
@@ -269,6 +281,7 @@ async function load(){
     document.getElementById('h-status').textContent=statusLine(meta);
     const next = meta.days_to_next_period!=null ? `next likely ~${fmtDate(Date.now()+meta.days_to_next_period*86400000)}` : 'period due any day';
     document.getElementById('h-sub').textContent=`day ${meta.day_of_cycle}${meta.last_period_start?' · started '+fmtDate(meta.last_period_start):''} · ${next}`;
+    document.getElementById('h-rhythm').textContent=rhythmPhrase(meta.confidence);
 
     const series=nightlySeries(rhr.samples||[], meta.last_period_start);
     document.getElementById('body').innerHTML=renderBody(meta, series);

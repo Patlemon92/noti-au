@@ -218,6 +218,9 @@
   <!-- self-reported: how the felt stuff is sitting vs your usual -->
   <div id="felt-section"></div>
 
+  <!-- cycle: only appears once a period has been logged -->
+  <div id="cycle-section"></div>
+
 </main>
 
 <!-- Bottom-sheet modal: device info + actions -->
@@ -255,6 +258,7 @@ let cachedSleep = { sessions: [] };
 let cachedBaselines = {};              // metric → {healthy,p30,p90,lifetime,...}
 let cachedCheckins = [];               // recent check-ins (desc) for the self-report table
 let cachedDevice = null;
+let cachedCycle = null;                // latest cycle_phase row (or null if never logged)
 
 // Only the metrics this hub actually surfaces (Overnight / Today /
 // Experimental) plus recovery_score — fetched but NEVER shown; it only
@@ -334,13 +338,15 @@ async function load() {
         .then(r => ({ metric: m, samples: r.samples || [], latest: r.latest || null }))
         .catch(() => ({ metric: m, samples: [], latest: null })));
 
-    const [{ devices }, trendResults, sleepRes, baseRes, ciRes] = await Promise.all([
+    const [{ devices }, trendResults, sleepRes, baseRes, ciRes, cycRes] = await Promise.all([
       api('/ring/status'),
       Promise.all(trendPromises),
       api(sleepQ).catch(() => ({ samples: [] })),
       api('/me/baselines').catch(() => ({ baselines: {} })),
       api('/me/checkins?days=7').catch(() => ({ checkins: [] })),
+      api('/ring/samples?metric=cycle_phase&limit=1').catch(() => ({ samples: [] })),
     ]);
+    cachedCycle = (cycRes.samples || [])[0] || null;
 
     cachedDevice = devices[0];
     cachedSamplesByMetric = {};
@@ -362,6 +368,7 @@ async function load() {
     renderHero();
     renderGroups();
     renderFelt();
+    renderCycle();
     firstLoad = false;
   } catch (e) {
     if (firstLoad) {
@@ -754,6 +761,43 @@ function renderFelt() {
   if (wrapped !== _lastFeltHtml) {
     _lastFeltHtml = wrapped;
     document.getElementById('felt-section').innerHTML = wrapped;
+  }
+}
+
+// ── Cycle row — only appears once a period has been logged (cycle_phase
+// row exists). Reads the engine's latest phase; taps through to cycle.html.
+let _lastCycleHtml = '';
+const _PHASE_LABEL = { menstrual:'Period', follicular:'Follicular', ovulatory:'Ovulatory', luteal:'Luteal', premenstrual:'Late luteal' };
+const _PHASE_DOT   = { menstrual:'#bb6147', follicular:'#8FA06A', ovulatory:'#C8993F', luteal:'#C58A74', premenstrual:'#C58A74' };
+function renderCycle() {
+  const m = cachedCycle && cachedCycle.meta;
+  let html = '';
+  if (m && m.phase) {
+    const phase = _PHASE_LABEL[m.phase] || m.phase;
+    const dot   = _PHASE_DOT[m.phase] || '#C8993F';
+    const next  = m.days_to_next_period != null ? `~${m.days_to_next_period} days to next`
+                : (m.overdue_by > 0 ? 'period due' : '');
+    html = `
+      <div class="group${_everBuilt ? '' : ' fade'}">
+        <div class="glabel">Cycle</div>
+        <div class="gcard">
+          <a class="row" href="/health/v2/cycle.html">
+            <div>
+              <div class="name">Cycle</div>
+              <div class="read"><i style="background:${dot}"></i>${phase} phase</div>
+            </div>
+            <div class="valwrap">
+              <div class="val">Day ${m.day_of_cycle}</div>
+              <div class="usual">${next}</div>
+            </div>
+            <div class="chev">›</div>
+          </a>
+        </div>
+      </div>`;
+  }
+  if (html !== _lastCycleHtml) {
+    _lastCycleHtml = html;
+    document.getElementById('cycle-section').innerHTML = html;
   }
 }
 

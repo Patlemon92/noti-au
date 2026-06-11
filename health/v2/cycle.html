@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Neeve · Cycle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;450;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4eadc; --card:#fbf6ee; --ink:#42332b; --ink-soft:#6b574a;
+    --muted:#9a8473; --clay:#bb6147; --trend:#6f7551; --line:#e6d8c4;
+    --menstrual:#bb6147; --follicular:#8FA06A; --ovulatory:#C8993F; --luteal:#C58A74;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Hanken Grotesk",system-ui,sans-serif;background:var(--paper);color:var(--ink);
+    padding-bottom:96px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:430px;margin:0 auto}
+
+  /* HERO */
+  .hero{position:relative;padding:max(18px,env(safe-area-inset-top)) 24px 30px;overflow:hidden;isolation:isolate;
+    background:linear-gradient(180deg,#f0d3ac 0%,#e3a982 34%,#c5826f 60%,#8d6675 82%,#6b4f63 100%)}
+  .hero::before{content:"";position:absolute;z-index:-1;width:300px;height:300px;left:50%;top:48%;transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(255,236,210,.85) 0%,rgba(214,142,118,.35) 38%,rgba(140,90,110,0) 70%);filter:blur(6px);animation:breathe 7s ease-in-out infinite}
+  @keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.92}50%{transform:translate(-50%,-50%) scale(1.09);opacity:1}}
+  .backpill{display:inline-flex;align-items:center;gap:6px;background:rgba(67,51,43,.30);backdrop-filter:blur(4px);
+    color:#fbf3e8;font-size:14px;font-weight:500;padding:9px 16px;border-radius:30px;border:1px solid rgba(255,255,255,.18);text-decoration:none}
+  .toppill{display:flex;justify-content:center;margin-top:26px}
+  .toppill span{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);
+    color:#fff5ea;font-size:15px;font-weight:500;padding:10px 22px;border-radius:30px;border:1px solid rgba(255,255,255,.22)}
+  .herobody{text-align:center;color:#fff6ec;padding-top:46px}
+  .herobody .label{font-family:"Fraunces",serif;font-size:29px;font-weight:500;opacity:.92}
+  .herobody .big{font-family:"Fraunces",serif;font-weight:500;font-size:56px;line-height:1;margin-top:2px;letter-spacing:-.01em;text-shadow:0 2px 30px rgba(80,40,55,.35)}
+  .herobody .status{font-size:18px;margin-top:15px;opacity:.95;font-weight:450;padding:0 8px}
+  .herobody .sub{font-size:14.5px;margin-top:7px;opacity:.74;font-weight:450}
+  .ranges{display:flex;gap:12px;justify-content:center;margin-top:24px}
+  .ranges button{flex:1;max-width:116px;border:none;background:rgba(255,255,255,.16);backdrop-filter:blur(4px);
+    color:rgba(255,246,236,.82);font-family:inherit;font-size:16px;font-weight:500;padding:14px 0;border-radius:30px;border:1px solid rgba(255,255,255,.22)}
+  .ranges button.on{background:rgba(255,255,255,.34);color:#fff6ec}
+
+  /* BODY */
+  .body{padding:22px 18px 24px}
+  .card{background:var(--card);border-radius:26px;padding:22px 20px;margin-bottom:16px;box-shadow:0 1px 0 rgba(0,0,0,.02),0 10px 30px rgba(120,90,60,.06)}
+  .chead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .ctitle{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .cnote{font-size:13px;color:var(--muted)}
+  svg .gridline{stroke:var(--line);stroke-width:1}
+  svg .axis{fill:var(--muted);font-size:13px;font-family:"Hanken Grotesk",sans-serif}
+  svg .restlabel{fill:var(--muted);font-size:12px;font-weight:500}
+  .phasestrip{margin-top:12px}
+  .chartcaption{font-size:13.5px;line-height:1.5;color:var(--ink-soft);margin-top:12px;padding:0 2px}
+
+  .breakdown{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .breakdown .b{text-align:center;padding:6px 4px}
+  .breakdown .b .lab{display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--muted);text-transform:uppercase}
+  .breakdown .b .lab i{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .breakdown .b .val{font-family:"Fraunces",serif;font-size:32px;font-weight:500;color:var(--ink);margin-top:8px;line-height:1}
+  .breakdown .b .unit{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.3}
+
+  .expl h3{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .expl p{font-size:15.5px;line-height:1.6;color:var(--ink-soft);font-weight:450}
+  .expl p b{color:var(--ink);font-weight:600}
+  .care{font-size:12.5px;color:var(--muted);margin-top:12px;font-style:italic;line-height:1.5}
+
+  .alys .arow{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .alys .name{display:flex;align-items:center;gap:10px;font-family:"Fraunces",serif;font-size:21px;font-weight:500;color:var(--ink)}
+  .alys .name i{width:11px;height:11px;border-radius:50%;background:var(--clay)}
+  .alys .when{font-size:13px;color:var(--muted)}
+  .alys p{font-size:16.5px;line-height:1.62;color:var(--ink-soft);font-weight:450}
+
+  .empty{padding:60px 30px;text-align:center;color:var(--ink-soft);font-size:16px;line-height:1.6}
+  .fade{opacity:0;transform:translateY(12px);animation:up .7s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes up{to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <a class="backpill" href="/health/v2/ring.html">‹ Your data</a>
+    <div class="toppill"><span>
+      <svg width="15" height="15" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" stroke="#fff5ea" stroke-width="1.5" fill="none" opacity=".9"/><circle cx="8" cy="2.7" r="1.5" fill="#fff5ea"/></svg>
+      This cycle
+    </span></div>
+    <div class="herobody" id="herobody">
+      <div class="label">Cycle</div>
+      <div class="big" id="h-phase">…</div>
+      <div class="status" id="h-status">Pulling your cycle together.</div>
+      <div class="sub" id="h-sub"></div>
+      <div class="ranges"><button class="on">This</button><button>Last</button><button>All</button></div>
+    </div>
+  </div>
+
+  <div class="body" id="body"></div>
+
+</div>
+
+<div id="nav-mount"></div>
+<script src="/health/v2/lib.js"></script>
+<script>
+document.getElementById('nav-mount').innerHTML = renderNav('ring');
+const SVG_NS='http://www.w3.org/2000/svg';
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PHASE_LABEL={menstrual:'Period',follicular:'Follicular',ovulatory:'Ovulatory',luteal:'Luteal',premenstrual:'Late luteal'};
+
+function fmtDate(d){ const x=new Date(d); return x.getDate()+' '+MONTHS[x.getMonth()]; }
+function cap(s){ return (PHASE_LABEL[s]||s||'—'); }
+
+function smooth(pts){
+  if(pts.length<2) return '';
+  let d=`M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+    const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+    d+=` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+const el=(t,a,p)=>{const e=document.createElementNS(SVG_NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)e.textContent=p;return e;};
+
+// Build a per-night series (one value per calendar day) from rhr_derived rows,
+// with explicit gaps for nights the ring wasn't worn. Honest: no filled gaps.
+function nightlySeries(rows, startDay){
+  const byDay=new Map();
+  for(const r of rows){ const day=new Date(r.ts).toISOString().slice(0,10); byDay.set(day, Number(r.value)); } // last wins (desc → earliest; fine)
+  if(!byDay.size) return [];
+  const days=[...byDay.keys()].sort();
+  const first=startDay && startDay<days[0] ? startDay : days[0];
+  const last=days[days.length-1];
+  const out=[]; let cur=new Date(first+'T00:00:00Z'); const end=new Date(last+'T00:00:00Z');
+  while(cur<=end){ const k=cur.toISOString().slice(0,10); out.push({day:k, v:byDay.has(k)?byDay.get(k):null}); cur.setUTCDate(cur.getUTCDate()+1); }
+  return out;
+}
+
+function renderChart(series, meta){
+  const W=680,H=300,padL=44,padR=18,padT=18,padB=30;
+  const vals=series.filter(s=>s.v!=null).map(s=>s.v);
+  if(vals.length<2) return '';
+  const lo=Math.min(...vals), hi=Math.max(...vals);
+  const yMin=Math.floor(lo-4), yMax=Math.ceil(hi+4);
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const X=i=>padL+(i/(series.length-1))*plotW;
+  const Y=v=>padT+(1-(v-yMin)/(yMax-yMin))*plotH;
+  const base=meta?.phase_baselines?.follicular?.rhr ?? meta?.phase_baselines?.current?.rhr;
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,width:'100%',preserveAspectRatio:'xMidYMid meet'});
+
+  if(base!=null){
+    svg.appendChild(el('rect',{x:padL,y:Y(base+2.5),width:plotW,height:Y(base-2.5)-Y(base+2.5),fill:'#8d8a6a',opacity:.10,rx:6}));
+    svg.appendChild(el('text',{x:padL+6,y:Y(base+2.5)-7,class:'restlabel'},'your usual'));
+  }
+  // gridlines (2 round values inside range)
+  const g1=Math.round((yMin+ (yMax-yMin)*0.3)/2)*2, g2=Math.round((yMin+(yMax-yMin)*0.7)/2)*2;
+  [g1,g2].forEach(v=>{ if(v>yMin&&v<yMax){ svg.appendChild(el('line',{x1:padL,y1:Y(v),x2:W-padR,y2:Y(v),class:'gridline',opacity:.7}));
+    svg.appendChild(el('text',{x:padL-10,y:Y(v)+4,class:'axis','text-anchor':'end'},v)); }});
+  // x labels
+  svg.appendChild(el('text',{x:X(0),y:H-8,class:'axis','text-anchor':'start'},fmtDate(series[0].day)));
+  svg.appendChild(el('text',{x:X(series.length-1),y:H-8,class:'axis','text-anchor':'end'},fmtDate(series[series.length-1].day)));
+  // line broken across gaps
+  let run=[]; const flush=()=>{ if(run.length>1) svg.appendChild(el('path',{d:smooth(run),fill:'none',stroke:'#6f7551','stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round'})); run=[]; };
+  series.forEach((p,i)=>{ if(p.v==null){flush();return;} run.push({x:X(i),y:Y(p.v)}); }); flush();
+  // dots
+  const pStart=meta?.last_period_start;
+  series.forEach((p,i)=>{ if(p.v==null) return;
+    const isP=pStart && p.day===pStart;
+    svg.appendChild(el('circle',{cx:X(i),cy:Y(p.v),r:isP?5:3.2,fill:isP?'#bb6147':'#5c613f'}));
+    if(isP) svg.appendChild(el('text',{x:X(i),y:Y(p.v)-12,class:'axis','text-anchor':'middle',style:'fill:#bb6147;font-weight:600'},'period'));
+  });
+  return svg.outerHTML;
+}
+
+function renderStrip(meta){
+  const CL=meta.cycle_length||28, bleed=meta.bleed_len||3;
+  const ov=Math.max(10,CL-14);
+  const ph=[
+    {a:0,b:bleed,c:'var(--menstrual)'},
+    {a:bleed,b:ov-1,c:'var(--follicular)'},
+    {a:ov-1,b:ov+1,c:'var(--ovulatory)'},
+    {a:ov+1,b:CL,c:'var(--luteal)'},
+  ];
+  const W=680,sL=44,sR=18,sW=W-sL-sR,ry=10,rh=16,rx=d=>sL+sW*(Math.max(0,Math.min(CL,d))/CL);
+  const svg=el('svg',{viewBox:`0 0 ${W} 56`,width:'100%',class:'phasestrip',preserveAspectRatio:'xMidYMid meet'});
+  ph.forEach((g,i)=>{ const xa=rx(g.a),w=rx(g.b)-xa,rad=(i===0||i===ph.length-1)?7:0;
+    svg.appendChild(el('rect',{x:xa,y:ry,width:Math.max(0,w),height:rh,fill:g.c,opacity:.85,rx:rad})); });
+  const tx=rx((meta.day_of_cycle||1)-0.5);
+  svg.appendChild(el('line',{x1:tx,y1:ry-5,x2:tx,y2:ry+rh+5,stroke:'#3a352c','stroke-width':2.4}));
+  svg.appendChild(el('circle',{cx:tx,cy:ry-9,r:4,fill:'#3a352c'}));
+  if(meta.last_period_start) svg.appendChild(el('text',{x:sL,y:ry+rh+22,class:'axis','text-anchor':'start'},fmtDate(meta.last_period_start)));
+  svg.appendChild(el('text',{x:tx,y:ry+rh+22,class:'axis','text-anchor':'middle',style:'fill:#3a352c;font-weight:600'},'today'));
+  const next=meta.days_to_next_period!=null ? '~'+fmtDate(Date.now()+meta.days_to_next_period*86400000) : 'soon';
+  svg.appendChild(el('text',{x:sL+sW,y:ry+rh+22,class:'axis','text-anchor':'end'},next));
+  return svg.outerHTML;
+}
+
+function statusLine(meta){
+  const a=meta.autonomic||{};
+  if((meta.phase==='luteal'||meta.phase==='premenstrual') && (a.confirm_count>=2))
+    return 'your resting signals have lifted, as they often do before your period';
+  if(meta.overdue_by>0) return 'your period is running a little late';
+  return 'your signals are sitting at their usual';
+}
+function alysLine(meta){
+  const learn = (meta.confidence==='learning'||meta.confidence==='low')
+    ? " I'll know your rhythm better with each cycle you log." : '';
+  if(meta.phase==='premenstrual'||meta.phase==='luteal')
+    return `You're around day ${meta.day_of_cycle}, in the back half of your cycle. This is the stretch where resting heart rate and breathing tend to lift and HRV settles a little — and that's showing up. It's also when migraines, low mood and pain can bunch up, so be gentle with yourself this week.${learn}`;
+  if(meta.phase==='menstrual')
+    return `You're on day ${meta.day_of_cycle}, around your period. Your body's working a little harder right now, so a heavier-feeling few days is normal.${learn}`;
+  return `You're around day ${meta.day_of_cycle} — the first half of your cycle. Your resting heart rate and breathing are sitting where they usually do, so nothing's pulling away from your normal yet. The part to keep half an eye on is the week before your next period.${learn}`;
+}
+
+function renderBody(meta, series){
+  const recorded=series.filter(s=>s.v!=null).length, span=series.length;
+  const nextTxt = meta.days_to_next_period!=null ? '~'+meta.days_to_next_period : (meta.overdue_by>0?'+'+meta.overdue_by:'—');
+  const nextUnit = meta.days_to_next_period!=null ? 'days away' : (meta.overdue_by>0?'days late':'');
+  return `
+    <div class="card fade">
+      <div class="chead"><span class="ctitle">Across this cycle</span><span class="cnote">${meta.last_period_start?fmtDate(meta.last_period_start):''} – today</span></div>
+      ${renderChart(series, meta) || '<div class="chartcaption">Not enough overnight readings yet to draw your line — wear your ring and it fills in.</div>'}
+      ${renderStrip(meta)}
+      <p class="chartcaption">Your resting heart rate against your usual. The band below counts the days from the period you logged.</p>
+    </div>
+
+    <div class="card fade">
+      <div class="chead"><span class="ctitle">This cycle in three numbers</span></div>
+      <div class="breakdown">
+        <div class="b"><div class="lab"><i style="background:var(--ovulatory)"></i>Day</div><div class="val">${meta.day_of_cycle}</div><div class="unit">of your cycle</div></div>
+        <div class="b"><div class="lab"><i style="background:var(--luteal)"></i>Next</div><div class="val">${nextTxt}</div><div class="unit">${nextUnit}</div></div>
+        <div class="b"><div class="lab"><i style="background:var(--trend)"></i>Nights</div><div class="val">${recorded}</div><div class="unit">of ${span} tracked</div></div>
+      </div>
+    </div>
+
+    <div class="card expl fade">
+      <h3>Why it matters</h3>
+      <p>Your cycle changes your body for real. When Neeve knows roughly where you are, a normal lift in heart rate or dip in HRV later in the month reads as <b>part of your cycle</b> — not a flare. It also marks the days before your period, when migraines, low mood and pain often bunch up, so they're less of a surprise.</p>
+      <div class="care">Neeve describes patterns to help your conversations. It doesn't predict ovulation, confirm fertility, or diagnose anything — bring what matters to your doctor.</div>
+    </div>
+
+    <div class="card expl fade">
+      <h3>How this is worked out</h3>
+      <p>Neeve follows your cycle from the <b>period you log</b> — counting the days from your first bleeding day. It cross-checks that count against your body: your resting heart rate, breathing and HRV move in small, steady ways across the month, so the ring can tell roughly where you are. Until it has seen a couple of cycles it uses a 28-day estimate, so the phase is a guide, not a certainty.</p>
+    </div>
+
+    <div class="card alys fade">
+      <div class="arow"><div class="name"><i></i>Alys</div><div class="when">today</div></div>
+      <p>${alysLine(meta)}</p>
+    </div>`;
+}
+
+async function load(){
+  try{
+    const since=new Date(Date.now()-150*86400000).toISOString();
+    const [cyc, rhr] = await Promise.all([
+      api('/ring/samples?metric=cycle_phase&limit=1').catch(()=>({samples:[]})),
+      api('/ring/samples?metric=rhr_derived&since='+encodeURIComponent(since)+'&limit=300').catch(()=>({samples:[]})),
+    ]);
+    const row=(cyc.samples||[])[0];
+    if(!row || !row.meta){
+      document.getElementById('h-phase').textContent='Not started yet';
+      document.getElementById('h-status').textContent='Log your period and Neeve will start following your cycle.';
+      document.getElementById('h-sub').textContent='';
+      document.getElementById('body').innerHTML=
+        `<div class="card"><p class="expl" style="font-size:15.5px;line-height:1.6;color:var(--ink-soft)">Neeve learns your cycle from the days you log in your check-in, plus your overnight signals from the ring. Log a period to begin — no temperature reading needed.</p></div>`;
+      return;
+    }
+    const meta=row.meta;
+    document.getElementById('h-phase').textContent=cap(meta.phase);
+    document.getElementById('h-status').textContent=statusLine(meta);
+    const next = meta.days_to_next_period!=null ? `next likely ~${fmtDate(Date.now()+meta.days_to_next_period*86400000)}` : 'period due any day';
+    document.getElementById('h-sub').textContent=`day ${meta.day_of_cycle}${meta.last_period_start?' · started '+fmtDate(meta.last_period_start):''} · ${next}`;
+
+    const series=nightlySeries(rhr.samples||[], meta.last_period_start);
+    document.getElementById('body').innerHTML=renderBody(meta, series);
+  }catch(e){
+    document.getElementById('h-status').textContent='Couldn’t load your cycle: '+e.message;
+  }
+}
+load();
+</script>
+</body>
+</html>

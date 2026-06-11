@@ -229,7 +229,7 @@
 <div class="ql-sheet" id="nt-sheet" role="dialog" aria-modal="true">
   <div class="ql-grip"></div>
   <h2>Worth a look</h2>
-  <div class="sub">Quiet things the ring noticed. If one matches how you felt, tell Alys — it helps her learn what matters to you.</div>
+  <div class="sub">Things the ring noticed. They're kept in your record either way — tell us whether you felt them so Alys learns what matters to you.</div>
   <div id="nt-list"></div>
   <div class="ql-actions" style="margin-top:2px"><button class="btn" onclick="closeNoticed()">Done</button></div>
 </div>
@@ -406,27 +406,27 @@ function noticedCard(f){
   if(f.flag_type==='quiet_period'){
     const chips=QUIET_INTENTS.map(([tag,lab])=>`<button class="chip" type="button" onclick="flagIntent('${f.id}','${tag}',this)">${lab}</button>`).join('');
     return `<div class="nt-item good" data-id="${f.id}">
-      <button class="nt-x" type="button" onclick="ackFlag('${f.id}',false)" aria-label="Dismiss"><svg viewBox="0 0 14 14" width="13" height="13"><path d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg></button>
+      <button class="nt-x" type="button" onclick="dismissFlag('${f.id}')" aria-label="Dismiss"><svg viewBox="0 0 14 14" width="13" height="13"><path d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg></button>
       <span class="nt-tag">Noticed · a quiet stretch</span>
       <div class="nt-h"><span class="nt-k">${flagKindLabel(f.flag_type)}</span><span class="nt-w">${flagWhen(f.ts)}</span></div>
       <p class="nt-s">${flagSummary(f)}</p>
       ${flagPanel(f)}
       <div class="nt-chips">${chips}</div>
       <textarea class="nt-note" rows="2" placeholder="Add a note (optional)"></textarea>
-      <div class="nt-row"><button class="nb" type="button" onclick="ackFlag('${f.id}',false)">Not a rest</button></div>
+      <div class="nt-row"><button class="nb" type="button" onclick="dismissFlag('${f.id}')">Not a rest</button></div>
     </div>`;
   }
   const good=isGoodFlag(f.flag_type);
   return `<div class="nt-item${good?' good':''}" data-id="${f.id}">
-    <button class="nt-x" type="button" onclick="ackFlag('${f.id}',false)" aria-label="Dismiss"><svg viewBox="0 0 14 14" width="13" height="13"><path d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg></button>
+    <button class="nt-x" type="button" onclick="dismissFlag('${f.id}')" aria-label="Dismiss"><svg viewBox="0 0 14 14" width="13" height="13"><path d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg></button>
     ${good?'<span class="nt-tag">Noticed · a good thing</span>':''}
     <div class="nt-h"><span class="nt-k">${flagKindLabel(f.flag_type)}</span><span class="nt-w">${flagWhen(f.ts)}</span></div>
     <p class="nt-s">${flagSummary(f)}</p>
     ${good?flagPanel(f):''}
     <textarea class="nt-note" rows="2" placeholder="${good?'Add a note — what were you doing?':'Add a note (optional)'}"></textarea>
     <div class="nt-row">${good
-      ?`<button class="nb yes" type="button" onclick="ackFlag('${f.id}',true)">Yes, that felt good</button><button class="nb" type="button" onclick="ackFlag('${f.id}',false)">Didn't notice</button>`
-      :`<button class="nb yes" type="button" onclick="ackFlag('${f.id}',true)">Yes, I felt that</button><button class="nb" type="button" onclick="ackFlag('${f.id}',false)">Wasn't me</button>`}</div>
+      ?`<button class="nb yes" type="button" onclick="ackFlag('${f.id}','felt')">Yes, that felt good</button><button class="nb" type="button" onclick="ackFlag('${f.id}','notfelt')">Didn't notice it</button>`
+      :`<button class="nb yes" type="button" onclick="ackFlag('${f.id}','felt')">Yes, I felt that</button><button class="nb" type="button" onclick="ackFlag('${f.id}','notfelt')">Didn't feel it</button>`}</div>
   </div>`;
 }
 function openNoticed(){
@@ -446,14 +446,25 @@ async function flagIntent(id, tag, btn){
   setTimeout(()=>{ if(el0) el0.remove(); if(!(window._noticed||[]).length){ closeNoticed(); load(); } }, 180);
 }
 function closeNoticed(){ document.getElementById('nt-backdrop').classList.remove('open'); document.getElementById('nt-sheet').classList.remove('open'); }
-async function ackFlag(id, felt){
-  const el0=document.querySelector('.nt-item[data-id="'+id+'"]');
-  const note=(el0&&el0.querySelector('.nt-note')&&el0.querySelector('.nt-note').value.trim())||'';
-  const body=felt?{tags:['felt'],note:note||undefined}:(note?{note}:{});
-  try{ await api('/me/flagged-events/'+id+'/'+(felt?'respond':'dismiss'), {method:'POST', body: JSON.stringify(body)}); }catch(_){}
+function _noteFor(id){ const el=document.querySelector('.nt-item[data-id="'+id+'"]'); return (el&&el.querySelector('.nt-note')&&el.querySelector('.nt-note').value.trim())||''; }
+function _removeNoticed(id){
   window._noticed=(window._noticed||[]).filter(f=>f.id!==id);
   const el=document.querySelector('.nt-item[data-id="'+id+'"]'); if(el) el.remove();
   if(!(window._noticed||[]).length){ closeNoticed(); load(); }
+}
+// A noticing is REAL data — it gets logged whether or not you felt it.
+// 'felt' = yes I felt it; 'notfelt' = it happened, I just didn't feel it.
+// Both RESPOND (record a dated note). Only the × / "Not a rest" dismisses.
+async function ackFlag(id, mode){
+  const note=_noteFor(id);
+  const tags=[mode==='felt'?'felt':'not_felt'];
+  try{ await api('/me/flagged-events/'+id+'/respond', {method:'POST', body: JSON.stringify({tags, note:note||undefined})}); }catch(_){}
+  _removeNoticed(id);
+}
+async function dismissFlag(id){
+  const note=_noteFor(id);
+  try{ await api('/me/flagged-events/'+id+'/dismiss', {method:'POST', body: JSON.stringify(note?{note}:{})}); }catch(_){}
+  _removeNoticed(id);
 }
 function selectKind(k){ _qlKind=_qlKind===k?null:k; document.querySelectorAll('#ql-kinds .ql-chip').forEach(b=>b.classList.toggle('on',b.dataset.kind===_qlKind)); refreshQlSubmit(); }
 function refreshQlSubmit(){ document.getElementById('ql-submit').disabled=!(document.getElementById('ql-body').value||'').trim(); }

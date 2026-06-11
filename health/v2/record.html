@@ -161,7 +161,8 @@
     display: flex; align-items: center; gap: 8px;
   }
   .note-meta .when { color: var(--taupe); font-weight: 500; letter-spacing: .08em; }
-  .note-noticed { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-radius: 99px; padding: 2px 8px; margin-left: auto; }
+  .note-tag { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-radius: 99px; padding: 2px 9px; background: rgba(43,32,24,.06); color: var(--taupe-2, #7A5F52); }
+  .note-noticed { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-radius: 99px; padding: 2px 8px; }
   .note-noticed.good { background: rgba(134,178,122,.16); color: #5d6b3b; }
   .note-noticed.att { background: rgba(216,90,48,.12); color: #a8451f; }
   .note-row.good { background: rgba(134,178,122,.05); }
@@ -521,6 +522,8 @@ async function renderNotes() {
     </div>
     <div class="note-kinds" id="note-kinds">
       <button class="note-kind on"   data-k="all">All</button>
+      <button class="note-kind"      data-k="noticed">Noticed</button>
+      <button class="note-kind"      data-k="mine">Yours</button>
       <button class="note-kind"      data-k="symptom">Symptoms</button>
       <button class="note-kind"      data-k="appointment">Appointments</button>
       <button class="note-kind"      data-k="medication">Medications</button>
@@ -554,9 +557,12 @@ async function renderNotes() {
 
 function paintNotes() {
   const root = document.getElementById('note-list');
-  const filtered = _notesKind === 'all'
-    ? _notesAll
-    : _notesAll.filter(n => (n.kind || '').toLowerCase() === _notesKind);
+  const isNoticed = n => !!(n.context && n.context.noticed);
+  const filtered =
+      _notesKind === 'all'     ? _notesAll
+    : _notesKind === 'noticed' ? _notesAll.filter(isNoticed)
+    : _notesKind === 'mine'    ? _notesAll.filter(n => !isNoticed(n))
+    : _notesAll.filter(n => !isNoticed(n) && (n.kind || '').toLowerCase() === _notesKind);
 
   if (!filtered.length) {
     root.innerHTML = '<div class="empty">Nothing in this view yet.</div>';
@@ -569,15 +575,14 @@ function paintNotes() {
     const kind = (n.kind || 'note').toString();
     const body = (n.body || n.text || '').toString().trim() || '—';
     const c = n.context || {};
-    const noticed = c.noticed
+    const tag = c.noticed
       ? `<span class="note-noticed ${c.good ? 'good' : 'att'}">Noticed${c.good ? ' · a good thing' : ''}</span>`
-      : '';
+      : `<span class="note-tag">${escapeHtml(kind)}</span>`;
     return `
       <div class="note-row${c.noticed && c.good ? ' good' : ''}">
         <div class="note-meta">
-          <span>${escapeHtml(kind)}</span>
+          ${tag}
           <span class="when">· ${escapeHtml(when.toLowerCase())}</span>
-          ${noticed}
         </div>
         <div class="note-body">${escapeHtml(body)}</div>
         ${notePanelHtml(c.panel)}

@@ -215,10 +215,17 @@
   .pat-conf-emerging { background: #ece3cf; color: #8a6d3b; }
   .pat-conf-established { background: #dfe3cf; color: #5d6b3b; }
   .pat-count { margin-left: auto; font-size: 11px; color: var(--taupe, #9a8473); }
-  .pat-label { font-family: 'Apricosa','Fraunces',serif; font-weight: 500; font-size: 18px; color: var(--ink-2,#2b2018); margin-bottom: 5px; }
-  .pat-sig { font-size: 13.5px; color: var(--ink-soft,#6b574a); line-height: 1.5; margin: 0 0 10px; }
-  .pat-surfaced { border-left: 3px solid var(--sage,#6f7551); background: rgba(111,117,81,.08);
-    padding: 10px 13px; border-radius: 0 10px 10px 0; font-size: 13px; color: var(--ink-2,#2b2018); margin: 2px 0 12px; line-height: 1.5; }
+  .pat-label { font-family: 'Apricosa','Fraunces',serif; font-weight: 500; font-size: 18px; color: var(--ink-2,#2b2018); margin-bottom: 10px; line-height: 1.25; }
+  .pat-eyebrow { display: block; font-size: 9.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--taupe,#9a8473); margin-bottom: 4px; }
+  .pat-plain { border-left: 3px solid var(--clay-2,#bf5a3c); background: rgba(191,90,60,.07);
+    padding: 11px 14px; border-radius: 0 10px 10px 0; font-size: 14.5px; color: var(--ink-2,#2b2018); margin: 0 0 12px; line-height: 1.5; }
+  .pat-means { font-size: 13.5px; color: var(--ink-soft,#6b574a); line-height: 1.55; margin: 0 0 12px; }
+  .pat-evidence { margin: 0 0 4px; }
+  .pat-evidence summary { font-size: 12.5px; font-weight: 600; color: var(--clay-2,#bf5a3c); cursor: pointer; list-style: none; padding: 2px 0; }
+  .pat-evidence summary::-webkit-details-marker { display: none; }
+  .pat-evidence summary::before { content: '▸ '; }
+  .pat-evidence[open] summary::before { content: '▾ '; }
+  .pat-research { padding-top: 8px; }
   .pat-research p { font-size: 12.5px; color: var(--ink-soft,#6b574a); line-height: 1.55; margin: 0 0 7px; }
   .pat-ref { color: var(--clay-2,#bf5a3c); font-weight: 700; cursor: pointer; border-bottom: 1px dotted; font-size: 11px; }
   .pat-qbox { margin: 4px 0 10px; border-left: 3px solid #c08a3e; background: rgba(233,205,162,.18);
@@ -577,12 +584,14 @@ async function renderPatterns() {
         `<p class="pat-claim">${escapeHtml(c.claim || '')} ${(c.refs || []).map(n => `<a class="pat-ref" onclick="togglePatCite(this,${n})">[${n}]</a>`).join(' ')}</p>`).join('');
       const conf = p.confidence ? `<span class="pat-conf pat-conf-${escapeHtml(p.confidence)}">${escapeHtml(p.confidence)}</span>` : '';
       const seen = p.count ? `<span class="pat-count">seen ${p.count}×</span>` : '';
+      const title = p.patient_title || p.label || '';
+      const means = p.patient || p.surfaced || '';
       return `<div class="pat-card">
         <div class="pat-h"><span class="pat-cat">${escapeHtml(p.category || '')}</span>${conf}${seen}</div>
-        <div class="pat-label">${escapeHtml(p.label || '')}</div>
-        ${p.signal ? `<p class="pat-sig">${escapeHtml(p.signal)}</p>` : ''}
-        ${p.surfaced ? `<p class="pat-surfaced">${escapeHtml(p.surfaced)}</p>` : ''}
-        ${claims ? `<div class="pat-research">${claims}</div>` : ''}
+        <div class="pat-label">${escapeHtml(title)}</div>
+        ${p.plain ? `<p class="pat-plain"><span class="pat-eyebrow">What we're seeing</span>${escapeHtml(p.plain)}</p>` : ''}
+        ${means ? `<p class="pat-means"><span class="pat-eyebrow">What it means</span>${escapeHtml(means)}</p>` : ''}
+        ${claims ? `<details class="pat-evidence"><summary>The research behind it</summary><div class="pat-research">${claims}</div></details>` : ''}
         <div class="pat-foot">Add it to your next doctor report from the <a onclick="location.search='?tab=prepare'">Prepare</a> tab.</div>
       </div>`;
     }).join('');

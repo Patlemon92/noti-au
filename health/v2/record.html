@@ -161,6 +161,9 @@
     display: flex; align-items: center; gap: 8px;
   }
   .note-meta .when { color: var(--taupe); font-weight: 500; letter-spacing: .08em; }
+  .note-context { margin-top: 7px; padding-top: 7px; border-top: 1px dashed rgba(43,32,24,.1); font-size: 11.5px; color: var(--taupe, #9a8473); }
+  .note-context .nc-range { color: rgba(154,132,115,.7); }
+  .note-context .nc-win { color: rgba(154,132,115,.6); font-style: italic; }
   .note-body {
     font-family: 'Apricosa', 'Fraunces', serif; font-weight: 500;
     font-size: 15.5px; line-height: 1.45; color: var(--ink);
@@ -562,8 +565,19 @@ function paintNotes() {
           <span class="when">· ${escapeHtml(when.toLowerCase())}</span>
         </div>
         <div class="note-body">${escapeHtml(body)}</div>
+        ${noteContextLine(n.context)}
       </div>`;
   }).join('');
+}
+// The 30-min vitals snapshot captured with a note / reading.
+function noteContextLine(c) {
+  if (!c) return '';
+  const parts = [];
+  if (c.hr)   parts.push(`HR ${c.hr.med} <span class="nc-range">(${c.hr.lo}–${c.hr.hi})</span>`);
+  if (c.spo2) parts.push(`SpO₂ ${c.spo2.med}%`);
+  if (c.rr)   parts.push(`breathing ${c.rr.med}`);
+  if (!parts.length) return '';
+  return `<div class="note-context">Around then · ${parts.join(' · ')} <span class="nc-win">last ${c.window_min || 30} min</span></div>`;
 }
 
 // ── PATTERNS ───────────────────────────────────────

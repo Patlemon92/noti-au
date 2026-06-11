@@ -110,6 +110,12 @@
   .ql-row{display:flex;flex-wrap:wrap;gap:6px;}
   .ql-chip{font-family:inherit;font-size:12.5px;font-weight:500;padding:8px 13px;border-radius:15px;border:1px solid var(--hair);background:#fcf8f1;color:var(--muted);cursor:pointer;}
   .ql-chip.on{background:var(--ink);color:#f6ecdd;border-color:var(--ink);}
+  .ql-reading{margin-top:16px;padding-top:14px;border-top:1px solid var(--hair);}
+  .ql-cap-note{color:var(--muted);font-weight:400;}
+  .ql-bp-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+  .ql-bp{width:64px;font-family:inherit;font-size:16px;text-align:center;padding:9px 6px;border:1px solid var(--hair);border-radius:10px;background:#fcf8f1;color:var(--ink);}
+  .ql-bp-sep{color:var(--muted);font-size:16px;}
+  #ql-bp-save{margin-left:auto;}
   .ql-actions{display:flex;align-items:center;gap:10px;margin-top:16px;}
   .ql-status{font-size:13px;color:var(--muted);flex:1;}
   .btn{padding:10px 18px;border-radius:99px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--hair);background:#fff;color:var(--ink);}
@@ -174,6 +180,17 @@
     <button class="ql-chip" data-kind="event"       onclick="selectKind('event')">Event</button>
     <button class="ql-chip" data-kind="thought"     onclick="selectKind('thought')">Thought</button>
   </div>
+  <div class="ql-reading">
+    <div class="ql-cap">Or log a blood-pressure reading <span class="ql-cap-note">(from a cuff)</span></div>
+    <div class="ql-bp-row">
+      <input id="ql-sys" class="ql-bp" type="number" inputmode="numeric" placeholder="sys" aria-label="Systolic">
+      <span class="ql-bp-sep">/</span>
+      <input id="ql-dia" class="ql-bp" type="number" inputmode="numeric" placeholder="dia" aria-label="Diastolic">
+      <input id="ql-pulse" class="ql-bp" type="number" inputmode="numeric" placeholder="pulse" aria-label="Pulse">
+      <button class="btn" id="ql-bp-save" onclick="submitBpReading()">Save</button>
+    </div>
+    <span class="ql-status" id="ql-bp-status"></span>
+  </div>
   <div class="ql-actions">
     <span class="ql-status" id="ql-status"></span>
     <button class="btn" onclick="closeLogSheet()">Cancel</button>
@@ -183,7 +200,9 @@
 
 <!-- Noticed sheet — opens from the bottom when the Noticed card is tapped -->
 <style>
-  .nt-item{border:1px solid var(--hair);border-radius:14px;padding:13px 14px;margin-bottom:10px;background:#fffdf9;}
+  .nt-item{position:relative;border:1px solid var(--hair);border-radius:14px;padding:13px 14px;margin-bottom:10px;background:#fffdf9;}
+  .nt-x{position:absolute;top:9px;right:9px;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border:0;background:rgba(43,32,24,.05);color:#9a8473;border-radius:50%;cursor:pointer;padding:0;}
+  .nt-x:active{background:rgba(43,32,24,.12);}
   .nt-h{display:flex;align-items:baseline;gap:8px;}
   .nt-k{font-family:"Fraunces",serif;font-weight:500;font-size:15.5px;color:var(--ink);}
   .nt-w{margin-left:auto;font-size:11.5px;color:var(--muted);}
@@ -382,9 +401,11 @@ function noticedCard(f){
   if(f.flag_type==='quiet_period'){
     const chips=QUIET_INTENTS.map(([tag,lab])=>`<button class="chip" type="button" onclick="flagIntent('${f.id}','${tag}',this)">${lab}</button>`).join('');
     return `<div class="nt-item good" data-id="${f.id}">
+      <button class="nt-x" type="button" onclick="ackFlag('${f.id}',false)" aria-label="Dismiss"><svg viewBox="0 0 14 14" width="13" height="13"><path d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg></button>
       <span class="nt-tag">Noticed · a quiet stretch</span>
       <div class="nt-h"><span class="nt-k">${flagKindLabel(f.flag_type)}</span><span class="nt-w">${flagWhen(f.ts)}</span></div>
       <p class="nt-s">${flagSummary(f)}</p>
+      ${flagPanel(f)}
       <div class="nt-chips">${chips}</div>
       <textarea class="nt-note" rows="2" placeholder="Add a note (optional)"></textarea>
       <div class="nt-row"><button class="nb" type="button" onclick="ackFlag('${f.id}',false)">Not a rest</button></div>
@@ -392,6 +413,7 @@ function noticedCard(f){
   }
   const good=isGoodFlag(f.flag_type);
   return `<div class="nt-item${good?' good':''}" data-id="${f.id}">
+    <button class="nt-x" type="button" onclick="ackFlag('${f.id}',false)" aria-label="Dismiss"><svg viewBox="0 0 14 14" width="13" height="13"><path d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg></button>
     ${good?'<span class="nt-tag">Noticed · a good thing</span>':''}
     <div class="nt-h"><span class="nt-k">${flagKindLabel(f.flag_type)}</span><span class="nt-w">${flagWhen(f.ts)}</span></div>
     <p class="nt-s">${flagSummary(f)}</p>
@@ -441,6 +463,21 @@ async function submitQuickLog(){
     document.querySelectorAll('.ql-chip').forEach(b=>b.classList.remove('on'));
     setTimeout(()=>{ closeLogSheet(); status.textContent=''; load(); }, 1000);
   }catch(e){ status.textContent=`Couldn't log: ${e.message}`; btn.disabled=false; }
+}
+async function submitBpReading(){
+  const sys=parseInt(document.getElementById('ql-sys').value,10),
+        dia=parseInt(document.getElementById('ql-dia').value,10),
+        pulseRaw=document.getElementById('ql-pulse').value;
+  const st=document.getElementById('ql-bp-status'), btn=document.getElementById('ql-bp-save');
+  if(!(sys>=60&&sys<=260)||!(dia>=30&&dia<=200)){ st.textContent='Enter a systolic 60–260 and diastolic 30–200.'; return; }
+  st.textContent='Saving…'; btn.disabled=true;
+  const body={systolic:sys,diastolic:dia}; if(pulseRaw) body.pulse=parseInt(pulseRaw,10);
+  try{
+    await api('/me/bp-reading',{method:'POST',body:JSON.stringify(body)});
+    st.textContent='Saved — this goes to your doctor report.';
+    ['ql-sys','ql-dia','ql-pulse'].forEach(id=>document.getElementById(id).value='');
+    setTimeout(()=>{ closeLogSheet(); st.textContent=''; load(); }, 1100);
+  }catch(e){ st.textContent="Couldn't save: "+e.message; btn.disabled=false; }
 }
 
 load();

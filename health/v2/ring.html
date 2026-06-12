@@ -221,6 +221,9 @@
   <!-- cycle: only appears once a period has been logged -->
   <div id="cycle-section"></div>
 
+  <!-- advanced scores: only appears if the user opted in (More → show advanced) -->
+  <div id="advanced-section"></div>
+
 </main>
 
 <!-- Bottom-sheet modal: device info + actions -->
@@ -271,8 +274,11 @@ let cachedCycle = null;                // latest cycle_phase row (or null if nev
 // row is always honest and current.
 const TREND_METRICS = [
   'hr', 'hrv_rmssd', 'spo2', 'respiration_rate',
-  'steps', 'bp_sys', 'bp_dia', 'recovery_score',
+  'steps', 'bp_sys', 'bp_dia', 'recovery_score', 'strain_score',
 ];
+// Advanced scores (recovery/strain) are OFF by default — Neeve stays scoreless
+// and calm for everyone unless a user opts in via More → "Show advanced metrics".
+function advancedOn() { return localStorage.getItem('neeve_show_advanced') === '1'; }
 
 // Row config → real metric keys. Each row: which series + baseline to
 // read, where the chevron leads, and how to phrase its read-line.
@@ -369,6 +375,7 @@ async function load() {
     renderGroups();
     renderFelt();
     renderCycle();
+    renderAdvanced();
     firstLoad = false;
   } catch (e) {
     if (firstLoad) {
@@ -798,6 +805,33 @@ function renderCycle() {
   if (html !== _lastCycleHtml) {
     _lastCycleHtml = html;
     document.getElementById('cycle-section').innerHTML = html;
+  }
+}
+
+// ── Advanced scores (recovery / strain) — only when the user opts in.
+// Kept calm: a guide, not a verdict; never the Today read, never the doctor PDF.
+let _lastAdvHtml = '';
+function renderAdvanced() {
+  let html = '';
+  if (advancedOn()) {
+    const rec = cachedLatest['recovery_score'];
+    const str = cachedLatest['strain_score'];
+    const tile = (label, metric, v, sub) => (v == null) ? '' :
+      `<a class="ftile" href="javascript:openExplainer('${metric}')">
+        <div class="ftname">${label}</div>
+        <div class="ftval">${Math.round(v)}</div>
+        <div class="ftmeta">${sub}</div></a>`;
+    const tiles = tile('Recovery', 'recovery_score', rec?.value, 'out of 100 · how ready you are')
+                + tile('Strain', 'strain_score', str?.value, 'out of 21 · the load you carried');
+    if (tiles.trim()) {
+      html = `<div class="group"><div class="glabel">Advanced</div>` +
+        `<div class="gnote">You turned these on. A guide for the curious — not a verdict, and never the whole picture.</div>` +
+        `<div class="fgrid">${tiles}</div></div>`;
+    }
+  }
+  if (html !== _lastAdvHtml) {
+    _lastAdvHtml = html;
+    document.getElementById('advanced-section').innerHTML = html;
   }
 }
 

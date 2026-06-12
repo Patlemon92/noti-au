@@ -231,6 +231,16 @@
     </a>
   </div>
 
+  <!-- WHAT YOU SEE -->
+  <div class="slabel">What you see</div>
+  <div class="group">
+    <div class="row" onclick="toggleAdvanced()">
+      <span class="label">Show advanced metrics</span>
+      <div class="toggle" id="adv-toggle"></div>
+    </div>
+  </div>
+  <div class="caption" style="margin:8px 6px 0">Off by default. Surfaces recovery, strain and stress as numbers where they apply — a guide for the curious, never a verdict.</div>
+
   <!-- NOTIFICATIONS -->
   <div class="slabel">Notifications</div>
   <div class="group">
@@ -497,6 +507,19 @@ async function load() {
 }
 load();
 onResume(load);
+
+// ── Advanced metrics (recovery/strain/stress) — opt-in display. Off by default,
+// so Neeve stays calm and scoreless for everyone unless asked. [[feedback-scores-optional]]
+function advancedEnabled() { return localStorage.getItem('neeve_show_advanced') === '1'; }
+function paintAdvToggle() {
+  const t = document.getElementById('adv-toggle');
+  if (t) t.classList.toggle('on', advancedEnabled());
+}
+function toggleAdvanced() {
+  localStorage.setItem('neeve_show_advanced', advancedEnabled() ? '0' : '1');
+  paintAdvToggle();
+}
+paintAdvToggle();
 
 function renderProfile(u) {
   const initial = (u.name || u.email || '·').trim()[0]?.toUpperCase() || '·';

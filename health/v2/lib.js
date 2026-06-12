@@ -695,8 +695,8 @@ function onResume(fn) {
 const METRIC_EXPLAINERS = {
   strain_score: {
     title: 'Strain',
-    body: `<p>How much load your body carried today, on a 0–21 scale (same
-range as Whoop's). Higher means more cardiovascular load.</p>
+    body: `<p>How much load your body carried today, on a 0–21 scale.
+Higher means more cardiovascular load.</p>
 <p><b>How it's calculated:</b> we sum the minutes you spent in each HR
 zone (light → moderate → hard) and weight harder zones more. HR zones
 are anchored to your resting HR + age-predicted max. Refreshed every

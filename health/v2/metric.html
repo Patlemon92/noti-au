@@ -119,9 +119,11 @@
   .mcal-nav button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line,#e6d8c4);background:#fff;color:var(--ink-soft,#6b574a);font-size:15px;cursor:pointer;}
   .mcal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
   .mcal-dow span{text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#9a8473);}
-  .mcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-  .mcal-cell{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;
-    font-family:"Fraunces",serif;font-weight:500;font-size:13px;color:var(--ink);background:#f5efe3;border:1px solid #efe7d8;cursor:pointer;}
+  .mcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .mcal-cell{aspect-ratio:1/1.16;border-radius:11px;display:flex;flex-direction:column;align-items:center;
+    padding-top:5px;color:var(--ink);background:#f5efe3;border:1px solid #efe7d8;cursor:pointer;overflow:hidden;}
+  .mcal-cell .cd{font-size:9.5px;font-weight:600;line-height:1;opacity:.6;align-self:flex-end;margin-right:6px;}
+  .mcal-cell .cv{font-family:"Fraunces",serif;font-weight:500;font-size:14.5px;line-height:1;margin-top:auto;margin-bottom:8px;color:inherit;}
   .mcal-cell.empty{background:transparent;border:0;cursor:default;}
   .mcal-cell.nodata{color:#c2b4a0;background:#f7f2e9;cursor:default;}
   .mcal-cell.today{box-shadow:0 0 0 1.5px var(--ink);}
@@ -241,15 +243,6 @@
       </div>
     </div>
 
-    <!-- CALENDAR CARD — this metric, day by day -->
-    <div class="card" id="m-cal-card">
-      <div class="chead"><span class="ctitle">By day</span></div>
-      <div class="mcal-nav"><button id="mcal-prev" type="button" aria-label="previous month">‹</button><span class="mtitle" id="mcal-month">—</span><button id="mcal-next" type="button" aria-label="next month">›</button></div>
-      <div class="mcal-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
-      <div class="mcal-grid" id="mcal-grid"></div>
-      <div class="mcal-read" id="mcal-read"></div>
-    </div>
-
     <!-- ALYS CARD -->
     <div class="card alys">
       <div class="arow">
@@ -257,6 +250,15 @@
         <div class="when" id="m-when"></div>
       </div>
       <p id="m-alys">…</p>
+    </div>
+
+    <!-- CALENDAR CARD — this metric, day by day -->
+    <div class="card" id="m-cal-card">
+      <div class="chead"><span class="ctitle">By day</span></div>
+      <div class="mcal-nav"><button id="mcal-prev" type="button" aria-label="previous month">‹</button><span class="mtitle" id="mcal-month">—</span><button id="mcal-next" type="button" aria-label="next month">›</button></div>
+      <div class="mcal-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+      <div class="mcal-grid" id="mcal-grid"></div>
+      <div class="mcal-read" id="mcal-read"></div>
     </div>
 
     <!-- CUFF CALIBRATION (BP page only) -->
@@ -618,11 +620,11 @@
     let html='';
     for(let i=0;i<first;i++) html+='<div class="mcal-cell empty"></div>';
     for(let d=1; d<=dim; d++){
-      const k=calKey(y,mo,d); const e=calByDay[k]; const cls=['mcal-cell']; let style='';
+      const k=calKey(y,mo,d); const e=calByDay[k]; const cls=['mcal-cell']; let style='', inner=`<span class="cd">${d}</span>`;
       if(!e){ cls.push('nodata'); }
-      else { const t=(calMean(e)-mn)/rng; const a=(0.16+0.66*t).toFixed(2); const fg=t>0.6?'#fff':'var(--ink)'; style=`style="background:rgba(187,97,71,${a});color:${fg}"`; }
+      else { const t=(calMean(e)-mn)/rng; const a=(0.16+0.66*t).toFixed(2); const fg=t>0.6?'#fff':'var(--ink)'; style=`style="background:rgba(187,97,71,${a});color:${fg}"`; inner+=`<span class="cv">${Math.round(calMean(e))}</span>`; }
       if(k===tk) cls.push('today');
-      html+=`<div class="${cls.join(' ')}" ${style} data-k="${k}" data-d="${d}">${d}</div>`;
+      html+=`<div class="${cls.join(' ')}" ${style} data-k="${k}" data-d="${d}">${inner}</div>`;
     }
     $('mcal-grid').innerHTML=html;
     $('mcal-grid').querySelectorAll('.mcal-cell[data-k]').forEach(c=>{
@@ -641,7 +643,13 @@
     const u = m.unit ? (' '+m.unit) : '';
     const mean = Math.round(calMean(e));
     const r = (e.lo!=null&&e.hi!=null && Math.round(e.lo)!==Math.round(e.hi)) ? ` · ${Math.round(e.lo)}–${Math.round(e.hi)}${u}` : '';
-    $('mcal-read').innerHTML=`<b>${ds}</b> — avg <b>${mean}${u}</b>${r}`;
+    let vs = '';
+    const bv = baseline ? (baseline.healthy ?? baseline.p30 ?? baseline.lifetime ?? null) : null;
+    if(bv!=null && isFinite(bv)){
+      const b=Math.round(bv), dd=mean-b, tol=Math.max(2, Math.round(b*0.04));
+      vs = Math.abs(dd)<=tol ? ' · around your usual' : (dd>0?` · above usual (${b})`:` · below usual (${b})`);
+    }
+    $('mcal-read').innerHTML=`<b>${ds}</b> — avg <b>${mean}${u}</b>${r}${vs}`;
   }
   document.getElementById('mcal-prev').onclick=()=>{ calCur.setMonth(calCur.getMonth()-1); renderCal(); };
   document.getElementById('mcal-next').onclick=()=>{ calCur.setMonth(calCur.getMonth()+1); renderCal(); };

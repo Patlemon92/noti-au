@@ -39,7 +39,7 @@
   .hero{position:relative;overflow:hidden;isolation:isolate;min-height:300px;
     display:flex;flex-direction:column;justify-content:space-between;
     margin:calc(-1 * (max(env(safe-area-inset-top,0px),58px) + 4px)) -18px 0;
-    border-radius:0 0 30px 30px;
+    border-radius:38px 38px 30px 30px;
     box-shadow:0 16px 38px rgba(120,90,55,.2);transition:background 1.2s ease;}
   .htop{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
     padding:calc(max(env(safe-area-inset-top,0px),44px) + 14px) 21px 0;}
@@ -51,6 +51,9 @@
     background:radial-gradient(circle,#fff7ea,#ffe2b8);box-shadow:0 0 40px 14px rgba(255,224,180,.55);transition:all 1s ease;}
   .hero .scrim{position:absolute;inset:0;z-index:0;opacity:0;transition:opacity 1s ease;
     background:linear-gradient(180deg,transparent 30%,rgba(26,20,36,.34));}
+  .hero .stars{position:absolute;inset:0;z-index:0;opacity:0;transition:opacity 1.2s ease;}
+  .hero.sky-night .stars{opacity:1;}
+  .hero .stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:0 0 4px 1px rgba(255,255,255,.5);}
   .hero.sky-morning{background:linear-gradient(180deg,#bcd0e6 0%,#e7d2c4 46%,#f4c39a 74%,#f3ad7e 100%);color:#4a2f23;}
   .hero.sky-day{background:linear-gradient(180deg,#7fb0dc 0%,#a8cbe6 50%,#d2e4f0 100%);color:#21384f;}
   .hero.sky-eve{background:linear-gradient(180deg,#34406e 0%,#6b5378 34%,#bb6f55 64%,#e79a5b 84%,#f3b86a 100%);color:#fbeede;}
@@ -162,11 +165,11 @@
 
   <div class="hero sky-day" id="hero">
     <div class="sun"></div>
+    <div class="stars"><i style="left:12%;top:20%"></i><i style="left:29%;top:13%;opacity:.8"></i><i style="left:46%;top:24%;opacity:.7"></i><i style="left:21%;top:36%;opacity:.6"></i><i style="left:62%;top:16%"></i><i style="left:40%;top:9%;opacity:.7"></i><i style="left:9%;top:44%;opacity:.5"></i><i style="left:55%;top:40%;opacity:.6"></i></div>
     <div class="scrim"></div>
     <div class="grain"></div>
     <div class="htop">
       <div class="hdate" id="date">Today</div>
-      <a class="more" href="/health/v2/more.html" aria-label="More">⋯</a>
     </div>
     <div class="hfg">
       <div class="wx"><span id="wx-clock">—</span>&nbsp;·&nbsp;<b id="wx-temp">—</b>&nbsp;<span id="wx-cond"></span></div>

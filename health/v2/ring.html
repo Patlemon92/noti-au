@@ -69,11 +69,17 @@
 
   /* HERO — the pacing read, in words */
   .hero{position:relative;border-radius:30px;padding:26px 24px 24px;overflow:hidden;isolation:isolate;
-    background:linear-gradient(155deg,#f6dcb6 0%, #ecbf97 42%, #d79e88 78%, #c08a7e 100%);
-    box-shadow:0 14px 34px rgba(150,100,70,.18);}
+    background:linear-gradient(155deg,#d7e0ec 0%,#e7ddcb 55%,#efd9c0 100%);
+    box-shadow:0 14px 34px rgba(150,100,70,.14);}
+  /* faded time-of-day sky — same idea as the home header, washed right back so
+     it's a quiet tint and the dark text stays legible. */
+  .hero.sky-morning{background:linear-gradient(155deg,#dde7f1 0%,#f0ddc9 58%,#f6d2af 100%);}
+  .hero.sky-day{background:linear-gradient(155deg,#cfe0ef 0%,#e1edf5 60%,#eef2f3 100%);}
+  .hero.sky-eve{background:linear-gradient(155deg,#cdd0e1 0%,#e6d2c5 52%,#f3d9bd 100%);}
+  .hero.sky-night{background:linear-gradient(155deg,#c6cbd9 0%,#d6d4cf 60%,#e1dbce 100%);}
   .hero::before{content:"";position:absolute;z-index:-1;width:260px;height:260px;left:72%;top:18%;
     transform:translate(-50%,-50%);
-    background:radial-gradient(circle,rgba(255,244,228,.85),rgba(220,160,130,.25) 45%,transparent 70%);
+    background:radial-gradient(circle,rgba(255,253,248,.8),rgba(235,225,210,.18) 45%,transparent 70%);
     filter:blur(4px);animation:breathe 8s ease-in-out infinite;}
   @keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:.9}50%{transform:translate(-50%,-50%) scale(1.08);opacity:1}}
   .hero .date{font-size:13.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#7a4f3d;opacity:.85;}
@@ -556,10 +562,13 @@ function readLine(kind, value, b) {
 }
 
 // ── factual data anchor (the daily READ lives on Today, not here) ──────
+function skyPeriod(){const h=new Date().getHours();return h<6?'night':h<11?'morning':h<17?'day':h<20?'eve':'night';}
 function renderHero() {
   const dateEl = document.getElementById('rh-date');
   const snapEl = document.getElementById('rh-snap');
   if (!dateEl || !snapEl) return;
+  const hero = document.getElementById('hero');
+  if (hero) { hero.classList.remove('sky-morning','sky-day','sky-eve','sky-night'); hero.classList.add('sky-'+skyPeriod()); }
   const now = new Date();
   dateEl.textContent = now.toLocaleDateString('en-AU',
     { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();

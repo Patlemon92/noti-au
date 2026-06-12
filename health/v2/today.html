@@ -40,11 +40,14 @@
   /* 4-stop gradients lifted from the locked readiness spec — deeper + clearly
      distinct per state, so the colour visibly reads the day (steady → open →
      strong are no longer near-identical pale ambers). */
-  .s-tender{background:linear-gradient(152deg,#e3cdd0 0%,#cdaeb6 38%,#b394a3 70%,#8f7689 100%);}
-  .s-quiet {background:linear-gradient(152deg,#eed9c1 0%,#dcc0a7 38%,#c4a695 70%,#a18a87 100%);}
-  .s-steady{background:linear-gradient(152deg,#f6dcb6 0%,#ecbf97 38%,#db9e80 70%,#c0876f 100%);}
-  .s-open  {background:linear-gradient(152deg,#fce7c2 0%,#f4c993 38%,#eea677 70%,#df8d6c 100%);}
-  .s-strong{background:linear-gradient(152deg,#ffeec6 0%,#f9cd86 38%,#f1a85f 70%,#df8a52 100%);}
+  /* readiness "weather": cool dusty mauve (tender) → hot terracotta (strong),
+     spread wide so each state reads clearly distinct — not five near-identical
+     ambers. Earthy throughout (clay is a core brand colour). */
+  .s-tender{background:linear-gradient(152deg,#e0c8cd 0%,#c9a2ac 40%,#ad8593 72%,#8a6675 100%);}
+  .s-quiet {background:linear-gradient(152deg,#ecddc4 0%,#d3b88f 40%,#bb9a6e 72%,#9c7d56 100%);}
+  .s-steady{background:linear-gradient(152deg,#f8e2af 0%,#eec078 40%,#dd9f4c 72%,#c2823a 100%);}
+  .s-open  {background:linear-gradient(152deg,#fcd49a 0%,#f0a455 40%,#e2802f 72%,#c96b25 100%);}
+  .s-strong{background:linear-gradient(152deg,#ffc878 0%,#f08f37 40%,#dc6e1f 72%,#bd5414 100%);}
   .hero[data-mood=tender] .s-tender,.hero[data-mood=quiet] .s-quiet,.hero[data-mood=steady] .s-steady,
   .hero[data-mood=open] .s-open,.hero[data-mood=strong] .s-strong{opacity:1;}
   .orb{position:absolute;z-index:-1;width:190px;height:190px;right:-30px;top:-40px;border-radius:50%;filter:blur(6px);
@@ -71,11 +74,11 @@
   .wd:active{transform:scale(.96);}
   .wd .wlab{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
   .wd .wnum{font-family:"Fraunces",serif;font-weight:500;font-size:16px;color:var(--ink);margin-top:4px;}
-  .wd.m-tender{background:#cdaeb6;border-color:#bd9aa4;}
-  .wd.m-quiet {background:#dcc0a7;border-color:#cbac92;}
-  .wd.m-steady{background:#ecbf97;border-color:#dcab80;}
-  .wd.m-open  {background:#f4c993;border-color:#e8b577;}
-  .wd.m-strong{background:#f9cd86;border-color:#efb866;}
+  .wd.m-tender{background:#cfa3ae;border-color:#bd8d9b;}
+  .wd.m-quiet {background:#d8bd92;border-color:#c4a677;}
+  .wd.m-steady{background:#eec078;border-color:#deaa5b;}
+  .wd.m-open  {background:#f0a455;border-color:#e08e3c;}
+  .wd.m-strong{background:#e9853f;border-color:#d67129;}
   .wd.today .wnum{font-weight:600;}
   .wd.sel{box-shadow:0 0 0 2px var(--ink);}   /* the selected day */
 

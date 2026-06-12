@@ -209,6 +209,15 @@
     </a>
   </div>
 
+  <!-- APPLE HEALTH -->
+  <div class="slabel" id="ah-section" style="display:none">Apple Health</div>
+  <div class="group" id="ah-group" style="display:none">
+    <a class="row" href="#" onclick="connectAppleHealth(); return false;">
+      <span class="label">Connect Apple Health</span>
+      <span><span class="value" id="ah-status">workouts &amp; steps</span><span class="chev">›</span></span>
+    </a>
+  </div>
+
   <!-- ALYS -->
   <div class="slabel">Alys</div>
   <div class="group">
@@ -752,6 +761,28 @@ function callNative(method, args = {}) {
     alert('That action only works in the Neeve app.');
   }
 }
+
+// ── Apple Health (iOS native shell only — HealthKit doesn't exist elsewhere) ──
+if (window.neeve && window.neeve.postMessage) {
+  const s = document.getElementById('ah-section'), g = document.getElementById('ah-group');
+  if (s) s.style.display = '';
+  if (g) g.style.display = '';
+}
+function connectAppleHealth() {
+  const st = document.getElementById('ah-status');
+  if (st) st.textContent = 'opening…';
+  callNative('connectAppleHealth');
+}
+window.addEventListener('neeve:health-connected', (e) => {
+  const st = document.getElementById('ah-status');
+  if (!st) return;
+  const d = e.detail || {};
+  st.textContent =
+    d.status === 'connected'   ? `connected · ${d.count || 0} synced` :
+    d.status === 'denied'      ? 'permission needed in Settings' :
+    d.status === 'unsupported' ? 'iPhone only' :
+                                 'couldn’t connect — try again';
+});
 
 // ── BP calibration sheet ─────────────────────────
 

@@ -826,13 +826,13 @@ function renderAdvanced() {
         <div class="ftname">${label}</div>
         <div class="ftval">${Math.round(v)}</div>
         <div class="ftmeta">${sub}</div></a>`;
-    const tiles = tile('Recovery', 'recovery_score', rec?.value, 'out of 100 · how ready you are')
-                + tile('Strain', 'strain_score', str?.value, 'out of 21 · the load you carried')
-                + tile('Stress', 'stress_score', stress?.value, 'out of 10 · your body + how you\'ve felt');
+    const tiles = tile('Recovery', 'recovery_score', rec?.value, 'of 100 · ready')
+                + tile('Strain', 'strain_score', str?.value, 'of 100 · load')
+                + tile('Stress', 'stress_score', stress?.value, 'of 10 · body + felt');
     if (tiles.trim()) {
       html = `<div class="group"><div class="glabel">Advanced</div>` +
         `<div class="gnote">You turned these on. A guide for the curious — not a verdict, and never the whole picture.</div>` +
-        `<div class="fgrid">${tiles}</div></div>`;
+        `<div class="fgrid" style="grid-template-columns:1fr 1fr 1fr;gap:8px">${tiles}</div></div>`;
     }
   }
   if (html !== _lastAdvHtml) {

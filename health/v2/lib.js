@@ -695,32 +695,43 @@ function onResume(fn) {
 const METRIC_EXPLAINERS = {
   strain_score: {
     title: 'Strain',
-    body: `<p>How much load your body carried today, on a 0–21 scale.
-Higher means more cardiovascular load.</p>
-<p><b>How it's calculated:</b> we sum the minutes you spent in each HR
-zone (light → moderate → hard) and weight harder zones more. HR zones
-are anchored to your resting HR + age-predicted max. Refreshed every
-~5 minutes throughout the day.</p>
-<p>Resting at the desk all day usually lands 5–8. A long walk pushes
-it to 12–14. Vigorous exercise can take it past 18.</p>`,
+    body: `<p>How much load your body carried today, on a 0–100 scale. Higher
+means more cardiovascular load — and, for a body that tires easily, more spent.</p>
+<p><b>How it's calculated:</b> not step count. Five signals: the minutes your
+heart rate sat elevated above your resting baseline (the load itself), big
+activity bursts, how slowly your heart rate came back down after each burst
+(impaired recovery), how far your HRV dropped below your usual, and your
+pressure index. Refreshed through the day.</p>
+<p>A quiet day usually lands low; a long walk lifts it; a day you overspent —
+especially if your heart was slow to settle afterwards — pushes it high.</p>
+<p><b>The research behind it:</b> the load term follows the heart-rate-load
+tradition (Banister/Edwards TRIMP — time above threshold, weighted by intensity);
+the recovery term uses the validated cutoff that a fall under 12 bpm one minute
+after exertion signals impaired heart-rate recovery (Cole et al. 1999). The
+post-exertion emphasis is grounded in ME/CFS research showing usable workload can
+collapse the day after exertion (Lim et al. 2020) — which is why a slow heart-rate
+return counts heavily here. The thresholds are research-backed; the blend is
+Neeve's — a personal guide, never a clinical score.</p>`,
   },
   recovery_score: {
     title: 'Recovery',
     body: `<p>How ready your body is right now, on a 0–100 scale. Computed
 from last night's sleep + resting HR + HRV trend.</p>
-<p><b>How it's calculated:</b> we score three inputs against your
-14-day rolling baseline — sleep duration vs your typical night, RHR
-vs your typical morning, and HRV vs your typical overnight median —
-then blend them. HRV is weighted most heavily because it's the most
-sensitive autonomic-nervous-system signal.</p>
-<p>50 is "about average for you". Above 70 means you're in better
-shape than usual; below 30 means your nervous system is loaded and a
-lighter day is worth considering.</p>
-<p><b>The research behind it:</b> HRV and resting heart rate are well-established
-autonomic-recovery signals, and a finger-PPG ring measures them accurately
-against medical ECG (Cao et al. 2022); lower HRV reflects greater autonomic
-load (Kang et al. 2016). The signals are research-backed — the blend is Neeve's,
-shown as a personal guide, never a clinical score.</p>`,
+<p><b>How it's calculated:</b> your overnight HRV and resting HR are turned into
+personal z-scores — how far above or below your own usual — and your sleep is
+scored on need-fulfilment plus how much deep and REM you got. HRV carries the
+most weight (~47%), then sleep (~32%), then resting HR (~21%), because HRV is the
+most sensitive autonomic signal. A night that's "normal for you" lands around 70,
+not 50, so typical reads as solid rather than average.</p>
+<p>Above 80 means you're better-recovered than usual; below 40 means your nervous
+system is loaded and a lighter day is worth considering.</p>
+<p><b>The research behind it:</b> this follows the established HRV-baseline-ratio
+readiness method (Plews &amp; Buchheit) — tracking HRV and resting HR against your
+own rolling baseline rather than population norms, where a ~25% HRV shift or ~5 bpm
+HR change marks a meaningful day. Lower HRV reflects greater autonomic load (Kang
+et al. 2016), and a finger-PPG ring measures HRV and HR accurately against medical
+ECG (Cao et al. 2022). The signals and thresholds are research-backed; the blend is
+Neeve's — a personal guide, never a clinical score.</p>`,
   },
   stress_score: {
     title: 'Stress (measured)',

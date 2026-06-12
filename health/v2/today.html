@@ -43,11 +43,13 @@
   /* readiness "weather": cool dusty mauve (tender) → hot terracotta (strong),
      spread wide so each state reads clearly distinct — not five near-identical
      ambers. Earthy throughout (clay is a core brand colour). */
-  .s-tender{background:linear-gradient(152deg,#e0c8cd 0%,#c9a2ac 40%,#ad8593 72%,#8a6675 100%);}
-  .s-quiet {background:linear-gradient(152deg,#ecddc4 0%,#d3b88f 40%,#bb9a6e 72%,#9c7d56 100%);}
-  .s-steady{background:linear-gradient(152deg,#f8e2af 0%,#eec078 40%,#dd9f4c 72%,#c2823a 100%);}
-  .s-open  {background:linear-gradient(152deg,#fcd49a 0%,#f0a455 40%,#e2802f 72%,#c96b25 100%);}
-  .s-strong{background:linear-gradient(152deg,#ffc878 0%,#f08f37 40%,#dc6e1f 72%,#bd5414 100%);}
+  /* light + airy, but distinct by HUE per state (rose → sand → amber → apricot
+     → gold). Keeps the states tellable apart without the heavy dark end. */
+  .s-tender{background:linear-gradient(152deg,#eed8dc 0%,#ddc0c8 50%,#c9a8b2 100%);}
+  .s-quiet {background:linear-gradient(152deg,#f2e6ce 0%,#e3cda9 50%,#d0b288 100%);}
+  .s-steady{background:linear-gradient(152deg,#fbe7bd 0%,#f3d49b 50%,#e8bd7b 100%);}
+  .s-open  {background:linear-gradient(152deg,#fde3b6 0%,#f7ca8a 50%,#efb368 100%);}
+  .s-strong{background:linear-gradient(152deg,#ffe3a4 0%,#f9cb78 50%,#f2b154 100%);}
   .hero[data-mood=tender] .s-tender,.hero[data-mood=quiet] .s-quiet,.hero[data-mood=steady] .s-steady,
   .hero[data-mood=open] .s-open,.hero[data-mood=strong] .s-strong{opacity:1;}
   .orb{position:absolute;z-index:-1;width:190px;height:190px;right:-30px;top:-40px;border-radius:50%;filter:blur(6px);

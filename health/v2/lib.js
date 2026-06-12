@@ -737,20 +737,25 @@ Neeve's — a personal guide, never a clinical score.</p>`,
     title: 'Stress (measured)',
     body: `<p>Your stress today, on a 0–10 scale — drawn from your own data and
 how you've actually felt. Higher means more strain on your nervous system.</p>
-<p><b>How it's worked out:</b> two parts. Your <b>body's signal</b> — how far
-your HRV has dropped below your usual, and how far your heart rate sits above
-your resting rate (low HRV with a raised heart rate is the classic
-sympathetic-stress signature). And <b>what you've told it</b> — your check-in
-stress rating, which leads, because how you feel matters more than the sensor.</p>
-<p>Before you've checked in, it's your body's signal alone; once you log how the
-day felt, your own words pull it into focus. 5 is "about usual for you".</p>
-<p><b>The research behind it:</b> the body signal follows the established
+<p><b>How it's worked out:</b> <b>what you tell it leads.</b> When you log how
+stressed you feel, your own rating carries the score (about three-quarters of it)
+— the ring can't see cognitive or emotional stress, only how your body is running,
+so it's a witness, not the verdict. The <b>body's signal</b> nudges from there,
+read two ways: how far your HRV and heart rate sit from <i>your own</i> usual, and
+how loaded they are against <i>healthy</i> reference levels — so a body that runs
+hot every day isn't quietly told it's "fine".</p>
+<p>Before you've checked in, it's the body signal alone — and on a day your heart
+and HRV look near-normal, that can read calm even when you don't feel it. That's
+the gap the check-in closes: log how the day actually felt and the number follows
+you.</p>
+<p><b>The research behind it:</b> the relative signal follows the established
 personal-baseline HRV method (Plews &amp; Buchheit; HRV standards, Task Force
-1996) — a ~25% drop in your own HRV, or a ~5 bpm rise over your resting heart
-rate, marks a meaningful shift. HRV falls and heart rate rises under sympathetic
-stress (Kang et al. 2016), and a finger-PPG ring measures both accurately
-(Cao et al. 2022). The thresholds are research-backed; combining them with your
-report is Neeve's — a personal guide, never a clinical score.</p>`,
+1996) — a ~25% drop in your own HRV, or a ~5 bpm rise over resting, marks a
+meaningful shift; HRV falls and heart rate rises under sympathetic stress (Kang
+et al. 2016), and a finger-PPG ring measures both accurately (Cao et al. 2022).
+The absolute layer compares against healthy norms so chronic load isn't
+normalised away. The thresholds are research-backed; the blend — and letting your
+own report lead — is Neeve's. A personal guide, never a clinical score.</p>`,
   },
   hr: {
     title: 'Heart rate',
@@ -933,3 +938,22 @@ function renderNav(active) {
       <span>${i.label}</span>
     </a>`).join('')}</nav>`;
 }
+
+// Time-of-day background tint — shared across EVERY page so the whole app
+// breathes with the day (the header sky's quieter cousin). Light cream variants
+// so headers still pop; same values as the Today + Ring headers.
+function neeveSkyBg(){
+  const h = new Date().getHours();
+  const p = h<6?'night':h<11?'morning':h<17?'day':h<20?'eve':'night';
+  return p==='morning'?'#f1e7d2':p==='day'?'#eae9e0':p==='eve'?'#eddfca':'#e4e1d6';
+}
+(function applyNeeveBg(){
+  function go(){
+    const bg = neeveSkyBg();
+    document.body.style.background = bg;
+    const tc = document.querySelector('meta[name="theme-color"]');
+    if (tc) tc.setAttribute('content', bg);
+  }
+  if (document.body) go();
+  else document.addEventListener('DOMContentLoaded', go);
+})();

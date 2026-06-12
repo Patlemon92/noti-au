@@ -400,7 +400,11 @@ function _loadIfFresh() {
 }
 function _startRefresh() {
   if (_refreshTimer) return;
-  _refreshTimer = setInterval(_loadIfFresh, 5000);
+  // Fallback poll only. Real freshness comes from the 'neeve:ring-tick' event
+  // (fires when new ring data actually lands), so this can be slow — load() is
+  // heavy (8 trends + a 2000-row sleep pull + baselines + check-ins) and at 5s
+  // it was a steady egress drain on a page users leave open. 60s is plenty.
+  _refreshTimer = setInterval(_loadIfFresh, 60000);
 }
 function _stopRefresh() {
   if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }

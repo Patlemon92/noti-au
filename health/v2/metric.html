@@ -293,7 +293,7 @@
     // the user's own usual, never as a verdict. [[feedback-scores-optional]]
     recovery_score:   {title:'Recovery', unit:'/100', archetype:'deviation'},
     strain_score:     {title:'Strain',   unit:'/21',  archetype:'deviation'},
-    stress_score:     {title:'Stress (measured)', unit:'/100', archetype:'deviation'},
+    stress_score:     {title:'Stress (measured)', unit:'/10', archetype:'deviation'},
   };
   const m = META[metric] || {title:metric, unit:'', archetype:'deviation'};
   const bmetric = m.fetchAs || metric;

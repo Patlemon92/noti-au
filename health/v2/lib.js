@@ -719,9 +719,10 @@ lighter day is worth considering.</p>`,
   },
   stress_score: {
     title: 'Stress (measured)',
-    body: `<p>Your body's stress right now, on a 0–100 scale — worked out from
+    body: `<p>Your body's stress right now, on a 0–10 scale — worked out from
 your own data, not a guess. Higher means more sympathetic ("fight-or-flight")
-activation.</p>
+activation. It's the same 0–10 scale as your check-in stress rating, so you can
+compare your <b>measured</b> stress to your <b>felt</b> stress side by side.</p>
 <p><b>How it's calculated:</b> two signals against your own baseline — how far
 your HRV has dropped below your usual, and how far your heart rate sits above
 your resting rate. Low HRV with a raised heart rate is the classic

@@ -280,7 +280,15 @@ function skyPeriod(){const h=new Date().getHours();return h<6?'night':h<11?'morn
 function greetWord(){const h=new Date().getHours();return h<12?'Morning':h<17?'Afternoon':'Evening';}
 let _wxCode=null;   // latest WMO weather code, so the sky reflects the real sky
 function wxClass(c){if(c==null)return'';if(c<=2)return'';if(c===3)return'wx-cloud';if(c<=48)return'wx-fog';if(c<=67)return'wx-rain';if(c<=77)return'wx-snow';if(c<=82)return'wx-rain';return'wx-storm';}
-function applySky(){const hero=document.getElementById('hero');if(hero)hero.className=('hero sky-'+skyPeriod()+' '+wxClass(_wxCode)).trim();}
+// the page background shifts with the sky too — subtle, so the header still pops
+function skyBg(){const p=skyPeriod();return p==='morning'?'#f1e7d2':p==='day'?'#eae9e0':p==='eve'?'#eddfca':'#e4e1d6';}
+function applySky(){
+  const hero=document.getElementById('hero');
+  if(hero)hero.className=('hero sky-'+skyPeriod()+' '+wxClass(_wxCode)).trim();
+  const bg=skyBg();
+  document.body.style.background=bg;
+  const tc=document.querySelector('meta[name=theme-color]'); if(tc)tc.setAttribute('content',bg);
+}
 function wmo(c){if(c==null)return'';if(c===0)return'clear';if(c<=2)return'mostly clear';if(c===3)return'cloudy';if(c<=48)return'fog';if(c<=67)return'rain';if(c<=77)return'snow';if(c<=82)return'showers';if(c<=99)return'storms';return'';}
 function fmtSleep(s){if(!s||s<=0)return'—';const h=Math.floor(s/3600),m=Math.round((s%3600)/60);return `${h}<small>h</small>${m}<small>m</small>`;}
 
@@ -299,8 +307,7 @@ function renderWeek(samples){
   for(let i=6;i>=0;i--){
     const d=new Date(now); d.setDate(now.getDate()-i);
     const k=dayKey(d);
-    const ord=byDay[k]; const state=ord?STATE_BY_ORD[ord]:null;
-    cells.push(`<button class="wd ${state?('m-'+state):''} ${k===todayKey?'today':''} ${k===selKey?'sel':''}" data-date="${k}">
+    cells.push(`<button class="wd ${k===todayKey?'today':''} ${k===selKey?'sel':''}" data-date="${k}">
       <div class="wlab">${d.toLocaleDateString('en-AU',{weekday:'short'})}</div><div class="wnum">${d.getDate()}</div></button>`);
   }
   document.getElementById('week').innerHTML=cells.join('');

@@ -288,6 +288,11 @@
     fog_level:        {title:'Brain fog', unit:'', icon:'~', archetype:'deviation', felt:true},
     pain_level:       {title:'Pain',      unit:'', icon:'~', archetype:'deviation', felt:true},
     stress:           {title:'Stress',    unit:'', icon:'~', archetype:'deviation', felt:true},
+    // Advanced engine scores — only reachable when the user opts in (More →
+    // show advanced metrics). Daily values from the ring stream; shown against
+    // the user's own usual, never as a verdict. [[feedback-scores-optional]]
+    recovery_score:   {title:'Recovery', unit:'/100', archetype:'deviation'},
+    strain_score:     {title:'Strain',   unit:'/21',  archetype:'deviation'},
   };
   const m = META[metric] || {title:metric, unit:'', archetype:'deviation'};
   const bmetric = m.fetchAs || metric;

@@ -821,7 +821,7 @@ function renderAdvanced() {
     const rec = cachedLatest['recovery_score'];
     const str = cachedLatest['strain_score'];
     const tile = (label, metric, v, sub) => (v == null) ? '' :
-      `<a class="ftile" href="javascript:openExplainer('${metric}')">
+      `<a class="ftile" href="/health/v2/metric.html?metric=${metric}&days=30">
         <div class="ftname">${label}</div>
         <div class="ftval">${Math.round(v)}</div>
         <div class="ftmeta">${sub}</div></a>`;

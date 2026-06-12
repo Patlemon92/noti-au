@@ -113,6 +113,22 @@
     margin-bottom:16px;box-shadow:0 1px 0 rgba(0,0,0,.02), 0 10px 30px rgba(120,90,60,.06);
   }
   .card .chead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  /* month calendar — this metric, day by day */
+  .mcal-nav{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 12px;}
+  .mcal-nav .mtitle{font-family:"Fraunces",serif;font-weight:500;font-size:16px;color:var(--ink);}
+  .mcal-nav button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line,#e6d8c4);background:#fff;color:var(--ink-soft,#6b574a);font-size:15px;cursor:pointer;}
+  .mcal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+  .mcal-dow span{text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted,#9a8473);}
+  .mcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .mcal-cell{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-family:"Fraunces",serif;font-weight:500;font-size:13px;color:var(--ink);background:#f5efe3;border:1px solid #efe7d8;cursor:pointer;}
+  .mcal-cell.empty{background:transparent;border:0;cursor:default;}
+  .mcal-cell.nodata{color:#c2b4a0;background:#f7f2e9;cursor:default;}
+  .mcal-cell.today{box-shadow:0 0 0 1.5px var(--ink);}
+  .mcal-cell.sel{outline:2px solid var(--clay);outline-offset:1px;}
+  .mcal-read{margin-top:13px;font-size:13px;color:var(--ink-soft,#6b574a);min-height:18px;}
+  .mcal-read b{color:var(--ink);font-weight:600;}
+  .mcal-read .mr-empty{color:var(--muted,#9a8473);}
   .card .ctitle{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
   .card .cnote{font-size:13px;color:var(--muted);}
 
@@ -223,6 +239,15 @@
         <div class="b"><div class="lab"><i style="background:#c98a6f"></i><span id="b2-lab">Average</span></div><div class="val" id="b2-val">–</div><div class="unit" id="b2-unit"></div></div>
         <div class="b"><div class="lab"><i style="background:#b5573f"></i><span id="b3-lab">High</span></div><div class="val" id="b3-val">–</div><div class="unit" id="b3-unit"></div></div>
       </div>
+    </div>
+
+    <!-- CALENDAR CARD — this metric, day by day -->
+    <div class="card" id="m-cal-card">
+      <div class="chead"><span class="ctitle">By day</span></div>
+      <div class="mcal-nav"><button id="mcal-prev" type="button" aria-label="previous month">‹</button><span class="mtitle" id="mcal-month">—</span><button id="mcal-next" type="button" aria-label="next month">›</button></div>
+      <div class="mcal-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+      <div class="mcal-grid" id="mcal-grid"></div>
+      <div class="mcal-read" id="mcal-read"></div>
     </div>
 
     <!-- ALYS CARD -->
@@ -556,7 +581,73 @@
       if(card) card.style.display='';
     }catch(e){ if(card) card.style.display='none'; }  // hide rather than show an empty card
   }
+  // ── month calendar: this metric, day by day ──
+  const calByDay = {};
+  let calCur = new Date(); calCur.setDate(1);
+  const calKey = (y,mo,d)=>`${y}-${mo}-${d}`;
+  const calMean = e => e.mean!=null ? e.mean : (e.n ? e.sum/e.n : null);
+  async function loadCalendar(){
+    try{
+      if (isFelt){
+        const r = await api('/me/checkins?days=120').catch(()=>({checkins:[]}));
+        for(const c of (r.checkins||[])){
+          const v = Number((c.answers||{})[metric]); if(!isFinite(v)||!c.completed_at) continue;
+          const dt = new Date(c.completed_at); const k = calKey(dt.getFullYear(),dt.getMonth(),dt.getDate());
+          const e = calByDay[k] || {sum:0,n:0,lo:v,hi:v};
+          e.sum+=v; e.n++; e.lo=Math.min(e.lo,v); e.hi=Math.max(e.hi,v); calByDay[k]=e;
+        }
+      } else {
+        const since = new Date(Date.now()-120*86400*1000).toISOString();
+        const r = await api(`/ring/samples-bucketed?metric=${encodeURIComponent(bmetric)}&since=${encodeURIComponent(since)}&bucket_secs=86400`).catch(()=>({buckets:[]}));
+        for(const b of (r.buckets||[])){
+          const dt = new Date(b.bucket_ts); if(isNaN(dt.getTime())) continue;
+          calByDay[calKey(dt.getFullYear(),dt.getMonth(),dt.getDate())] = {mean:+b.mean, lo:+b.lo, hi:+b.hi, n:+b.n};
+        }
+      }
+    }catch(_){}
+    renderCal();
+  }
+  function renderCal(){
+    const y=calCur.getFullYear(), mo=calCur.getMonth();
+    $('mcal-month').textContent = calCur.toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+    const means = Object.values(calByDay).map(calMean).filter(v=>v!=null);
+    const mn = means.length?Math.min(...means):0, mx = means.length?Math.max(...means):1, rng=(mx-mn)||1;
+    const first = new Date(y,mo,1).getDay();
+    const dim = new Date(y,mo+1,0).getDate();
+    const tD = new Date(); const tk = calKey(tD.getFullYear(),tD.getMonth(),tD.getDate());
+    let html='';
+    for(let i=0;i<first;i++) html+='<div class="mcal-cell empty"></div>';
+    for(let d=1; d<=dim; d++){
+      const k=calKey(y,mo,d); const e=calByDay[k]; const cls=['mcal-cell']; let style='';
+      if(!e){ cls.push('nodata'); }
+      else { const t=(calMean(e)-mn)/rng; const a=(0.16+0.66*t).toFixed(2); const fg=t>0.6?'#fff':'var(--ink)'; style=`style="background:rgba(187,97,71,${a});color:${fg}"`; }
+      if(k===tk) cls.push('today');
+      html+=`<div class="${cls.join(' ')}" ${style} data-k="${k}" data-d="${d}">${d}</div>`;
+    }
+    $('mcal-grid').innerHTML=html;
+    $('mcal-grid').querySelectorAll('.mcal-cell[data-k]').forEach(c=>{
+      c.onclick=()=>{
+        $('mcal-grid').querySelectorAll('.sel').forEach(x=>x.classList.remove('sel'));
+        if(!c.classList.contains('nodata')) c.classList.add('sel');
+        showCalRead(calByDay[c.dataset.k]||null, c.dataset.d, y, mo);
+      };
+    });
+    $('mcal-read').innerHTML='<span class="mr-empty">Tap a day to see its reading.</span>';
+  }
+  function showCalRead(e,d,y,mo){
+    const dt=new Date(y,mo,Number(d));
+    const ds=dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+    if(!e){ $('mcal-read').innerHTML=`<b>${ds}</b> — <span class="mr-empty">nothing recorded</span>`; return; }
+    const u = m.unit ? (' '+m.unit) : '';
+    const mean = Math.round(calMean(e));
+    const r = (e.lo!=null&&e.hi!=null && Math.round(e.lo)!==Math.round(e.hi)) ? ` · ${Math.round(e.lo)}–${Math.round(e.hi)}${u}` : '';
+    $('mcal-read').innerHTML=`<b>${ds}</b> — avg <b>${mean}${u}</b>${r}`;
+  }
+  document.getElementById('mcal-prev').onclick=()=>{ calCur.setMonth(calCur.getMonth()-1); renderCal(); };
+  document.getElementById('mcal-next').onclick=()=>{ calCur.setMonth(calCur.getMonth()+1); renderCal(); };
+
   load();
+  loadCalendar();
 })();
 </script>
 </body>

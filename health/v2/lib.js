@@ -719,16 +719,15 @@ lighter day is worth considering.</p>`,
   },
   stress_score: {
     title: 'Stress (measured)',
-    body: `<p>Your body's stress right now, on a 0–10 scale — worked out from
-your own data, not a guess. Higher means more sympathetic ("fight-or-flight")
-activation. It's the same 0–10 scale as your check-in stress rating, so you can
-compare your <b>measured</b> stress to your <b>felt</b> stress side by side.</p>
-<p><b>How it's calculated:</b> two signals against your own baseline — how far
+    body: `<p>Your stress today, on a 0–10 scale — drawn from your own data and
+how you've actually felt. Higher means more strain on your nervous system.</p>
+<p><b>How it's worked out:</b> two parts. Your <b>body's signal</b> — how far
 your HRV has dropped below your usual, and how far your heart rate sits above
-your resting rate. Low HRV with a raised heart rate is the classic
-physiological stress signature.</p>
-<p>This is your <b>measured</b> stress. Your check-in stress rating is your
-<b>felt</b> stress — the two together say more than either alone.</p>
+your resting rate (low HRV with a raised heart rate is the classic
+sympathetic-stress signature). And <b>what you've told it</b> — your check-in
+stress rating, which leads, because how you feel matters more than the sensor.</p>
+<p>Before you've checked in, it's your body's signal alone; once you log how the
+day felt, your own words pull it into focus.</p>
 <p>Built on the well-established finding that heart-rate variability falls and
 heart rate rises under sympathetic stress.</p>`,
   },

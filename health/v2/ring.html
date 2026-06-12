@@ -828,7 +828,7 @@ function renderAdvanced() {
         <div class="ftmeta">${sub}</div></a>`;
     const tiles = tile('Recovery', 'recovery_score', rec?.value, 'out of 100 · how ready you are')
                 + tile('Strain', 'strain_score', str?.value, 'out of 21 · the load you carried')
-                + tile('Stress', 'stress_score', stress?.value, 'out of 10 · measured, from HRV + HR');
+                + tile('Stress', 'stress_score', stress?.value, 'out of 10 · your body + how you\'ve felt');
     if (tiles.trim()) {
       html = `<div class="group"><div class="glabel">Advanced</div>` +
         `<div class="gnote">You turned these on. A guide for the curious — not a verdict, and never the whole picture.</div>` +

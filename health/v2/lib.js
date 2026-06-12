@@ -715,7 +715,12 @@ then blend them. HRV is weighted most heavily because it's the most
 sensitive autonomic-nervous-system signal.</p>
 <p>50 is "about average for you". Above 70 means you're in better
 shape than usual; below 30 means your nervous system is loaded and a
-lighter day is worth considering.</p>`,
+lighter day is worth considering.</p>
+<p><b>The research behind it:</b> HRV and resting heart rate are well-established
+autonomic-recovery signals, and a finger-PPG ring measures them accurately
+against medical ECG (Cao et al. 2022); lower HRV reflects greater autonomic
+load (Kang et al. 2016). The signals are research-backed — the blend is Neeve's,
+shown as a personal guide, never a clinical score.</p>`,
   },
   stress_score: {
     title: 'Stress (measured)',
@@ -727,9 +732,14 @@ your resting rate (low HRV with a raised heart rate is the classic
 sympathetic-stress signature). And <b>what you've told it</b> — your check-in
 stress rating, which leads, because how you feel matters more than the sensor.</p>
 <p>Before you've checked in, it's your body's signal alone; once you log how the
-day felt, your own words pull it into focus.</p>
-<p>Built on the well-established finding that heart-rate variability falls and
-heart rate rises under sympathetic stress.</p>`,
+day felt, your own words pull it into focus. 5 is "about usual for you".</p>
+<p><b>The research behind it:</b> the body signal follows the established
+personal-baseline HRV method (Plews &amp; Buchheit; HRV standards, Task Force
+1996) — a ~25% drop in your own HRV, or a ~5 bpm rise over your resting heart
+rate, marks a meaningful shift. HRV falls and heart rate rises under sympathetic
+stress (Kang et al. 2016), and a finger-PPG ring measures both accurately
+(Cao et al. 2022). The thresholds are research-backed; combining them with your
+report is Neeve's — a personal guide, never a clinical score.</p>`,
   },
   hr: {
     title: 'Heart rate',

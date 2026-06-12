@@ -734,7 +734,7 @@ const FELT_ROWS = [
   { key:'fatigue_level',  alt:'morning_fatigue_level',  name:'Fatigue' },
   { key:'fog_level',                                    name:'Brain fog' },
   { key:'pain_level',     alt:'morning_pain_level',     name:'Pain' },
-  { key:'stress',                                       name:'Stress' },
+  // stress moved to the opt-in Advanced group (recovery/strain/stress trio)
 ];
 let _lastFeltHtml = '';
 
@@ -820,13 +820,15 @@ function renderAdvanced() {
   if (advancedOn()) {
     const rec = cachedLatest['recovery_score'];
     const str = cachedLatest['strain_score'];
+    const stress = latestAnswer('stress');
     const tile = (label, metric, v, sub) => (v == null) ? '' :
       `<a class="ftile" href="/health/v2/metric.html?metric=${metric}&days=30">
         <div class="ftname">${label}</div>
         <div class="ftval">${Math.round(v)}</div>
         <div class="ftmeta">${sub}</div></a>`;
     const tiles = tile('Recovery', 'recovery_score', rec?.value, 'out of 100 · how ready you are')
-                + tile('Strain', 'strain_score', str?.value, 'out of 21 · the load you carried');
+                + tile('Strain', 'strain_score', str?.value, 'out of 21 · the load you carried')
+                + tile('Stress', 'stress', stress, 'out of 10 · how you rated it');
     if (tiles.trim()) {
       html = `<div class="group"><div class="glabel">Advanced</div>` +
         `<div class="gnote">You turned these on. A guide for the curious — not a verdict, and never the whole picture.</div>` +

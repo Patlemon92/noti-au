@@ -54,6 +54,18 @@
   .hero .stars{position:absolute;inset:0;z-index:0;opacity:0;transition:opacity 1.2s ease;}
   .hero.sky-night .stars{opacity:1;}
   .hero .stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:0 0 4px 1px rgba(255,255,255,.5);}
+  /* actual drifting clouds for overcast/rain/fog weather */
+  .hero .clouds{position:absolute;inset:0;z-index:0;opacity:0;transition:opacity 1.2s ease;pointer-events:none;}
+  .hero.wx-cloud .clouds,.hero.wx-rain .clouds,.hero.wx-storm .clouds,.hero.wx-fog .clouds{opacity:1;}
+  .hero .clouds i{position:absolute;height:18px;border-radius:18px;background:rgba(255,255,255,.5);filter:blur(7px);
+    box-shadow:24px 4px 0 -4px rgba(255,255,255,.46), -22px 6px 0 -6px rgba(255,255,255,.46), 6px -9px 0 -6px rgba(255,255,255,.46);
+    animation:cloudDrift 32s ease-in-out infinite alternate;}
+  .hero .clouds i:nth-child(1){left:10%;top:16%;width:58px;}
+  .hero .clouds i:nth-child(2){left:52%;top:25%;width:48px;opacity:.85;animation-duration:42s;}
+  .hero .clouds i:nth-child(3){left:28%;top:37%;width:40px;opacity:.6;animation-duration:37s;}
+  /* storm clouds a touch darker/heavier */
+  .hero.wx-storm .clouds i{background:rgba(210,214,222,.6);box-shadow:24px 4px 0 -4px rgba(210,214,222,.55), -22px 6px 0 -6px rgba(210,214,222,.55), 6px -9px 0 -6px rgba(210,214,222,.55);}
+  @keyframes cloudDrift{from{transform:translateX(-9px)}to{transform:translateX(15px)}}
   .hero.sky-morning{background:linear-gradient(180deg,#bcd0e6 0%,#e7d2c4 46%,#f4c39a 74%,#f3ad7e 100%);color:#4a2f23;}
   .hero.sky-day{background:linear-gradient(180deg,#7fb0dc 0%,#a8cbe6 50%,#d2e4f0 100%);color:#21384f;}
   .hero.sky-eve{background:linear-gradient(180deg,#34406e 0%,#6b5378 34%,#bb6f55 64%,#e79a5b 84%,#f3b86a 100%);color:#fbeede;}
@@ -166,6 +178,7 @@
   <div class="hero sky-day" id="hero">
     <div class="sun"></div>
     <div class="stars"><i style="left:12%;top:20%"></i><i style="left:29%;top:13%;opacity:.8"></i><i style="left:46%;top:24%;opacity:.7"></i><i style="left:21%;top:36%;opacity:.6"></i><i style="left:62%;top:16%"></i><i style="left:40%;top:9%;opacity:.7"></i><i style="left:9%;top:44%;opacity:.5"></i><i style="left:55%;top:40%;opacity:.6"></i></div>
+    <div class="clouds"><i></i><i></i><i></i></div>
     <div class="scrim"></div>
     <div class="grain"></div>
     <div class="htop">

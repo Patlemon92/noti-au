@@ -717,6 +717,20 @@ sensitive autonomic-nervous-system signal.</p>
 shape than usual; below 30 means your nervous system is loaded and a
 lighter day is worth considering.</p>`,
   },
+  stress_score: {
+    title: 'Stress (measured)',
+    body: `<p>Your body's stress right now, on a 0–100 scale — worked out from
+your own data, not a guess. Higher means more sympathetic ("fight-or-flight")
+activation.</p>
+<p><b>How it's calculated:</b> two signals against your own baseline — how far
+your HRV has dropped below your usual, and how far your heart rate sits above
+your resting rate. Low HRV with a raised heart rate is the classic
+physiological stress signature.</p>
+<p>This is your <b>measured</b> stress. Your check-in stress rating is your
+<b>felt</b> stress — the two together say more than either alone.</p>
+<p>Built on the well-established finding that heart-rate variability falls and
+heart rate rises under sympathetic stress.</p>`,
+  },
   hr: {
     title: 'Heart rate',
     body: `<p>The most recent beats-per-minute reading from your ring's PPG

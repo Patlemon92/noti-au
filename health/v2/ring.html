@@ -274,7 +274,7 @@ let cachedCycle = null;                // latest cycle_phase row (or null if nev
 // row is always honest and current.
 const TREND_METRICS = [
   'hr', 'hrv_rmssd', 'spo2', 'respiration_rate',
-  'steps', 'bp_sys', 'bp_dia', 'recovery_score', 'strain_score',
+  'steps', 'bp_sys', 'bp_dia', 'recovery_score', 'strain_score', 'stress_score',
 ];
 // Advanced scores (recovery/strain) are OFF by default — Neeve stays scoreless
 // and calm for everyone unless a user opts in via More → "Show advanced metrics".
@@ -820,7 +820,7 @@ function renderAdvanced() {
   if (advancedOn()) {
     const rec = cachedLatest['recovery_score'];
     const str = cachedLatest['strain_score'];
-    const stress = latestAnswer('stress');
+    const stress = cachedLatest['stress_score'];
     const tile = (label, metric, v, sub) => (v == null) ? '' :
       `<a class="ftile" href="/health/v2/metric.html?metric=${metric}&days=30">
         <div class="ftname">${label}</div>
@@ -828,7 +828,7 @@ function renderAdvanced() {
         <div class="ftmeta">${sub}</div></a>`;
     const tiles = tile('Recovery', 'recovery_score', rec?.value, 'out of 100 · how ready you are')
                 + tile('Strain', 'strain_score', str?.value, 'out of 21 · the load you carried')
-                + tile('Stress', 'stress', stress, 'out of 10 · how you rated it');
+                + tile('Stress', 'stress_score', stress?.value, 'out of 100 · measured, from HRV + HR');
     if (tiles.trim()) {
       html = `<div class="group"><div class="glabel">Advanced</div>` +
         `<div class="gnote">You turned these on. A guide for the curious — not a verdict, and never the whole picture.</div>` +

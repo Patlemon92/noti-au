@@ -34,41 +34,60 @@
     font-family:"Fraunces",serif;font-style:italic;font-weight:500;font-size:15.5px;line-height:1.45;color:var(--ink-soft);}
   .hdr-alys .ic{color:var(--clay);font-style:normal;font-size:13px;margin-top:3px;flex:none;}
 
-  /* hero card — colour shifts with readiness */
-  .hero{position:relative;border-radius:28px;overflow:hidden;isolation:isolate;box-shadow:0 16px 38px rgba(150,100,70,.2);}
-  .sky{position:absolute;inset:0;z-index:-2;opacity:0;transition:opacity 1s ease;}
-  /* 4-stop gradients lifted from the locked readiness spec — deeper + clearly
-     distinct per state, so the colour visibly reads the day (steady → open →
-     strong are no longer near-identical pale ambers). */
-  /* readiness "weather": cool dusty mauve (tender) → hot terracotta (strong),
-     spread wide so each state reads clearly distinct — not five near-identical
-     ambers. Earthy throughout (clay is a core brand colour). */
-  /* light + airy, but distinct by HUE per state (rose → sand → amber → apricot
-     → gold). Keeps the states tellable apart without the heavy dark end. */
-  .s-tender{background:linear-gradient(152deg,#eed8dc 0%,#ddc0c8 50%,#c9a8b2 100%);}
-  .s-quiet {background:linear-gradient(152deg,#f2e6ce 0%,#e3cda9 50%,#d0b288 100%);}
-  .s-steady{background:linear-gradient(152deg,#fbe7bd 0%,#f3d49b 50%,#e8bd7b 100%);}
-  .s-open  {background:linear-gradient(152deg,#fde3b6 0%,#f7ca8a 50%,#efb368 100%);}
-  .s-strong{background:linear-gradient(152deg,#ffe3a4 0%,#f9cb78 50%,#f2b154 100%);}
-  .hero[data-mood=tender] .s-tender,.hero[data-mood=quiet] .s-quiet,.hero[data-mood=steady] .s-steady,
-  .hero[data-mood=open] .s-open,.hero[data-mood=strong] .s-strong{opacity:1;}
-  .orb{position:absolute;z-index:-1;width:190px;height:190px;right:-30px;top:-40px;border-radius:50%;filter:blur(6px);
-    background:radial-gradient(circle,rgba(255,250,240,.85),rgba(255,240,220,.2) 50%,transparent 72%);
-    opacity:.85;transition:opacity 1s ease;animation:breathe 9s ease-in-out infinite;}
-  /* orb presence grows with readiness (spec: tender .50 → strong 1.0) */
-  .hero[data-mood=tender] .orb{opacity:.50;}
-  .hero[data-mood=quiet]  .orb{opacity:.72;}
-  .hero[data-mood=steady] .orb{opacity:.85;}
-  .hero[data-mood=open]   .orb{opacity:.90;}
-  .hero[data-mood=strong] .orb{opacity:1;}
-  @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
-  .hfg{position:relative;padding:24px 24px 26px;color:#41271d;}
-  .hfg .wx{display:inline-flex;align-items:center;gap:6px;background:rgba(255,250,243,.5);backdrop-filter:blur(4px);
-    border:1px solid rgba(255,255,255,.4);padding:7px 13px;border-radius:30px;font-size:13px;font-weight:500;color:#5c3a2b;}
-  .hfg .wx b{color:#41271d;font-weight:600;}
-  .hfg .day{font-family:"Fraunces",serif;font-weight:500;font-size:42px;line-height:1.05;letter-spacing:-.01em;margin-top:18px;transition:opacity .4s;}
-  .hfg .why{font-size:16.5px;line-height:1.5;margin-top:12px;max-width:30ch;color:#56372a;transition:opacity .4s;}
-  .hfg .see{margin-top:18px;font-size:13.5px;font-weight:600;color:#7a4a35;text-decoration:none;display:inline-flex;gap:5px;}
+  /* hero — the real sky for the time of day. The day's state lives in the
+     words below; the background is just the sky, so there's nothing to decode. */
+  .hero{position:relative;overflow:hidden;isolation:isolate;min-height:300px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    margin:calc(-1 * (max(env(safe-area-inset-top,0px),58px) + 4px)) -18px 0;
+    border-radius:0 0 30px 30px;
+    box-shadow:0 16px 38px rgba(120,90,55,.2);transition:background 1.2s ease;}
+  .htop{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
+    padding:calc(max(env(safe-area-inset-top,0px),44px) + 14px) 21px 0;}
+  .hdate{font-size:13px;font-weight:600;letter-spacing:.01em;opacity:.92;}
+  .htop .more{font-size:21px;line-height:1;text-decoration:none;opacity:.78;color:inherit;}
+  .hero .grain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:soft-light;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:170px;}
+  .hero .sun{position:absolute;z-index:0;border-radius:50%;right:30px;top:30px;width:50px;height:50px;
+    background:radial-gradient(circle,#fff7ea,#ffe2b8);box-shadow:0 0 40px 14px rgba(255,224,180,.55);transition:all 1s ease;}
+  .hero .scrim{position:absolute;inset:0;z-index:0;opacity:0;transition:opacity 1s ease;
+    background:linear-gradient(180deg,transparent 30%,rgba(26,20,36,.34));}
+  .hero.sky-morning{background:linear-gradient(180deg,#bcd0e6 0%,#e7d2c4 46%,#f4c39a 74%,#f3ad7e 100%);color:#4a2f23;}
+  .hero.sky-day{background:linear-gradient(180deg,#7fb0dc 0%,#a8cbe6 50%,#d2e4f0 100%);color:#21384f;}
+  .hero.sky-eve{background:linear-gradient(180deg,#34406e 0%,#6b5378 34%,#bb6f55 64%,#e79a5b 84%,#f3b86a 100%);color:#fbeede;}
+  .hero.sky-night{background:linear-gradient(180deg,#1a2138 0%,#26304f 50%,#3a4566 100%);color:#eaeefb;}
+  .hero.sky-eve .scrim,.hero.sky-night .scrim{opacity:1;}
+  .hero.sky-day .sun{width:44px;height:44px;background:radial-gradient(circle,#fffef8,#fff0c4);box-shadow:0 0 36px 12px rgba(255,244,200,.55);}
+  .hero.sky-eve .sun{top:auto;bottom:32px;width:58px;height:58px;background:radial-gradient(circle,#ffe9c2,#f0a85e);box-shadow:0 0 46px 16px rgba(240,168,94,.5);}
+  .hero.sky-night .sun{width:36px;height:36px;background:radial-gradient(circle at 38% 35%,#fbfaf2,#d9dceb);box-shadow:0 0 28px 9px rgba(220,225,240,.4);}
+  /* the actual weather, washed over the time-of-day sky */
+  .hero.wx-cloud::after,.hero.wx-fog::after,.hero.wx-rain::after,.hero.wx-snow::after,.hero.wx-storm::after{
+    content:"";position:absolute;inset:0;z-index:0;pointer-events:none;}
+  .hero.wx-cloud::after{background:linear-gradient(180deg,rgba(178,184,198,.34),rgba(150,158,172,.22));}
+  .hero.wx-fog::after{background:rgba(220,222,227,.44);}
+  .hero.wx-rain::after{background:repeating-linear-gradient(74deg,rgba(255,255,255,.09) 0 1px,transparent 1px 8px),linear-gradient(180deg,rgba(118,128,143,.44),rgba(94,105,123,.42));}
+  .hero.wx-snow::after{background:radial-gradient(rgba(255,255,255,.85) 1px,transparent 1.6px) 0 0/24px 24px,linear-gradient(180deg,rgba(204,212,223,.4),rgba(184,195,210,.36));}
+  .hero.wx-storm::after{background:linear-gradient(180deg,rgba(74,80,93,.55),rgba(54,60,74,.55));}
+  .hero.wx-cloud .sun,.hero.wx-fog .sun,.hero.wx-rain .sun,.hero.wx-storm .sun{opacity:.25;}
+  .hfg{position:relative;z-index:2;padding:18px 22px 24px;}
+  .hfg .wx{display:inline-flex;align-items:center;gap:6px;backdrop-filter:blur(4px);
+    padding:7px 13px;border-radius:30px;font-size:13px;font-weight:500;}
+  .hfg .wx b{font-weight:600;}
+  .hfg .day{font-family:"Fraunces",serif;font-weight:500;font-size:33px;line-height:1.06;letter-spacing:-.02em;margin-top:18px;transition:opacity .4s;}
+  .hfg .why{font-size:16px;line-height:1.52;margin-top:11px;max-width:31ch;transition:opacity .4s;}
+  .hfg .see{margin-top:17px;font-size:13.5px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
+  /* text adapts to the sky — dark on the light skies, light on dusk + night */
+  .hero.sky-morning .hfg{color:#4a2f23;}
+  .hero.sky-morning .wx{background:rgba(255,250,243,.55);border:1px solid rgba(255,255,255,.6);color:#6a4330;}
+  .hero.sky-morning .why{color:#5c4032;} .hero.sky-morning .see{color:#9a4f2c;}
+  .hero.sky-day .hfg{color:#21384f;}
+  .hero.sky-day .wx{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.65);color:#355270;}
+  .hero.sky-day .why{color:#33506e;} .hero.sky-day .see{color:#2f5b86;}
+  .hero.sky-eve .hfg{color:#fbeede;}
+  .hero.sky-eve .wx{background:rgba(20,16,32,.22);border:1px solid rgba(255,230,200,.28);color:#fbeede;}
+  .hero.sky-eve .why{color:#f6e7d8;} .hero.sky-eve .see{color:#ffd9ab;}
+  .hero.sky-night .hfg{color:#eaeefb;}
+  .hero.sky-night .wx{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#eaeefb;}
+  .hero.sky-night .why{color:#d6dcf0;} .hero.sky-night .see{color:#cdd3ec;}
 
   /* week strip — each day coloured by its readiness */
   .week{display:flex;gap:7px;margin:16px 1px 4px;}
@@ -141,24 +160,19 @@
 <body>
 <main class="page">
 
-  <div class="top">
-    <div class="av" id="av">P</div>
-    <div class="who">
-      <div class="h" id="hello">Hello</div>
-      <div class="d" id="date">Today</div>
+  <div class="hero sky-day" id="hero">
+    <div class="sun"></div>
+    <div class="scrim"></div>
+    <div class="grain"></div>
+    <div class="htop">
+      <div class="hdate" id="date">Today</div>
+      <a class="more" href="/health/v2/more.html" aria-label="More">⋯</a>
     </div>
-    <a class="more" href="/health/v2/more.html" aria-label="More">⋯</a>
-  </div>
-
-  <div class="hero" id="hero" data-mood="steady">
-    <div class="sky s-tender"></div><div class="sky s-quiet"></div><div class="sky s-steady"></div>
-    <div class="sky s-open"></div><div class="sky s-strong"></div>
-    <div class="orb"></div>
     <div class="hfg">
       <div class="wx"><span id="wx-clock">—</span>&nbsp;·&nbsp;<b id="wx-temp">—</b>&nbsp;<span id="wx-cond"></span></div>
-      <div class="day" id="day">Reading your day…</div>
+      <div class="day" id="day">&nbsp;</div>
       <div class="why" id="why"></div>
-      <a class="see" href="/health/v2/ring.html">see your data →</a>
+      <a class="see" href="/health/v2/ring.html">see your day →</a>
     </div>
   </div>
 
@@ -258,6 +272,12 @@ document.getElementById('nav-mount').innerHTML = renderNav('today');
 const DAY_FALLBACK={tender:'A tender day.',quiet:'A quiet day.',steady:'A steady day.',open:'An open day.',strong:'A strong day.'};
 const STATE_BY_ORD={1:'tender',2:'quiet',3:'steady',4:'open',5:'strong'};
 function greet(h){return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
+// The header is the sky for the time of day — nothing to decode.
+function skyPeriod(){const h=new Date().getHours();return h<6?'night':h<11?'morning':h<17?'day':h<20?'eve':'night';}
+function greetWord(){const h=new Date().getHours();return h<12?'Morning':h<17?'Afternoon':'Evening';}
+let _wxCode=null;   // latest WMO weather code, so the sky reflects the real sky
+function wxClass(c){if(c==null)return'';if(c<=2)return'';if(c===3)return'wx-cloud';if(c<=48)return'wx-fog';if(c<=67)return'wx-rain';if(c<=77)return'wx-snow';if(c<=82)return'wx-rain';return'wx-storm';}
+function applySky(){const hero=document.getElementById('hero');if(hero)hero.className=('hero sky-'+skyPeriod()+' '+wxClass(_wxCode)).trim();}
 function wmo(c){if(c==null)return'';if(c===0)return'clear';if(c<=2)return'mostly clear';if(c===3)return'cloudy';if(c<=48)return'fog';if(c<=67)return'rain';if(c<=77)return'snow';if(c<=82)return'showers';if(c<=99)return'storms';return'';}
 function fmtSleep(s){if(!s||s<=0)return'—';const h=Math.floor(s/3600),m=Math.round((s%3600)/60);return `${h}<small>h</small>${m}<small>m</small>`;}
 
@@ -333,7 +353,8 @@ function updateGlance(){
 
 async function load(){
   document.getElementById('wx-clock').textContent=new Date().toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'}).toLowerCase();
-  document.getElementById('date').textContent='Today, '+new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long'});
+  document.getElementById('date').textContent=new Date().toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long'});
+  applySky();
   // Only the FAST endpoints block the paint. The Today observation is an
   // Alys (LLM) call — slow — so it's fetched separately below and filled in
   // when it arrives, instead of holding the whole page at "--".
@@ -344,8 +365,7 @@ async function load(){
     api('/ring/trend?metric=readiness_state&days=7').catch(()=>({samples:[]})),
   ]);
   const name=me?.name?me.name.split(' ')[0]:'there';
-  document.getElementById('av').textContent=(name[0]||'•').toUpperCase();
-  document.getElementById('hello').textContent='Hello, '+name;
+  document.getElementById('day').textContent=greetWord()+', '+name+'.';
 
   // Notifications: the local check-in reminders only get scheduled when
   // the app is told to — and permission is only requested then. Trigger
@@ -368,9 +388,8 @@ async function load(){
   updateGlance();
 
   if(t){
-    const state=t.state||'steady';
-    document.getElementById('hero').dataset.mood=state;
-    document.getElementById('day').textContent=t.day_word||DAY_FALLBACK[state]||'Today.';
+    // The header no longer grades the day — a warm greeting leads (set above),
+    // the sky carries the time of day + weather, and the read does the talking.
     // Paint the deterministic readiness "why" immediately; Alys's slower,
     // warmer observation patches over it below when it arrives.
     document.getElementById('why').textContent = t.why || '';
@@ -378,7 +397,7 @@ async function load(){
       const obsLine = obs && (obs.text||obs.summary||obs.observation);
       if(obsLine){ const el=document.getElementById('why'); if(el) el.textContent=obsLine; }
     }).catch(()=>{});
-    if(t.weather){ document.getElementById('wx-temp').textContent=t.weather.temperature!=null?Math.round(t.weather.temperature)+'°':'—'; document.getElementById('wx-cond').textContent=wmo(t.weather.weather_code); }
+    if(t.weather){ document.getElementById('wx-temp').textContent=t.weather.temperature!=null?Math.round(t.weather.temperature)+'°':'—'; document.getElementById('wx-cond').textContent=wmo(t.weather.weather_code); _wxCode=t.weather.weather_code; applySky(); }
     let next='';
     if(t.checkin&&t.checkin.due){ const slot=t.checkin.slot==='evening'?'Evening':'Morning';
       next+=`<a class="ncard checkin" href="/health/v2/checkin.html?slot=${t.checkin.slot}"><span class="ic"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5l3 3L7 16l-3.5.5L4 13z"/></svg></span><div><div class="t">${slot} check-in</div><div class="s">a couple of minutes, when you're ready</div></div><span class="go">›</span></a>`; }

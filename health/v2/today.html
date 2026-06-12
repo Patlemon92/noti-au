@@ -65,12 +65,12 @@
   /* the actual weather, washed over the time-of-day sky */
   .hero.wx-cloud::after,.hero.wx-fog::after,.hero.wx-rain::after,.hero.wx-snow::after,.hero.wx-storm::after{
     content:"";position:absolute;inset:0;z-index:0;pointer-events:none;}
-  .hero.wx-cloud::after{background:linear-gradient(180deg,rgba(178,184,198,.34),rgba(150,158,172,.22));}
-  .hero.wx-fog::after{background:rgba(220,222,227,.44);}
-  .hero.wx-rain::after{background:repeating-linear-gradient(74deg,rgba(255,255,255,.09) 0 1px,transparent 1px 8px),linear-gradient(180deg,rgba(118,128,143,.44),rgba(94,105,123,.42));}
-  .hero.wx-snow::after{background:radial-gradient(rgba(255,255,255,.85) 1px,transparent 1.6px) 0 0/24px 24px,linear-gradient(180deg,rgba(204,212,223,.4),rgba(184,195,210,.36));}
-  .hero.wx-storm::after{background:linear-gradient(180deg,rgba(74,80,93,.55),rgba(54,60,74,.55));}
-  .hero.wx-cloud .sun,.hero.wx-fog .sun,.hero.wx-rain .sun,.hero.wx-storm .sun{opacity:.25;}
+  .hero.wx-cloud::after{background:linear-gradient(180deg,rgba(180,186,200,.16),rgba(150,158,172,.10));}
+  .hero.wx-fog::after{background:rgba(220,222,227,.26);}
+  .hero.wx-rain::after{background:repeating-linear-gradient(74deg,rgba(255,255,255,.06) 0 1px,transparent 1px 9px),linear-gradient(180deg,rgba(118,128,143,.24),rgba(94,105,123,.22));}
+  .hero.wx-snow::after{background:radial-gradient(rgba(255,255,255,.8) 1px,transparent 1.6px) 0 0/24px 24px,linear-gradient(180deg,rgba(204,212,223,.22),rgba(184,195,210,.2));}
+  .hero.wx-storm::after{background:linear-gradient(180deg,rgba(74,80,93,.36),rgba(54,60,74,.36));}
+  .hero.wx-cloud .sun,.hero.wx-fog .sun,.hero.wx-rain .sun,.hero.wx-storm .sun{opacity:.45;}
   .hfg{position:relative;z-index:2;padding:18px 22px 24px;}
   .hfg .wx{display:inline-flex;align-items:center;gap:6px;backdrop-filter:blur(4px);
     padding:7px 13px;border-radius:30px;font-size:13px;font-weight:500;}

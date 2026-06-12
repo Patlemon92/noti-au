@@ -872,7 +872,7 @@ function explainerButton(metric) {
   if (!METRIC_EXPLAINERS[metric]) return '';
   return `<button class="stat-help" type="button"
     onclick="event.preventDefault();event.stopPropagation();openExplainer('${metric}')"
-    aria-label="How this number is calculated">ⓘ</button>`;
+    aria-label="How this number is calculated"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.6"/><path d="M8 7.2v3.6" stroke-linecap="round"/><circle cx="8" cy="5" r=".5" fill="currentColor" stroke="none"/></svg></button>`;
 }
 
 // Bottom nav HTML (call once per page; pass active tab id).

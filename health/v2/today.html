@@ -366,7 +366,7 @@ async function load(){
     if(t.weather){ document.getElementById('wx-temp').textContent=t.weather.temperature!=null?Math.round(t.weather.temperature)+'°':'—'; document.getElementById('wx-cond').textContent=wmo(t.weather.weather_code); }
     let next='';
     if(t.checkin&&t.checkin.due){ const slot=t.checkin.slot==='evening'?'Evening':'Morning';
-      next+=`<a class="ncard checkin" href="/health/v2/checkin.html?slot=${t.checkin.slot}"><span class="ic">✎</span><div><div class="t">${slot} check-in</div><div class="s">a couple of minutes, when you're ready</div></div><span class="go">›</span></a>`; }
+      next+=`<a class="ncard checkin" href="/health/v2/checkin.html?slot=${t.checkin.slot}"><span class="ic"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5l3 3L7 16l-3.5.5L4 13z"/></svg></span><div><div class="t">${slot} check-in</div><div class="s">a couple of minutes, when you're ready</div></div><span class="go">›</span></a>`; }
     const ev=(flags&&flags.events)||[]; window._noticed=ev;
     if(ev.length){ next+=`<button class="ncard noticed" type="button" onclick="openNoticed()" style="border:0;width:100%;text-align:left;cursor:pointer;font:inherit"><span class="ic"></span><div><div class="t">Noticed</div><div class="s">${ev.length} thing${ev.length>1?'s':''} worth a look</div></div><span class="go">›</span></button>`; }
     document.getElementById('next').innerHTML=next;

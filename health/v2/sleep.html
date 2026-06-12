@@ -184,6 +184,7 @@ function setHist(d) {
   const btn = document.getElementById(`hist-${d}`);
   if (btn) btn.classList.add('pill-rose');
   loadHistory();
+  loadAnalysis();   // Alys's read reads histDays — keep it in sync with the range
 }
 setHist(7);
 
@@ -387,9 +388,8 @@ async function loadRest() {
 }
 
 loadLastNight();
-loadHistory();
-loadAnalysis();
 loadRest();
+// loadHistory() + loadAnalysis() run via setHist(7) above, kept range-synced.
 onResume(() => { loadLastNight(); loadHistory(); loadAnalysis(); loadRest(); });
 </script>
 </body>

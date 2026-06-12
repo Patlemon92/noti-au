@@ -47,6 +47,10 @@
   .htop .more{font-size:21px;line-height:1;text-decoration:none;opacity:.78;color:inherit;}
   .hero .grain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:soft-light;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:170px;}
+  /* iOS WebView leaks absolutely-positioned children past rounded corners
+     (overflow:hidden + border-radius bug) — round the full-bleed layers too so
+     the night scrim doesn't show square corners. */
+  .hero .grain,.hero .scrim,.hero .stars,.hero .clouds{border-radius:inherit;}
   .hero .sun{position:absolute;z-index:0;border-radius:50%;right:30px;top:30px;width:50px;height:50px;
     background:radial-gradient(circle,#fff7ea,#ffe2b8);box-shadow:0 0 40px 14px rgba(255,224,180,.55);transition:all 1s ease;}
   .hero .scrim{position:absolute;inset:0;z-index:0;opacity:0;transition:opacity 1s ease;

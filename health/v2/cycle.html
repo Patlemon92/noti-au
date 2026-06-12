@@ -75,6 +75,25 @@
   .empty{padding:60px 30px;text-align:center;color:var(--ink-soft);font-size:16px;line-height:1.6}
   .fade{opacity:0;transform:translateY(12px);animation:up .7s cubic-bezier(.2,.7,.2,1) forwards}
   @keyframes up{to{opacity:1;transform:translateY(0)}}
+  /* month calendar — coloured by phase */
+  .mcal-card .ctitle{font-family:"Fraunces",serif;font-weight:500;font-size:18px;}
+  .mcal-nav{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 12px;}
+  .mcal-nav .mtitle{font-family:"Fraunces",serif;font-weight:500;font-size:16px;}
+  .mcal-nav button{width:30px;height:30px;border-radius:50%;border:1px solid #e6d8c4;background:#fff;color:#6b574a;font-size:15px;cursor:pointer;}
+  .mcal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:4px;}
+  .mcal-dow span{text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#9a8473;}
+  .mcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .mcal-cell{aspect-ratio:1/1.1;border-radius:11px;display:flex;align-items:flex-start;justify-content:flex-end;padding:5px 6px 0 0;background:#f5efe3;border:1px solid #efe7d8;cursor:pointer;color:#42332b;}
+  .mcal-cell .cd{font-family:"Fraunces",serif;font-weight:500;font-size:13px;line-height:1;}
+  .mcal-cell.empty{background:transparent;border:0;cursor:default;}
+  .mcal-cell.nodata{color:#c2b4a0;background:#f7f2e9;cursor:default;}
+  .mcal-cell.today{box-shadow:0 0 0 1.5px #42332b;}
+  .mcal-cell.sel{outline:2px solid #3a352c;outline-offset:1px;}
+  .mcal-read{margin-top:13px;font-size:13px;color:#6b574a;min-height:18px;}
+  .mcal-read b{color:#42332b;font-weight:600;}
+  .mcal-read .mr-empty{color:#9a8473;}
+  .mcal-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:11.5px;color:#6b574a;}
+  .mcal-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:0;}
 </style>
 </head>
 <body>
@@ -96,6 +115,7 @@
   </div>
 
   <div class="body" id="body"></div>
+  <div class="body" id="cyc-cal-card"></div>
 
 </div>
 
@@ -259,6 +279,57 @@ function renderBody(meta, series){
     </div>`;
 }
 
+// ── month calendar coloured by cycle phase (projected from logged period) ──
+const PHASE_COLOR={menstrual:'187,97,71',follicular:'143,160,106',ovulatory:'200,153,63',luteal:'197,138,116'};
+function phaseForDay(meta, date){
+  const CL=meta.cycle_length||28, bleed=meta.bleed_len||3, ov=Math.max(10,CL-14);
+  if(!meta.last_period_start) return null;
+  const start=new Date(meta.last_period_start+'T00:00:00');
+  const doc=((Math.floor((date-start)/86400000) % CL)+CL)%CL;
+  let phase = doc<bleed ? 'menstrual' : doc<ov-1 ? 'follicular' : doc<ov+1 ? 'ovulatory' : 'luteal';
+  return {phase, dayNum:doc+1};
+}
+function renderCycleCal(meta){
+  const host=document.getElementById('cyc-cal-card'); if(!host) return;
+  if(!meta || !meta.last_period_start){ host.innerHTML=''; return; }
+  host.innerHTML=`<div class="card mcal-card fade">
+    <div class="chead"><span class="ctitle">By phase</span></div>
+    <div class="mcal-nav"><button id="ccal-prev" type="button" aria-label="previous month">‹</button><span class="mtitle" id="ccal-month">—</span><button id="ccal-next" type="button" aria-label="next month">›</button></div>
+    <div class="mcal-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+    <div class="mcal-grid" id="ccal-grid"></div>
+    <div class="mcal-read" id="ccal-read"></div>
+    <div class="mcal-legend"><span><i style="background:var(--menstrual)"></i>Period</span><span><i style="background:var(--follicular)"></i>Follicular</span><span><i style="background:var(--ovulatory)"></i>Ovulatory</span><span><i style="background:var(--luteal)"></i>Luteal</span></div>
+    <p class="caption" style="margin-top:10px;font-size:12.5px;color:var(--muted,#9a8473);line-height:1.45">Phases are projected from your logged period and typical cycle length — a guide, not a record of each day.</p>
+  </div>`;
+  let cur=new Date(); cur.setDate(1);
+  function draw(){
+    const y=cur.getFullYear(), mo=cur.getMonth();
+    document.getElementById('ccal-month').textContent=cur.toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+    const first=new Date(y,mo,1).getDay(), dim=new Date(y,mo+1,0).getDate();
+    const tD=new Date(), tk=`${tD.getFullYear()}-${tD.getMonth()}-${tD.getDate()}`;
+    let html=''; for(let i=0;i<first;i++) html+='<div class="mcal-cell empty"></div>';
+    for(let d=1; d<=dim; d++){
+      const date=new Date(y,mo,d), p=phaseForDay(meta,date), cls=['mcal-cell']; let style='';
+      if(p){ const a=p.phase==='menstrual'?0.62:0.4; style=`style="background:rgba(${PHASE_COLOR[p.phase]},${a})"`; }
+      else cls.push('nodata');
+      if(`${y}-${mo}-${d}`===tk) cls.push('today');
+      html+=`<div class="${cls.join(' ')}" ${style} data-d="${d}"><span class="cd">${d}</span></div>`;
+    }
+    const grid=document.getElementById('ccal-grid'); grid.innerHTML=html;
+    grid.querySelectorAll('.mcal-cell[data-d]').forEach(c=>{
+      c.onclick=()=>{ grid.querySelectorAll('.sel').forEach(x=>x.classList.remove('sel')); c.classList.add('sel');
+        const date=new Date(y,mo,Number(c.dataset.d)), p=phaseForDay(meta,date);
+        const ds=date.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+        document.getElementById('ccal-read').innerHTML = p?`<b>${ds}</b> — day <b>${p.dayNum}</b> · ${PHASE_LABEL[p.phase]||p.phase}`:`<b>${ds}</b>`;
+      };
+    });
+    document.getElementById('ccal-read').innerHTML='<span class="mr-empty">Tap a day to see its phase.</span>';
+  }
+  document.getElementById('ccal-prev').onclick=()=>{ cur.setMonth(cur.getMonth()-1); draw(); };
+  document.getElementById('ccal-next').onclick=()=>{ cur.setMonth(cur.getMonth()+1); draw(); };
+  draw();
+}
+
 async function load(){
   try{
     const since=new Date(Date.now()-150*86400000).toISOString();
@@ -284,6 +355,7 @@ async function load(){
 
     const series=nightlySeries(rhr.samples||[], meta.last_period_start);
     document.getElementById('body').innerHTML=renderBody(meta, series);
+    renderCycleCal(meta);
   }catch(e){
     document.getElementById('h-status').textContent='Couldn’t load your cycle: '+e.message;
   }

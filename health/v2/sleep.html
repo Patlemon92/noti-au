@@ -121,6 +121,24 @@
        in taupe, never hidden, so the category stays legible and the
        layout doesn't shift between good and bad nights. */
     #awake-val.zero, #awake-val.zero .unit { color: var(--ink-mute); }
+    /* month calendar — hours per night */
+    .mcal-card{margin-top:12px;}
+    .mcal-nav{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px;}
+    .mcal-nav .mtitle{font-family:"Fraunces",serif;font-weight:500;font-size:16px;}
+    .mcal-nav button{width:30px;height:30px;border-radius:50%;border:1px solid #e6d8c4;background:#fff;color:#6b574a;font-size:15px;cursor:pointer;}
+    .mcal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:4px;}
+    .mcal-dow span{text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#9a8473;}
+    .mcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+    .mcal-cell{aspect-ratio:1/1.16;border-radius:11px;display:flex;flex-direction:column;align-items:center;padding-top:5px;background:#f5efe3;border:1px solid #efe7d8;cursor:pointer;overflow:hidden;color:#42332b;}
+    .mcal-cell .cd{font-size:9.5px;font-weight:600;line-height:1;opacity:.6;align-self:flex-end;margin-right:6px;}
+    .mcal-cell .cv{font-family:"Fraunces",serif;font-weight:500;font-size:13.5px;line-height:1;margin-top:auto;margin-bottom:8px;color:inherit;}
+    .mcal-cell.empty{background:transparent;border:0;cursor:default;}
+    .mcal-cell.nodata{color:#c2b4a0;background:#f7f2e9;cursor:default;}
+    .mcal-cell.today{box-shadow:0 0 0 1.5px #42332b;}
+    .mcal-cell.sel{outline:2px solid #6b4f63;outline-offset:1px;}
+    .mcal-read{margin-top:13px;font-size:13px;color:#6b574a;min-height:18px;}
+    .mcal-read b{color:#42332b;font-weight:600;}
+    .mcal-read .mr-empty{color:#9a8473;}
   </style>
 
   <!-- Alys read across the visible window -->
@@ -154,6 +172,12 @@
       <div id="hist-list">
         <div class="empty">Loading…</div>
       </div>
+    </div>
+    <div class="card mcal-card">
+      <div class="mcal-nav"><button id="scal-prev" type="button" aria-label="previous month">‹</button><span class="mtitle" id="scal-month">—</span><button id="scal-next" type="button" aria-label="next month">›</button></div>
+      <div class="mcal-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+      <div class="mcal-grid" id="scal-grid"></div>
+      <div class="mcal-read" id="scal-read"></div>
     </div>
   </section>
 
@@ -391,6 +415,55 @@ loadLastNight();
 loadRest();
 // loadHistory() + loadAnalysis() run via setHist(7) above, kept range-synced.
 onResume(() => { loadLastNight(); loadHistory(); loadAnalysis(); loadRest(); });
+
+// ── month calendar: hours per night ──
+const scalByDay = {}; let scalCur = new Date(); scalCur.setDate(1);
+const scalKey = (y,mo,d)=>`${y}-${mo}-${d}`;
+async function loadSleepCal(){
+  try{
+    const since = new Date(Date.now()-120*86400*1000).toISOString();
+    const { samples } = await api(`/ring/samples?metric=sleep_consolidated,sleep_session&limit=400&since=${encodeURIComponent(since)}`);
+    const _c = (samples||[]).filter(s=>s.metric==='sleep_consolidated');
+    const list = _c.length ? _c : (samples||[]).filter(s=>s.metric==='sleep_session');
+    for(const s of list){
+      const night = new Date(s.meta?.end_ts||s.ts);
+      const k = scalKey(night.getFullYear(),night.getMonth(),night.getDate());
+      const hrs = Number(s.value)/3600;
+      if(!scalByDay[k] || hrs>scalByDay[k].h) scalByDay[k]={h:hrs, sec:Number(s.value)};
+    }
+  }catch(_){}
+  renderSCal();
+}
+function renderSCal(){
+  const y=scalCur.getFullYear(), mo=scalCur.getMonth();
+  document.getElementById('scal-month').textContent = scalCur.toLocaleDateString('en-AU',{month:'long',year:'numeric'});
+  const hours = Object.values(scalByDay).map(e=>e.h);
+  const mn = hours.length?Math.min(...hours):0, mx = hours.length?Math.max(...hours):1, rng=(mx-mn)||1;
+  const first = new Date(y,mo,1).getDay(), dim = new Date(y,mo+1,0).getDate();
+  const tD = new Date(), tk = scalKey(tD.getFullYear(),tD.getMonth(),tD.getDate());
+  let html=''; for(let i=0;i<first;i++) html+='<div class="mcal-cell empty"></div>';
+  for(let d=1; d<=dim; d++){
+    const k=scalKey(y,mo,d), e=scalByDay[k], cls=['mcal-cell']; let style='', inner=`<span class="cd">${d}</span>`;
+    if(!e){ cls.push('nodata'); }
+    else { const t=(e.h-mn)/rng, a=(0.16+0.66*t).toFixed(2), fg=t>0.6?'#fff':'#42332b'; style=`style="background:rgba(107,79,99,${a});color:${fg}"`; inner+=`<span class="cv">${e.h.toFixed(1)}</span>`; }
+    if(k===tk) cls.push('today');
+    html+=`<div class="${cls.join(' ')}" ${style} data-k="${k}" data-d="${d}">${inner}</div>`;
+  }
+  document.getElementById('scal-grid').innerHTML=html;
+  document.getElementById('scal-grid').querySelectorAll('.mcal-cell[data-k]').forEach(c=>{
+    c.onclick=()=>{ document.getElementById('scal-grid').querySelectorAll('.sel').forEach(x=>x.classList.remove('sel')); if(!c.classList.contains('nodata')) c.classList.add('sel'); showSCalRead(scalByDay[c.dataset.k]||null,c.dataset.d,y,mo); };
+  });
+  document.getElementById('scal-read').innerHTML='<span class="mr-empty">Tap a night to see its sleep.</span>';
+}
+function showSCalRead(e,d,y,mo){
+  const dt=new Date(y,mo,Number(d)), ds=dt.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'});
+  if(!e){ document.getElementById('scal-read').innerHTML=`<b>${ds}</b> — <span class="mr-empty">no sleep recorded</span>`; return; }
+  const h=Math.floor(e.sec/3600), m=Math.round((e.sec%3600)/60);
+  document.getElementById('scal-read').innerHTML=`<b>${ds}</b> — slept <b>${h}h ${m}m</b>`;
+}
+document.getElementById('scal-prev').onclick=()=>{ scalCur.setMonth(scalCur.getMonth()-1); renderSCal(); };
+document.getElementById('scal-next').onclick=()=>{ scalCur.setMonth(scalCur.getMonth()+1); renderSCal(); };
+loadSleepCal();
 </script>
 </body>
 </html>

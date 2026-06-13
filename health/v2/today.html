@@ -379,11 +379,12 @@ async function load(){
   // Only the FAST endpoints block the paint. The Today observation is an
   // Alys (LLM) call — slow — so it's fetched separately below and filled in
   // when it arrives, instead of holding the whole page at "--".
-  const [me,t,flags,week]=await Promise.all([
+  const [me,t,flags,week,proDue]=await Promise.all([
     api('/me').catch(()=>null),
     api('/me/today').catch(()=>null),
     api('/me/flagged-events?only_open=1&days=7').catch(()=>({events:[]})),
     api('/ring/trend?metric=readiness_state&days=7').catch(()=>({samples:[]})),
+    api('/me/pro-due').catch(()=>({instruments:[],due:[]})),
   ]);
   const name=me?.name?me.name.split(' ')[0]:'there';
   document.getElementById('day').textContent=greetWord()+', '+name+'.';
@@ -424,6 +425,11 @@ async function load(){
       next+=`<a class="ncard checkin" href="/health/v2/checkin.html?slot=${t.checkin.slot}"><span class="ic"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5l3 3L7 16l-3.5.5L4 13z"/></svg></span><div><div class="t">${slot} check-in</div><div class="s">a couple of minutes, when you're ready</div></div><span class="go">›</span></a>`; }
     const ev=(flags&&flags.events)||[]; window._noticed=ev;
     if(ev.length){ next+=`<button class="ncard noticed" type="button" onclick="openNoticed()" style="border:0;width:100%;text-align:left;cursor:pointer;font:inherit"><span class="ic"></span><div><div class="t">Noticed</div><div class="s">${ev.length} thing${ev.length>1?'s':''} worth a look</div></div><span class="go">›</span></button>`; }
+    // Fortnightly check-in nudge — calm, pull-only. Just the prompt; the
+    // result lives in the record + report, never here. Shows the first due.
+    const due=(proDue&&proDue.due)||[];
+    if(due.length){ const k=due[0];
+      next+=`<a class="ncard checkin" href="/health/v2/pro.html?instrument=${k}"><span class="ic"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg></span><div><div class="t">Your fortnightly check-in</div><div class="s">a few gentle questions, when you're ready</div></div><span class="go">›</span></a>`; }
     document.getElementById('next').innerHTML=next;
   }
 }

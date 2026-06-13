@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f3ead9" />
+<link rel="manifest" href="/health/manifest-health.json" />
+<link rel="apple-touch-icon" href="/health/icon-192.png" />
+<title>Check-in · Neeve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Hanken+Grotesk:wght@400;450;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/health/v2/styles.css">
+<style>
+  :root{
+    --paper:#f3ead9; --card:#fcf8f1; --ink:#3f3128; --ink-soft:#7c6759;
+    --muted:#a08a78; --clay:#bb6147; --clay-deep:#a3472f; --sage:#8d8a6a; --hair:#eaddc9;
+  }
+  *{box-sizing:border-box}
+  body{font-family:"Hanken Grotesk",system-ui,sans-serif;background:var(--paper);background-attachment:fixed;color:var(--ink);margin:0;-webkit-font-smoothing:antialiased;}
+  .page{max-width:460px;margin:0 auto;padding:14px 18px calc(40px + env(safe-area-inset-bottom));}
+  .top{display:flex;align-items:center;gap:6px;margin:2px 0 18px;}
+  .back{background:none;border:0;padding:6px;margin-left:-6px;cursor:pointer;color:var(--ink-soft);}
+  .back svg{display:block}
+  .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;}
+  h1{font-family:"Fraunces",serif;font-weight:500;font-size:26px;line-height:1.15;margin:0 0 8px;color:var(--ink);}
+  .lede{font-size:15px;line-height:1.5;color:var(--ink-soft);margin:0 0 4px;}
+  .recall{font-size:13px;color:var(--muted);margin:2px 0 0;}
+  .q{background:var(--card);border:1px solid var(--hair);border-radius:16px;padding:15px 15px 13px;margin:14px 0;}
+  .q-text{font-size:15.5px;line-height:1.45;margin:0 0 12px;color:var(--ink);}
+  .opts{display:flex;flex-direction:column;gap:7px;}
+  .opt{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:rgba(63,49,40,.035);
+       border:1.5px solid transparent;border-radius:11px;padding:11px 13px;font:inherit;font-size:14.5px;
+       color:var(--ink-soft);cursor:pointer;transition:background .14s,border-color .14s,color .14s;}
+  .opt .tick{flex:none;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--muted);transition:all .14s;}
+  .opt.on{background:rgba(187,97,71,.10);border-color:var(--clay);color:var(--ink);}
+  .opt.on .tick{border-color:var(--clay);background:var(--clay);box-shadow:inset 0 0 0 3px var(--card);}
+  .prog{position:sticky;top:0;z-index:5;background:linear-gradient(var(--paper),var(--paper) 70%,transparent);padding:8px 0 6px;margin:0 0 4px;}
+  .bar{height:5px;background:var(--hair);border-radius:3px;overflow:hidden;}
+  .bar > i{display:block;height:100%;width:0;background:var(--clay);border-radius:3px;transition:width .25s;}
+  .prog .n{font-size:12px;color:var(--muted);margin-top:5px;}
+  .submit{width:100%;border:0;border-radius:14px;background:var(--clay);color:#fff7f0;font:inherit;font-size:16px;
+          font-weight:600;padding:15px;margin-top:8px;cursor:pointer;transition:background .15s,opacity .15s;}
+  .submit:disabled{opacity:.45;cursor:default;}
+  .note{font-size:12.5px;color:var(--muted);text-align:center;margin:12px 0 0;line-height:1.5;}
+  /* done state */
+  .done{text-align:center;padding:34px 6px 10px;}
+  .done .mark{width:54px;height:54px;border-radius:50%;background:rgba(141,138,106,.16);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+  .done h2{font-family:"Fraunces",serif;font-weight:500;font-size:23px;margin:0 0 10px;}
+  .done p{font-size:15px;line-height:1.55;color:var(--ink-soft);margin:0 auto 8px;max-width:34ch;}
+  .done .btn{display:inline-block;margin-top:18px;border:1.5px solid var(--hair);border-radius:12px;padding:12px 22px;background:var(--card);color:var(--ink);font:inherit;font-size:15px;text-decoration:none;cursor:pointer;}
+  /* gentle support footer — quiet, never alarming */
+  .care{background:#f6efe1;border:1px solid var(--hair);border-left:3px solid var(--sage);border-radius:13px;
+        padding:15px 16px;margin:18px 0 0;text-align:left;}
+  .care h3{font-family:"Fraunces",serif;font-weight:500;font-size:16px;margin:0 0 7px;color:var(--ink);}
+  .care p{font-size:13.5px;line-height:1.55;color:var(--ink-soft);margin:0 0 9px;}
+  .care a{color:var(--clay-deep);font-weight:600;text-decoration:none;}
+  .care .lines{font-size:13.5px;line-height:1.8;color:var(--ink);}
+  .err{text-align:center;color:var(--ink-soft);padding:50px 16px;font-size:15px;}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <div class="top">
+    <button class="back" onclick="history.length>1?history.back():location.href='/health/v2/today.html'" aria-label="Back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+  </div>
+  <div id="body"><div class="err">Loading…</div></div>
+</div>
+
+<script src="/health/v2/lib.js"></script>
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  const key = params.get('instrument') || 'phq9';
+  const answers = {};
+  let inst = null;
+
+  const body = document.getElementById('body');
+
+  function pct(){ const done = Object.keys(answers).length; return inst ? Math.round(done/inst.items.length*100) : 0; }
+
+  function render(){
+    // Soft, non-clinical framing. The validated item wording stays exact;
+    // everything around it is warm. We deliberately do NOT show the
+    // instrument's clinical name (e.g. "PHQ-9") to the patient.
+    let h = `
+      <div class="prog"><div class="bar"><i id="fill" style="width:${pct()}%"></i></div>
+        <div class="n"><span id="count">${Object.keys(answers).length}</span> of ${inst.items.length}</div></div>
+      <p class="eyebrow">Every couple of weeks</p>
+      <h1>${esc(inst.softTitle)}</h1>
+      <p class="lede">${esc(inst.preamble)}</p>
+      <p class="recall">There are no right answers — just whatever's been true for you.</p>`;
+
+    for (const it of inst.items){
+      const sel = answers[it.key];
+      h += `<div class="q" data-k="${esc(it.key)}"><p class="q-text">${esc(it.text)}</p><div class="opts">`;
+      for (const o of inst.scale){
+        const on = (sel === o.value) ? ' on' : '';
+        h += `<button type="button" class="opt${on}" data-k="${esc(it.key)}" data-v="${o.value}">
+                <span class="tick"></span><span>${esc(o.label)}</span></button>`;
+      }
+      h += `</div></div>`;
+    }
+    h += `<button class="submit" id="submit" disabled>Done</button>
+          <p class="note">This goes into your record and the report you can share with your doctor.</p>`;
+    body.innerHTML = h;
+
+    body.querySelectorAll('.opt').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const k=b.dataset.k, v=Number(b.dataset.v);
+        answers[k]=v;
+        b.parentElement.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on', x===b));
+        document.getElementById('fill').style.width = pct()+'%';
+        document.getElementById('count').textContent = Object.keys(answers).length;
+        const sub=document.getElementById('submit');
+        sub.disabled = Object.keys(answers).length < inst.items.length;
+      });
+    });
+    document.getElementById('submit').addEventListener('click', submit);
+  }
+
+  async function submit(){
+    const sub=document.getElementById('submit');
+    sub.disabled=true; sub.textContent='Saving…';
+    try{
+      const res = await api('/me/pro/'+key, { method:'POST', body: JSON.stringify({ items: answers }) });
+      done(res);
+    }catch(e){ sub.disabled=false; sub.textContent='Done'; alert('Could not save just now — please try again.'); }
+  }
+
+  function done(res){
+    // Warm close. No score, no severity label shown to the patient —
+    // that detail is doctor-facing. If the self-harm item was endorsed,
+    // a quiet, caring support panel appears (never an alarm).
+    let h = `<div class="done">
+      <div class="mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6f7551" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <h2>Thank you for checking in</h2>
+      <p>That's saved to your record. Over time these build into something clear you can take to your doctor.</p>`;
+    if (res && res.crisis_support){
+      h += `<div class="care">
+        <h3>Before you go</h3>
+        <p>You mentioned thoughts of being better off dead or hurting yourself. That can be really heavy to carry. If things feel like too much, please reach out — any time, day or night:</p>
+        <div class="lines">
+          <strong>Lifeline</strong> — <a href="tel:131114">13 11 14</a><br>
+          <strong>13YARN</strong> — <a href="tel:139276">13 92 76</a><br>
+          <strong>Beyond Blue</strong> — <a href="tel:1300224636">1300 22 4636</a>
+        </div>
+        <p style="margin:10px 0 0">If you're in immediate danger, call <a href="tel:000">000</a>. It's worth telling your doctor too — they can help.</p>
+      </div>`;
+    }
+    h += `<a class="btn" href="/health/v2/today.html">Back to today</a></div>`;
+    body.innerHTML = h;
+    window.scrollTo(0,0);
+  }
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  // Soft, patient-facing titles per instrument (clinical names never shown).
+  const SOFT_TITLES = {
+    phq9: 'How the last two weeks have been',
+    gad7: 'Worry and how you\'ve felt',
+  };
+
+  (async function(){
+    try{
+      const data = await api('/me/pro/'+key);
+      inst = data.instrument;
+      if (!inst || !inst.items || !inst.items.length){ body.innerHTML='<div class="err">This check-in isn\'t ready yet.</div>'; return; }
+      inst.softTitle = SOFT_TITLES[key] || 'A short check-in';
+      render();
+    }catch(e){ body.innerHTML='<div class="err">Couldn\'t load this check-in. Please try again.</div>'; }
+  })();
+})();
+</script>
+</body>
+</html>

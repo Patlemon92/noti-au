@@ -37,7 +37,7 @@
     /* The Flutter WebView doesn't always report safe-area insets, so the
        hero rode up under the status bar. Floor the top padding so it
        always clears it (max of the real inset and 58px). */
-    padding:calc(max(env(safe-area-inset-top,0px), 58px) + 6px) 18px calc(120px + env(safe-area-inset-bottom));
+    padding:calc(env(safe-area-inset-top,0px) + 16px) 18px calc(120px + env(safe-area-inset-bottom));
     animation:ring-fade .5s ease;
   }
   @keyframes ring-fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}

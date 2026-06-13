@@ -18,7 +18,7 @@
   }
   body{font-family:"Hanken Grotesk",system-ui,sans-serif;background:var(--paper);background-attachment:fixed;color:var(--ink);}
   .page{max-width:412px;margin:0 auto;
-    padding:calc(max(env(safe-area-inset-top,0px), 58px) + 4px) 18px calc(120px + env(safe-area-inset-bottom));}
+    padding:calc(env(safe-area-inset-top,0px) + 16px) 18px calc(120px + env(safe-area-inset-bottom));}
 
   /* header */
   .top{display:flex;align-items:center;gap:12px;margin:4px 4px 18px;}
@@ -36,13 +36,13 @@
 
   /* hero — the real sky for the time of day. The day's state lives in the
      words below; the background is just the sky, so there's nothing to decode. */
-  .hero{position:relative;overflow:hidden;isolation:isolate;min-height:286px;
+  .hero{position:relative;overflow:hidden;isolation:isolate;min-height:320px;
     display:flex;flex-direction:column;justify-content:space-between;
     margin:0;
     border-radius:28px;
     box-shadow:0 16px 38px rgba(120,90,55,.2);transition:background 1.2s ease;}
   .htop{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
-    padding:18px 20px 0;}
+    padding:18px 21px 0;}
   .hdate{font-size:13px;font-weight:600;letter-spacing:.01em;opacity:.92;}
   .htop .more{font-size:21px;line-height:1;text-decoration:none;opacity:.78;color:inherit;}
   .hero .grain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:soft-light;

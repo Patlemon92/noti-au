@@ -36,13 +36,13 @@
 
   /* hero — the real sky for the time of day. The day's state lives in the
      words below; the background is just the sky, so there's nothing to decode. */
-  .hero{position:relative;overflow:hidden;isolation:isolate;min-height:300px;
+  .hero{position:relative;overflow:hidden;isolation:isolate;min-height:286px;
     display:flex;flex-direction:column;justify-content:space-between;
-    margin:calc(-1 * (max(env(safe-area-inset-top,0px),58px) + 4px)) -18px 0;
-    border-radius:38px 38px 30px 30px;
+    margin:0;
+    border-radius:28px;
     box-shadow:0 16px 38px rgba(120,90,55,.2);transition:background 1.2s ease;}
   .htop{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
-    padding:calc(max(env(safe-area-inset-top,0px),44px) + 14px) 21px 0;}
+    padding:18px 20px 0;}
   .hdate{font-size:13px;font-weight:600;letter-spacing:.01em;opacity:.92;}
   .htop .more{font-size:21px;line-height:1;text-decoration:none;opacity:.78;color:inherit;}
   .hero .grain{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:soft-light;
@@ -103,7 +103,7 @@
   .hero.sky-night .why{color:#d6dcf0;} .hero.sky-night .see{color:#cdd3ec;}
 
   /* week strip — each day coloured by its readiness */
-  .week{display:flex;gap:7px;margin:16px 1px 4px;}
+  .week{display:flex;gap:7px;margin:16px 0 4px;}
   .wd{flex:1;border-radius:16px;padding:10px 2px 9px;text-align:center;background:var(--card);border:1px solid var(--hair);font-family:inherit;cursor:pointer;}
   .wd:active{transform:scale(.96);}
   .wd .wlab{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}

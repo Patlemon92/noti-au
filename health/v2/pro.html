@@ -26,6 +26,10 @@
   h1{font-family:"Fraunces",serif;font-weight:500;font-size:26px;line-height:1.15;margin:0 0 8px;color:var(--ink);}
   .lede{font-size:15px;line-height:1.5;color:var(--ink-soft);margin:0 0 4px;}
   .recall{font-size:13px;color:var(--muted);margin:2px 0 0;}
+  /* soft divider between groups of questions — keeps it one flow, not separate forms */
+  .seam{display:flex;align-items:center;gap:10px;margin:26px 2px 6px;}
+  .seam span{font-size:13px;color:var(--muted);white-space:nowrap;}
+  .seam .ln{flex:1;height:1px;background:var(--hair);}
   .q{background:var(--card);border:1px solid var(--hair);border-radius:16px;padding:15px 15px 13px;margin:14px 0;}
   .q-text{font-size:15.5px;line-height:1.45;margin:0 0 12px;color:var(--ink);}
   .opts{display:flex;flex-direction:column;gap:7px;}
@@ -43,13 +47,11 @@
           font-weight:600;padding:15px;margin-top:8px;cursor:pointer;transition:background .15s,opacity .15s;}
   .submit:disabled{opacity:.45;cursor:default;}
   .note{font-size:12.5px;color:var(--muted);text-align:center;margin:12px 0 0;line-height:1.5;}
-  /* done state */
   .done{text-align:center;padding:34px 6px 10px;}
   .done .mark{width:54px;height:54px;border-radius:50%;background:rgba(141,138,106,.16);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
   .done h2{font-family:"Fraunces",serif;font-weight:500;font-size:23px;margin:0 0 10px;}
   .done p{font-size:15px;line-height:1.55;color:var(--ink-soft);margin:0 auto 8px;max-width:34ch;}
   .done .btn{display:inline-block;margin-top:18px;border:1.5px solid var(--hair);border-radius:12px;padding:12px 22px;background:var(--card);color:var(--ink);font:inherit;font-size:15px;text-decoration:none;cursor:pointer;}
-  /* gentle support footer — quiet, never alarming */
   .care{background:#f6efe1;border:1px solid var(--hair);border-left:3px solid var(--sage);border-radius:13px;
         padding:15px 16px;margin:18px 0 0;text-align:left;}
   .care h3{font-family:"Fraunces",serif;font-weight:500;font-size:16px;margin:0 0 7px;color:var(--ink);}
@@ -73,49 +75,59 @@
 <script>
 (function(){
   const params = new URLSearchParams(location.search);
-  const key = params.get('instrument') || 'phq9';
-  const answers = {};
-  let inst = null;
-
+  const only = params.get('instrument');   // optional: pin to one instrument
   const body = document.getElementById('body');
 
-  function pct(){ const done = Object.keys(answers).length; return inst ? Math.round(done/inst.items.length*100) : 0; }
+  // blocks = [{ key, soft, preamble, scale, items:[{key,text,critical}] }]
+  let blocks = [];
+  const answers = {};   // { instrument: { item_key: value } }
+  let totalItems = 0;
+
+  // Soft, patient-facing lead-ins. Clinical names are never shown. Where a
+  // later block shares the same scale + window as the first, it gets a light
+  // "seam" divider instead of a fresh preamble — so it reads as ONE check-in.
+  const SOFT = {
+    phq9: { lead: 'A few about how you\'ve felt', seam: 'A few about mood' },
+    gad7: { lead: 'A few about worry',            seam: 'And a few about worry' },
+  };
+
+  function answeredCount(){ let n=0; for(const k in answers) n+=Object.keys(answers[k]).length; return n; }
+  function pct(){ return totalItems ? Math.round(answeredCount()/totalItems*100) : 0; }
 
   function render(){
-    // Soft, non-clinical framing. The validated item wording stays exact;
-    // everything around it is warm. We deliberately do NOT show the
-    // instrument's clinical name (e.g. "PHQ-9") to the patient.
     let h = `
       <div class="prog"><div class="bar"><i id="fill" style="width:${pct()}%"></i></div>
-        <div class="n"><span id="count">${Object.keys(answers).length}</span> of ${inst.items.length}</div></div>
+        <div class="n"><span id="count">${answeredCount()}</span> of ${totalItems}</div></div>
       <p class="eyebrow">Every couple of weeks</p>
-      <h1>${esc(inst.softTitle)}</h1>
-      <p class="lede">${esc(inst.preamble)}</p>
+      <h1>Your fortnightly check-in</h1>
+      <p class="lede">Over the last two weeks, how often have you been bothered by each of these?</p>
       <p class="recall">There are no right answers — just whatever's been true for you.</p>`;
 
-    for (const it of inst.items){
-      const sel = answers[it.key];
-      h += `<div class="q" data-k="${esc(it.key)}"><p class="q-text">${esc(it.text)}</p><div class="opts">`;
-      for (const o of inst.scale){
-        const on = (sel === o.value) ? ' on' : '';
-        h += `<button type="button" class="opt${on}" data-k="${esc(it.key)}" data-v="${o.value}">
-                <span class="tick"></span><span>${esc(o.label)}</span></button>`;
+    blocks.forEach((b, bi) => {
+      if (bi > 0) h += `<div class="seam"><span class="ln"></span><span>${esc((SOFT[b.key]&&SOFT[b.key].seam)||'A few more')}</span><span class="ln"></span></div>`;
+      for (const it of b.items){
+        const sel = (answers[b.key]||{})[it.key];
+        h += `<div class="q"><p class="q-text">${esc(it.text)}</p><div class="opts">`;
+        for (const o of b.scale){
+          const on = (sel === o.value) ? ' on' : '';
+          h += `<button type="button" class="opt${on}" data-inst="${esc(b.key)}" data-k="${esc(it.key)}" data-v="${o.value}">
+                  <span class="tick"></span><span>${esc(o.label)}</span></button>`;
+        }
+        h += `</div></div>`;
       }
-      h += `</div></div>`;
-    }
+    });
     h += `<button class="submit" id="submit" disabled>Done</button>
           <p class="note">This goes into your record and the report you can share with your doctor.</p>`;
     body.innerHTML = h;
 
-    body.querySelectorAll('.opt').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        const k=b.dataset.k, v=Number(b.dataset.v);
-        answers[k]=v;
-        b.parentElement.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on', x===b));
+    body.querySelectorAll('.opt').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const inst=btn.dataset.inst, k=btn.dataset.k, v=Number(btn.dataset.v);
+        (answers[inst] = answers[inst] || {})[k] = v;
+        btn.parentElement.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on', x===btn));
         document.getElementById('fill').style.width = pct()+'%';
-        document.getElementById('count').textContent = Object.keys(answers).length;
-        const sub=document.getElementById('submit');
-        sub.disabled = Object.keys(answers).length < inst.items.length;
+        document.getElementById('count').textContent = answeredCount();
+        document.getElementById('submit').disabled = answeredCount() < totalItems;
       });
     });
     document.getElementById('submit').addEventListener('click', submit);
@@ -125,20 +137,22 @@
     const sub=document.getElementById('submit');
     sub.disabled=true; sub.textContent='Saving…';
     try{
-      const res = await api('/me/pro/'+key, { method:'POST', body: JSON.stringify({ items: answers }) });
-      done(res);
+      // Each instrument is scored and stored on its own — validity intact.
+      let crisis=false;
+      for (const b of blocks){
+        const res = await api('/me/pro/'+b.key, { method:'POST', body: JSON.stringify({ items: answers[b.key]||{} }) });
+        if (res && res.crisis_support) crisis=true;
+      }
+      done(crisis);
     }catch(e){ sub.disabled=false; sub.textContent='Done'; alert('Could not save just now — please try again.'); }
   }
 
-  function done(res){
-    // Warm close. No score, no severity label shown to the patient —
-    // that detail is doctor-facing. If the self-harm item was endorsed,
-    // a quiet, caring support panel appears (never an alarm).
+  function done(crisis){
     let h = `<div class="done">
       <div class="mark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6f7551" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
       <h2>Thank you for checking in</h2>
       <p>That's saved to your record. Over time these build into something clear you can take to your doctor.</p>`;
-    if (res && res.crisis_support){
+    if (crisis){
       h += `<div class="care">
         <h3>Before you go</h3>
         <p>You mentioned thoughts of being better off dead or hurting yourself. That can be really heavy to carry. If things feel like too much, please reach out — any time, day or night:</p>
@@ -157,18 +171,23 @@
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-  // Soft, patient-facing titles per instrument (clinical names never shown).
-  const SOFT_TITLES = {
-    phq9: 'How the last two weeks have been',
-    gad7: 'Worry and how you\'ve felt',
-  };
-
   (async function(){
     try{
-      const data = await api('/me/pro/'+key);
-      inst = data.instrument;
-      if (!inst || !inst.items || !inst.items.length){ body.innerHTML='<div class="err">This check-in isn\'t ready yet.</div>'; return; }
-      inst.softTitle = SOFT_TITLES[key] || 'A short check-in';
+      // Which instruments to ask: the pinned one, or everything due, in one flow.
+      let keys;
+      if (only){ keys = [only]; }
+      else {
+        const due = await api('/me/pro-due');
+        keys = (due && due.due) || [];
+      }
+      if (!keys.length){ body.innerHTML='<div class="done"><h2>You\'re all caught up</h2><p>No fortnightly check-in due right now.</p><a class="btn" href="/health/v2/today.html">Back to today</a></div>'; return; }
+
+      const defs = await Promise.all(keys.map(k => api('/me/pro/'+k).then(d=>d.instrument).catch(()=>null)));
+      blocks = defs.filter(d => d && d.items && d.items.length).map(d => ({
+        key: d.key, scale: d.scale, preamble: d.preamble, items: d.items,
+      }));
+      if (!blocks.length){ body.innerHTML='<div class="err">This check-in isn\'t ready yet.</div>'; return; }
+      totalItems = blocks.reduce((n,b)=>n+b.items.length, 0);
       render();
     }catch(e){ body.innerHTML='<div class="err">Couldn\'t load this check-in. Please try again.</div>'; }
   })();

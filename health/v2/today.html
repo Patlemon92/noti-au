@@ -428,8 +428,8 @@ async function load(){
     // Fortnightly check-in nudge — calm, pull-only. Just the prompt; the
     // result lives in the record + report, never here. Shows the first due.
     const due=(proDue&&proDue.due)||[];
-    if(due.length){ const k=due[0];
-      next+=`<a class="ncard checkin" href="/health/v2/pro.html?instrument=${k}"><span class="ic"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg></span><div><div class="t">Your fortnightly check-in</div><div class="s">a few gentle questions, when you're ready</div></div><span class="go">›</span></a>`; }
+    if(due.length){
+      next+=`<a class="ncard checkin" href="/health/v2/pro.html"><span class="ic"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l3.5 3.5L16 5.5"/></svg></span><div><div class="t">Your fortnightly check-in</div><div class="s">a few gentle questions, when you're ready</div></div><span class="go">›</span></a>`; }
     document.getElementById('next').innerHTML=next;
   }
 }

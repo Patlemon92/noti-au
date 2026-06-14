@@ -89,10 +89,10 @@
   <h3>You're not on your own</h3>
   <p>You mentioned thoughts of being better off dead, or of hurting yourself. That can be really heavy to carry. If it's feeling like too much, please reach out — any time, day or night:</p>
   <div class="cm-lines">
-    <strong>Lifeline</strong> — <a href="tel:131114">13 11 14</a><br>
-    <strong>13YARN</strong> — <a href="tel:139276">13 92 76</a><br>
-    <strong>Beyond Blue</strong> — <a href="tel:1300224636">1300 22 4636</a><br>
-    If you're in immediate danger — <a href="tel:000">000</a>
+    <strong>Lifeline</strong> — <a href="tel:131114" data-resource="lifeline">13 11 14</a><br>
+    <strong>13YARN</strong> — <a href="tel:139276" data-resource="13yarn">13 92 76</a><br>
+    <strong>Beyond Blue</strong> — <a href="tel:1300224636" data-resource="beyondblue">1300 22 4636</a><br>
+    If you're in immediate danger — <a href="tel:000" data-resource="000">000</a>
   </div>
   <button class="cm-close" id="cm-close" type="button">Thank you — I'll keep going</button>
 </div>
@@ -110,11 +110,23 @@
   let totalItems = 0;
   const criticalKeys = new Set();   // item keys that trigger crisis support (e.g. PHQ-9 item 9)
 
+  // Auto-save: persist each instrument's answers-so-far the moment they're
+  // given, so a partial check-in (especially a self-harm endorsement) is never
+  // lost if the person stops before finishing. Fire-and-forget.
+  function saveProgress(inst){
+    api('/me/pro/'+inst+'/progress', { method:'POST', body: JSON.stringify({ items: answers[inst]||{} }) }).catch(()=>{});
+  }
+
   // Crisis support sheet — shown the moment a self-harm item is endorsed.
   function openCrisis(){ document.getElementById('cm-bd').classList.add('open'); document.getElementById('cm-sheet').classList.add('open'); }
   function closeCrisis(){ document.getElementById('cm-bd').classList.remove('open'); document.getElementById('cm-sheet').classList.remove('open'); }
   document.getElementById('cm-bd').addEventListener('click', closeCrisis);
   document.getElementById('cm-close').addEventListener('click', closeCrisis);
+  // Log when a support number is actually tapped — a real safety signal.
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="tel:"]');
+    if (a && a.dataset.resource) { try { track('action', 'crisis_resource_tap', { resource: a.dataset.resource }); } catch(_){} }
+  });
 
   // Soft, patient-facing lead-ins. Clinical names are never shown. Where a
   // later block shares the same scale + window as the first, it gets a light
@@ -161,6 +173,7 @@
         document.getElementById('fill').style.width = pct()+'%';
         document.getElementById('count').textContent = answeredCount();
         document.getElementById('submit').disabled = answeredCount() < totalItems;
+        saveProgress(inst);   // persist this answer immediately
         // The moment a self-harm item is endorsed (any non-zero), offer support.
         if (criticalKeys.has(k) && v > 0) openCrisis();
       });
@@ -192,11 +205,11 @@
         <h3>Before you go</h3>
         <p>You mentioned thoughts of being better off dead or hurting yourself. That can be really heavy to carry. If things feel like too much, please reach out — any time, day or night:</p>
         <div class="lines">
-          <strong>Lifeline</strong> — <a href="tel:131114">13 11 14</a><br>
-          <strong>13YARN</strong> — <a href="tel:139276">13 92 76</a><br>
-          <strong>Beyond Blue</strong> — <a href="tel:1300224636">1300 22 4636</a>
+          <strong>Lifeline</strong> — <a href="tel:131114" data-resource="lifeline">13 11 14</a><br>
+          <strong>13YARN</strong> — <a href="tel:139276" data-resource="13yarn">13 92 76</a><br>
+          <strong>Beyond Blue</strong> — <a href="tel:1300224636" data-resource="beyondblue">1300 22 4636</a>
         </div>
-        <p style="margin:10px 0 0">If you're in immediate danger, call <a href="tel:000">000</a>. It's worth telling your doctor too — they can help.</p>
+        <p style="margin:10px 0 0">If you're in immediate danger, call <a href="tel:000" data-resource="000">000</a>. It's worth telling your doctor too — they can help.</p>
       </div>`;
     }
     h += `<a class="btn" href="/health/v2/today.html">Back to today</a></div>`;

@@ -85,8 +85,12 @@
   .hfg .wx{display:inline-flex;align-items:center;gap:6px;backdrop-filter:blur(4px);
     padding:7px 13px;border-radius:30px;font-size:13px;font-weight:500;}
   .hfg .wx b{font-weight:600;}
-  .hfg .day{font-family:"Fraunces",serif;font-weight:500;font-size:33px;line-height:1.06;letter-spacing:-.02em;margin-top:18px;transition:opacity .4s;}
-  .hfg .why{font-size:16px;line-height:1.52;margin-top:11px;max-width:31ch;transition:opacity .4s;}
+  /* greeting is now the small lead-in; the STATE is the headline that carries
+     the day's understanding, the read does the talking under it. */
+  .hfg .greet{font-size:13.5px;font-weight:600;letter-spacing:.01em;margin-top:16px;opacity:.85;}
+  .hfg .state{font-family:"Fraunces",serif;font-weight:500;font-size:26px;line-height:1.1;letter-spacing:-.02em;margin-top:5px;transition:opacity .4s;}
+  .hfg .state:empty{display:none;}
+  .hfg .why{font-size:15px;line-height:1.55;margin-top:10px;max-width:33ch;transition:opacity .4s;}
   .hfg .see{margin-top:17px;font-size:13.5px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;}
   /* text adapts to the sky — dark on the light skies, light on dusk + night */
   .hero.sky-morning .hfg{color:#4a2f23;}
@@ -124,6 +128,19 @@
   .gstat .l{font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
   .gstat .v{font-family:"Fraunces",serif;font-weight:500;font-size:22px;margin-top:7px;color:var(--ink);line-height:1;}
   .gstat .v small{font-size:11px;color:var(--muted);font-weight:400;}
+
+  /* Capacity card — recovery/strain/stress, reframed with meaning. The numbers
+     alone are a Fitbit score; the line+sub say what they mean for today. */
+  .capcard{background:var(--card);border-radius:22px;padding:18px 20px;box-shadow:0 8px 24px rgba(120,90,60,.06);margin-top:12px;}
+  .capcard .ch{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+  .capcard .ch a{color:var(--muted);text-decoration:none;font-size:10px;letter-spacing:.02em;text-transform:none;}
+  .capcard .line{font-family:"Fraunces",serif;font-weight:500;font-size:17px;line-height:1.32;letter-spacing:-.01em;color:var(--ink);}
+  .capcard .sub{font-size:13.5px;line-height:1.5;color:var(--ink-soft,#6f5d4e);margin-top:7px;}
+  .capcard .chips{display:flex;gap:8px;margin-top:14px;}
+  .capcard .chip{flex:1;background:#f4ecdc;border-radius:13px;padding:9px 4px;text-align:center;}
+  .capcard .chip .cn{font-family:"Fraunces",serif;font-weight:600;font-size:18px;line-height:1;}
+  .capcard .chip .ck{font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
+  .capcard .chip.ok .cn{color:#5c6044;} .capcard .chip.mid .cn{color:#c08a3e;} .capcard .chip.hi .cn{color:var(--clay);}
 
   .ncard{display:flex;align-items:center;gap:13px;background:var(--card);border-radius:20px;padding:15px 18px;
     box-shadow:0 8px 24px rgba(120,90,60,.06);text-decoration:none;color:inherit;margin-top:10px;}
@@ -184,7 +201,8 @@
     </div>
     <div class="hfg">
       <div class="wx"><span id="wx-clock">—</span>&nbsp;·&nbsp;<b id="wx-temp">—</b>&nbsp;<span id="wx-cond"></span></div>
-      <div class="day" id="day">&nbsp;</div>
+      <div class="greet" id="day">&nbsp;</div>
+      <div class="state" id="state"></div>
       <div class="why" id="why"></div>
       <a class="see" href="/health/v2/ring.html">see your day →</a>
     </div>
@@ -199,6 +217,8 @@
     <a class="gstat" href="/health/v2/metric.html?metric=spo2&days=1"><div class="l">O₂</div><div class="v" id="g-o2">—</div></a>
     <a class="gstat" href="/health/v2/sleep.html"><div class="l">Sleep</div><div class="v" id="g-sleep">—</div></a>
   </div>
+  <div id="capacity"></div>
+
   <div id="next"></div>
 
   <button class="note" type="button" onclick="openLogSheet()">
@@ -305,6 +325,31 @@ function fmtSleep(s){if(!s||s<=0)return'—';const h=Math.floor(s/3600),m=Math.r
 
 function dayKey(d){ return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
 function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+
+// Capacity card — recovery/strain/stress with the meaning that makes them
+// worth showing. Server sends {recovery,strain,stress,level,line,sub}; we only
+// render when there's at least a line + one score, and respect the user's
+// opt-in (scores hidden unless turned on). [[feedback-scores-optional]]
+function renderCapacity(cap){
+  const host=document.getElementById('capacity'); if(!host) return;
+  const optedIn = localStorage.getItem('neeve_show_scores')!=='0'; // default on once they exist; user can hide
+  if(!cap || !optedIn || (cap.recovery==null && cap.strain==null && cap.stress==null)){ host.innerHTML=''; return; }
+  const chip=(v,k,cls)=> v==null ? '' : `<div class="chip ${cls}"><div class="cn">${v}</div><div class="ck">${k}</div></div>`;
+  // strain/stress thresholds → colour cue (calm sage / amber / clay), recovery inverse
+  const recCls = cap.recovery==null?'' : cap.recovery>=70?'ok' : cap.recovery>=45?'mid':'hi';
+  const strCls = cap.strain==null?'' : cap.strain>=60?'hi' : cap.strain>=35?'mid':'ok';
+  const stsCls = cap.stress==null?'' : cap.stress>=6?'hi' : cap.stress>=4?'mid':'ok';
+  host.innerHTML = `<div class="capcard">
+    <div class="ch"><span>Your body's capacity today</span><a href="/health/v2/ring.html">customise</a></div>
+    <div class="line">${cap.line||''}</div>
+    ${cap.sub?`<div class="sub">${cap.sub}</div>`:''}
+    <div class="chips">
+      ${chip(cap.recovery,'Recovery',recCls)}
+      ${chip(cap.strain,'Strain',strCls)}
+      ${chip(cap.stress,'Stress',stsCls)}
+    </div>
+  </div>`;
+}
 
 function renderWeek(samples){
   const byDay={};
@@ -414,11 +459,16 @@ async function load(){
     // the sky carries the time of day + weather, and the read does the talking.
     // Paint the deterministic readiness "why" immediately; Alys's slower,
     // warmer observation patches over it below when it arrives.
+    // The state headline carries the day's understanding; the read does the
+    // talking under it. State_line is deterministic for now; the synthesis
+    // engine will write a felt+measured headline here later.
+    const stEl=document.getElementById('state'); if(stEl) stEl.textContent = t.state_line || '';
     document.getElementById('why').textContent = t.why || '';
     api('/me/today-observation').then(obs=>{
       const obsLine = obs && (obs.text||obs.summary||obs.observation);
       if(obsLine){ const el=document.getElementById('why'); if(el) el.textContent=obsLine; }
     }).catch(()=>{});
+    renderCapacity(t.capacity);
     if(t.weather){ document.getElementById('wx-temp').textContent=t.weather.temperature!=null?Math.round(t.weather.temperature)+'°':'—'; document.getElementById('wx-cond').textContent=wmo(t.weather.weather_code); _wxCode=t.weather.weather_code; applySky(); }
     let next='';
     if(t.checkin&&t.checkin.due){ const slot=t.checkin.slot==='evening'?'Evening':'Morning';

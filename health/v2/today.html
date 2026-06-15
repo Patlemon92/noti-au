@@ -462,12 +462,10 @@ async function load(){
     // The state headline carries the day's understanding; the read does the
     // talking under it. State_line is deterministic for now; the synthesis
     // engine will write a felt+measured headline here later.
+    // /me/today now returns the synthesised understanding (headline + read +
+    // capacity) — no separate observation patch needed; the read is complete.
     const stEl=document.getElementById('state'); if(stEl) stEl.textContent = t.state_line || '';
     document.getElementById('why').textContent = t.why || '';
-    api('/me/today-observation').then(obs=>{
-      const obsLine = obs && (obs.text||obs.summary||obs.observation);
-      if(obsLine){ const el=document.getElementById('why'); if(el) el.textContent=obsLine; }
-    }).catch(()=>{});
     renderCapacity(t.capacity);
     if(t.weather){ document.getElementById('wx-temp').textContent=t.weather.temperature!=null?Math.round(t.weather.temperature)+'°':'—'; document.getElementById('wx-cond').textContent=wmo(t.weather.weather_code); _wxCode=t.weather.weather_code; applySky(); }
     let next='';

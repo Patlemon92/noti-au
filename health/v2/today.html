@@ -254,6 +254,15 @@
     </div>
     <span class="ql-status" id="ql-bp-status"></span>
   </div>
+  <div class="ql-reading">
+    <div class="ql-cap">Or log a temperature <span class="ql-cap-note">(thermometer, °C)</span></div>
+    <div class="ql-bp-row">
+      <input id="ql-temp" class="ql-bp" type="number" inputmode="decimal" step="0.1" placeholder="36.8" aria-label="Temperature in Celsius">
+      <span class="ql-bp-sep" style="font-size:13px">°C</span>
+      <button class="btn" id="ql-temp-save" onclick="submitTempReading()">Save</button>
+    </div>
+    <span class="ql-status" id="ql-temp-status"></span>
+  </div>
   <div class="ql-actions">
     <span class="ql-status" id="ql-status"></span>
     <button class="btn" onclick="closeLogSheet()">Cancel</button>
@@ -588,6 +597,18 @@ async function submitQuickLog(){
     document.querySelectorAll('.ql-chip').forEach(b=>b.classList.remove('on'));
     setTimeout(()=>{ closeLogSheet(); status.textContent=''; load(); }, 1000);
   }catch(e){ status.textContent=`Couldn't log: ${e.message}`; btn.disabled=false; }
+}
+async function submitTempReading(){
+  const v=parseFloat(document.getElementById('ql-temp').value);
+  const st=document.getElementById('ql-temp-status'), btn=document.getElementById('ql-temp-save');
+  if(!(v>=34&&v<=43)){ st.textContent='Enter a temperature 34–43 °C.'; return; }
+  st.textContent='Saving…'; btn.disabled=true;
+  try{
+    await api('/me/temp-reading',{method:'POST',body:JSON.stringify({celsius:v})});
+    st.textContent=(v>=38?'Saved — a raised temperature is flagged on your record.':'Saved to your record.');
+    document.getElementById('ql-temp').value='';
+    setTimeout(()=>{ closeLogSheet(); st.textContent=''; load(); }, 1100);
+  }catch(e){ st.textContent="Couldn't save: "+e.message; btn.disabled=false; }
 }
 async function submitBpReading(){
   const sys=parseInt(document.getElementById('ql-sys').value,10),

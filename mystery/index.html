@@ -728,7 +728,7 @@
           <span class="muted" style="font-size:11px;">${state.phase === "voting" || state.phase === "results" ? "Voting" : "Round " + state.round + " of " + TOTAL_ROUNDS}</span>
         </div>
         ${pacingControls()}
-        <p class="muted" style="font-size:11px; margin:10px 0 0;">You're a suspect too — read your dossier below. Cast the board to a TV any time from the demo bar.</p>
+        <p class="muted" style="font-size:11px; margin:10px 0 0;">You were dealt a character at random, same as everyone — you could even be the killer. Read your dossier below and play to win. You just also keep the game moving.</p>
       </div>` : "";
 
     // voting phase overrides tabs (host still sees their pacing control)
@@ -997,7 +997,13 @@
     });
 
     const start = stage.querySelector("[data-start]");
-    if (start) start.onclick = () => { syncCast(); state.roundStartedAt = Date.now(); state.hostChar = CHARS[0].id; go("game", { viewAs: CHARS[0].id, round: 1, phase: "round" }); };
+    if (start) start.onclick = () => {
+      syncCast();
+      state.roundStartedAt = Date.now();
+      // the host is dealt a random character like everyone else — and can be the killer
+      state.hostChar = CHARS[Math.floor(Math.random() * CHARS.length)].id;
+      go("game", { viewAs: state.hostChar, round: 1, phase: "round" });
+    };
 
     const adv = stage.querySelector("[data-advance]");
     if (adv) adv.onclick = () => { state.round++; state.roundStartedAt = Date.now(); render(); };

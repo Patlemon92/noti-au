@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#161318" />
+<title>The Reveal — Murder Mystery Party</title>
+<style>
+  :root {
+    --bg:      #161318;
+    --panel:   #201b26;
+    --panel-2: #2a2431;
+    --ink:     #f3ecdf;
+    --muted:   #a99fb0;
+    --gold:    #c8a24a;
+    --gold-dim:#8a713a;
+    --blood:   #a23b3b;
+    --line:    rgba(200,162,74,.22);
+    --radius:  18px;
+    --serif:   Georgia, 'Times New Roman', serif;
+    --sans:    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background:
+      radial-gradient(120% 80% at 50% -10%, #241d2b 0%, var(--bg) 55%) fixed;
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* phone frame ---------------------------------------------------------- */
+  .stage {
+    max-width: 430px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .screen {
+    flex: 1;
+    padding: 22px 20px 30px;
+    display: flex;
+    flex-direction: column;
+    animation: fade .35s ease;
+  }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; margin: 0; letter-spacing: .01em; }
+  .eyebrow {
+    font-family: var(--sans); font-size: 11px; letter-spacing: .28em;
+    text-transform: uppercase; color: var(--gold); font-weight: 700;
+  }
+  .muted { color: var(--muted); }
+  .serif { font-family: var(--serif); }
+
+  /* buttons -------------------------------------------------------------- */
+  button { font-family: inherit; cursor: pointer; border: none; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 15px 18px; border-radius: 14px;
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dim) 100%);
+    color: #1c150a; font-weight: 800; font-size: 16px; letter-spacing: .02em;
+    box-shadow: 0 8px 22px rgba(200,162,74,.22);
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.ghost {
+    background: transparent; color: var(--ink);
+    border: 1px solid var(--line); box-shadow: none; font-weight: 600;
+  }
+  .btn.blood {
+    background: linear-gradient(180deg, #b84545 0%, #7c2727 100%);
+    color: #fff; box-shadow: 0 8px 22px rgba(162,59,59,.28);
+  }
+  .btn:disabled { opacity: .4; }
+
+  /* cards ---------------------------------------------------------------- */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .card + .card { margin-top: 12px; }
+
+  /* avatars -------------------------------------------------------------- */
+  .ava {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: var(--serif); font-weight: 700; font-size: 17px; color: #fff;
+    flex: 0 0 auto; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.18);
+  }
+  .ava.lg { width: 66px; height: 66px; font-size: 26px; }
+
+  /* device switcher (demo only) ----------------------------------------- */
+  .switcher {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(18,15,21,.86); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    padding: 8px 12px;
+  }
+  .switcher .lbl {
+    font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--gold); font-weight: 700; margin: 0 2px 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chips { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 7px;
+    padding: 6px 12px 6px 7px; border-radius: 999px;
+    background: var(--panel-2); border: 1px solid transparent;
+    color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap;
+  }
+  .chip .dot { width: 20px; height: 20px; border-radius: 50%; display:grid; place-items:center; font-size:11px; color:#fff; font-family:var(--serif); }
+  .chip.host .dot { background: var(--gold); color:#1c150a; }
+  .chip.on { color: var(--ink); border-color: var(--gold); background: #2f2836; }
+
+  /* misc ----------------------------------------------------------------- */
+  .rule { height: 1px; background: var(--line); margin: 16px 0; border: 0; }
+  .pill {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    background: rgba(200,162,74,.14); color: var(--gold); border: 1px solid var(--line);
+  }
+  .tabs { display: flex; gap: 6px; margin: 4px 0 14px; }
+  .tab {
+    flex: 1; text-align: center; padding: 9px 4px; border-radius: 11px;
+    background: var(--panel); border: 1px solid transparent; color: var(--muted);
+    font-size: 12.5px; font-weight: 700; letter-spacing: .02em;
+  }
+  .tab.on { color: #1c150a; background: var(--gold); }
+  .list-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; }
+  .list-row + .list-row { border-top: 1px solid var(--line); }
+  .flush { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .spacer { flex: 1; }
+  .footer-cta { padding-top: 14px; }
+  .center { text-align: center; }
+  .big-code {
+    font-family: var(--serif); font-size: 46px; letter-spacing: .18em;
+    color: var(--gold); font-weight: 700; text-align: center;
+  }
+  .fade-in-slow { animation: fade .6s ease; }
+  .shimmer {
+    background: linear-gradient(90deg, var(--panel) 25%, var(--panel-2) 50%, var(--panel) 75%);
+    background-size: 200% 100%; animation: sh 1.3s infinite;
+    border-radius: 10px; height: 14px;
+  }
+  @keyframes sh { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  .action-box {
+    background: linear-gradient(180deg, rgba(162,59,59,.16), rgba(162,59,59,.06));
+    border: 1px solid rgba(162,59,59,.4); border-radius: 14px; padding: 14px 15px;
+  }
+  .reveal-box {
+    background: linear-gradient(180deg, rgba(200,162,74,.12), rgba(200,162,74,.03));
+    border: 1px solid var(--line); border-radius: 14px; padding: 14px 15px;
+  }
+  .k { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 800; }
+  .demo-note {
+    font-size: 11.5px; color: var(--muted); text-align: center;
+    padding: 10px 16px; border-top: 1px solid var(--line);
+  }
+  ul.clean { margin: 8px 0 0; padding-left: 18px; }
+  ul.clean li { margin: 6px 0; }
+</style>
+</head>
+<body>
+  <div class="stage" id="stage"></div>
+  <script src="mystery-data.js"></script>
+  <script>
+  // ===================================================================
+  //  THE REVEAL — single-device prototype
+  //  One data model (window.MYSTERY) drives every screen. The "switch
+  //  phone" bar lets one person preview the host + all six dossiers.
+  // ===================================================================
+
+  const M = window.MYSTERY;
+  const CHARS = M.characters;
+  const TOTAL_ROUNDS = 3;
+
+  // demo lobby: the human is "You" playing Vivian; others are auto-filled.
+  const PLAYER_NAMES = ["You", "Priya", "Marcus", "Tom", "Leah", "Sam"];
+
+  const state = {
+    screen: "intro",   // intro · setup · generating · lobby · game · reveal
+    viewAs: "host",     // 'host' or a character id
+    round: 1,           // 1..3, then voting
+    phase: "round",     // round · voting · results
+    tab: "who",         // dossier tab
+    joined: 0,          // players shown in lobby
+    myVote: null,       // the human's whodunit vote
+    code: "GHTK",
+  };
+
+  const el = (id) => document.getElementById(id);
+  const stage = el("stage");
+  const charById = (id) => CHARS.find((c) => c.id === id);
+  const initials = (name) => name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  const ava = (c, cls = "") =>
+    `<div class="ava ${cls}" style="background:${c.color}">${initials(c.title === "The Stranger" ? c.name.split(" ")[0] : c.name.replace(/^(Lady|Dr\.|Mr\.|Mrs\.|Miss) /, ""))}</div>`;
+
+  function go(screen, opts = {}) { Object.assign(state, opts, { screen }); render(); }
+  function setView(v) { state.viewAs = v; state.tab = "who"; render(); }
+
+  // -------------------------------------------------------------- render
+  function render() {
+    let html = "";
+    if (state.screen === "game") html += switcher();
+    switch (state.screen) {
+      case "intro":      html += screenIntro(); break;
+      case "setup":      html += screenSetup(); break;
+      case "generating": html += screenGenerating(); break;
+      case "lobby":      html += screenLobby(); break;
+      case "game":       html += (state.viewAs === "host") ? screenHost() : screenPlayer(); break;
+      case "reveal":     html += screenReveal(); break;
+    }
+    stage.innerHTML = html;
+    bind();
+    stage.scrollTop = 0; window.scrollTo(0, 0);
+  }
+
+  // ---------------------------------------------------- device switcher
+  function switcher() {
+    const chip = (id, label, color, isHost) => {
+      const on = state.viewAs === id ? "on" : "";
+      const dot = isHost
+        ? `<span class="dot">★</span>`
+        : `<span class="dot" style="background:${color}">${initials(label)}</span>`;
+      return `<button class="chip ${isHost ? "host" : ""} ${on}" data-view="${id}">${dot}${label}</button>`;
+    };
+    return `
+      <div class="switcher">
+        <div class="lbl">📱 Demo · tap a phone to view it</div>
+        <div class="chips">
+          ${chip("host", "Host", "", true)}
+          ${CHARS.map((c) => chip(c.id, c.name.split(" ").slice(-1)[0], c.color, false)).join("")}
+        </div>
+      </div>`;
+  }
+
+  // --------------------------------------------------------------- intro
+  function screenIntro() {
+    return `
+      <div class="screen center" style="justify-content:center; gap:0;">
+        <div class="spacer"></div>
+        <div class="eyebrow">A murder mystery party</div>
+        <h1 style="font-size:52px; line-height:1.02; margin:14px 0 6px;">The<br/>Reveal</h1>
+        <p class="muted" style="max-width:300px; margin:8px auto 0;">
+          Gather your friends. One of them is a killer. Your phones know who.
+        </p>
+        <div class="spacer"></div>
+        <div style="width:100%; max-width:320px; margin:0 auto;">
+          <button class="btn" data-go="setup">Host a game</button>
+          <button class="btn ghost" style="margin-top:10px;" data-go="setup">Join with a code</button>
+        </div>
+        <p class="muted" style="font-size:11px; margin-top:22px;">Prototype · no sign-up · plays on any phone</p>
+        <div class="spacer"></div>
+      </div>`;
+  }
+
+  // --------------------------------------------------------------- setup
+  function screenSetup() {
+    const themes = [
+      { k: "manor",  t: "1920s Manor",    s: "Storm-locked estate", on: true },
+      { k: "space",  t: "Space Station",  s: "Deep-orbit crew", on: false },
+      { k: "cruise", t: "Cruise Ship",    s: "Midnight sailing", on: false },
+      { k: "festival", t: "Music Festival", s: "Backstage chaos", on: false },
+    ];
+    return `
+      <div class="screen">
+        <div class="eyebrow">New game · step 1</div>
+        <h2 style="font-size:27px; margin:8px 0 4px;">Set the scene</h2>
+        <p class="muted" style="margin:0 0 18px;">Claude writes a fresh mystery for your group — characters, secrets, clues and the solution.</p>
+
+        <div class="k gold" style="color:var(--gold); margin-bottom:9px;">Theme</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          ${themes.map((th) => `
+            <button class="card ${th.on ? "" : ""}" data-theme="${th.k}"
+              style="text-align:left; padding:14px; ${th.on ? "border-color:var(--gold);" : "opacity:.5;"}">
+              <div class="serif" style="font-size:16px;">${th.t}</div>
+              <div class="muted" style="font-size:12px;">${th.s}</div>
+              ${th.on ? `<div class="pill" style="margin-top:8px;">Selected</div>`
+                      : `<div class="muted" style="font-size:10px; margin-top:8px; letter-spacing:.1em;">SOON</div>`}
+            </button>`).join("")}
+        </div>
+
+        <div class="k" style="color:var(--gold); margin:18px 0 9px;">Players</div>
+        <div class="card flush">
+          <div>
+            <div class="serif" style="font-size:17px;">6 guests</div>
+            <div class="muted" style="font-size:12px;">Best for 4–10 · sample cast is fixed at 6</div>
+          </div>
+          <div class="pill">6</div>
+        </div>
+
+        <div class="spacer"></div>
+        <div class="footer-cta">
+          <button class="btn" data-go="generating">Generate the mystery ✦</button>
+        </div>
+      </div>`;
+  }
+
+  // ---------------------------------------------------------- generating
+  function screenGenerating() {
+    // Simulated AI authoring beat, then straight to the lobby.
+    const lines = [
+      "Casting six suspects…",
+      "Planting a secret in every heart…",
+      "Choosing tonight's killer…",
+      "Hiding clues around the manor…",
+      "Sealing the solution…",
+    ];
+    setTimeout(() => go("lobby", { joined: 1 }), 2600);
+    return `
+      <div class="screen center" style="justify-content:center;">
+        <div class="spacer"></div>
+        <div class="eyebrow">Writing your mystery</div>
+        <h2 class="serif" style="font-size:26px; margin:12px 0 20px;">Death at<br/>Blackwood Manor</h2>
+        <div style="width:100%; max-width:280px; margin:0 auto; text-align:left; display:flex; flex-direction:column; gap:12px;">
+          ${lines.map((l, i) => `
+            <div style="display:flex; align-items:center; gap:10px; animation:fade .5s ${i * .45}s both;">
+              <span style="color:var(--gold);">✦</span>
+              <span class="muted" style="font-size:13.5px;">${l}</span>
+            </div>`).join("")}
+        </div>
+        <div class="spacer"></div>
+        <p class="muted" style="font-size:11px;">In the real app this is a live call to Claude.</p>
+        <div class="spacer"></div>
+      </div>`;
+  }
+
+  // --------------------------------------------------------------- lobby
+  function screenLobby() {
+    // reveal players one at a time for a live-joining feel
+    if (state.joined < PLAYER_NAMES.length) {
+      setTimeout(() => { state.joined++; render(); }, 650);
+    }
+    const rows = PLAYER_NAMES.slice(0, state.joined).map((n, i) => {
+      const c = CHARS[i];
+      return `
+        <div class="list-row fade-in-slow">
+          <div class="ava" style="background:${c.color}; width:38px; height:38px; font-size:14px;">${initials(n)}</div>
+          <div style="flex:1;">
+            <div style="font-weight:700;">${n}${i === 0 ? '<span class="muted" style="font-weight:400;"> · you</span>' : ""}</div>
+            <div class="muted" style="font-size:12px;">Ready</div>
+          </div>
+          <span style="color:#6fbf73;">●</span>
+        </div>`;
+    }).join("");
+    const all = state.joined >= PLAYER_NAMES.length;
+    return `
+      <div class="screen">
+        <div class="center">
+          <div class="eyebrow">Room code</div>
+          <div class="big-code">${state.code.split("").join(" ")}</div>
+          <p class="muted" style="font-size:12.5px; margin:4px 0 0;">Friends open the app and type this to join</p>
+        </div>
+        <hr class="rule" />
+        <div class="flush" style="margin-bottom:2px;">
+          <div class="k" style="color:var(--gold);">In the parlour</div>
+          <div class="muted" style="font-size:12px;">${state.joined}/6</div>
+        </div>
+        <div class="card" style="padding:6px 16px;">${rows}</div>
+        <div class="spacer"></div>
+        <div class="footer-cta">
+          <button class="btn ${all ? "" : ""}" data-start ${all ? "" : "disabled"}>
+            ${all ? "Begin the night ✦" : "Waiting for guests…"}
+          </button>
+        </div>
+      </div>`;
+  }
+
+  // ---------------------------------------------------------- host screen
+  function screenHost() {
+    const votingDone = state.phase === "voting";
+    const evidenceSoFar = [];
+    for (let r = 1; r <= state.round; r++) (M.evidence[r] || []).forEach((e) => evidenceSoFar.push({ r, e }));
+
+    let control;
+    if (state.phase === "round" && state.round < TOTAL_ROUNDS) {
+      control = `<button class="btn" data-advance>Advance to Round ${state.round + 1} →</button>`;
+    } else if (state.phase === "round" && state.round === TOTAL_ROUNDS) {
+      control = `<button class="btn blood" data-tovote>Call everyone to vote ⚖</button>`;
+    } else {
+      control = `<button class="btn blood" data-reveal>Reveal the killer</button>
+                 <p class="muted center" style="font-size:12px; margin-top:8px;">Votes are in. Time for the truth.</p>`;
+    }
+
+    return `
+      <div class="screen">
+        <div class="flush">
+          <div><div class="eyebrow">Host screen</div><h2 class="serif" style="font-size:22px;">${M.meta.title}</h2></div>
+          <span class="pill">${state.phase === "voting" ? "Voting" : "Round " + state.round + "/" + TOTAL_ROUNDS}</span>
+        </div>
+
+        <div class="card" style="margin-top:14px;">
+          <div class="k" style="color:var(--gold); margin-bottom:8px;">Read aloud to the room</div>
+          <p class="serif" style="margin:0; font-size:15px;">${roundNarration(state.round, state.phase)}</p>
+        </div>
+
+        <div class="k" style="color:var(--gold); margin:18px 0 8px;">The case board</div>
+        <div class="card">
+          ${evidenceSoFar.map((x) => `
+            <div class="list-row">
+              <span style="color:var(--gold);">✦</span>
+              <div style="flex:1; font-size:13.5px;">${x.e}<span class="muted" style="font-size:11px;"> · R${x.r}</span></div>
+            </div>`).join("")}
+        </div>
+
+        <div class="k" style="color:var(--gold); margin:18px 0 8px;">Suspects &amp; their private nudges</div>
+        <div class="card" style="padding:8px 16px;">
+          ${CHARS.map((c) => `
+            <div class="list-row">
+              ${ava(c)}
+              <div style="flex:1;">
+                <div style="font-weight:700; font-size:14px;">${c.name}</div>
+                <div class="muted" style="font-size:12px;">${c.title}${c.isKiller ? ' · <span style="color:var(--blood);">killer</span>' : ""}</div>
+              </div>
+              <button class="chip" data-view="${c.id}" style="padding:6px 12px;">view →</button>
+            </div>`).join("")}
+        </div>
+
+        <div class="spacer"></div>
+        <div class="footer-cta">${control}</div>
+        <p class="demo-note" style="border:0; padding-top:14px;">Only the host advances rounds. Everyone's phone updates the instant you do.</p>
+      </div>`;
+  }
+
+  function roundNarration(round, phase) {
+    if (phase === "voting")
+      return "The evidence is laid bare and every secret has had its airing. Guests — on your own phones, name the one you believe killed Lord Edmund.";
+    return ({
+      1: M.meta.hook + " Round one: introduce yourselves, and let the questions begin.",
+      2: "Round two. The doctor's story is unravelling, and a vial has gone missing. Press each other — someone here is lying.",
+      3: "The final round. Alibis are crumbling and old secrets surface. Make your accusations before the vote.",
+    })[round];
+  }
+
+  // -------------------------------------------------------- player screen
+  function screenPlayer() {
+    const c = charById(state.viewAs);
+    const rd = c.rounds[state.round];
+    const evidenceSoFar = [];
+    for (let r = 1; r <= state.round; r++) (M.evidence[r] || []).forEach((e) => evidenceSoFar.push(e));
+
+    // header
+    const header = `
+      <div class="flush" style="align-items:flex-start;">
+        <div style="display:flex; gap:13px; align-items:center;">
+          ${ava(c, "lg")}
+          <div>
+            <div class="eyebrow" style="color:${c.color === "#a23b3b" ? "var(--gold)" : "var(--gold)"};">${c.title}</div>
+            <h2 class="serif" style="font-size:21px; line-height:1.1;">${c.name}</h2>
+          </div>
+        </div>
+        <span class="pill">R${state.round}</span>
+      </div>`;
+
+    // voting phase overrides tabs
+    if (state.phase === "voting") return `<div class="screen">${header}${votePanel(c)}</div>`;
+
+    const tabBar = `
+      <div class="tabs">
+        ${tab("who", "You")}
+        ${tab("goals", "Goals")}
+        ${tab("round", "This round")}
+      </div>`;
+
+    let body = "";
+    if (state.tab === "who") {
+      body = `
+        <div class="card">
+          <div class="k" style="color:var(--gold); margin-bottom:6px;">Who you are</div>
+          <p style="margin:0 0 14px; font-size:14.5px;">${c.publicRole}</p>
+          <div class="reveal-box">
+            <div class="k" style="color:var(--gold); margin-bottom:6px;">🤫 Your secret — for your eyes only</div>
+            <p style="margin:0; font-size:14.5px;">${c.secret}</p>
+          </div>
+          <div style="margin-top:12px; font-size:13px;" class="muted">
+            <strong style="color:var(--ink);">You must hide:</strong> ${c.mustHide}
+          </div>
+        </div>`;
+    } else if (state.tab === "goals") {
+      body = `
+        <div class="card">
+          <div class="k" style="color:var(--gold); margin-bottom:10px;">Your objectives tonight</div>
+          <ul class="clean" style="font-size:14.5px;">
+            ${c.objectives.map((o) => `<li>${o}</li>`).join("")}
+          </ul>
+          <hr class="rule" />
+          <div class="k" style="color:var(--gold); margin-bottom:6px;">You happen to know</div>
+          <p style="margin:0; font-size:14px;">${c.knows}</p>
+        </div>`;
+    } else {
+      body = `
+        <div class="reveal-box">
+          <div class="k" style="color:var(--gold); margin-bottom:6px;">✦ New this round</div>
+          <p style="margin:0; font-size:14.5px;">${rd.reveal}</p>
+        </div>
+        <div class="action-box" style="margin-top:12px;">
+          <div class="k" style="color:#e39a9a; margin-bottom:6px;">▶ Do this now — privately</div>
+          <p style="margin:0; font-size:14.5px;">${rd.action}</p>
+        </div>`;
+    }
+
+    // shared evidence, collapsible-ish
+    const board = `
+      <div class="k" style="color:var(--gold); margin:18px 0 8px;">The case board · everyone sees this</div>
+      <div class="card" style="padding:6px 16px;">
+        ${evidenceSoFar.map((e) => `
+          <div class="list-row"><span style="color:var(--gold);">✦</span><div style="flex:1; font-size:13px;">${e}</div></div>`).join("")}
+      </div>`;
+
+    return `<div class="screen">${header}<div style="height:14px;"></div>${tabBar}${body}${board}
+        <p class="demo-note" style="border:0; padding-top:16px;">This screen is private to ${c.name.split(" ").slice(-1)[0]}. Every suspect sees a different one.</p>
+      </div>`;
+  }
+
+  function tab(key, label) {
+    return `<button class="tab ${state.tab === key ? "on" : ""}" data-tab="${key}">${label}</button>`;
+  }
+
+  function votePanel(c) {
+    const voted = state.myVote;
+    return `
+      <div style="margin-top:16px;">
+        <div class="k" style="color:var(--gold);">The vote</div>
+        <h3 class="serif" style="font-size:19px; margin:4px 0 4px;">Who killed Lord Edmund?</h3>
+        <p class="muted" style="font-size:13px; margin:0 0 14px;">Choose carefully. You are ${c.name.split(" ").slice(-1)[0]} — vote as they would.</p>
+        <div class="card" style="padding:6px 16px;">
+          ${CHARS.map((s) => {
+            const on = voted === s.id;
+            return `
+              <div class="list-row" data-vote="${s.id}" style="cursor:pointer;">
+                ${ava(s)}
+                <div style="flex:1;">
+                  <div style="font-weight:700; font-size:14px;">${s.name}</div>
+                  <div class="muted" style="font-size:12px;">${s.title}</div>
+                </div>
+                <span style="width:22px; height:22px; border-radius:50%; border:2px solid ${on ? "var(--gold)" : "var(--line)"}; display:grid; place-items:center;">
+                  ${on ? '<span style="color:var(--gold);">✓</span>' : ""}
+                </span>
+              </div>`;
+          }).join("")}
+        </div>
+        ${voted ? `<p class="muted center" style="font-size:12px; margin-top:12px;">Vote locked. Switch to the Host phone to reveal the killer.</p>` : ""}
+      </div>`;
+  }
+
+  // -------------------------------------------------------------- reveal
+  function screenReveal() {
+    const killer = charById(M.solution.killer);
+    const guessedRight = state.myVote === M.solution.killer;
+    // mock the table's votes for flavour
+    const mockVotes = { sebastian: 3, cordelia: 1, vivian: 1, reginald: 1 };
+    if (state.myVote) mockVotes[state.myVote] = (mockVotes[state.myVote] || 0) + 0; // human already among the 6
+    return `
+      <div class="screen">
+        <div class="center">
+          <div class="eyebrow">The truth</div>
+          <div style="margin:18px auto 10px;">${ava(killer, "lg")}</div>
+          <h2 class="serif" style="font-size:26px;">${killer.name}</h2>
+          <span class="pill" style="background:rgba(162,59,59,.16); color:#e39a9a; border-color:rgba(162,59,59,.4);">The killer</span>
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+          <div class="k" style="color:var(--gold); margin-bottom:6px;">How it was done</div>
+          <p style="margin:0 0 12px; font-size:14px;">${M.solution.method}</p>
+          <div class="k" style="color:var(--gold); margin-bottom:6px;">Why</div>
+          <p style="margin:0 0 12px; font-size:14px;">${M.solution.motive}</p>
+          <hr class="rule" />
+          <p class="serif" style="margin:0; font-size:14.5px;">${M.solution.explanation}</p>
+        </div>
+
+        <div class="card ${guessedRight ? "" : ""}" style="margin-top:12px; ${guessedRight ? "border-color:#6fbf73;" : "border-color:var(--blood);"}">
+          <div class="flush">
+            <div>
+              <div class="k" style="color:${guessedRight ? "#6fbf73" : "var(--blood)"};">Your verdict</div>
+              <div class="serif" style="font-size:17px;">${state.myVote ? (guessedRight ? "You caught the killer!" : "The killer walked free.") : "You didn't vote"}</div>
+            </div>
+            <div style="font-size:26px;">${guessedRight ? "🎉" : "🕯️"}</div>
+          </div>
+          ${state.myVote && !guessedRight ? `<p class="muted" style="font-size:13px; margin:8px 0 0;">You accused ${charById(state.myVote).name}. Sebastian's deflection worked on you.</p>` : ""}
+        </div>
+
+        <div class="k" style="color:var(--gold); margin:18px 0 8px;">Tonight's honours</div>
+        <div class="card" style="padding:8px 16px;">
+          ${M.solution.awards.map((a) => {
+            const w = charById(a.who);
+            return `<div class="list-row">${ava(w)}
+              <div style="flex:1;"><div style="font-weight:700; font-size:14px;">${a.title}</div>
+              <div class="muted" style="font-size:12px;">${w.name.split(" ").slice(-1)[0]} · ${a.note}</div></div></div>`;
+          }).join("")}
+        </div>
+
+        <div class="spacer"></div>
+        <div class="footer-cta">
+          <button class="btn" data-restart>Play another night</button>
+        </div>
+      </div>`;
+  }
+
+  // ---------------------------------------------------------------- bind
+  function bind() {
+    stage.querySelectorAll("[data-view]").forEach((b) => b.onclick = () => setView(b.dataset.view));
+    stage.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => go(b.dataset.go));
+    stage.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => { state.tab = b.dataset.tab; render(); });
+
+    const start = stage.querySelector("[data-start]");
+    if (start) start.onclick = () => go("game", { viewAs: "host", round: 1, phase: "round" });
+
+    const adv = stage.querySelector("[data-advance]");
+    if (adv) adv.onclick = () => { state.round++; render(); };
+
+    const tv = stage.querySelector("[data-tovote]");
+    if (tv) tv.onclick = () => { state.phase = "voting"; render(); };
+
+    const rv = stage.querySelector("[data-reveal]");
+    if (rv) rv.onclick = () => go("reveal");
+
+    stage.querySelectorAll("[data-vote]").forEach((r) => r.onclick = () => { state.myVote = r.dataset.vote; render(); });
+
+    const rs = stage.querySelector("[data-restart]");
+    if (rs) rs.onclick = () => { Object.assign(state, { screen: "intro", viewAs: "host", round: 1, phase: "round", tab: "who", joined: 0, myVote: null }); render(); };
+  }
+
+  render();
+  </script>
+</body>
+</html>

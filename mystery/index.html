@@ -327,6 +327,9 @@
     revealed: new Set(),// item ids revealed to the whole table (public)
     prime: {},          // charId -> suspectId (prime suspect, prefills the vote)
     doc: null,          // the document currently open in the overlay
+    help: false,        // how-to-play primer overlay
+    seenPrimer: false,  // only auto-show the primer once
+    did: new Set(),     // `${charId}:${round}:${step}` — checked-off round actions
   };
 
   const el = (id) => document.getElementById(id);
@@ -384,11 +387,39 @@
     const key = state.screen + ":" + state.viewAs + ":" + state.tab;
     const keep = key === state._lastKey;
     const sy = window.scrollY;
+    if (state.help) html += primerOverlay();
     stage.innerHTML = html;
     stage.classList.toggle("wide", state.screen === "game" && state.viewAs === "host");
     bind();
     if (keep) window.scrollTo(0, sy); else { stage.scrollTop = 0; window.scrollTo(0, 0); }
     state._lastKey = key;
+  }
+
+  // ------------------------------------------------- how-to-play primer
+  function primerOverlay() {
+    const pts = [
+      ["🎭", "You're someone else tonight", "You've been dealt a character with a secret. Your phone is yours alone — never show your screen. Everyone sees something different."],
+      ["📜", "The host sets each scene", "The night runs in rounds. The host reads what's happened, then — in turn — your phone hands you a line to say aloud and one guest to question."],
+      ["🗣️", "Then work the room", "Once the scripted moment's done, mingle freely: accuse, deny, dig for the truth. Your card gives you a goal for the round and comebacks if you're accused."],
+      ["🔎", "Build your case", "Tap Investigate each round to gather clues into your Casebook — open real letters, telegrams and more to work out who did it."],
+      ["⚖️", "Name the killer", "At the end, everyone votes. Guess right — but also play your part well. There are honours for the best performance, not just the sharpest sleuth."],
+    ];
+    return `
+      <div class="scrim" data-help-scrim>
+        <button class="doc-close" data-help-close>✕</button>
+        <div class="card" style="max-width:384px; width:100%; max-height:86vh; overflow:auto;">
+          <div class="deco-rule" style="margin-bottom:8px;"><span>✦</span></div>
+          <h2 class="serif center" style="font-size:25px;">How the night works</h2>
+          <p class="muted center" style="font-size:12.5px; margin:4px 0 8px;">A quick read — you'll have it in a minute.</p>
+          ${pts.map((pt, i) => `
+            <div style="display:flex; gap:13px; padding:13px 0; ${i ? "border-top:1px solid var(--line-2);" : ""}">
+              <div style="font-size:22px; flex:0 0 auto; line-height:1.2;">${pt[0]}</div>
+              <div><div style="font-weight:700; font-size:14.5px;">${pt[1]}</div>
+                <div class="muted" style="font-size:13px; margin-top:2px; line-height:1.5;">${pt[2]}</div></div>
+            </div>`).join("")}
+          <button class="btn" data-help-close style="margin-top:14px;">Got it — let's play</button>
+        </div>
+      </div>`;
   }
 
   // ------------------------------------------------- document overlay
@@ -716,7 +747,10 @@
             <h2 class="serif" style="font-size:21px; line-height:1.1;">${c.name}</h2>
           </div>
         </div>
-        <span class="pill">${c.id === state.hostChar ? "★ Host · R" + state.round : "R" + state.round}</span>
+        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+          <span class="pill">${c.id === state.hostChar ? "★ Host · R" + state.round : "R" + state.round}</span>
+          <button class="chip" data-help-open style="padding:5px 11px; font-size:12px;">? How to play</button>
+        </div>
       </div>`;
 
     // If this player is the host, they run pacing from their OWN phone —
@@ -766,59 +800,89 @@
           </div>
         </div>
         <div class="card" style="margin-top:12px;">
-          <div class="k" style="color:var(--gold); margin-bottom:10px;">Your objectives tonight</div>
+          <div class="k" style="color:var(--gold); margin-bottom:10px;">Your mission tonight · how you win</div>
           <ul class="clean" style="font-size:14.5px;">
             ${c.objectives.map((o) => `<li>${o}</li>`).join("")}
           </ul>
           <hr class="rule" />
           <div class="k" style="color:var(--gold); margin-bottom:6px;">You happen to know</div>
           <p style="margin:0; font-size:14px;">${c.knows}</p>
-        </div>`;
+        </div>
+        <button class="btn" data-tab-go="round" style="margin-top:14px;">See what to do this round →</button>
+        <p class="muted center" style="font-size:11.5px; margin:9px 0 0;">Read your part first — then follow your cue each round.</p>`;
     } else if (state.tab === "round") {
       const guide = M.meta.roundGuide[state.round];
       const target = nameOf(rd.question.to);
-      const stepNo = (n, label) =>
-        `<span class="k" style="display:inline-flex; align-items:center; gap:7px; color:var(--gold); margin-bottom:6px;">
-           <span style="width:18px; height:18px; border-radius:50%; background:var(--gold); color:#1c150a; display:grid; place-items:center; font-size:11px;">${n}</span>${label}</span>`;
       const thisRoundClues = M.clues.filter((cl) => cl.round === state.round);
       const ungathered = thisRoundClues.filter((cl) => !foundSet(c.id).has(cl.id));
-      const investigate = thisRoundClues.length ? `
-        <div class="card" style="margin-top:12px; border-color:var(--gold);">
-          ${stepNo(3, "GATHER THE EVIDENCE")}
-          ${ungathered.length
-            ? `<p class="muted" style="margin:2px 0 10px; font-size:13px;">${ungathered.length} new ${ungathered.length === 1 ? "clue is" : "clues are"} waiting to be found this round.</p>
-               <button class="btn" data-investigate style="padding:11px;">🔎 Investigate the manor</button>`
-            : `<p class="muted" style="margin:2px 0 0; font-size:13px;">✓ Gathered. Open your <strong style="color:var(--ink);">Casebook</strong> to examine what you found.</p>`}
-        </div>` : "";
+
+      const didKey = (s) => c.id + ":" + state.round + ":" + s;
+      const didSay = state.did.has(didKey("say"));
+      const didAsk = state.did.has(didKey("ask"));
+      const didInv = thisRoundClues.length > 0 && ungathered.length === 0;
+      const steps = [didSay, didAsk].concat(thisRoundClues.length ? [didInv] : []);
+      const doneCount = steps.filter(Boolean).length;
+
+      // a numbered step with a done state + its own action control
+      const step = (done, num, label, inner, action) => `
+        <div class="card" style="margin-top:10px; ${done ? "opacity:.72; border-color:var(--line-2);" : "border-color:var(--amber);"}">
+          <div class="flush" style="margin-bottom:8px;">
+            <span class="k" style="display:inline-flex; align-items:center; gap:8px; color:${done ? "#7bbf7f" : "var(--amber)"};">
+              <span style="width:19px; height:19px; border-radius:50%; ${done ? "background:#3f6b43;" : "background:var(--amber)"}; color:${done ? "#dff3e0" : "#241706"}; display:grid; place-items:center; font-size:11px; font-weight:800;">${done ? "✓" : num}</span>${label}
+            </span>
+          </div>
+          ${inner}
+          ${action}
+        </div>`;
+
+      const investigateAction = thisRoundClues.length
+        ? (ungathered.length
+            ? `<button class="btn" data-investigate style="padding:11px; margin-top:10px;">🔎 Search for evidence</button>`
+            : `<p class="muted" style="margin:8px 0 0; font-size:13px;">✓ In your <strong style="color:var(--ink);">Casebook</strong> — tap the clues to read them.</p>`)
+        : "";
+
       body = `
-        <div class="card" style="padding:12px 15px; background:var(--panel-2);">
-          <div class="k" style="color:var(--gold); margin-bottom:4px;">Round ${state.round} · ${guide.title}</div>
-          <p class="muted" style="margin:0; font-size:13px;">${guide.goal}</p>
+        <div class="card" style="padding:13px 15px; background:linear-gradient(180deg,var(--panel-2),#141620);">
+          <div class="flush">
+            <div class="k" style="color:var(--amber);">Round ${state.round} · ${guide.title}</div>
+            <span class="muted" style="font-size:11px; font-weight:700;">${doneCount}/${steps.length} done</span>
+          </div>
+          <p class="muted" style="margin:6px 0 0; font-size:13px;">${guide.goal}</p>
         </div>
 
-        <div class="reveal-box" style="margin-top:12px;">
-          <div class="k" style="color:var(--gold); margin-bottom:6px;">✦ What you now know — private</div>
+        <div class="reveal-box" style="margin-top:10px;">
+          <div class="k" style="color:var(--amber); margin-bottom:6px;">✦ What you secretly know now</div>
           <p style="margin:0; font-size:14.5px;">${rd.learned}</p>
         </div>
 
-        <div class="card" style="margin-top:12px; border-color:var(--gold);">
-          ${stepNo(1, "SAY THIS ALOUD")}
-          <p class="serif" style="margin:0; font-size:15.5px; line-height:1.5;">“${rd.sayAloud}”</p>
+        <div style="margin:20px 0 4px; padding-bottom:7px; border-bottom:1px solid var(--line);">
+          <span class="k" style="color:var(--amber); letter-spacing:.14em;">▸ Part 1 · when it's your turn</span>
         </div>
+        <p class="muted" style="font-size:12.5px; margin:8px 0 4px;">The host goes round the table. When they reach you:</p>
 
-        <div class="card" style="margin-top:12px; border-color:var(--gold);">
-          ${stepNo(2, "ASK " + target.toUpperCase())}
-          <p class="serif" style="margin:0; font-size:15px; line-height:1.5;">“${rd.question.text}”</p>
+        ${step(didSay, 1, "SAY THIS ALOUD",
+          `<p class="serif" style="margin:0; font-size:15.5px; line-height:1.5;">“${rd.sayAloud}”</p>`,
+          didSay ? "" : `<button class="chip" data-did="say" style="margin-top:10px; padding:7px 13px;">Mark as said ✓</button>`)}
+
+        ${step(didAsk, 2, "ASK " + target.toUpperCase(),
+          `<p class="serif" style="margin:0; font-size:15px; line-height:1.5;">“${rd.question.text}”</p>`,
+          didAsk ? "" : `<button class="chip" data-did="ask" style="margin-top:10px; padding:7px 13px;">Mark as asked ✓</button>`)}
+
+        ${thisRoundClues.length ? step(didInv, 3, "GATHER THE EVIDENCE",
+          `<p class="muted" style="margin:0; font-size:13.5px;">${ungathered.length ? `New evidence is on the table this round.` : `You've collected this round's clues.`}</p>`,
+          investigateAction) : ""}
+
+        <div style="margin:22px 0 4px; padding-bottom:7px; border-bottom:1px solid var(--line);">
+          <span class="k" style="color:var(--amber); letter-spacing:.14em;">▸ Part 2 · work the room</span>
         </div>
+        <p class="muted" style="font-size:12.5px; margin:8px 0 8px;">Now talk freely — question anyone, accuse, deny, deflect. These are your weapons:</p>
 
-        ${investigate}
-
-        <div class="action-box" style="margin-top:12px;">
-          <div class="k" style="color:#e39a9a; margin-bottom:6px;">🎯 Your secret goal this round</div>
+        <div class="action-box">
+          <div class="k" style="color:#e6b56c; margin-bottom:6px;">🎯 This round, try to</div>
           <p style="margin:0; font-size:14px;">${rd.secretGoal}</p>
         </div>
 
-        <div class="card" style="margin-top:12px;">
+        <div class="card" style="margin-top:10px;">
           <div class="k" style="color:var(--muted); margin-bottom:6px;">🛡 If someone accuses you</div>
           <p style="margin:0; font-size:14px;">${rd.ifAccused}</p>
         </div>`;
@@ -984,6 +1048,20 @@
     stage.querySelectorAll("[data-view]").forEach((b) => b.onclick = () => setView(b.dataset.view));
     stage.querySelectorAll("[data-go]").forEach((b) => b.onclick = () => go(b.dataset.go));
     stage.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => { state.tab = b.dataset.tab; render(); });
+    stage.querySelectorAll("[data-tab-go]").forEach((b) => b.onclick = () => { state.tab = b.dataset.tabGo; render(); });
+
+    // how-to-play primer
+    stage.querySelectorAll("[data-help-open]").forEach((b) => b.onclick = () => { state.help = true; render(); });
+    stage.querySelectorAll("[data-help-close]").forEach((b) => b.onclick = () => { state.help = false; render(); });
+    const hsc = stage.querySelector("[data-help-scrim]");
+    if (hsc) hsc.onclick = (e) => { if (e.target === hsc) { state.help = false; render(); } };
+
+    // check off a scripted round action
+    stage.querySelectorAll("[data-did]").forEach((b) => b.onclick = () => {
+      const k = state.viewAs + ":" + state.round + ":" + b.dataset.did;
+      state.did.has(k) ? state.did.delete(k) : state.did.add(k);
+      render();
+    });
 
     // setup: pick a mystery + clamp player count to its range
     stage.querySelectorAll("[data-pick]").forEach((b) => b.onclick = () => {
@@ -1002,6 +1080,8 @@
       state.roundStartedAt = Date.now();
       // the host is dealt a random character like everyone else — and can be the killer
       state.hostChar = CHARS[Math.floor(Math.random() * CHARS.length)].id;
+      state.tab = "who";
+      if (!state.seenPrimer) { state.help = true; state.seenPrimer = true; }
       go("game", { viewAs: state.hostChar, round: 1, phase: "round" });
     };
 
@@ -1039,7 +1119,7 @@
     if (ri) ri.onclick = () => { state.revealed.add(ri.dataset.revealItem); render(); };
 
     const rs = stage.querySelector("[data-restart]");
-    if (rs) rs.onclick = () => { Object.assign(state, { screen: "intro", viewAs: "host", round: 1, phase: "round", tab: "who", joined: 0, myVote: null, roundStartedAt: null, hostChar: null, found: {}, opened: new Set(), revealed: new Set(), prime: {}, doc: null }); render(); };
+    if (rs) rs.onclick = () => { Object.assign(state, { screen: "intro", viewAs: "host", round: 1, phase: "round", tab: "who", joined: 0, myVote: null, roundStartedAt: null, hostChar: null, found: {}, opened: new Set(), revealed: new Set(), prime: {}, doc: null, help: false, did: new Set() }); render(); };
   }
 
   // live elapsed timer on the game board — updates only its own node so the

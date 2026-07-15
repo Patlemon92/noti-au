@@ -198,6 +198,7 @@
     tab: "who",         // dossier tab
     joined: 0,          // players shown in lobby
     myVote: null,       // the human's whodunit vote
+    roundStartedAt: null, // ms timestamp for the elapsed timer
     code: "GHTK",
   };
 
@@ -404,35 +405,57 @@
       </div>`;
   }
 
-  // ---------------------------------------------------------- host screen
+  // ------------------------------------------------ host / game-board screen
+  // Public-safe: shows the pacing guide + shared evidence only. No secrets,
+  // no killer — whoever runs the night is a suspect like everyone else.
   function screenHost() {
-    const votingDone = state.phase === "voting";
     const evidenceSoFar = [];
     for (let r = 1; r <= state.round; r++) (M.evidence[r] || []).forEach((e) => evidenceSoFar.push({ r, e }));
+    const guide = M.meta.roundGuide[state.round];
+    const voting = state.phase === "voting" || state.phase === "results";
 
     let control;
     if (state.phase === "round" && state.round < TOTAL_ROUNDS) {
-      control = `<button class="btn" data-advance>Advance to Round ${state.round + 1} →</button>`;
+      control = `<button class="btn" data-advance>Wrap up · start ${M.meta.roundGuide[state.round + 1].title} →</button>
+                 <p class="muted center" style="font-size:12px; margin-top:8px;">Advance when: ${guide.advanceWhen}</p>`;
     } else if (state.phase === "round" && state.round === TOTAL_ROUNDS) {
-      control = `<button class="btn blood" data-tovote>Call everyone to vote ⚖</button>`;
+      control = `<button class="btn blood" data-tovote>Everyone ready? Call the vote ⚖</button>
+                 <p class="muted center" style="font-size:12px; margin-top:8px;">Advance when: ${guide.advanceWhen}</p>`;
     } else {
       control = `<button class="btn blood" data-reveal>Reveal the killer</button>
                  <p class="muted center" style="font-size:12px; margin-top:8px;">Votes are in. Time for the truth.</p>`;
     }
 
+    // top block: either the round pacing card, or a voting banner
+    const topBlock = voting
+      ? `<div class="card" style="margin-top:14px;">
+           <div class="k" style="color:var(--gold); margin-bottom:6px;">The vote</div>
+           <p class="serif" style="margin:0; font-size:15px;">Everyone opens their own phone and names the guest they believe killed Edmund. No peeking at each other's screens.</p>
+         </div>`
+      : `<div class="card" style="margin-top:14px;">
+           <div class="flush" style="align-items:flex-start;">
+             <div>
+               <div class="k" style="color:var(--gold);">Round ${state.round} · ${guide.title}</div>
+               <div class="serif" style="font-size:19px; margin-top:2px;">What happens now</div>
+             </div>
+             <div class="center" style="min-width:78px;">
+               <div class="serif" style="font-size:20px; line-height:1;"><span id="elapsed">0:00</span></div>
+               <div class="muted" style="font-size:10px; letter-spacing:.06em;">~${guide.minutes} min</div>
+             </div>
+           </div>
+           <p style="margin:10px 0 0; font-size:14px;">${guide.goal}</p>
+         </div>`;
+
     return `
       <div class="screen">
         <div class="flush">
-          <div><div class="eyebrow">Host screen</div><h2 class="serif" style="font-size:22px;">${M.meta.title}</h2></div>
-          <span class="pill">${state.phase === "voting" ? "Voting" : "Round " + state.round + "/" + TOTAL_ROUNDS}</span>
+          <div><div class="eyebrow">Host · game board</div><h2 class="serif" style="font-size:22px;">${M.meta.title}</h2></div>
+          <span class="pill">${voting ? "Voting" : "Round " + state.round + "/" + TOTAL_ROUNDS}</span>
         </div>
 
-        <div class="card" style="margin-top:14px;">
-          <div class="k" style="color:var(--gold); margin-bottom:8px;">Read aloud to the room</div>
-          <p class="serif" style="margin:0; font-size:15px;">${roundNarration(state.round, state.phase)}</p>
-        </div>
+        ${topBlock}
 
-        <div class="k" style="color:var(--gold); margin:18px 0 8px;">The case board</div>
+        <div class="k" style="color:var(--gold); margin:18px 0 8px;">The case board · everyone can see this</div>
         <div class="card">
           ${evidenceSoFar.map((x) => `
             <div class="list-row">
@@ -441,33 +464,22 @@
             </div>`).join("")}
         </div>
 
-        <div class="k" style="color:var(--gold); margin:18px 0 8px;">Suspects &amp; their private nudges</div>
+        <div class="k" style="color:var(--gold); margin:18px 0 8px;">Who's at the table</div>
         <div class="card" style="padding:8px 16px;">
           ${CHARS.map((c) => `
             <div class="list-row">
               ${ava(c)}
               <div style="flex:1;">
                 <div style="font-weight:700; font-size:14px;">${c.name}</div>
-                <div class="muted" style="font-size:12px;">${c.title}${c.isKiller ? ' · <span style="color:var(--blood);">killer</span>' : ""}</div>
+                <div class="muted" style="font-size:12px;">${c.title}</div>
               </div>
-              <button class="chip" data-view="${c.id}" style="padding:6px 12px;">view →</button>
             </div>`).join("")}
         </div>
 
         <div class="spacer"></div>
         <div class="footer-cta">${control}</div>
-        <p class="demo-note" style="border:0; padding-top:14px;">Only the host advances rounds. Everyone's phone updates the instant you do.</p>
+        <p class="demo-note" style="border:0; padding-top:14px;">You run the pacing — nobody's secrets show here. Everyone's phone follows when you advance.</p>
       </div>`;
-  }
-
-  function roundNarration(round, phase) {
-    if (phase === "voting")
-      return "The evidence is laid bare and every secret has had its airing. Guests — on your own phones, name the one you believe killed Lord Edmund.";
-    return ({
-      1: M.meta.hook + " Round one: introduce yourselves, and let the questions begin.",
-      2: "Round two. The doctor's story is unravelling, and a vial has gone missing. Press each other — someone here is lying.",
-      3: "The final round. Alibis are crumbling and old secrets surface. Make your accusations before the vote.",
-    })[round];
   }
 
   // -------------------------------------------------------- player screen
@@ -526,14 +538,29 @@
           <p style="margin:0; font-size:14px;">${c.knows}</p>
         </div>`;
     } else {
+      const guide = M.meta.roundGuide[state.round];
       body = `
-        <div class="reveal-box">
-          <div class="k" style="color:var(--gold); margin-bottom:6px;">✦ New this round</div>
+        <div class="card" style="padding:13px 15px; background:var(--panel-2);">
+          <div class="k" style="color:var(--gold); margin-bottom:4px;">Round ${state.round} · ${guide.title}</div>
+          <p class="muted" style="margin:0; font-size:13px;">${guide.goal}</p>
+        </div>
+        <div class="reveal-box" style="margin-top:12px;">
+          <div class="k" style="color:var(--gold); margin-bottom:6px;">✦ What you've just learned</div>
           <p style="margin:0; font-size:14.5px;">${rd.reveal}</p>
         </div>
         <div class="action-box" style="margin-top:12px;">
-          <div class="k" style="color:#e39a9a; margin-bottom:6px;">▶ Do this now — privately</div>
+          <div class="k" style="color:#e39a9a; margin-bottom:6px;">▶ Your move — privately</div>
           <p style="margin:0; font-size:14.5px;">${rd.action}</p>
+        </div>
+        <div class="card" style="margin-top:12px;">
+          <div class="k" style="color:var(--gold); margin-bottom:8px;">❓ Ask around the table</div>
+          <ul class="clean" style="margin:0; font-size:14px;">
+            ${rd.ask.map((q) => `<li style="margin:7px 0;">“${q}”</li>`).join("")}
+          </ul>
+        </div>
+        <div class="card" style="margin-top:12px; border-color:rgba(200,162,74,.3);">
+          <div class="k" style="color:var(--gold); margin-bottom:6px;">🛡 If they come for you</div>
+          <p style="margin:0; font-size:14px;">${rd.defend}</p>
         </div>`;
     }
 
@@ -651,10 +678,10 @@
     });
 
     const start = stage.querySelector("[data-start]");
-    if (start) start.onclick = () => { syncCast(); go("game", { viewAs: "host", round: 1, phase: "round" }); };
+    if (start) start.onclick = () => { syncCast(); state.roundStartedAt = Date.now(); go("game", { viewAs: "host", round: 1, phase: "round" }); };
 
     const adv = stage.querySelector("[data-advance]");
-    if (adv) adv.onclick = () => { state.round++; render(); };
+    if (adv) adv.onclick = () => { state.round++; state.roundStartedAt = Date.now(); render(); };
 
     const tv = stage.querySelector("[data-tovote]");
     if (tv) tv.onclick = () => { state.phase = "voting"; render(); };
@@ -665,8 +692,17 @@
     stage.querySelectorAll("[data-vote]").forEach((r) => r.onclick = () => { state.myVote = r.dataset.vote; render(); });
 
     const rs = stage.querySelector("[data-restart]");
-    if (rs) rs.onclick = () => { Object.assign(state, { screen: "intro", viewAs: "host", round: 1, phase: "round", tab: "who", joined: 0, myVote: null }); render(); };
+    if (rs) rs.onclick = () => { Object.assign(state, { screen: "intro", viewAs: "host", round: 1, phase: "round", tab: "who", joined: 0, myVote: null, roundStartedAt: null }); render(); };
   }
+
+  // live elapsed timer on the game board — updates only its own node so the
+  // rest of the screen (and scroll position) is untouched.
+  setInterval(() => {
+    const e = document.getElementById("elapsed");
+    if (!e || !state.roundStartedAt) return;
+    const s = Math.max(0, Math.floor((Date.now() - state.roundStartedAt) / 1000));
+    e.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }, 1000);
 
   render();
   </script>

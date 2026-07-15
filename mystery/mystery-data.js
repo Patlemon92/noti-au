@@ -11,14 +11,21 @@
  *   • OPTIONAL roles switch on as the group grows, each adding its own
  *     subplot without changing whodunit.
  *
- * The engine just filters:  characters.filter(c => c.minPlayers <= count)
- *
  *   mystery = {
- *     meta      : id / title / theme / player range / vibe
- *     characters: [ dossier + minPlayers threshold + per-round drip ]
- *     evidence  : shared clues unlocked round-by-round
- *     solution  : the truth + end-of-game honours
+ *     meta       : id / title / theme / player range / round pacing guide
+ *     characters : dossier + minPlayers + per-round drip
+ *                    round = { reveal, action, ask[], defend }
+ *                      reveal — what you privately learn this round
+ *                      action — your private objective this round
+ *                      ask    — pointed questions to put to named others
+ *                      defend — how to answer when the finger points at you
+ *     evidence   : shared clues unlocked round-by-round (public)
+ *     solution   : the truth + end-of-game honours
  *   }
+ *
+ * NOTE: nothing in `characters` or `solution` is ever shown on the host /
+ * game-board screen — the host is a suspect too. Only `evidence` and the
+ * public role summaries are safe to display to the room.
  */
 window.MYSTERIES = [
   {
@@ -38,11 +45,38 @@ window.MYSTERIES = [
         "tonight for Edmund's sixtieth birthday — and by dawn he lies dead in his " +
         "study, an empty brandy glass at his side. Dr. Hart calls it his heart. " +
         "It was not his heart. No one has left the house. One of you is a murderer.",
-      // Plain-language note the setup screen shows as the count changes.
       scaling: {
         4: "The core four — a complete, solvable mystery.",
         5: "Adds the Housekeeper, and with her a thread of quiet blackmail.",
         6: "Adds a mysterious late guest hiding who he really is.",
+      },
+      // Pacing guide the host/board screen shows — what each round is FOR,
+      // a suggested length, and when it's done. No secrets here.
+      roundGuide: {
+        1: {
+          title: "Introductions",
+          minutes: 15,
+          goal:
+            "Go round the room. Each guest says who they are and one thing they noticed " +
+            "last night. Before you move on, everyone should have asked at least one question.",
+          advanceWhen: "Everyone has introduced themselves and asked a question.",
+        },
+        2: {
+          title: "The Investigation",
+          minutes: 20,
+          goal:
+            "Fresh evidence is on the table. Press each other on where you were, what you " +
+            "saw, and what you're hiding. Chase the contradictions — someone is lying.",
+          advanceWhen: "The new clues have been argued over and alibis challenged.",
+        },
+        3: {
+          title: "Accusations",
+          minutes: 15,
+          goal:
+            "The last secrets surface. Everyone makes their case — who do you think killed " +
+            "Edmund, and why? Lay out your evidence, then call the vote.",
+          advanceWhen: "Everyone has made an accusation and defended themselves.",
+        },
       },
     },
 
@@ -68,12 +102,33 @@ window.MYSTERIES = [
         mustHide: "The forged will.",
         isKiller: false,
         rounds: {
-          1: { reveal: "You inherit everything — but only if the new will stands.",
-               action: "Grieve, publicly and beautifully. Remind everyone how devoted a wife you were." },
-          2: { reveal: "A servant saw you near the study at midnight. You were there — slipping the forged will out of Edmund's desk before anyone could find the old one.",
-               action: "If anyone asks why you were near the study, say only that you 'couldn't sleep'." },
-          3: { reveal: "Dr. Hart knows about your debts — and about your affair. He can destroy you with a sentence.",
-               action: "Quietly warn Hart to stay silent. Offer him something to keep it that way." },
+          1: {
+            reveal: "You inherit everything — but only if the new will stands.",
+            action: "Grieve, publicly and beautifully. Remind everyone how devoted a wife you were.",
+            ask: [
+              "Dr. Hart — you looked shaken this morning. Are you truly certain it was his heart?",
+              "Did anyone hear Edmund arguing with someone late last night? I'm sure I did.",
+            ],
+            defend: "If your composure is doubted: you're holding yourself together for the family's sake.",
+          },
+          2: {
+            reveal: "A servant saw you near the study at midnight — where you slipped the forged will out of Edmund's desk before the old one could be found.",
+            action: "Steer talk away from the study and toward anyone else's movements.",
+            ask: [
+              "Cordelia, you were out in the garden so late and so cold. Whatever were you doing?",
+              "Doctor, if it was poison — whose was it, and how did it reach his glass?",
+            ],
+            defend: "If asked why you were near the study at midnight: you couldn't sleep, you went for some air.",
+          },
+          3: {
+            reveal: "Dr. Hart knows about your debts — and your affair. One sentence from him could ruin you.",
+            action: "Quietly warn Hart to stay silent. Publicly, point the room at someone with a clearer motive.",
+            ask: [
+              "Sebastian, you and Edmund were shut in that study for an age. What was so urgent?",
+              "Who here actually gained something the moment Edmund died? Let's be honest.",
+            ],
+            defend: "If the new will is raised: Edmund always meant to provide for you — you're wounded they'd suggest otherwise.",
+          },
         },
       },
 
@@ -98,12 +153,33 @@ window.MYSTERIES = [
         mustHide: "The affair, and that the poison was yours.",
         isKiller: false,
         rounds: {
-          1: { reveal: "You know it was poison. You told the others it 'looked like his heart' — to buy yourself time.",
-               action: "Hold the line: natural causes, a sad but ordinary death." },
-          2: { reveal: "Your medical bag sat unattended in the drawing room all evening. Anyone at dinner could have opened it and taken the vial.",
-               action: "Concede the death was suspicious — but stress that your bag was open to everyone." },
-          3: { reveal: "You saw Sebastian lingering near your bag before dinner. You said nothing — because you were with Vivian and could not explain where you'd been.",
-               action: "Reveal you saw Sebastian near the bag — but have a story ready for your own whereabouts." },
+          1: {
+            reveal: "You know it was poison. You told the others it 'looked like his heart' — to buy yourself time.",
+            action: "Hold the line: natural causes, a sad but ordinary death.",
+            ask: [
+              "Has anyone actually seen Edmund take his heart medicine lately? He was so careless with it.",
+              "Who was the last of you to see him alive?",
+            ],
+            defend: "If the diagnosis is challenged: Edmund had a weak heart for years — it was the obvious call.",
+          },
+          2: {
+            reveal: "You must admit the death looks suspicious — but your bag sat open in the drawing room all evening. Anyone could have taken the vial.",
+            action: "Concede it may be poison, then stress the bag was open to the whole party.",
+            ask: [
+              "My medical bag sat open all evening — did anyone notice someone lingering near it?",
+              "Sebastian, weren't you in the drawing room before dinner? Did you go near my things?",
+            ],
+            defend: "If asked about the missing vial: your bag was open to everyone — you can hardly be blamed.",
+          },
+          3: {
+            reveal: "You saw Sebastian lingering near your bag before dinner. You've said nothing — because you were with Vivian and can't explain where you were.",
+            action: "Reveal you saw Sebastian at your bag — but have a story ready for your own whereabouts.",
+            ask: [
+              "Sebastian — I'll say it plainly — I saw you by my bag before dinner. What were you doing?",
+              "Doesn't the poison being digitalis point at whoever handled a doctor's bag?",
+            ],
+            defend: "If asked where you were before dinner: you were 'taking some air'. Never, ever mention Vivian.",
+          },
         },
       },
 
@@ -128,12 +204,33 @@ window.MYSTERIES = [
         mustHide: "That you were hours away from being disinherited.",
         isKiller: false,
         rounds: {
-          1: { reveal: "You loved Edmund like a father — and last night, for the first time, you hated him.",
-               action: "Play the heartbroken daughter. Let them see the grief, never the anger." },
-          2: { reveal: "You were seen crying in the garden at 11pm. You were not grieving — you were burning the letter in which Edmund disinherited you.",
-               action: "If any letter is mentioned, insist no such letter ever existed." },
-          3: { reveal: "You know a secret that would pull every eye away from you — proof that another guest has been lying all night.",
-               action: "Decide whether to expose what you know to save your own skin." },
+          1: {
+            reveal: "You loved Edmund like a father — and last night, for the first time, you hated him.",
+            action: "Play the heartbroken daughter. Let them see the grief, never the anger.",
+            ask: [
+              "Lady Vivian, you're remarkably composed for a grieving widow. How are you so calm?",
+              "Doctor, did Edmund say anything to you yesterday — about his affairs, his plans?",
+            ],
+            defend: "If your grief is doubted: you loved Edmund as a father — how dare they suggest otherwise.",
+          },
+          2: {
+            reveal: "You were seen crying in the garden at 11pm. You weren't grieving — you were burning the letter in which Edmund disinherited you.",
+            action: "If any letter or the garden comes up, insist there was nothing to burn.",
+            ask: [
+              "Mr. Crowe, is it true the business was failing? Edmund seemed so worried lately.",
+              "If someone poisoned him, they needed the poison first — who had access to the doctor's bag?",
+            ],
+            defend: "If the garden or a letter is raised: you were upset and needed air — there was no letter.",
+          },
+          3: {
+            reveal: "You know a secret that would pull every eye off you — proof another guest has been lying all night.",
+            action: "Decide whether to expose what you know to save your own skin.",
+            ask: [
+              "Doctor, why did you call it a heart attack so quickly, before anyone could even look?",
+              "Sebastian, why would Edmund summon the police for dawn? What had you done?",
+            ],
+            defend: "If accused: you knew nothing of any change to the will — why on earth would you?",
+          },
         },
       },
 
@@ -159,12 +256,33 @@ window.MYSTERIES = [
         mustHide: "Everything — the theft and the murder both.",
         isKiller: true,
         rounds: {
-          1: { reveal: "You are the murderer. Be as shattered as anyone in the room. Offer, loudly, to help find the truth.",
-               action: "Attach yourself to one guest and gently steer them toward suspecting someone else." },
-          2: { reveal: "Dr. Hart saw you at his bag. If he talks, you are finished — and the embezzlement gives you the clearest motive of anyone here.",
-               action: "Get ahead of it. Suggest Cordelia had motive and opportunity too — before anyone looks at you." },
-          3: { reveal: "The net is closing. Every guest is hiding something. Their secrets are your best weapon now.",
-               action: "Loudly accuse whoever the room already distrusts. Deflect, deflect, deflect." },
+          1: {
+            reveal: "You are the murderer. Be as shattered as anyone in the room. Offer, loudly, to help find the truth.",
+            action: "Attach yourself to one guest and gently steer them toward suspecting someone else.",
+            ask: [
+              "Cordelia, you and Edmund quarrelled yesterday, didn't you? I heard raised voices.",
+              "Lady Vivian — forgive me — but had things been well between you and Edmund of late?",
+            ],
+            defend: "If anyone probes the business: it was thriving, and you and Edmund were the best of friends.",
+          },
+          2: {
+            reveal: "Dr. Hart saw you at his bag. If he talks, you're finished — the embezzlement gives you the clearest motive here.",
+            action: "Get ahead of it: point out Cordelia had motive and opportunity too, before anyone looks at you.",
+            ask: [
+              "Doctor — isn't digitalis exactly what killed him? And whose bag was it in?",
+              "Cordelia, where were you before dinner? No one seems able to say.",
+            ],
+            defend: "If the argument in the study is raised: yes, you argued — about a bad investment, nothing more.",
+          },
+          3: {
+            reveal: "The net is closing. Every guest is hiding something — their secrets are your best weapon now.",
+            action: "Loudly accuse whoever the room already distrusts. Deflect, deflect, deflect.",
+            ask: [
+              "Lady Vivian, who benefits most now Edmund is gone? A newly-signed will, was it?",
+              "Cordelia burned something in the garden last night. Doesn't that trouble anyone but me?",
+            ],
+            defend: "If the embezzlement is named: deny everything, and demand to know who is spreading such lies.",
+          },
         },
       },
 
@@ -189,12 +307,33 @@ window.MYSTERIES = [
         mustHide: "That you've been blackmailing the killer.",
         isKiller: false,
         rounds: {
-          1: { reveal: "You know more than anyone in this house. You also have a private reason to keep one suspect safe.",
-               action: "Offer to help the investigation — and help it selectively." },
-          2: { reveal: "You saw Sebastian leave the drawing room alone before dinner, heading for Hart's bag. But if he hangs, your income dies with him.",
-               action: "Sit on what you saw. Muddy the water. Point gently elsewhere." },
-          3: { reveal: "If you're cornered, you can trade what you saw for your own safety — but it exposes the blackmail.",
-               action: "Decide: keep protecting Sebastian, or save yourself by naming him?" },
+          1: {
+            reveal: "You know more than anyone in this house. You also have a private reason to keep one suspect safe.",
+            action: "Offer to help the investigation — and help it selectively.",
+            ask: [
+              "Shall I tell you who was still awake and moving about the house after midnight?",
+              "Lady Vivian, I saw a light near the study late last night. Was that you, m'lady?",
+            ],
+            defend: "If asked what you know: you see much, but a good housekeeper keeps her confidences.",
+          },
+          2: {
+            reveal: "You saw Sebastian leave the drawing room alone before dinner, toward Hart's bag. But if he hangs, your income dies with him.",
+            action: "Sit on what you saw. Muddy the water. Point gently elsewhere.",
+            ask: [
+              "Miss Cordelia burned something in the garden grate last night — do ask her what it was.",
+              "That letter Edmund was writing yesterday — has anyone seen where it went?",
+            ],
+            defend: "If pressed on Sebastian: you saw nothing certain — the hall was dim, you can't be sure.",
+          },
+          3: {
+            reveal: "If you're cornered, you can trade what you saw for your own safety — but it exposes the blackmail.",
+            action: "Decide: keep protecting Sebastian, or save yourself by naming him?",
+            ask: [
+              "Everyone here has a secret. Ask yourselves who had the most to lose by dawn.",
+              "Doctor, that bag of yours — who did you leave it with all evening?",
+            ],
+            defend: "If your own conduct is questioned: you've served this house faithfully for thirty years.",
+          },
         },
       },
 
@@ -219,12 +358,33 @@ window.MYSTERIES = [
         mustHide: "Who you really are — until you decide to reveal it.",
         isKiller: false,
         rounds: {
-          1: { reveal: "No one knows who you really are. And motive is written all over you the moment they find out.",
-               action: "Stay the quiet outsider. Watch everyone. Say little." },
-          2: { reveal: "Passing the study at 10pm, you heard Edmund and Sebastian shouting about 'stolen money'.",
-               action: "Share what you heard. It points squarely at Sebastian — and away from you." },
-          3: { reveal: "It's time. Revealing you're Edmund's son recasts you as a grieving heir rather than a lurking stranger.",
-               action: "Reveal your identity. Claim your place. Demand justice for your father." },
+          1: {
+            reveal: "No one knows who you really are. And motive is written all over you the moment they find out.",
+            action: "Stay the quiet outsider. Watch everyone. Say little.",
+            ask: [
+              "Curious that the doctor pronounced it heart failure and closed the matter so quickly.",
+              "Who among you actually stood to lose if Edmund lived to change his mind about something?",
+            ],
+            defend: "If asked who you really are: a distant relation, here to pay respects. Stay vague.",
+          },
+          2: {
+            reveal: "Passing the study at 10pm, you heard Edmund and Sebastian shouting about 'stolen money'.",
+            action: "Share what you heard. It points squarely at Sebastian — and away from you.",
+            ask: [
+              "I heard two men shouting in the study at ten — about money. Who was in there with Edmund?",
+              "Sebastian, that was your voice I heard, wasn't it? What money were you quarrelling over?",
+            ],
+            defend: "If your presence is questioned: you arrived only just before the storm — you barely knew the man.",
+          },
+          3: {
+            reveal: "It's time. Revealing you're Edmund's son recasts you as a grieving heir, not a lurking stranger.",
+            action: "Reveal your identity. Claim your place. Demand justice for your father.",
+            ask: [
+              "Before you accuse the stranger — ask the partner why he was to be arrested at dawn.",
+              "Now you know who I am: who here had more to gain from Edmund's death than I did?",
+            ],
+            defend: "When you reveal you're his son: you came for recognition, not revenge — you wanted a father.",
+          },
         },
       },
     ],
@@ -256,7 +416,6 @@ window.MYSTERIES = [
         "The missing vial, the raised voices over 'stolen money', and the open drawing-room bag all " +
         "point one way. Vivian's forged will and Cordelia's burnt letter are real secrets — but not " +
         "this murder. Sebastian Crowe poisoned his oldest friend to save his own neck.",
-      // Honours are filtered to whoever's actually in the cast.
       awards: [
         { title: "The Mastermind", who: "sebastian", note: "Pulled it off — or nearly did." },
         { title: "Most Tangled Secret", who: "reginald", note: "The son no one saw coming." },

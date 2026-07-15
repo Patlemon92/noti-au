@@ -319,6 +319,7 @@
     joined: 0,          // players shown in lobby
     myVote: null,       // the human's whodunit vote
     roundStartedAt: null, // ms timestamp for the elapsed timer
+    hostChar: null,     // which character is running the night
     code: "GHTK",
     // interactive layer
     found: {},          // charId -> Set(clueId) gathered by investigating
@@ -428,10 +429,10 @@
     };
     return `
       <div class="switcher">
-        <div class="lbl">📱 Demo · tap a phone to view it</div>
+        <div class="lbl">📱 Demo · tap a phone — ★ Board is the optional TV screen</div>
         <div class="chips">
-          ${chip("host", "Host", "", true)}
-          ${CHARS.map((c) => chip(c.id, c.name.split(" ").slice(-1)[0], c.color, false)).join("")}
+          ${chip("host", "Board", "", true)}
+          ${CHARS.map((c) => chip(c.id, (c.id === state.hostChar ? "★ " : "") + c.name.split(" ").slice(-1)[0], c.color, false)).join("")}
         </div>
       </div>`;
   }
@@ -600,23 +601,26 @@
   // ------------------------------------------------ host / game-board screen
   // Public-safe: shows the pacing guide + shared evidence only. No secrets,
   // no killer — whoever runs the night is a suspect like everyone else.
+  // pacing controls — used both on the optional board AND on the host's own
+  // phone, so the host runs the night without giving up their character.
+  function pacingControls() {
+    const guide = M.meta.roundGuide[state.round];
+    if (state.phase === "round" && state.round < TOTAL_ROUNDS)
+      return `<button class="btn" data-advance>Wrap up · start ${M.meta.roundGuide[state.round + 1].title} →</button>
+              <p class="muted center" style="font-size:12px; margin-top:8px;">Advance when: ${guide.advanceWhen}</p>`;
+    if (state.phase === "round" && state.round === TOTAL_ROUNDS)
+      return `<button class="btn blood" data-tovote>Everyone ready? Call the vote ⚖</button>
+              <p class="muted center" style="font-size:12px; margin-top:8px;">Advance when: ${guide.advanceWhen}</p>`;
+    return `<button class="btn blood" data-reveal>Reveal the killer</button>
+            <p class="muted center" style="font-size:12px; margin-top:8px;">Votes are in. Time for the truth.</p>`;
+  }
+
   function screenHost() {
     const evidenceSoFar = [];
     for (let r = 1; r <= state.round; r++) (M.evidence[r] || []).forEach((e) => evidenceSoFar.push({ r, e }));
     const guide = M.meta.roundGuide[state.round];
     const voting = state.phase === "voting" || state.phase === "results";
-
-    let control;
-    if (state.phase === "round" && state.round < TOTAL_ROUNDS) {
-      control = `<button class="btn" data-advance>Wrap up · start ${M.meta.roundGuide[state.round + 1].title} →</button>
-                 <p class="muted center" style="font-size:12px; margin-top:8px;">Advance when: ${guide.advanceWhen}</p>`;
-    } else if (state.phase === "round" && state.round === TOTAL_ROUNDS) {
-      control = `<button class="btn blood" data-tovote>Everyone ready? Call the vote ⚖</button>
-                 <p class="muted center" style="font-size:12px; margin-top:8px;">Advance when: ${guide.advanceWhen}</p>`;
-    } else {
-      control = `<button class="btn blood" data-reveal>Reveal the killer</button>
-                 <p class="muted center" style="font-size:12px; margin-top:8px;">Votes are in. Time for the truth.</p>`;
-    }
+    const control = pacingControls();
 
     // top block: either the scripted round run-sheet, or a voting banner
     const topBlock = voting
@@ -651,7 +655,7 @@
       <div class="screen">
         <div class="board-grid">
           <div class="board-span flush board-hero">
-            <div><div class="eyebrow">The table board</div><h2 class="serif" style="font-size:24px;">${M.meta.title}</h2></div>
+            <div><div class="eyebrow">Shared board · optional</div><h2 class="serif" style="font-size:24px;">${M.meta.title}</h2></div>
             <span class="pill">${voting ? "Voting" : "Round " + state.round + "/" + TOTAL_ROUNDS}</span>
           </div>
 
@@ -689,7 +693,7 @@
 
           <div class="board-span" style="margin-top:6px;">
             <div class="footer-cta">${control}</div>
-            <p class="demo-note" style="border:0; padding-top:14px;">You run the pacing — nobody's secrets show here. Everyone's phone follows when you advance. Prop this screen up, or cast it to a TV.</p>
+            <p class="demo-note" style="border:0; padding-top:14px;">Optional shared screen — cast it to a TV or prop up a spare device. No secrets show here. The host can also run pacing from their own phone, so this screen isn't required.</p>
           </div>
         </div>
       </div>`;
@@ -712,11 +716,23 @@
             <h2 class="serif" style="font-size:21px; line-height:1.1;">${c.name}</h2>
           </div>
         </div>
-        <span class="pill">R${state.round}</span>
+        <span class="pill">${c.id === state.hostChar ? "★ Host · R" + state.round : "R" + state.round}</span>
       </div>`;
 
-    // voting phase overrides tabs
-    if (state.phase === "voting") return `<div class="screen">${header}${votePanel(c)}</div>`;
+    // If this player is the host, they run pacing from their OWN phone —
+    // a compact control that never costs them their character/dossier.
+    const hostBar = (c.id === state.hostChar) ? `
+      <div class="card" style="margin-top:14px; border-color:var(--amber);">
+        <div class="flush" style="margin-bottom:10px;">
+          <div class="k" style="color:var(--amber);">★ You're running the night</div>
+          <span class="muted" style="font-size:11px;">${state.phase === "voting" || state.phase === "results" ? "Voting" : "Round " + state.round + " of " + TOTAL_ROUNDS}</span>
+        </div>
+        ${pacingControls()}
+        <p class="muted" style="font-size:11px; margin:10px 0 0;">You're a suspect too — read your dossier below. Cast the board to a TV any time from the demo bar.</p>
+      </div>` : "";
+
+    // voting phase overrides tabs (host still sees their pacing control)
+    if (state.phase === "voting") return `<div class="screen">${header}${hostBar}${votePanel(c)}</div>`;
 
     // --- casebook contents for this character ---
     const items = allItems();
@@ -857,7 +873,7 @@
         <p class="muted" style="font-size:12px; margin:9px 2px 0;">${primeId ? `Marked as your prime suspect — ready for the final vote.` : `Tap the guest you most suspect. It'll be waiting when the vote comes.`}</p>`;
     }
 
-    return `<div class="screen">${header}<div style="height:14px;"></div>${tabBar}${body}
+    return `<div class="screen">${header}${hostBar}<div style="height:14px;"></div>${tabBar}${body}
         <p class="demo-note" style="border:0; padding-top:16px;">This screen is private to ${c.name.split(" ").slice(-1)[0]}. Every suspect sees a different one.</p>
       </div>`;
   }
@@ -981,7 +997,7 @@
     });
 
     const start = stage.querySelector("[data-start]");
-    if (start) start.onclick = () => { syncCast(); state.roundStartedAt = Date.now(); go("game", { viewAs: "host", round: 1, phase: "round" }); };
+    if (start) start.onclick = () => { syncCast(); state.roundStartedAt = Date.now(); state.hostChar = CHARS[0].id; go("game", { viewAs: CHARS[0].id, round: 1, phase: "round" }); };
 
     const adv = stage.querySelector("[data-advance]");
     if (adv) adv.onclick = () => { state.round++; state.roundStartedAt = Date.now(); render(); };
@@ -1017,7 +1033,7 @@
     if (ri) ri.onclick = () => { state.revealed.add(ri.dataset.revealItem); render(); };
 
     const rs = stage.querySelector("[data-restart]");
-    if (rs) rs.onclick = () => { Object.assign(state, { screen: "intro", viewAs: "host", round: 1, phase: "round", tab: "who", joined: 0, myVote: null, roundStartedAt: null, found: {}, opened: new Set(), revealed: new Set(), prime: {}, doc: null }); render(); };
+    if (rs) rs.onclick = () => { Object.assign(state, { screen: "intro", viewAs: "host", round: 1, phase: "round", tab: "who", joined: 0, myVote: null, roundStartedAt: null, hostChar: null, found: {}, opened: new Set(), revealed: new Set(), prime: {}, doc: null }); render(); };
   }
 
   // live elapsed timer on the game board — updates only its own node so the

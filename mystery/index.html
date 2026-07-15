@@ -164,6 +164,67 @@
   }
   ul.clean { margin: 8px 0 0; padding-left: 18px; }
   ul.clean li { margin: 6px 0; }
+
+  /* interactive documents ------------------------------------------------ */
+  .scrim {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(8,6,10,.74); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center; padding: 22px;
+    animation: fade .18s ease;
+  }
+  .doc-close {
+    position: fixed; top: 14px; right: 14px; z-index: 62;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(0,0,0,.55); color: #fff; border: 1px solid rgba(255,255,255,.28); font-size: 18px;
+  }
+  .doc {
+    width: 100%; max-width: 360px; max-height: 82vh; overflow: auto; border-radius: 7px;
+    box-shadow: 0 26px 64px rgba(0,0,0,.6);
+    animation: pop .34s cubic-bezier(.2,.9,.3,1.25) both;
+  }
+  @keyframes pop { from { opacity: 0; transform: scale(.86) translateY(12px) rotate(-1deg); } to { opacity: 1; transform: none; } }
+  .doc-inner { padding: 24px 22px; }
+  .doc .dt { font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; opacity: .65; margin-bottom: 10px; }
+  .doc .dh { font-size: 19px; margin-bottom: 13px; }
+  .doc .db { font-size: 15px; line-height: 1.62; white-space: pre-line; }
+  .doc .reveal-btn {
+    margin-top: 18px; width: 100%; padding: 13px; border-radius: 10px; font-weight: 800; font-size: 14px;
+    background: linear-gradient(180deg,#b84545,#7c2727); color: #fff; border: none;
+  }
+  .doc .revealed-tag { margin-top: 16px; font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #7c2727; }
+  /* paper variants */
+  .doc.note, .doc.document, .doc.paper { background: #efe7d3; color: #2a2117; }
+  .doc.note .db, .doc.document .db { font-family: var(--serif); }
+  .doc.letter { background: #f2ead8; color: #2a2117; }
+  .doc.letter .db { font-family: var(--serif); font-style: italic; }
+  .doc.letter.charred {
+    background: linear-gradient(180deg,#ece0c4 0%,#d8c39c 78%,#7c623c 100%);
+    box-shadow: 0 26px 64px rgba(0,0,0,.6), inset 0 -46px 42px -22px rgba(30,10,0,.55);
+  }
+  .doc.will { background: #f5efdb; color: #241d10; text-align: center; }
+  .doc.will .db { font-family: var(--serif); }
+  .doc.telegram { background: #e8e6dd; color: #20201a; }
+  .doc.telegram .dt { color: #7c2727; }
+  .doc.telegram .db { font-family: 'Courier New', monospace; text-transform: uppercase; letter-spacing: .03em; font-size: 13px; }
+  .doc.ledger { background: #eceadf; color: #20201a; }
+  .doc.ledger .db { font-family: 'Courier New', monospace; font-size: 13.5px; }
+  .doc.object { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
+  .doc.object .dh, .doc.object .db { }
+  .doc.object .db { font-family: var(--serif); font-style: italic; }
+  /* casebook cards */
+  .clue-card {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    padding: 12px 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); cursor: pointer;
+  }
+  .clue-card + .clue-card { margin-top: 9px; }
+  .clue-card:active { transform: translateY(1px); }
+  .clue-ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 19px; background: var(--panel-2); flex: 0 0 auto; }
+  .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); flex: 0 0 auto; }
+  .tab-badge {
+    display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px; margin-left: 5px;
+    border-radius: 8px; background: var(--blood); color: #fff; font-size: 10px; font-weight: 800; line-height: 1;
+  }
+  .empty-note { font-size: 12.5px; color: var(--muted); padding: 4px 2px; }
 </style>
 </head>
 <body>
@@ -200,6 +261,12 @@
     myVote: null,       // the human's whodunit vote
     roundStartedAt: null, // ms timestamp for the elapsed timer
     code: "GHTK",
+    // interactive layer
+    found: {},          // charId -> Set(clueId) gathered by investigating
+    opened: new Set(),  // `${charId}:${docId}` — for unread badges
+    revealed: new Set(),// item ids revealed to the whole table (public)
+    prime: {},          // charId -> suspectId (prime suspect, prefills the vote)
+    doc: null,          // the document currently open in the overlay
   };
 
   const el = (id) => document.getElementById(id);
@@ -214,6 +281,23 @@
     if (/^(Lady|Mr\.|Mrs\.|Miss)$/.test(parts[0])) return parts[1];     // Vivian, Cordelia…
     return parts[0];
   };
+
+  // ---- interactive-layer helpers ----
+  const KIND_ICON = { note: "📄", document: "📜", object: "🔎", letter: "✉️", will: "📜", telegram: "📨", ledger: "📒" };
+  const iconFor = (k) => KIND_ICON[k] || "📄";
+  const foundSet = (cid) => (state.found[cid] || (state.found[cid] = new Set()));
+  const isOpened = (id) => state.opened.has(state.viewAs + ":" + id);
+  // every character's item, indexed by id (for rendering revealed props anywhere)
+  const allItems = () => {
+    const m = {};
+    M.characters.forEach((c) => (c.items || []).forEach((it) => (m[it.id] = { ...it, owner: c.id })));
+    return m;
+  };
+  function openDoc(payload) {
+    state.doc = payload;
+    state.opened.add(state.viewAs + ":" + payload.id);
+    render();
+  }
   const initials = (name) => name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   const ava = (c, cls = "") =>
     `<div class="ava ${cls}" style="background:${c.color}">${initials(c.title === "The Stranger" ? c.name.split(" ")[0] : c.name.replace(/^(Lady|Dr\.|Mr\.|Mrs\.|Miss) /, ""))}</div>`;
@@ -233,9 +317,44 @@
       case "game":       html += (state.viewAs === "host") ? screenHost() : screenPlayer(); break;
       case "reveal":     html += screenReveal(); break;
     }
+    if (state.doc) html += docOverlay();
+
+    // preserve scroll position across in-place re-renders (opening a doc,
+    // marking a suspect, investigating); only jump to top on a real nav.
+    const key = state.screen + ":" + state.viewAs + ":" + state.tab;
+    const keep = key === state._lastKey;
+    const sy = window.scrollY;
     stage.innerHTML = html;
     bind();
-    stage.scrollTop = 0; window.scrollTo(0, 0);
+    if (keep) window.scrollTo(0, sy); else { stage.scrollTop = 0; window.scrollTo(0, 0); }
+    state._lastKey = key;
+  }
+
+  // ------------------------------------------------- document overlay
+  function docOverlay() {
+    const d = state.doc;
+    const cls = "doc " + (d.kind || "note") + (d.charred ? " charred" : "");
+    const revealed = d.id && state.revealed.has(d.id);
+    const source = d.kind === "telegram" ? "Telegram"
+      : d.where ? "Found in " + d.where
+      : d.hideNote ? "In your possession"
+      : d.revealable ? "In your possession" : "Document";
+    const revealBtn = (d.revealable && !revealed)
+      ? `<button class="reveal-btn" data-reveal-item="${d.id}">${d.revealLabel || "Reveal to the table"}</button>` : "";
+    const revealedTag = revealed ? `<div class="revealed-tag">◆ Revealed to the table</div>` : "";
+    const hideTag = d.hideNote ? `<div class="revealed-tag" style="color:#8a713a;">🔒 ${d.hideNote}</div>` : "";
+    return `
+      <div class="scrim" data-scrim>
+        <button class="doc-close" data-doc-close>✕</button>
+        <div class="${cls}">
+          <div class="doc-inner">
+            <div class="dt">${source}</div>
+            <div class="dh serif">${d.title}</div>
+            <div class="db">${d.body}</div>
+            ${revealedTag}${hideTag}${revealBtn}
+          </div>
+        </div>
+      </div>`;
   }
 
   // ---------------------------------------------------- device switcher
@@ -480,6 +599,11 @@
               <span style="color:var(--gold);">✦</span>
               <div style="flex:1; font-size:13.5px;">${x.e}<span class="muted" style="font-size:11px;"> · R${x.r}</span></div>
             </div>`).join("")}
+          ${[...state.revealed].map((id) => allItems()[id]).filter(Boolean).map((it) => `
+            <div class="list-row">
+              <span style="color:var(--blood);">◆</span>
+              <div style="flex:1; font-size:13.5px;">${it.title}<span class="muted" style="font-size:11px;"> · revealed by ${nameOf(it.owner)}</span></div>
+            </div>`).join("")}
         </div>
 
         <div class="k" style="color:var(--gold); margin:18px 0 8px;">Who's at the table</div>
@@ -523,11 +647,21 @@
     // voting phase overrides tabs
     if (state.phase === "voting") return `<div class="screen">${header}${votePanel(c)}</div>`;
 
+    // --- casebook contents for this character ---
+    const items = allItems();
+    const gathered = M.clues.filter((cl) => cl.round <= state.round && foundSet(c.id).has(cl.id));
+    const myItems = c.items || [];
+    const revealedDocs = [...state.revealed].map((id) => items[id]).filter(Boolean);
+    let unread = 0;
+    gathered.forEach((cl) => { if (!state.opened.has(c.id + ":" + cl.id)) unread++; });
+    myItems.forEach((it) => { if (!state.opened.has(c.id + ":" + it.id)) unread++; });
+    revealedDocs.forEach((it) => { if (it.owner !== c.id && !state.opened.has(c.id + ":" + it.id)) unread++; });
+
     const tabBar = `
       <div class="tabs">
         ${tab("who", "You")}
-        ${tab("goals", "Goals")}
         ${tab("round", "This round")}
+        ${tab("case", "Casebook" + (unread ? `<span class="tab-badge">${unread}</span>` : ""))}
       </div>`;
 
     let body = "";
@@ -543,10 +677,8 @@
           <div style="margin-top:12px; font-size:13px;" class="muted">
             <strong style="color:var(--ink);">You must hide:</strong> ${c.mustHide}
           </div>
-        </div>`;
-    } else if (state.tab === "goals") {
-      body = `
-        <div class="card">
+        </div>
+        <div class="card" style="margin-top:12px;">
           <div class="k" style="color:var(--gold); margin-bottom:10px;">Your objectives tonight</div>
           <ul class="clean" style="font-size:14.5px;">
             ${c.objectives.map((o) => `<li>${o}</li>`).join("")}
@@ -555,12 +687,22 @@
           <div class="k" style="color:var(--gold); margin-bottom:6px;">You happen to know</div>
           <p style="margin:0; font-size:14px;">${c.knows}</p>
         </div>`;
-    } else {
+    } else if (state.tab === "round") {
       const guide = M.meta.roundGuide[state.round];
       const target = nameOf(rd.question.to);
       const stepNo = (n, label) =>
         `<span class="k" style="display:inline-flex; align-items:center; gap:7px; color:var(--gold); margin-bottom:6px;">
            <span style="width:18px; height:18px; border-radius:50%; background:var(--gold); color:#1c150a; display:grid; place-items:center; font-size:11px;">${n}</span>${label}</span>`;
+      const thisRoundClues = M.clues.filter((cl) => cl.round === state.round);
+      const ungathered = thisRoundClues.filter((cl) => !foundSet(c.id).has(cl.id));
+      const investigate = thisRoundClues.length ? `
+        <div class="card" style="margin-top:12px; border-color:var(--gold);">
+          ${stepNo(3, "GATHER THE EVIDENCE")}
+          ${ungathered.length
+            ? `<p class="muted" style="margin:2px 0 10px; font-size:13px;">${ungathered.length} new ${ungathered.length === 1 ? "clue is" : "clues are"} waiting to be found this round.</p>
+               <button class="btn" data-investigate style="padding:11px;">🔎 Investigate the manor</button>`
+            : `<p class="muted" style="margin:2px 0 0; font-size:13px;">✓ Gathered. Open your <strong style="color:var(--ink);">Casebook</strong> to examine what you found.</p>`}
+        </div>` : "";
       body = `
         <div class="card" style="padding:12px 15px; background:var(--panel-2);">
           <div class="k" style="color:var(--gold); margin-bottom:4px;">Round ${state.round} · ${guide.title}</div>
@@ -582,6 +724,8 @@
           <p class="serif" style="margin:0; font-size:15px; line-height:1.5;">“${rd.question.text}”</p>
         </div>
 
+        ${investigate}
+
         <div class="action-box" style="margin-top:12px;">
           <div class="k" style="color:#e39a9a; margin-bottom:6px;">🎯 Your secret goal this round</div>
           <p style="margin:0; font-size:14px;">${rd.secretGoal}</p>
@@ -591,17 +735,48 @@
           <div class="k" style="color:var(--muted); margin-bottom:6px;">🛡 If someone accuses you</div>
           <p style="margin:0; font-size:14px;">${rd.ifAccused}</p>
         </div>`;
+    } else {
+      // ---- Casebook ----
+      const ungatheredNow = M.clues.filter((cl) => cl.round === state.round && !foundSet(c.id).has(cl.id));
+      const primeId = state.prime[c.id];
+      body = `
+        <div class="k" style="color:var(--gold); margin:2px 0 9px;">Evidence you've gathered</div>
+        ${gathered.length
+          ? gathered.map((cl) => clueCard(cl, c.id, false)).join("")
+          : `<div class="empty-note">Nothing yet. Tap <strong style="color:var(--ink);">🔎 Investigate</strong> in ‘This round’ to gather the clues on the table.</div>`}
+        ${ungatheredNow.length
+          ? `<div class="empty-note" style="margin-top:8px; color:var(--gold);">✦ More evidence is out this round — Investigate to collect it.</div>` : ""}
+
+        <div class="k" style="color:var(--gold); margin:20px 0 9px;">In your possession</div>
+        ${myItems.length
+          ? myItems.map((it) => clueCard(it, c.id, true)).join("")
+          : `<div class="empty-note">You carry nothing of note.</div>`}
+
+        ${revealedDocs.length ? `
+          <div class="k" style="color:var(--gold); margin:20px 0 9px;">Revealed to the table</div>
+          ${revealedDocs.map((it) => clueCard(it, c.id, false)).join("")}` : ""}
+
+        <div class="k" style="color:var(--gold); margin:20px 0 9px;">Who do you suspect?</div>
+        <div class="card" style="padding:6px 16px;">
+          ${CHARS.filter((s) => s.id !== c.id).map((s) => {
+            const on = primeId === s.id;
+            return `
+              <div class="list-row" data-prime="${s.id}" style="cursor:pointer;">
+                ${ava(s)}
+                <div style="flex:1;">
+                  <div style="font-weight:700; font-size:14px;">${s.name}</div>
+                  <div class="muted" style="font-size:12px;">${s.title}</div>
+                </div>
+                <span style="width:22px; height:22px; border-radius:50%; border:2px solid ${on ? "var(--gold)" : "var(--line)"}; display:grid; place-items:center;">
+                  ${on ? '<span style="color:var(--gold);">✓</span>' : ""}
+                </span>
+              </div>`;
+          }).join("")}
+        </div>
+        <p class="muted" style="font-size:12px; margin:9px 2px 0;">${primeId ? `Marked as your prime suspect — ready for the final vote.` : `Tap the guest you most suspect. It'll be waiting when the vote comes.`}</p>`;
     }
 
-    // shared evidence, collapsible-ish
-    const board = `
-      <div class="k" style="color:var(--gold); margin:18px 0 8px;">The case board · everyone sees this</div>
-      <div class="card" style="padding:6px 16px;">
-        ${evidenceSoFar.map((e) => `
-          <div class="list-row"><span style="color:var(--gold);">✦</span><div style="flex:1; font-size:13px;">${e}</div></div>`).join("")}
-      </div>`;
-
-    return `<div class="screen">${header}<div style="height:14px;"></div>${tabBar}${body}${board}
+    return `<div class="screen">${header}<div style="height:14px;"></div>${tabBar}${body}
         <p class="demo-note" style="border:0; padding-top:16px;">This screen is private to ${c.name.split(" ").slice(-1)[0]}. Every suspect sees a different one.</p>
       </div>`;
   }
@@ -610,16 +785,34 @@
     return `<button class="tab ${state.tab === key ? "on" : ""}" data-tab="${key}">${label}</button>`;
   }
 
+  // a tappable evidence/possession card that opens the document overlay
+  function clueCard(d, cid, isItem) {
+    const unread = !state.opened.has(cid + ":" + d.id);
+    let tag = "";
+    if (isItem) tag = d.revealable ? (state.revealed.has(d.id) ? "Revealed" : "Can be revealed") : "Secret · yours to hide";
+    return `
+      <button class="clue-card" data-open="${d.id}">
+        <div class="clue-ic">${iconFor(d.kind)}</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:700; font-size:14px;">${d.title}</div>
+          <div class="muted" style="font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.teaser}${tag ? " · " + tag : ""}</div>
+        </div>
+        ${unread ? '<span class="unread-dot"></span>' : ""}
+      </button>`;
+  }
+
   function votePanel(c) {
-    const voted = state.myVote;
+    const prime = state.prime[c.id];
+    const selected = state.myVote || prime || null;
+    const prefilled = !state.myVote && prime;
     return `
       <div style="margin-top:16px;">
         <div class="k" style="color:var(--gold);">The vote</div>
         <h3 class="serif" style="font-size:19px; margin:4px 0 4px;">Who killed Lord Edmund?</h3>
-        <p class="muted" style="font-size:13px; margin:0 0 14px;">Choose carefully. You are ${c.name.split(" ").slice(-1)[0]} — vote as they would.</p>
+        <p class="muted" style="font-size:13px; margin:0 0 14px;">${prefilled ? `Your Casebook marked <strong style="color:var(--ink);">${nameOf(prime)}</strong> — tap to confirm, or change your mind.` : `Weigh the evidence you gathered. You are ${c.name.split(" ").slice(-1)[0]} — vote as they would.`}</p>
         <div class="card" style="padding:6px 16px;">
           ${CHARS.map((s) => {
-            const on = voted === s.id;
+            const on = selected === s.id;
             return `
               <div class="list-row" data-vote="${s.id}" style="cursor:pointer;">
                 ${ava(s)}
@@ -633,7 +826,7 @@
               </div>`;
           }).join("")}
         </div>
-        ${voted ? `<p class="muted center" style="font-size:12px; margin-top:12px;">Vote locked. Switch to the Host phone to reveal the killer.</p>` : ""}
+        ${state.myVote ? `<p class="muted center" style="font-size:12px; margin-top:12px;">Vote locked. Switch to the Host phone to reveal the killer.</p>` : ""}
       </div>`;
   }
 
@@ -720,8 +913,30 @@
 
     stage.querySelectorAll("[data-vote]").forEach((r) => r.onclick = () => { state.myVote = r.dataset.vote; render(); });
 
+    // interactive layer: open documents, investigate, mark suspects, reveal
+    const resolveDoc = (id) => M.clues.find((x) => x.id === id) || allItems()[id] || null;
+    stage.querySelectorAll("[data-open]").forEach((b) => b.onclick = () => {
+      const d = resolveDoc(b.dataset.open);
+      if (d) openDoc(d);
+    });
+    const inv = stage.querySelector("[data-investigate]");
+    if (inv) inv.onclick = () => {
+      M.clues.filter((cl) => cl.round === state.round).forEach((cl) => foundSet(state.viewAs).add(cl.id));
+      render();
+    };
+    stage.querySelectorAll("[data-prime]").forEach((r) => r.onclick = () => {
+      state.prime[state.viewAs] = (state.prime[state.viewAs] === r.dataset.prime) ? null : r.dataset.prime;
+      render();
+    });
+    const scrim = stage.querySelector("[data-scrim]");
+    if (scrim) scrim.onclick = (e) => { if (e.target === scrim) { state.doc = null; render(); } };
+    const dc = stage.querySelector("[data-doc-close]");
+    if (dc) dc.onclick = () => { state.doc = null; render(); };
+    const ri = stage.querySelector("[data-reveal-item]");
+    if (ri) ri.onclick = () => { state.revealed.add(ri.dataset.revealItem); render(); };
+
     const rs = stage.querySelector("[data-restart]");
-    if (rs) rs.onclick = () => { Object.assign(state, { screen: "intro", viewAs: "host", round: 1, phase: "round", tab: "who", joined: 0, myVote: null, roundStartedAt: null }); render(); };
+    if (rs) rs.onclick = () => { Object.assign(state, { screen: "intro", viewAs: "host", round: 1, phase: "round", tab: "who", joined: 0, myVote: null, roundStartedAt: null, found: {}, opened: new Set(), revealed: new Set(), prime: {}, doc: null }); render(); };
   }
 
   // live elapsed timer on the game board — updates only its own node so the

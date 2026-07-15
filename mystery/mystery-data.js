@@ -125,6 +125,11 @@ window.MYSTERIES = [
         ],
         knows: "Edmund had a furious, shouting argument with Sebastian in the study late last night.",
         mustHide: "The forged will.",
+        items: [
+          { id: "debts", kind: "letter", title: "A drawer of final demands", teaser: "Creditors' letters, kept hidden",
+            body: "Stack upon stack of overdue notices. The estate is mortgaged to the rafters — Edmund never knew. Ruin is a week away, unless the inheritance comes through.",
+            hideNote: "Keep this buried. It is your motive." },
+        ],
         isKiller: false,
         rounds: {
           1: {
@@ -169,6 +174,11 @@ window.MYSTERIES = [
         ],
         knows: "The poison that killed Edmund was digitalis. Your digitalis.",
         mustHide: "The affair, and that the poison was yours.",
+        items: [
+          { id: "love-letter", kind: "letter", title: "A letter in Vivian's hand", teaser: "Kept folded against your heart",
+            body: "'My dearest Julian — soon we shall not have to hide at all. Yours, always. — V.'\n\nProof of the affair. Proof of a motive.",
+            hideNote: "If this is ever seen, you are finished." },
+        ],
         isKiller: false,
         rounds: {
           1: {
@@ -213,6 +223,11 @@ window.MYSTERIES = [
         ],
         knows: "Sebastian and Edmund's business was quietly failing.",
         mustHide: "That you were hours away from being disinherited.",
+        items: [
+          { id: "burnt-letter", kind: "letter", charred: true, title: "The half-burnt letter", teaser: "Rescued from the garden grate",
+            body: "Edmund's hand, the edges black and crumbling to ash:\n\n'… I cannot in conscience leave you a penny, Cordelia. You are no true blood of mine …'\n\nThe rest is cinders.",
+            hideNote: "This is your motive. Pray no one finds it." },
+        ],
         isKiller: false,
         rounds: {
           1: {
@@ -257,6 +272,11 @@ window.MYSTERIES = [
         ],
         knows: "You did it. Before dinner you took the vial from Hart's bag and stirred it into Edmund's nightcap brandy.",
         mustHide: "Everything — the theft and the murder both.",
+        items: [
+          { id: "account-book", kind: "ledger", title: "Your private account book", teaser: "The one Edmund found",
+            body: "Years of figures quietly bled from the company into your own name. This is the proof Edmund held over you last night. This is why there could be no dawn.",
+            hideNote: "If any eye but yours sees this, you hang." },
+        ],
         isKiller: true,
         rounds: {
           1: {
@@ -301,6 +321,11 @@ window.MYSTERIES = [
         ],
         knows: "Sebastian was embezzling. You can prove it.",
         mustHide: "That you've been blackmailing the killer.",
+        items: [
+          { id: "ledger-page", kind: "ledger", title: "A page torn from the company ledger", teaser: "Your insurance — and your sin",
+            body: "Sebastian Crowe's own hand, his theft laid bare in neat columns. It has bought your silence for months. Reveal it and you name a murderer — but you expose your blackmail with it.",
+            revealable: true, revealLabel: "Reveal the ledger to the table" },
+        ],
         isKiller: false,
         rounds: {
           1: {
@@ -345,6 +370,11 @@ window.MYSTERIES = [
         ],
         knows: "Edmund was alive and shouting at Sebastian at 10pm, long after most guests had gone up.",
         mustHide: "Who you really are — until you decide to reveal it.",
+        items: [
+          { id: "birth-record", kind: "document", title: "A baptismal record", teaser: "Folded soft with years of handling",
+            body: "A parish register entry naming Edmund Blackwood as father to a son, born out of wedlock. You. Your claim to this house — and your motive — in a single line of ink.",
+            revealable: true, revealLabel: "Reveal who you truly are" },
+        ],
         isKiller: false,
         rounds: {
           1: {
@@ -386,6 +416,29 @@ window.MYSTERIES = [
         "A newly-dated will has surfaced, naming Lady Vivian sole heir. The ink is barely a week old.",
       ],
     },
+
+    // Interactive documents players GATHER by investigating each round, then
+    // tap to open and read. `kind` drives how the prop is styled.
+    clues: [
+      { id: "cert", round: 1, kind: "note", where: "the study", title: "The death certificate",
+        teaser: "Signed by Dr. Hart this morning",
+        body: "CERTIFICATE OF DEATH\n\nEdmund Blackwood, aged 60.\nCause: heart failure.\nManner: natural causes.\nNo post-mortem requested.\n\nSigned, J. Hart, M.D." },
+      { id: "glass", round: 1, kind: "object", where: "the study", title: "The brandy glass",
+        teaser: "Found at the dead man's side",
+        body: "A single crystal glass, drained to the dregs. At the bottom clings a faint, sticky residue — and a bitter, almondy sweetness that good brandy alone never leaves behind." },
+      { id: "bag", round: 2, kind: "object", where: "the drawing room", title: "Dr. Hart's medical bag",
+        teaser: "Left open all evening",
+        body: "A doctor's bag, open on the sideboard. Inside, a rolled leather case of little glass vials — and one empty loop where a bottle of digitalis plainly used to sit." },
+      { id: "note", round: 2, kind: "letter", where: "the desk blotter", title: "A torn note in Edmund's hand",
+        teaser: "Pressed into the study blotter",
+        body: "Half a sheet, torn away and forgotten, in Lord Edmund's furious hand:\n\n'— know what you have taken from me. It ends at dawn. The constable shall hear the whole of it, unless —'\n\nThe rest is torn off." },
+      { id: "telegram", round: 3, kind: "telegram", where: "the hall table", title: "An urgent telegram",
+        teaser: "Delivered before the storm closed the roads",
+        body: "Post Office Telegram\n\nTo: Lord E. Blackwood, Blackwood Manor\n\nConstable informed stop shall attend at dawn regarding the accounts stop\n\n— Rees & Son, Solicitors" },
+      { id: "will", round: 3, kind: "will", where: "the study desk", title: "A newly-dated will",
+        teaser: "The ink barely a week old",
+        body: "Last Will & Testament\nof Edmund Blackwood\n\n'… I leave the whole of my estate, and this house, to my beloved wife, Vivian.'\n\nDated the ninth — barely a week gone. The signature is Edmund's. Or very nearly." },
+    ],
 
     solution: {
       killer: "sebastian",

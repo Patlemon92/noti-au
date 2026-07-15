@@ -205,6 +205,15 @@
   const el = (id) => document.getElementById(id);
   const stage = el("stage");
   const charById = (id) => CHARS.find((c) => c.id === id);
+  // short display name for question targets (searches the full cast, not just active)
+  const nameOf = (id) => {
+    const c = M.characters.find((x) => x.id === id);
+    if (!c) return "them";
+    const parts = c.name.split(" ");
+    if (parts[0] === "Dr.") return "Dr. " + parts[parts.length - 1];   // Dr. Hart
+    if (/^(Lady|Mr\.|Mrs\.|Miss)$/.test(parts[0])) return parts[1];     // Vivian, Cordelia…
+    return parts[0];
+  };
   const initials = (name) => name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
   const ava = (c, cls = "") =>
     `<div class="ava ${cls}" style="background:${c.color}">${initials(c.title === "The Stranger" ? c.name.split(" ")[0] : c.name.replace(/^(Lady|Dr\.|Mr\.|Mrs\.|Miss) /, ""))}</div>`;
@@ -426,7 +435,7 @@
                  <p class="muted center" style="font-size:12px; margin-top:8px;">Votes are in. Time for the truth.</p>`;
     }
 
-    // top block: either the round pacing card, or a voting banner
+    // top block: either the scripted round run-sheet, or a voting banner
     const topBlock = voting
       ? `<div class="card" style="margin-top:14px;">
            <div class="k" style="color:var(--gold); margin-bottom:6px;">The vote</div>
@@ -435,15 +444,24 @@
       : `<div class="card" style="margin-top:14px;">
            <div class="flush" style="align-items:flex-start;">
              <div>
-               <div class="k" style="color:var(--gold);">Round ${state.round} · ${guide.title}</div>
-               <div class="serif" style="font-size:19px; margin-top:2px;">What happens now</div>
+               <div class="k" style="color:var(--gold);">Round ${state.round} of ${TOTAL_ROUNDS}</div>
+               <div class="serif" style="font-size:20px; margin-top:2px;">${guide.title}</div>
              </div>
              <div class="center" style="min-width:78px;">
                <div class="serif" style="font-size:20px; line-height:1;"><span id="elapsed">0:00</span></div>
                <div class="muted" style="font-size:10px; letter-spacing:.06em;">~${guide.minutes} min</div>
              </div>
            </div>
-           <p style="margin:10px 0 0; font-size:14px;">${guide.goal}</p>
+         </div>
+         <div class="reveal-box" style="margin-top:12px;">
+           <div class="k" style="color:var(--gold); margin-bottom:6px;">📜 Read this aloud to the room</div>
+           <p class="serif" style="margin:0; font-size:14.5px; line-height:1.55;">${guide.narration}</p>
+         </div>
+         <div class="card" style="margin-top:12px;">
+           <div class="k" style="color:var(--gold); margin-bottom:10px;">Then run the round</div>
+           <ol style="margin:0; padding-left:20px; font-size:14px;">
+             ${guide.steps.map((s) => `<li style="margin:8px 0; padding-left:2px;">${s}</li>`).join("")}
+           </ol>
          </div>`;
 
     return `
@@ -539,28 +557,39 @@
         </div>`;
     } else {
       const guide = M.meta.roundGuide[state.round];
+      const target = nameOf(rd.question.to);
+      const stepNo = (n, label) =>
+        `<span class="k" style="display:inline-flex; align-items:center; gap:7px; color:var(--gold); margin-bottom:6px;">
+           <span style="width:18px; height:18px; border-radius:50%; background:var(--gold); color:#1c150a; display:grid; place-items:center; font-size:11px;">${n}</span>${label}</span>`;
       body = `
-        <div class="card" style="padding:13px 15px; background:var(--panel-2);">
+        <div class="card" style="padding:12px 15px; background:var(--panel-2);">
           <div class="k" style="color:var(--gold); margin-bottom:4px;">Round ${state.round} · ${guide.title}</div>
           <p class="muted" style="margin:0; font-size:13px;">${guide.goal}</p>
         </div>
+
         <div class="reveal-box" style="margin-top:12px;">
-          <div class="k" style="color:var(--gold); margin-bottom:6px;">✦ What you've just learned</div>
-          <p style="margin:0; font-size:14.5px;">${rd.reveal}</p>
+          <div class="k" style="color:var(--gold); margin-bottom:6px;">✦ What you now know — private</div>
+          <p style="margin:0; font-size:14.5px;">${rd.learned}</p>
         </div>
+
+        <div class="card" style="margin-top:12px; border-color:var(--gold);">
+          ${stepNo(1, "SAY THIS ALOUD")}
+          <p class="serif" style="margin:0; font-size:15.5px; line-height:1.5;">“${rd.sayAloud}”</p>
+        </div>
+
+        <div class="card" style="margin-top:12px; border-color:var(--gold);">
+          ${stepNo(2, "ASK " + target.toUpperCase())}
+          <p class="serif" style="margin:0; font-size:15px; line-height:1.5;">“${rd.question.text}”</p>
+        </div>
+
         <div class="action-box" style="margin-top:12px;">
-          <div class="k" style="color:#e39a9a; margin-bottom:6px;">▶ Your move — privately</div>
-          <p style="margin:0; font-size:14.5px;">${rd.action}</p>
+          <div class="k" style="color:#e39a9a; margin-bottom:6px;">🎯 Your secret goal this round</div>
+          <p style="margin:0; font-size:14px;">${rd.secretGoal}</p>
         </div>
+
         <div class="card" style="margin-top:12px;">
-          <div class="k" style="color:var(--gold); margin-bottom:8px;">❓ Ask around the table</div>
-          <ul class="clean" style="margin:0; font-size:14px;">
-            ${rd.ask.map((q) => `<li style="margin:7px 0;">“${q}”</li>`).join("")}
-          </ul>
-        </div>
-        <div class="card" style="margin-top:12px; border-color:rgba(200,162,74,.3);">
-          <div class="k" style="color:var(--gold); margin-bottom:6px;">🛡 If they come for you</div>
-          <p style="margin:0; font-size:14px;">${rd.defend}</p>
+          <div class="k" style="color:var(--muted); margin-bottom:6px;">🛡 If someone accuses you</div>
+          <p style="margin:0; font-size:14px;">${rd.ifAccused}</p>
         </div>`;
     }
 

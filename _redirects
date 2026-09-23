@@ -43,30 +43,6 @@
 /admin               https://noti.com.au/  302
 /admin.html          https://noti.com.au/  302
 /upgrade             https://noti.com.au/  302
-/sw.js               /health/sw-health.js                   200
-/health/manifest.json       /health/manifest-health.json           200
-
-# v1 pages → v2 equivalents (one place for the new design, no stale UI)
-/health/home                /health/v2/today                       301
-/health/home.html           /health/v2/today                       301
-/health/alys                /health/v2/alys                        301
-/health/alys.html           /health/v2/alys                        301
-/health/profile             /health/v2/profile                     301
-/health/profile.html        /health/v2/profile                     301
-/health/record              /health/v2/record                      301
-/health/record.html         /health/v2/record                      301
-/health/export              /health/v2/export                      301
-/health/export.html         /health/v2/export                      301
-/health/checkin             /health/v2/checkin.html                301
-/health/checkin.html        /health/v2/checkin.html                301
-
-# ─── Noti Trade (unchanged) ─────────────
-/job/:jobId/:token    /jobs.html?jobId=:jobId&t=:token    200
-/job/:jobId           /jobs.html?jobId=:jobId              200
-/review/:jobId/:token /review.html?jobId=:jobId&t=:token   200
-/review/:jobId        /review.html?jobId=:jobId            200
-/request              /job-request.html                    200
-/upgrade              https://buy.stripe.com/fZu9AS0V69MB1xLaSjeAg02    302
 /sw.js                /sw.js                               200
 /manifest.json        /manifest.json                       200
 

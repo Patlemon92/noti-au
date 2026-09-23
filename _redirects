@@ -18,6 +18,48 @@
 /health/checkin             /health/v2/checkin.html                301
 /health/checkin.html        /health/v2/checkin.html                301
 
+# ─── Noti Trade — RETIRED 2026-09-24 ─────────────
+# The trade marketplace's backend and database are gone (code kept in the
+# archived repo Patlemon92/noti-trade-archive). Every trade page and route
+# goes to noti.com.au. 302, not 301, so browsers do not cache it and it stays
+# reversible. The page files remain in this repo, unserved.
+/signup              https://noti.com.au/  302
+/signup.html         https://noti.com.au/  302
+/signup-full         https://noti.com.au/  302
+/signup-full.html    https://noti.com.au/  302
+/request             https://noti.com.au/  302
+/job-request         https://noti.com.au/  302
+/job-request.html    https://noti.com.au/  302
+/job/*               https://noti.com.au/  302
+/jobs                https://noti.com.au/  302
+/jobs.html           https://noti.com.au/  302
+/review/*            https://noti.com.au/  302
+/review              https://noti.com.au/  302
+/review.html         https://noti.com.au/  302
+/specialist          https://noti.com.au/  302
+/specialist.html     https://noti.com.au/  302
+/support             https://noti.com.au/  302
+/support.html        https://noti.com.au/  302
+/admin               https://noti.com.au/  302
+/admin.html          https://noti.com.au/  302
+/upgrade             https://noti.com.au/  302
+/sw.js               /health/sw-health.js                   200
+/health/manifest.json       /health/manifest-health.json           200
+
+# v1 pages → v2 equivalents (one place for the new design, no stale UI)
+/health/home                /health/v2/today                       301
+/health/home.html           /health/v2/today                       301
+/health/alys                /health/v2/alys                        301
+/health/alys.html           /health/v2/alys                        301
+/health/profile             /health/v2/profile                     301
+/health/profile.html        /health/v2/profile                     301
+/health/record              /health/v2/record                      301
+/health/record.html         /health/v2/record                      301
+/health/export              /health/v2/export                      301
+/health/export.html         /health/v2/export                      301
+/health/checkin             /health/v2/checkin.html                301
+/health/checkin.html        /health/v2/checkin.html                301
+
 # ─── Noti Trade (unchanged) ─────────────
 /job/:jobId/:token    /jobs.html?jobId=:jobId&t=:token    200
 /job/:jobId           /jobs.html?jobId=:jobId              200
